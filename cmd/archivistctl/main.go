@@ -41,7 +41,7 @@ func main() {
 
 	var opts []grpc.DialOption
 	opts = append(opts, grpc.WithTransportCredentials(insecure.NewCredentials()))
-	conn, err := grpc.Dial("127.0.0.1:5280", opts...)
+	conn, err := grpc.Dial("127.0.0.1:8080", opts...)
 	if err != nil {
 		logrus.Fatalf("unable to grpc dial: %+v", err)
 	}

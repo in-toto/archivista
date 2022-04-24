@@ -1,7 +1,14 @@
 # archivist
 
-This application is configured through the environment. The following environment
-variables can be used:
+## building
+
+```sh
+go install ./cmd/archivist
+go install ./cmd/archivistctl
+```
+
+This application is configured through the environment. The following
+environment variables can be used:
 
 ```sh
 KEY                        TYPE             DEFAULT                     REQUIRED    DESCRIPTION
@@ -12,5 +19,14 @@ ARCHIVIST_LOG_LEVEL        String           INFO                                
 
 Running in a test environment:
 ```sh
-ARCHIVIST_ENABLE_SPIFFE=false ARCHIVIST_LISTEN_ON=tcp://127.0.0.1:8080 ./archivist
+go install ./cmd/archivist
+ARCHIVIST_ENABLE_SPIFFE=false ARCHIVIST_LISTEN_ON=tcp://127.0.0.1:8080 archivist
+```
+
+`archivectl` is used to upload and download DSSE objects from the command line.
+As of now, it only uploads then downloads the same object to test end to end
+functionality. This command will be built up in time.
+
+```sh
+archivistctl file-to-upload-and-downlaod
 ```
