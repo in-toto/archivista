@@ -9,8 +9,8 @@ require (
 	github.com/networkservicemesh/sdk v1.3.0
 	github.com/sirupsen/logrus v1.8.1
 	github.com/spiffe/go-spiffe/v2 v2.0.0
+	github.com/testifysec/archivist-api v0.0.0-20220430222002-615ab6476fd2
 	google.golang.org/grpc v1.46.0
-	google.golang.org/protobuf v1.28.0
 )
 
 require (
@@ -52,5 +52,6 @@ require (
 	golang.org/x/sys v0.0.0-20220307203707-22a9840ba4d7 // indirect
 	golang.org/x/text v0.3.7 // indirect
 	google.golang.org/genproto v0.0.0-20200806141610-86f49bd18e98 // indirect
+	google.golang.org/protobuf v1.28.0 // indirect
 	gopkg.in/square/go-jose.v2 v2.4.1 // indirect
 )

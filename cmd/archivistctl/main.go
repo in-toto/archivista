@@ -21,8 +21,8 @@ import (
 	"io/ioutil"
 	"os"
 
+	"github.com/testifysec/archivist-api/pkg/api/archivist"
 	"github.com/testifysec/archivist/internal/types/dsse"
-	"github.com/testifysec/archivist/pkg/api/archivist"
 
 	"github.com/sirupsen/logrus"
 	"google.golang.org/grpc"
@@ -66,12 +66,12 @@ func main() {
 		logrus.Fatalln("obj is not DSSE %d %d %d", len(obj.Payload), len(obj.PayloadType), len(obj.Signatures))
 	}
 
-	_, err = client.Store(context.Background(), &archivist.StoreRequest{
-		Object: string(file),
-	})
-	if err != nil {
-		logrus.Fatalf("unable to store object: %+v", err)
-	}
+	//_, err = client.Store(context.Background(), &archivist.StoreRequest{
+	//	Object: string(file),
+	//})
+	//if err != nil {
+	//	logrus.Fatalf("unable to store object: %+v", err)
+	//}
 
 	resp, err := client.GetBySubject(context.Background(), &archivist.GetBySubjectRequest{Subject: "subject"})
 

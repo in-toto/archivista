@@ -17,8 +17,8 @@ package server
 import (
 	"context"
 	"github.com/sirupsen/logrus"
-	"github.com/testifysec/archivist/pkg/api/archivist"
-	"google.golang.org/protobuf/types/known/emptypb"
+	"github.com/testifysec/archivist-api/pkg/api/archivist"
+	//"google.golang.org/protobuf/types/known/emptypb"
 )
 
 type service struct {
@@ -38,6 +38,8 @@ func (s *service) GetBySubject(ctx context.Context, request *archivist.GetBySubj
 	return s.store.GetBySubject(ctx, request)
 }
 
+/*
 func (s *service) Store(ctx context.Context, request *archivist.StoreRequest) (*emptypb.Empty, error) {
 	return s.store.Store(ctx, request)
 }
+*/

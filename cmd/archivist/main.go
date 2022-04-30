@@ -26,10 +26,10 @@ import (
 	"syscall"
 	"time"
 
+	"github.com/testifysec/archivist-api/pkg/api/archivist"
 	"github.com/testifysec/archivist/internal/config"
 	"github.com/testifysec/archivist/internal/server"
 	"github.com/testifysec/archivist/internal/storage/badgerstore"
-	"github.com/testifysec/archivist/pkg/api/archivist"
 
 	nested "github.com/antonfisher/nested-logrus-formatter"
 	"github.com/networkservicemesh/sdk/pkg/tools/debug"
