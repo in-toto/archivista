@@ -132,8 +132,11 @@ func main() {
 	}
 
 	grpcServer := grpc.NewServer(grpcOptions...)
-	svc := server.NewService(store)
-	archivist.RegisterArchivistServer(grpcServer, svc)
+	archivistService := server.NewArchivistServer(store)
+	archivist.RegisterArchivistServer(grpcServer, archivistService)
+
+	collectorService := server.NewCollectorServer(store)
+	archivist.RegisterCollectorServer(grpcServer, collectorService)
 
 	srvErrCh := grpcutils.ListenAndServe(ctx, &cfg.ListenOn, grpcServer)
 	exitOnErrCh(ctx, cancel, srvErrCh)

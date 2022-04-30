@@ -52,7 +52,8 @@ func main() {
 		}
 	}()
 
-	client := archivist.NewArchivistClient(conn)
+	archivistClient := archivist.NewArchivistClient(conn)
+	collectorClient := archivist.NewCollectorClient(conn)
 
 	// check if valid
 
@@ -66,14 +67,14 @@ func main() {
 		logrus.Fatalln("obj is not DSSE %d %d %d", len(obj.Payload), len(obj.PayloadType), len(obj.Signatures))
 	}
 
-	//_, err = client.Store(context.Background(), &archivist.StoreRequest{
-	//	Object: string(file),
-	//})
-	//if err != nil {
-	//	logrus.Fatalf("unable to store object: %+v", err)
-	//}
+	_, err = collectorClient.Store(context.Background(), &archivist.StoreRequest{
+		Object: string(file),
+	})
+	if err != nil {
+		logrus.Fatalf("unable to store object: %+v", err)
+	}
 
-	resp, err := client.GetBySubject(context.Background(), &archivist.GetBySubjectRequest{Subject: "subject"})
+	resp, err := archivistClient.GetBySubject(context.Background(), &archivist.GetBySubjectRequest{Subject: "subject"})
 
 	fmt.Print(resp.GetObject()[0])
 }

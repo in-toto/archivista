@@ -16,19 +16,28 @@ package badgerstore
 
 import (
 	"context"
+	"fmt"
 	"github.com/dgraph-io/badger/v3"
 	"github.com/sirupsen/logrus"
 	"github.com/testifysec/archivist-api/pkg/api/archivist"
+	"google.golang.org/protobuf/types/known/emptypb"
+	"math/rand"
 	//"google.golang.org/protobuf/types/known/emptypb"
 )
 
+type UnifiedStorage interface {
+	archivist.ArchivistServer
+	archivist.CollectorServer
+}
+
 type store struct {
 	archivist.UnimplementedArchivistServer
+	archivist.UnimplementedCollectorServer
 
 	db *badger.DB
 }
 
-func NewServer(ctx context.Context, file string) (archivist.ArchivistServer, chan error, error) {
+func NewServer(ctx context.Context, file string) (UnifiedStorage, chan error, error) {
 	errCh := make(chan error)
 	var opt = badger.DefaultOptions("").WithInMemory(true)
 	if file == "" {
@@ -76,7 +85,6 @@ func (s *store) GetBySubject(_ context.Context, request *archivist.GetBySubjectR
 	return &archivist.GetBySubjectResponse{Object: results}, err
 }
 
-/*
 func (s *store) Store(_ context.Context, request *archivist.StoreRequest) (*emptypb.Empty, error) {
 	err := s.db.Update(func(txn *badger.Txn) error {
 		key := fmt.Sprintf("subject-%d", rand.Int())
@@ -86,4 +94,3 @@ func (s *store) Store(_ context.Context, request *archivist.StoreRequest) (*empt
 	})
 	return &emptypb.Empty{}, err
 }
-*/

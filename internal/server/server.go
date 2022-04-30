@@ -18,28 +18,38 @@ import (
 	"context"
 	"github.com/sirupsen/logrus"
 	"github.com/testifysec/archivist-api/pkg/api/archivist"
-	//"google.golang.org/protobuf/types/known/emptypb"
+	"google.golang.org/protobuf/types/known/emptypb"
 )
 
-type service struct {
+type archivistServer struct {
 	archivist.UnimplementedArchivistServer
 
 	store archivist.ArchivistServer
 }
 
-func NewService(store archivist.ArchivistServer) archivist.ArchivistServer {
-	return &service{
+func NewArchivistServer(store archivist.ArchivistServer) archivist.ArchivistServer {
+	return &archivistServer{
 		store: store,
 	}
 }
 
-func (s *service) GetBySubject(ctx context.Context, request *archivist.GetBySubjectRequest) (*archivist.GetBySubjectResponse, error) {
+func (s *archivistServer) GetBySubject(ctx context.Context, request *archivist.GetBySubjectRequest) (*archivist.GetBySubjectResponse, error) {
 	logrus.WithContext(ctx).Printf("storing... ")
 	return s.store.GetBySubject(ctx, request)
 }
 
-/*
-func (s *service) Store(ctx context.Context, request *archivist.StoreRequest) (*emptypb.Empty, error) {
+type collectorServer struct {
+	archivist.UnimplementedCollectorServer
+
+	store archivist.CollectorServer
+}
+
+func NewCollectorServer(store archivist.CollectorServer) archivist.CollectorServer {
+	return &collectorServer{
+		store: store,
+	}
+}
+
+func (s *collectorServer) Store(ctx context.Context, request *archivist.StoreRequest) (*emptypb.Empty, error) {
 	return s.store.Store(ctx, request)
 }
-*/
