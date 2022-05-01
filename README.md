@@ -3,9 +3,18 @@
 ## building
 
 ```sh
-go install ./cmd/archivist
-go install ./cmd/archivistctl
+$ docker-compose up --build
+
+$ archivistctl attestation.json
 ```
+
+## shutting down
+
+```sh
+$ docker-compose down
+```
+
+## Running archivist out of docker-compose
 
 This application is configured through the environment. The following environment variables can be used:
 
@@ -19,13 +28,13 @@ ARCHIVIST_LOG_LEVEL        String           INFO                                
 Running in a test environment:
 
 ```sh
-go install ./cmd/archivist
-ARCHIVIST_ENABLE_SPIFFE=false ARCHIVIST_LISTEN_ON=tcp://127.0.0.1:8080 archivist
+$ go install ./cmd/archivist
+$ ARCHIVIST_ENABLE_SPIFFE=false ARCHIVIST_LISTEN_ON=tcp://127.0.0.1:8080 archivist
 ```
 
 `archivectl` is used to upload and download DSSE objects from the command line. As of now, it only uploads then
 downloads the same object to test end to end functionality. This command will be built up in time.
 
 ```sh
-archivistctl file-to-upload-and-downlaod
+$ archivistctl file-to-upload-and-downlaod
 ```
