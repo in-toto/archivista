@@ -16,6 +16,7 @@ package server
 
 import (
 	"context"
+	"fmt"
 	"github.com/sirupsen/logrus"
 	"github.com/testifysec/archivist-api/pkg/api/archivist"
 	"google.golang.org/protobuf/types/known/emptypb"
@@ -34,7 +35,7 @@ func NewArchivistServer(store archivist.ArchivistServer) archivist.ArchivistServ
 }
 
 func (s *archivistServer) GetBySubject(ctx context.Context, request *archivist.GetBySubjectRequest) (*archivist.GetBySubjectResponse, error) {
-	logrus.WithContext(ctx).Printf("storing... ")
+	logrus.WithContext(ctx).Printf("retrieving by subject... ")
 	return s.store.GetBySubject(ctx, request)
 }
 
@@ -51,5 +52,6 @@ func NewCollectorServer(store archivist.CollectorServer) archivist.CollectorServ
 }
 
 func (s *collectorServer) Store(ctx context.Context, request *archivist.StoreRequest) (*emptypb.Empty, error) {
+	fmt.Println("middleware: store")
 	return s.store.Store(ctx, request)
 }

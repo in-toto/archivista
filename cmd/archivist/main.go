@@ -29,7 +29,7 @@ import (
 	"github.com/testifysec/archivist-api/pkg/api/archivist"
 	"github.com/testifysec/archivist/internal/config"
 	"github.com/testifysec/archivist/internal/server"
-	"github.com/testifysec/archivist/internal/storage/badgerstore"
+	"github.com/testifysec/archivist/internal/storage/mysqlstore"
 
 	nested "github.com/antonfisher/nested-logrus-formatter"
 	"github.com/networkservicemesh/sdk/pkg/tools/debug"
@@ -115,7 +115,7 @@ func main() {
 	// ********************************************************************************
 	now = time.Now()
 
-	store, storeCh, err := badgerstore.NewServer(ctx, "")
+	store, storeCh, err := mysqlstore.NewServer(ctx, "")
 	if err != nil {
 		logrus.Fatalf("error starting badger store: %+v", err)
 	}

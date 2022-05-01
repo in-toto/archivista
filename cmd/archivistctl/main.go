@@ -18,11 +18,11 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
+	"github.com/testifysec/witness/pkg/dsse"
 	"io/ioutil"
 	"os"
 
 	"github.com/testifysec/archivist-api/pkg/api/archivist"
-	"github.com/testifysec/archivist/internal/types/dsse"
 
 	"github.com/sirupsen/logrus"
 	"google.golang.org/grpc"
@@ -57,13 +57,13 @@ func main() {
 
 	// check if valid
 
-	obj := &dsse.DSSE{}
+	obj := &dsse.Envelope{}
 	err = json.Unmarshal(file, obj)
 	if err != nil {
 		logrus.Fatalln("could not unmarshal input: ", err)
 	}
 
-	if obj.Payload == "" || obj.PayloadType == "" || len(obj.Signatures) == 0 {
+	if len(obj.Payload) == 0 || obj.PayloadType == "" || len(obj.Signatures) == 0 {
 		logrus.Fatalln("obj is not DSSE %d %d %d", len(obj.Payload), len(obj.PayloadType), len(obj.Signatures))
 	}
 
