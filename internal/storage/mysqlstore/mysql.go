@@ -49,9 +49,6 @@ type store struct {
 }
 
 func NewServer(ctx context.Context, connectionstring string) (UnifiedStorage, chan error, error) {
-	//time.Sleep(1 * time.Hour)
-	//b, _ := ioutil.ReadFile("/etc/hosts")
-	//logrus.Fatalln(string(b))
 	drv, err := sql.Open("mysql", "root:example@tcp(db)/testify")
 	if err != nil {
 		return nil, nil, err
