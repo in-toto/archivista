@@ -9,6 +9,12 @@ import (
 // Digest is the predicate function for digest builders.
 type Digest func(*sql.Selector)
 
+// Dsse is the predicate function for dsse builders.
+type Dsse func(*sql.Selector)
+
+// DsseSignature is the predicate function for dssesignature builders.
+type DsseSignature func(*sql.Selector)
+
 // Statement is the predicate function for statement builders.
 type Statement func(*sql.Selector)
 

@@ -10,6 +10,7 @@ import (
 	"entgo.io/ent/dialect/sql"
 	"entgo.io/ent/dialect/sql/sqlgraph"
 	"entgo.io/ent/schema/field"
+	"github.com/testifysec/archivist/ent/dsse"
 	"github.com/testifysec/archivist/ent/predicate"
 	"github.com/testifysec/archivist/ent/statement"
 	"github.com/testifysec/archivist/ent/subject"
@@ -28,12 +29,6 @@ func (su *StatementUpdate) Where(ps ...predicate.Statement) *StatementUpdate {
 	return su
 }
 
-// SetStatement sets the "statement" field.
-func (su *StatementUpdate) SetStatement(s string) *StatementUpdate {
-	su.mutation.SetStatement(s)
-	return su
-}
-
 // AddSubjectIDs adds the "subjects" edge to the Subject entity by IDs.
 func (su *StatementUpdate) AddSubjectIDs(ids ...int) *StatementUpdate {
 	su.mutation.AddSubjectIDs(ids...)
@@ -47,6 +42,21 @@ func (su *StatementUpdate) AddSubjects(s ...*Subject) *StatementUpdate {
 		ids[i] = s[i].ID
 	}
 	return su.AddSubjectIDs(ids...)
+}
+
+// AddDsseIDs adds the "dsse" edge to the Dsse entity by IDs.
+func (su *StatementUpdate) AddDsseIDs(ids ...int) *StatementUpdate {
+	su.mutation.AddDsseIDs(ids...)
+	return su
+}
+
+// AddDsse adds the "dsse" edges to the Dsse entity.
+func (su *StatementUpdate) AddDsse(d ...*Dsse) *StatementUpdate {
+	ids := make([]int, len(d))
+	for i := range d {
+		ids[i] = d[i].ID
+	}
+	return su.AddDsseIDs(ids...)
 }
 
 // Mutation returns the StatementMutation object of the builder.
@@ -73,6 +83,27 @@ func (su *StatementUpdate) RemoveSubjects(s ...*Subject) *StatementUpdate {
 		ids[i] = s[i].ID
 	}
 	return su.RemoveSubjectIDs(ids...)
+}
+
+// ClearDsse clears all "dsse" edges to the Dsse entity.
+func (su *StatementUpdate) ClearDsse() *StatementUpdate {
+	su.mutation.ClearDsse()
+	return su
+}
+
+// RemoveDsseIDs removes the "dsse" edge to Dsse entities by IDs.
+func (su *StatementUpdate) RemoveDsseIDs(ids ...int) *StatementUpdate {
+	su.mutation.RemoveDsseIDs(ids...)
+	return su
+}
+
+// RemoveDsse removes "dsse" edges to Dsse entities.
+func (su *StatementUpdate) RemoveDsse(d ...*Dsse) *StatementUpdate {
+	ids := make([]int, len(d))
+	for i := range d {
+		ids[i] = d[i].ID
+	}
+	return su.RemoveDsseIDs(ids...)
 }
 
 // Save executes the query and returns the number of nodes affected by the update operation.
@@ -147,13 +178,6 @@ func (su *StatementUpdate) sqlSave(ctx context.Context) (n int, err error) {
 			}
 		}
 	}
-	if value, ok := su.mutation.Statement(); ok {
-		_spec.Fields.Set = append(_spec.Fields.Set, &sqlgraph.FieldSpec{
-			Type:   field.TypeString,
-			Value:  value,
-			Column: statement.FieldStatement,
-		})
-	}
 	if su.mutation.SubjectsCleared() {
 		edge := &sqlgraph.EdgeSpec{
 			Rel:     sqlgraph.M2M,
@@ -208,6 +232,60 @@ func (su *StatementUpdate) sqlSave(ctx context.Context) (n int, err error) {
 		}
 		_spec.Edges.Add = append(_spec.Edges.Add, edge)
 	}
+	if su.mutation.DsseCleared() {
+		edge := &sqlgraph.EdgeSpec{
+			Rel:     sqlgraph.O2M,
+			Inverse: true,
+			Table:   statement.DsseTable,
+			Columns: []string{statement.DsseColumn},
+			Bidi:    false,
+			Target: &sqlgraph.EdgeTarget{
+				IDSpec: &sqlgraph.FieldSpec{
+					Type:   field.TypeInt,
+					Column: dsse.FieldID,
+				},
+			},
+		}
+		_spec.Edges.Clear = append(_spec.Edges.Clear, edge)
+	}
+	if nodes := su.mutation.RemovedDsseIDs(); len(nodes) > 0 && !su.mutation.DsseCleared() {
+		edge := &sqlgraph.EdgeSpec{
+			Rel:     sqlgraph.O2M,
+			Inverse: true,
+			Table:   statement.DsseTable,
+			Columns: []string{statement.DsseColumn},
+			Bidi:    false,
+			Target: &sqlgraph.EdgeTarget{
+				IDSpec: &sqlgraph.FieldSpec{
+					Type:   field.TypeInt,
+					Column: dsse.FieldID,
+				},
+			},
+		}
+		for _, k := range nodes {
+			edge.Target.Nodes = append(edge.Target.Nodes, k)
+		}
+		_spec.Edges.Clear = append(_spec.Edges.Clear, edge)
+	}
+	if nodes := su.mutation.DsseIDs(); len(nodes) > 0 {
+		edge := &sqlgraph.EdgeSpec{
+			Rel:     sqlgraph.O2M,
+			Inverse: true,
+			Table:   statement.DsseTable,
+			Columns: []string{statement.DsseColumn},
+			Bidi:    false,
+			Target: &sqlgraph.EdgeTarget{
+				IDSpec: &sqlgraph.FieldSpec{
+					Type:   field.TypeInt,
+					Column: dsse.FieldID,
+				},
+			},
+		}
+		for _, k := range nodes {
+			edge.Target.Nodes = append(edge.Target.Nodes, k)
+		}
+		_spec.Edges.Add = append(_spec.Edges.Add, edge)
+	}
 	if n, err = sqlgraph.UpdateNodes(ctx, su.driver, _spec); err != nil {
 		if _, ok := err.(*sqlgraph.NotFoundError); ok {
 			err = &NotFoundError{statement.Label}
@@ -227,12 +305,6 @@ type StatementUpdateOne struct {
 	mutation *StatementMutation
 }
 
-// SetStatement sets the "statement" field.
-func (suo *StatementUpdateOne) SetStatement(s string) *StatementUpdateOne {
-	suo.mutation.SetStatement(s)
-	return suo
-}
-
 // AddSubjectIDs adds the "subjects" edge to the Subject entity by IDs.
 func (suo *StatementUpdateOne) AddSubjectIDs(ids ...int) *StatementUpdateOne {
 	suo.mutation.AddSubjectIDs(ids...)
@@ -246,6 +318,21 @@ func (suo *StatementUpdateOne) AddSubjects(s ...*Subject) *StatementUpdateOne {
 		ids[i] = s[i].ID
 	}
 	return suo.AddSubjectIDs(ids...)
+}
+
+// AddDsseIDs adds the "dsse" edge to the Dsse entity by IDs.
+func (suo *StatementUpdateOne) AddDsseIDs(ids ...int) *StatementUpdateOne {
+	suo.mutation.AddDsseIDs(ids...)
+	return suo
+}
+
+// AddDsse adds the "dsse" edges to the Dsse entity.
+func (suo *StatementUpdateOne) AddDsse(d ...*Dsse) *StatementUpdateOne {
+	ids := make([]int, len(d))
+	for i := range d {
+		ids[i] = d[i].ID
+	}
+	return suo.AddDsseIDs(ids...)
 }
 
 // Mutation returns the StatementMutation object of the builder.
@@ -272,6 +359,27 @@ func (suo *StatementUpdateOne) RemoveSubjects(s ...*Subject) *StatementUpdateOne
 		ids[i] = s[i].ID
 	}
 	return suo.RemoveSubjectIDs(ids...)
+}
+
+// ClearDsse clears all "dsse" edges to the Dsse entity.
+func (suo *StatementUpdateOne) ClearDsse() *StatementUpdateOne {
+	suo.mutation.ClearDsse()
+	return suo
+}
+
+// RemoveDsseIDs removes the "dsse" edge to Dsse entities by IDs.
+func (suo *StatementUpdateOne) RemoveDsseIDs(ids ...int) *StatementUpdateOne {
+	suo.mutation.RemoveDsseIDs(ids...)
+	return suo
+}
+
+// RemoveDsse removes "dsse" edges to Dsse entities.
+func (suo *StatementUpdateOne) RemoveDsse(d ...*Dsse) *StatementUpdateOne {
+	ids := make([]int, len(d))
+	for i := range d {
+		ids[i] = d[i].ID
+	}
+	return suo.RemoveDsseIDs(ids...)
 }
 
 // Select allows selecting one or more fields (columns) of the returned entity.
@@ -370,13 +478,6 @@ func (suo *StatementUpdateOne) sqlSave(ctx context.Context) (_node *Statement, e
 			}
 		}
 	}
-	if value, ok := suo.mutation.Statement(); ok {
-		_spec.Fields.Set = append(_spec.Fields.Set, &sqlgraph.FieldSpec{
-			Type:   field.TypeString,
-			Value:  value,
-			Column: statement.FieldStatement,
-		})
-	}
 	if suo.mutation.SubjectsCleared() {
 		edge := &sqlgraph.EdgeSpec{
 			Rel:     sqlgraph.M2M,
@@ -423,6 +524,60 @@ func (suo *StatementUpdateOne) sqlSave(ctx context.Context) (_node *Statement, e
 				IDSpec: &sqlgraph.FieldSpec{
 					Type:   field.TypeInt,
 					Column: subject.FieldID,
+				},
+			},
+		}
+		for _, k := range nodes {
+			edge.Target.Nodes = append(edge.Target.Nodes, k)
+		}
+		_spec.Edges.Add = append(_spec.Edges.Add, edge)
+	}
+	if suo.mutation.DsseCleared() {
+		edge := &sqlgraph.EdgeSpec{
+			Rel:     sqlgraph.O2M,
+			Inverse: true,
+			Table:   statement.DsseTable,
+			Columns: []string{statement.DsseColumn},
+			Bidi:    false,
+			Target: &sqlgraph.EdgeTarget{
+				IDSpec: &sqlgraph.FieldSpec{
+					Type:   field.TypeInt,
+					Column: dsse.FieldID,
+				},
+			},
+		}
+		_spec.Edges.Clear = append(_spec.Edges.Clear, edge)
+	}
+	if nodes := suo.mutation.RemovedDsseIDs(); len(nodes) > 0 && !suo.mutation.DsseCleared() {
+		edge := &sqlgraph.EdgeSpec{
+			Rel:     sqlgraph.O2M,
+			Inverse: true,
+			Table:   statement.DsseTable,
+			Columns: []string{statement.DsseColumn},
+			Bidi:    false,
+			Target: &sqlgraph.EdgeTarget{
+				IDSpec: &sqlgraph.FieldSpec{
+					Type:   field.TypeInt,
+					Column: dsse.FieldID,
+				},
+			},
+		}
+		for _, k := range nodes {
+			edge.Target.Nodes = append(edge.Target.Nodes, k)
+		}
+		_spec.Edges.Clear = append(_spec.Edges.Clear, edge)
+	}
+	if nodes := suo.mutation.DsseIDs(); len(nodes) > 0 {
+		edge := &sqlgraph.EdgeSpec{
+			Rel:     sqlgraph.O2M,
+			Inverse: true,
+			Table:   statement.DsseTable,
+			Columns: []string{statement.DsseColumn},
+			Bidi:    false,
+			Target: &sqlgraph.EdgeTarget{
+				IDSpec: &sqlgraph.FieldSpec{
+					Type:   field.TypeInt,
+					Column: dsse.FieldID,
 				},
 			},
 		}

@@ -71,10 +71,15 @@ func main() {
 		Object: string(file),
 	})
 	if err != nil {
-		logrus.Fatalf("unable to store object: %+v", err)
+		logrus.Errorf("unable to store object: %+v", err)
 	}
 
-	resp, err := archivistClient.GetBySubject(context.Background(), &archivist.GetBySubjectRequest{Subject: "subject"})
+	resp, err := archivistClient.GetBySubjectDigest(context.Background(), &archivist.GetBySubjectDigestRequest{Algorithm: "sha256", Value: "3ff8d62302fe86d3f2d637843c696ab4d065f9e1cc873121806cf9467e546e4f"})
+	if err != nil {
+		logrus.Fatalf("unable to retrieve object: %+v", err)
+	}
 
-	fmt.Print(resp.GetObject()[0])
+	for i, v := range resp.GetObject() {
+		fmt.Printf("%d: %s\n", i, v)
+	}
 }

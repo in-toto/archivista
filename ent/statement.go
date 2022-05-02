@@ -12,11 +12,9 @@ import (
 
 // Statement is the model entity for the Statement schema.
 type Statement struct {
-	config `json:"-"`
+	config
 	// ID of the ent.
 	ID int `json:"id,omitempty"`
-	// Statement holds the value of the "statement" field.
-	Statement string `json:"statement,omitempty"`
 	// Edges holds the relations/edges for other nodes in the graph.
 	// The values are being populated by the StatementQuery when eager-loading is set.
 	Edges StatementEdges `json:"edges"`
@@ -26,9 +24,11 @@ type Statement struct {
 type StatementEdges struct {
 	// Subjects holds the value of the subjects edge.
 	Subjects []*Subject `json:"subjects,omitempty"`
+	// Dsse holds the value of the dsse edge.
+	Dsse []*Dsse `json:"dsse,omitempty"`
 	// loadedTypes holds the information for reporting if a
 	// type was loaded (or requested) in eager-loading or not.
-	loadedTypes [1]bool
+	loadedTypes [2]bool
 }
 
 // SubjectsOrErr returns the Subjects value or an error if the edge
@@ -40,6 +40,15 @@ func (e StatementEdges) SubjectsOrErr() ([]*Subject, error) {
 	return nil, &NotLoadedError{edge: "subjects"}
 }
 
+// DsseOrErr returns the Dsse value or an error if the edge
+// was not loaded in eager-loading.
+func (e StatementEdges) DsseOrErr() ([]*Dsse, error) {
+	if e.loadedTypes[1] {
+		return e.Dsse, nil
+	}
+	return nil, &NotLoadedError{edge: "dsse"}
+}
+
 // scanValues returns the types for scanning values from sql.Rows.
 func (*Statement) scanValues(columns []string) ([]interface{}, error) {
 	values := make([]interface{}, len(columns))
@@ -47,8 +56,6 @@ func (*Statement) scanValues(columns []string) ([]interface{}, error) {
 		switch columns[i] {
 		case statement.FieldID:
 			values[i] = new(sql.NullInt64)
-		case statement.FieldStatement:
-			values[i] = new(sql.NullString)
 		default:
 			return nil, fmt.Errorf("unexpected column %q for type Statement", columns[i])
 		}
@@ -70,12 +77,6 @@ func (s *Statement) assignValues(columns []string, values []interface{}) error {
 				return fmt.Errorf("unexpected type %T for field id", value)
 			}
 			s.ID = int(value.Int64)
-		case statement.FieldStatement:
-			if value, ok := values[i].(*sql.NullString); !ok {
-				return fmt.Errorf("unexpected type %T for field statement", values[i])
-			} else if value.Valid {
-				s.Statement = value.String
-			}
 		}
 	}
 	return nil
@@ -84,6 +85,11 @@ func (s *Statement) assignValues(columns []string, values []interface{}) error {
 // QuerySubjects queries the "subjects" edge of the Statement entity.
 func (s *Statement) QuerySubjects() *SubjectQuery {
 	return (&StatementClient{config: s.config}).QuerySubjects(s)
+}
+
+// QueryDsse queries the "dsse" edge of the Statement entity.
+func (s *Statement) QueryDsse() *DsseQuery {
+	return (&StatementClient{config: s.config}).QueryDsse(s)
 }
 
 // Update returns a builder for updating this Statement.
@@ -109,8 +115,6 @@ func (s *Statement) String() string {
 	var builder strings.Builder
 	builder.WriteString("Statement(")
 	builder.WriteString(fmt.Sprintf("id=%v", s.ID))
-	builder.WriteString(", statement=")
-	builder.WriteString(s.Statement)
 	builder.WriteByte(')')
 	return builder.String()
 }

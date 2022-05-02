@@ -9,6 +9,8 @@ import (
 	"entgo.io/ent"
 	"entgo.io/ent/dialect/sql"
 	"github.com/testifysec/archivist/ent/digest"
+	"github.com/testifysec/archivist/ent/dsse"
+	"github.com/testifysec/archivist/ent/dssesignature"
 	"github.com/testifysec/archivist/ent/statement"
 	"github.com/testifysec/archivist/ent/subject"
 )
@@ -31,9 +33,11 @@ type OrderFunc func(*sql.Selector)
 // columnChecker returns a function indicates if the column exists in the given column.
 func columnChecker(table string) func(string) error {
 	checks := map[string]func(string) bool{
-		digest.Table:    digest.ValidColumn,
-		statement.Table: statement.ValidColumn,
-		subject.Table:   subject.ValidColumn,
+		digest.Table:        digest.ValidColumn,
+		dsse.Table:          dsse.ValidColumn,
+		dssesignature.Table: dssesignature.ValidColumn,
+		statement.Table:     statement.ValidColumn,
+		subject.Table:       subject.ValidColumn,
 	}
 	check, ok := checks[table]
 	if !ok {

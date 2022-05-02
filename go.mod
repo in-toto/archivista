@@ -5,12 +5,13 @@ go 1.18
 require (
 	entgo.io/ent v0.10.1
 	github.com/antonfisher/nested-logrus-formatter v1.3.1
+	github.com/git-bom/gitbom-go v0.0.0-20220502033008-4a48bb2317f7
 	github.com/go-sql-driver/mysql v1.6.0
 	github.com/kelseyhightower/envconfig v1.4.0
 	github.com/networkservicemesh/sdk v1.3.0
 	github.com/sirupsen/logrus v1.8.1
 	github.com/spiffe/go-spiffe/v2 v2.0.0
-	github.com/testifysec/archivist-api v0.0.0-20220430222002-615ab6476fd2
+	github.com/testifysec/archivist-api v0.0.0-20220502044345-059a521f0ad1
 	github.com/testifysec/witness v0.1.7
 	google.golang.org/grpc v1.46.0
 	google.golang.org/protobuf v1.28.0
@@ -47,10 +48,10 @@ require (
 	go.opentelemetry.io/otel/sdk/metric v0.26.0 // indirect
 	go.opentelemetry.io/otel/trace v1.3.0 // indirect
 	go.opentelemetry.io/proto/otlp v0.11.0 // indirect
-	golang.org/x/crypto v0.0.0-20220307211146-efcb8507fb70 // indirect
+	golang.org/x/crypto v0.0.0-20220321153916-2c7772ba3064 // indirect
 	golang.org/x/mod v0.5.1 // indirect
 	golang.org/x/net v0.0.0-20220127200216-cd36cc0744dd // indirect
-	golang.org/x/sys v0.0.0-20220307203707-22a9840ba4d7 // indirect
+	golang.org/x/sys v0.0.0-20220330033206-e17cdc41300f // indirect
 	golang.org/x/text v0.3.7 // indirect
 	google.golang.org/genproto v0.0.0-20220218161850-94dd64e39d7c // indirect
 	gopkg.in/square/go-jose.v2 v2.6.0 // indirect

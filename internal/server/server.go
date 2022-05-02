@@ -33,10 +33,9 @@ func NewArchivistServer(store archivist.ArchivistServer) archivist.ArchivistServ
 		store: store,
 	}
 }
-
-func (s *archivistServer) GetBySubject(ctx context.Context, request *archivist.GetBySubjectRequest) (*archivist.GetBySubjectResponse, error) {
+func (s *archivistServer) GetBySubjectDigest(ctx context.Context, request *archivist.GetBySubjectDigestRequest) (*archivist.GetBySubjectDigestResponse, error) {
 	logrus.WithContext(ctx).Printf("retrieving by subject... ")
-	return s.store.GetBySubject(ctx, request)
+	return s.store.GetBySubjectDigest(ctx, request)
 }
 
 type collectorServer struct {
@@ -53,5 +52,10 @@ func NewCollectorServer(store archivist.CollectorServer) archivist.CollectorServ
 
 func (s *collectorServer) Store(ctx context.Context, request *archivist.StoreRequest) (*emptypb.Empty, error) {
 	fmt.Println("middleware: store")
-	return s.store.Store(ctx, request)
+	res, err := s.store.Store(ctx, request)
+	if err != nil {
+		logrus.WithContext(ctx).Printf("received error from database: %+v", err)
+		return nil, err
+	}
+	return res, nil
 }

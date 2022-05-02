@@ -4,11 +4,11 @@ package ent
 
 import (
 	"context"
-	"errors"
 	"fmt"
 
 	"entgo.io/ent/dialect/sql/sqlgraph"
 	"entgo.io/ent/schema/field"
+	"github.com/testifysec/archivist/ent/dsse"
 	"github.com/testifysec/archivist/ent/statement"
 	"github.com/testifysec/archivist/ent/subject"
 )
@@ -18,12 +18,6 @@ type StatementCreate struct {
 	config
 	mutation *StatementMutation
 	hooks    []Hook
-}
-
-// SetStatement sets the "statement" field.
-func (sc *StatementCreate) SetStatement(s string) *StatementCreate {
-	sc.mutation.SetStatement(s)
-	return sc
 }
 
 // AddSubjectIDs adds the "subjects" edge to the Subject entity by IDs.
@@ -39,6 +33,21 @@ func (sc *StatementCreate) AddSubjects(s ...*Subject) *StatementCreate {
 		ids[i] = s[i].ID
 	}
 	return sc.AddSubjectIDs(ids...)
+}
+
+// AddDsseIDs adds the "dsse" edge to the Dsse entity by IDs.
+func (sc *StatementCreate) AddDsseIDs(ids ...int) *StatementCreate {
+	sc.mutation.AddDsseIDs(ids...)
+	return sc
+}
+
+// AddDsse adds the "dsse" edges to the Dsse entity.
+func (sc *StatementCreate) AddDsse(d ...*Dsse) *StatementCreate {
+	ids := make([]int, len(d))
+	for i := range d {
+		ids[i] = d[i].ID
+	}
+	return sc.AddDsseIDs(ids...)
 }
 
 // Mutation returns the StatementMutation object of the builder.
@@ -111,9 +120,6 @@ func (sc *StatementCreate) ExecX(ctx context.Context) {
 
 // check runs all checks and user-defined validators on the builder.
 func (sc *StatementCreate) check() error {
-	if _, ok := sc.mutation.Statement(); !ok {
-		return &ValidationError{Name: "statement", err: errors.New(`ent: missing required field "Statement.statement"`)}
-	}
 	return nil
 }
 
@@ -141,14 +147,6 @@ func (sc *StatementCreate) createSpec() (*Statement, *sqlgraph.CreateSpec) {
 			},
 		}
 	)
-	if value, ok := sc.mutation.Statement(); ok {
-		_spec.Fields = append(_spec.Fields, &sqlgraph.FieldSpec{
-			Type:   field.TypeString,
-			Value:  value,
-			Column: statement.FieldStatement,
-		})
-		_node.Statement = value
-	}
 	if nodes := sc.mutation.SubjectsIDs(); len(nodes) > 0 {
 		edge := &sqlgraph.EdgeSpec{
 			Rel:     sqlgraph.M2M,
@@ -160,6 +158,25 @@ func (sc *StatementCreate) createSpec() (*Statement, *sqlgraph.CreateSpec) {
 				IDSpec: &sqlgraph.FieldSpec{
 					Type:   field.TypeInt,
 					Column: subject.FieldID,
+				},
+			},
+		}
+		for _, k := range nodes {
+			edge.Target.Nodes = append(edge.Target.Nodes, k)
+		}
+		_spec.Edges = append(_spec.Edges, edge)
+	}
+	if nodes := sc.mutation.DsseIDs(); len(nodes) > 0 {
+		edge := &sqlgraph.EdgeSpec{
+			Rel:     sqlgraph.O2M,
+			Inverse: true,
+			Table:   statement.DsseTable,
+			Columns: []string{statement.DsseColumn},
+			Bidi:    false,
+			Target: &sqlgraph.EdgeTarget{
+				IDSpec: &sqlgraph.FieldSpec{
+					Type:   field.TypeInt,
+					Column: dsse.FieldID,
 				},
 			},
 		}

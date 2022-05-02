@@ -24,9 +24,11 @@ type config struct {
 
 // hooks per client, for fast access.
 type hooks struct {
-	Digest    []ent.Hook
-	Statement []ent.Hook
-	Subject   []ent.Hook
+	Digest        []ent.Hook
+	Dsse          []ent.Hook
+	DsseSignature []ent.Hook
+	Statement     []ent.Hook
+	Subject       []ent.Hook
 }
 
 // Options applies the options on the config object.

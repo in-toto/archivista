@@ -29,10 +29,40 @@ var (
 			},
 		},
 	}
+	// DssesColumns holds the columns for the "dsses" table.
+	DssesColumns = []*schema.Column{
+		{Name: "id", Type: field.TypeInt, Increment: true},
+		{Name: "gitbom_sha256", Type: field.TypeString, Unique: true},
+		{Name: "payload_type", Type: field.TypeString},
+		{Name: "dsse_statement", Type: field.TypeInt, Nullable: true},
+	}
+	// DssesTable holds the schema information for the "dsses" table.
+	DssesTable = &schema.Table{
+		Name:       "dsses",
+		Columns:    DssesColumns,
+		PrimaryKey: []*schema.Column{DssesColumns[0]},
+		ForeignKeys: []*schema.ForeignKey{
+			{
+				Symbol:     "dsses_statements_statement",
+				Columns:    []*schema.Column{DssesColumns[3]},
+				RefColumns: []*schema.Column{StatementsColumns[0]},
+				OnDelete:   schema.SetNull,
+			},
+		},
+	}
+	// DsseSignaturesColumns holds the columns for the "dsse_signatures" table.
+	DsseSignaturesColumns = []*schema.Column{
+		{Name: "id", Type: field.TypeInt, Increment: true},
+	}
+	// DsseSignaturesTable holds the schema information for the "dsse_signatures" table.
+	DsseSignaturesTable = &schema.Table{
+		Name:       "dsse_signatures",
+		Columns:    DsseSignaturesColumns,
+		PrimaryKey: []*schema.Column{DsseSignaturesColumns[0]},
+	}
 	// StatementsColumns holds the columns for the "statements" table.
 	StatementsColumns = []*schema.Column{
 		{Name: "id", Type: field.TypeInt, Increment: true},
-		{Name: "statement", Type: field.TypeString},
 	}
 	// StatementsTable holds the schema information for the "statements" table.
 	StatementsTable = &schema.Table{
@@ -79,6 +109,8 @@ var (
 	// Tables holds all the tables in the schema.
 	Tables = []*schema.Table{
 		DigestsTable,
+		DssesTable,
+		DsseSignaturesTable,
 		StatementsTable,
 		SubjectsTable,
 		StatementSubjectsTable,
@@ -87,6 +119,7 @@ var (
 
 func init() {
 	DigestsTable.ForeignKeys[0].RefTable = SubjectsTable
+	DssesTable.ForeignKeys[0].RefTable = StatementsTable
 	StatementSubjectsTable.ForeignKeys[0].RefTable = StatementsTable
 	StatementSubjectsTable.ForeignKeys[1].RefTable = SubjectsTable
 }

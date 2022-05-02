@@ -22,6 +22,32 @@ func (f DigestFunc) Mutate(ctx context.Context, m ent.Mutation) (ent.Value, erro
 	return f(ctx, mv)
 }
 
+// The DsseFunc type is an adapter to allow the use of ordinary
+// function as Dsse mutator.
+type DsseFunc func(context.Context, *ent.DsseMutation) (ent.Value, error)
+
+// Mutate calls f(ctx, m).
+func (f DsseFunc) Mutate(ctx context.Context, m ent.Mutation) (ent.Value, error) {
+	mv, ok := m.(*ent.DsseMutation)
+	if !ok {
+		return nil, fmt.Errorf("unexpected mutation type %T. expect *ent.DsseMutation", m)
+	}
+	return f(ctx, mv)
+}
+
+// The DsseSignatureFunc type is an adapter to allow the use of ordinary
+// function as DsseSignature mutator.
+type DsseSignatureFunc func(context.Context, *ent.DsseSignatureMutation) (ent.Value, error)
+
+// Mutate calls f(ctx, m).
+func (f DsseSignatureFunc) Mutate(ctx context.Context, m ent.Mutation) (ent.Value, error) {
+	mv, ok := m.(*ent.DsseSignatureMutation)
+	if !ok {
+		return nil, fmt.Errorf("unexpected mutation type %T. expect *ent.DsseSignatureMutation", m)
+	}
+	return f(ctx, mv)
+}
+
 // The StatementFunc type is an adapter to allow the use of ordinary
 // function as Statement mutator.
 type StatementFunc func(context.Context, *ent.StatementMutation) (ent.Value, error)

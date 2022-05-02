@@ -16,10 +16,9 @@ package mysqlstore
 
 import (
 	"context"
-	"crypto/sha256"
-	"encoding/base64"
 	"encoding/json"
 	"fmt"
+	"github.com/git-bom/gitbom-go"
 	"github.com/sirupsen/logrus"
 	"github.com/testifysec/archivist-api/pkg/api/archivist"
 	"github.com/testifysec/archivist/ent"
@@ -84,32 +83,33 @@ func NewServer(ctx context.Context, connectionstring string) (UnifiedStorage, ch
 	}, errCh, nil
 }
 
-func (s *store) GetBySubject(ctx context.Context, request *archivist.GetBySubjectRequest) (*archivist.GetBySubjectResponse, error) {
+func (s *store) GetBySubjectDigest(ctx context.Context, request *archivist.GetBySubjectDigestRequest) (*archivist.GetBySubjectDigestResponse, error) {
 	digests, err := s.client.Digest.Query().Where(
 		digest.And(
-			digest.Algorithm("algo"),
-			digest.Value("value"),
+			digest.Algorithm(request.Algorithm),
+			digest.Value(request.Value),
 		),
 	).All(ctx)
 
-	statements := make([]*ent.Statement, 0)
+	logrus.WithContext(ctx).Printf("digests: %+v", digests)
+
+	results := make([]string, 0)
 	for _, curDigest := range digests {
-		curStatement, err := curDigest.QuerySubject().QueryStatement().Only(ctx)
+		curDsse, err := curDigest.QuerySubject().QueryStatement().QueryDsse().Only(ctx)
 		if err != nil {
 			logrus.WithContext(ctx).Errorf("error getting statement: %+v", err)
 		}
-		statements = append(statements, curStatement)
+		results = append(results, curDsse.GitbomSha256)
 	}
+	logrus.WithContext(ctx).Printf("statements: %+v", results)
 
-	results := make([]string, 0)
-	for _, stmt := range statements {
-		results = append(results, stmt.Statement)
-	}
+	logrus.WithContext(ctx).Printf("results: %+v", results)
 
-	return &archivist.GetBySubjectResponse{Object: results}, err
+	return &archivist.GetBySubjectDigestResponse{Object: results}, err
 }
 
 func (s *store) Store(ctx context.Context, request *archivist.StoreRequest) (*emptypb.Empty, error) {
+	tx, err := s.client.Tx(ctx)
 	fmt.Println("STORING")
 	obj := request.GetObject()
 
@@ -125,18 +125,30 @@ func (s *store) Store(ctx context.Context, request *archivist.StoreRequest) (*em
 		return nil, err
 	}
 
-	payloadHash := sha256.Sum256(envelope.Payload)
-	payloasHashString := base64.URLEncoding.EncodeToString(payloadHash[:])
+	// generate gitbom
+	gb := gitbom.NewSha256GitBom()
+	if err := gb.AddReference([]byte(obj), nil); err != nil {
+		logrus.WithContext(ctx).Errorf("gitbom tag generation failed: %+v", err)
+		return nil, err
+	}
 
-	stmt, err := s.client.Statement.Create().
-		SetStatement(payloasHashString).
+	dsse, err := tx.Dsse.Create().
+		SetPayloadType(envelope.PayloadType).
+		SetGitbomSha256(gb.Identity()).
+		Save(ctx)
+	if err != nil {
+		return nil, err
+	}
+
+	stmt, err := tx.Statement.Create().
+		AddDsse(dsse).
 		Save(ctx)
 	if err != nil {
 		return nil, err
 	}
 
 	for _, subject := range payload.Subject {
-		storedSubject, err := s.client.Subject.Create().
+		storedSubject, err := tx.Subject.Create().
 			SetName(subject.Name).
 			AddStatement(stmt).
 			Save(ctx)
@@ -145,13 +157,20 @@ func (s *store) Store(ctx context.Context, request *archivist.StoreRequest) (*em
 		}
 
 		for algorithm, value := range subject.Digest {
-			if err := s.client.Digest.Create().
+			if err := tx.Digest.Create().
 				SetAlgorithm(algorithm).
 				SetValue(value).SetSubject(storedSubject).
 				Exec(ctx); err != nil {
 				return nil, err
 			}
 		}
+	}
+
+	err = tx.Commit()
+
+	if err != nil {
+		logrus.Errorf("unable to commit transaction: %+v", err)
+		return nil, err
 	}
 
 	fmt.Println("stored!")

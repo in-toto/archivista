@@ -7,10 +7,10 @@ const (
 	Label = "statement"
 	// FieldID holds the string denoting the id field in the database.
 	FieldID = "id"
-	// FieldStatement holds the string denoting the statement field in the database.
-	FieldStatement = "statement"
 	// EdgeSubjects holds the string denoting the subjects edge name in mutations.
 	EdgeSubjects = "subjects"
+	// EdgeDsse holds the string denoting the dsse edge name in mutations.
+	EdgeDsse = "dsse"
 	// Table holds the table name of the statement in the database.
 	Table = "statements"
 	// SubjectsTable is the table that holds the subjects relation/edge. The primary key declared below.
@@ -18,12 +18,18 @@ const (
 	// SubjectsInverseTable is the table name for the Subject entity.
 	// It exists in this package in order to avoid circular dependency with the "subject" package.
 	SubjectsInverseTable = "subjects"
+	// DsseTable is the table that holds the dsse relation/edge.
+	DsseTable = "dsses"
+	// DsseInverseTable is the table name for the Dsse entity.
+	// It exists in this package in order to avoid circular dependency with the "dsse" package.
+	DsseInverseTable = "dsses"
+	// DsseColumn is the table column denoting the dsse relation/edge.
+	DsseColumn = "dsse_statement"
 )
 
 // Columns holds all SQL columns for statement fields.
 var Columns = []string{
 	FieldID,
-	FieldStatement,
 }
 
 var (

@@ -4,6 +4,7 @@ package ent
 
 import (
 	"github.com/testifysec/archivist/ent/digest"
+	"github.com/testifysec/archivist/ent/dsse"
 	"github.com/testifysec/archivist/ent/schema"
 	"github.com/testifysec/archivist/ent/subject"
 )
@@ -22,6 +23,16 @@ func init() {
 	digestDescValue := digestFields[1].Descriptor()
 	// digest.ValueValidator is a validator for the "value" field. It is called by the builders before save.
 	digest.ValueValidator = digestDescValue.Validators[0].(func(string) error)
+	dsseFields := schema.Dsse{}.Fields()
+	_ = dsseFields
+	// dsseDescGitbomSha256 is the schema descriptor for gitbom_sha256 field.
+	dsseDescGitbomSha256 := dsseFields[0].Descriptor()
+	// dsse.GitbomSha256Validator is a validator for the "gitbom_sha256" field. It is called by the builders before save.
+	dsse.GitbomSha256Validator = dsseDescGitbomSha256.Validators[0].(func(string) error)
+	// dsseDescPayloadType is the schema descriptor for payload_type field.
+	dsseDescPayloadType := dsseFields[1].Descriptor()
+	// dsse.PayloadTypeValidator is a validator for the "payload_type" field. It is called by the builders before save.
+	dsse.PayloadTypeValidator = dsseDescPayloadType.Validators[0].(func(string) error)
 	subjectFields := schema.Subject{}.Fields()
 	_ = subjectFields
 	// subjectDescName is the schema descriptor for name field.
