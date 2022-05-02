@@ -3,6 +3,7 @@ module github.com/testifysec/archivist
 go 1.18
 
 require (
+	ariga.io/sqlcomment v0.0.0-20211020114721-6bb67a62a61a
 	entgo.io/ent v0.10.1
 	github.com/antonfisher/nested-logrus-formatter v1.3.1
 	github.com/git-bom/gitbom-go v0.0.0-20220502033008-4a48bb2317f7
@@ -25,6 +26,7 @@ require (
 	github.com/go-logr/logr v1.2.1 // indirect
 	github.com/go-logr/stdr v1.2.0 // indirect
 	github.com/go-openapi/inflect v0.19.0 // indirect
+	github.com/golang/groupcache v0.0.0-20210331224755-41bb18bfe9da // indirect
 	github.com/golang/protobuf v1.5.2 // indirect
 	github.com/google/go-cmp v0.5.7 // indirect
 	github.com/google/uuid v1.3.0 // indirect
@@ -35,6 +37,7 @@ require (
 	github.com/pkg/errors v0.9.1 // indirect
 	github.com/zclconf/go-cty v1.10.0 // indirect
 	github.com/zeebo/errs v1.2.2 // indirect
+	go.opencensus.io v0.23.0 // indirect
 	go.opentelemetry.io/otel v1.3.0 // indirect
 	go.opentelemetry.io/otel/exporters/otlp/internal/retry v1.3.0 // indirect
 	go.opentelemetry.io/otel/exporters/otlp/otlpmetric v0.26.0 // indirect

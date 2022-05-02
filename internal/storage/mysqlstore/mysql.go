@@ -15,6 +15,7 @@
 package mysqlstore
 
 import (
+	"ariga.io/sqlcomment"
 	"context"
 	"encoding/json"
 	"fmt"
@@ -55,13 +56,21 @@ func NewServer(ctx context.Context, connectionstring string) (UnifiedStorage, ch
 	if err != nil {
 		return nil, nil, err
 	}
+	sqlcommentDrv := sqlcomment.NewDriver(drv,
+		sqlcomment.WithDriverVerTag(),
+		sqlcomment.WithTags(sqlcomment.Tags{
+			sqlcomment.KeyApplication: "archivist",
+			sqlcomment.KeyFramework:   "net/http",
+		}),
+	)
 
+	// TODO make sure these take affect in sqlcommentDrv
 	db := drv.DB()
 	db.SetMaxIdleConns(10)
 	db.SetMaxOpenConns(100)
 	db.SetConnMaxLifetime(3 * time.Minute)
 
-	client := ent.NewClient(ent.Driver(drv))
+	client := ent.NewClient(ent.Driver(sqlcommentDrv))
 
 	errCh := make(chan error)
 
@@ -84,26 +93,25 @@ func NewServer(ctx context.Context, connectionstring string) (UnifiedStorage, ch
 }
 
 func (s *store) GetBySubjectDigest(ctx context.Context, request *archivist.GetBySubjectDigestRequest) (*archivist.GetBySubjectDigestResponse, error) {
-	digests, err := s.client.Digest.Query().Where(
+	res, err := s.client.Digest.Query().Where(
 		digest.And(
 			digest.Algorithm(request.Algorithm),
 			digest.Value(request.Value),
 		),
-	).All(ctx)
-
-	logrus.WithContext(ctx).Printf("digests: %+v", digests)
+	).WithSubject(func(q *ent.SubjectQuery) {
+		q.WithStatement(func(q *ent.StatementQuery) {
+			q.WithDsse()
+		})
+	}).All(ctx)
 
 	results := make([]string, 0)
-	for _, curDigest := range digests {
-		curDsse, err := curDigest.QuerySubject().QueryStatement().QueryDsse().Only(ctx)
-		if err != nil {
-			logrus.WithContext(ctx).Errorf("error getting statement: %+v", err)
+	for _, curDigest := range res {
+		for _, curStatement := range curDigest.Edges.Subject.Edges.Statement {
+			for _, curDsse := range curStatement.Edges.Dsse {
+				results = append(results, curDsse.GitbomSha256)
+			}
 		}
-		results = append(results, curDsse.GitbomSha256)
 	}
-	logrus.WithContext(ctx).Printf("statements: %+v", results)
-
-	logrus.WithContext(ctx).Printf("results: %+v", results)
 
 	return &archivist.GetBySubjectDigestResponse{Object: results}, err
 }
