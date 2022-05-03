@@ -11,6 +11,7 @@ import (
 	"github.com/testifysec/archivist/ent/digest"
 	"github.com/testifysec/archivist/ent/dsse"
 	"github.com/testifysec/archivist/ent/predicate"
+	"github.com/testifysec/archivist/ent/signature"
 	"github.com/testifysec/archivist/ent/statement"
 	"github.com/testifysec/archivist/ent/subject"
 
@@ -26,11 +27,11 @@ const (
 	OpUpdateOne = ent.OpUpdateOne
 
 	// Node types.
-	TypeDigest        = "Digest"
-	TypeDsse          = "Dsse"
-	TypeDsseSignature = "DsseSignature"
-	TypeStatement     = "Statement"
-	TypeSubject       = "Subject"
+	TypeDigest    = "Digest"
+	TypeDsse      = "Dsse"
+	TypeSignature = "Signature"
+	TypeStatement = "Statement"
+	TypeSubject   = "Subject"
 )
 
 // DigestMutation represents an operation that mutates the Digest nodes in the graph.
@@ -470,17 +471,20 @@ func (m *DigestMutation) ResetEdge(name string) error {
 // DsseMutation represents an operation that mutates the Dsse nodes in the graph.
 type DsseMutation struct {
 	config
-	op               Op
-	typ              string
-	id               *int
-	gitbom_sha256    *string
-	payload_type     *string
-	clearedFields    map[string]struct{}
-	statement        *int
-	clearedstatement bool
-	done             bool
-	oldValue         func(context.Context) (*Dsse, error)
-	predicates       []predicate.Dsse
+	op                Op
+	typ               string
+	id                *int
+	gitbom_sha256     *string
+	payload_type      *string
+	clearedFields     map[string]struct{}
+	statement         *int
+	clearedstatement  bool
+	signatures        map[int]struct{}
+	removedsignatures map[int]struct{}
+	clearedsignatures bool
+	done              bool
+	oldValue          func(context.Context) (*Dsse, error)
+	predicates        []predicate.Dsse
 }
 
 var _ ent.Mutation = (*DsseMutation)(nil)
@@ -692,6 +696,60 @@ func (m *DsseMutation) ResetStatement() {
 	m.clearedstatement = false
 }
 
+// AddSignatureIDs adds the "signatures" edge to the Signature entity by ids.
+func (m *DsseMutation) AddSignatureIDs(ids ...int) {
+	if m.signatures == nil {
+		m.signatures = make(map[int]struct{})
+	}
+	for i := range ids {
+		m.signatures[ids[i]] = struct{}{}
+	}
+}
+
+// ClearSignatures clears the "signatures" edge to the Signature entity.
+func (m *DsseMutation) ClearSignatures() {
+	m.clearedsignatures = true
+}
+
+// SignaturesCleared reports if the "signatures" edge to the Signature entity was cleared.
+func (m *DsseMutation) SignaturesCleared() bool {
+	return m.clearedsignatures
+}
+
+// RemoveSignatureIDs removes the "signatures" edge to the Signature entity by IDs.
+func (m *DsseMutation) RemoveSignatureIDs(ids ...int) {
+	if m.removedsignatures == nil {
+		m.removedsignatures = make(map[int]struct{})
+	}
+	for i := range ids {
+		delete(m.signatures, ids[i])
+		m.removedsignatures[ids[i]] = struct{}{}
+	}
+}
+
+// RemovedSignatures returns the removed IDs of the "signatures" edge to the Signature entity.
+func (m *DsseMutation) RemovedSignaturesIDs() (ids []int) {
+	for id := range m.removedsignatures {
+		ids = append(ids, id)
+	}
+	return
+}
+
+// SignaturesIDs returns the "signatures" edge IDs in the mutation.
+func (m *DsseMutation) SignaturesIDs() (ids []int) {
+	for id := range m.signatures {
+		ids = append(ids, id)
+	}
+	return
+}
+
+// ResetSignatures resets all changes to the "signatures" edge.
+func (m *DsseMutation) ResetSignatures() {
+	m.signatures = nil
+	m.clearedsignatures = false
+	m.removedsignatures = nil
+}
+
 // Where appends a list predicates to the DsseMutation builder.
 func (m *DsseMutation) Where(ps ...predicate.Dsse) {
 	m.predicates = append(m.predicates, ps...)
@@ -827,9 +885,12 @@ func (m *DsseMutation) ResetField(name string) error {
 
 // AddedEdges returns all edge names that were set/added in this mutation.
 func (m *DsseMutation) AddedEdges() []string {
-	edges := make([]string, 0, 1)
+	edges := make([]string, 0, 2)
 	if m.statement != nil {
 		edges = append(edges, dsse.EdgeStatement)
+	}
+	if m.signatures != nil {
+		edges = append(edges, dsse.EdgeSignatures)
 	}
 	return edges
 }
@@ -842,13 +903,22 @@ func (m *DsseMutation) AddedIDs(name string) []ent.Value {
 		if id := m.statement; id != nil {
 			return []ent.Value{*id}
 		}
+	case dsse.EdgeSignatures:
+		ids := make([]ent.Value, 0, len(m.signatures))
+		for id := range m.signatures {
+			ids = append(ids, id)
+		}
+		return ids
 	}
 	return nil
 }
 
 // RemovedEdges returns all edge names that were removed in this mutation.
 func (m *DsseMutation) RemovedEdges() []string {
-	edges := make([]string, 0, 1)
+	edges := make([]string, 0, 2)
+	if m.removedsignatures != nil {
+		edges = append(edges, dsse.EdgeSignatures)
+	}
 	return edges
 }
 
@@ -856,15 +926,24 @@ func (m *DsseMutation) RemovedEdges() []string {
 // the given name in this mutation.
 func (m *DsseMutation) RemovedIDs(name string) []ent.Value {
 	switch name {
+	case dsse.EdgeSignatures:
+		ids := make([]ent.Value, 0, len(m.removedsignatures))
+		for id := range m.removedsignatures {
+			ids = append(ids, id)
+		}
+		return ids
 	}
 	return nil
 }
 
 // ClearedEdges returns all edge names that were cleared in this mutation.
 func (m *DsseMutation) ClearedEdges() []string {
-	edges := make([]string, 0, 1)
+	edges := make([]string, 0, 2)
 	if m.clearedstatement {
 		edges = append(edges, dsse.EdgeStatement)
+	}
+	if m.clearedsignatures {
+		edges = append(edges, dsse.EdgeSignatures)
 	}
 	return edges
 }
@@ -875,6 +954,8 @@ func (m *DsseMutation) EdgeCleared(name string) bool {
 	switch name {
 	case dsse.EdgeStatement:
 		return m.clearedstatement
+	case dsse.EdgeSignatures:
+		return m.clearedsignatures
 	}
 	return false
 }
@@ -897,33 +978,40 @@ func (m *DsseMutation) ResetEdge(name string) error {
 	case dsse.EdgeStatement:
 		m.ResetStatement()
 		return nil
+	case dsse.EdgeSignatures:
+		m.ResetSignatures()
+		return nil
 	}
 	return fmt.Errorf("unknown Dsse edge %s", name)
 }
 
-// DsseSignatureMutation represents an operation that mutates the DsseSignature nodes in the graph.
-type DsseSignatureMutation struct {
+// SignatureMutation represents an operation that mutates the Signature nodes in the graph.
+type SignatureMutation struct {
 	config
 	op            Op
 	typ           string
 	id            *int
+	key_id        *string
+	signature     *string
 	clearedFields map[string]struct{}
+	dsse          *int
+	cleareddsse   bool
 	done          bool
-	oldValue      func(context.Context) (*DsseSignature, error)
-	predicates    []predicate.DsseSignature
+	oldValue      func(context.Context) (*Signature, error)
+	predicates    []predicate.Signature
 }
 
-var _ ent.Mutation = (*DsseSignatureMutation)(nil)
+var _ ent.Mutation = (*SignatureMutation)(nil)
 
-// dssesignatureOption allows management of the mutation configuration using functional options.
-type dssesignatureOption func(*DsseSignatureMutation)
+// signatureOption allows management of the mutation configuration using functional options.
+type signatureOption func(*SignatureMutation)
 
-// newDsseSignatureMutation creates new mutation for the DsseSignature entity.
-func newDsseSignatureMutation(c config, op Op, opts ...dssesignatureOption) *DsseSignatureMutation {
-	m := &DsseSignatureMutation{
+// newSignatureMutation creates new mutation for the Signature entity.
+func newSignatureMutation(c config, op Op, opts ...signatureOption) *SignatureMutation {
+	m := &SignatureMutation{
 		config:        c,
 		op:            op,
-		typ:           TypeDsseSignature,
+		typ:           TypeSignature,
 		clearedFields: make(map[string]struct{}),
 	}
 	for _, opt := range opts {
@@ -932,20 +1020,20 @@ func newDsseSignatureMutation(c config, op Op, opts ...dssesignatureOption) *Dss
 	return m
 }
 
-// withDsseSignatureID sets the ID field of the mutation.
-func withDsseSignatureID(id int) dssesignatureOption {
-	return func(m *DsseSignatureMutation) {
+// withSignatureID sets the ID field of the mutation.
+func withSignatureID(id int) signatureOption {
+	return func(m *SignatureMutation) {
 		var (
 			err   error
 			once  sync.Once
-			value *DsseSignature
+			value *Signature
 		)
-		m.oldValue = func(ctx context.Context) (*DsseSignature, error) {
+		m.oldValue = func(ctx context.Context) (*Signature, error) {
 			once.Do(func() {
 				if m.done {
 					err = errors.New("querying old values post mutation is not allowed")
 				} else {
-					value, err = m.Client().DsseSignature.Get(ctx, id)
+					value, err = m.Client().Signature.Get(ctx, id)
 				}
 			})
 			return value, err
@@ -954,10 +1042,10 @@ func withDsseSignatureID(id int) dssesignatureOption {
 	}
 }
 
-// withDsseSignature sets the old DsseSignature of the mutation.
-func withDsseSignature(node *DsseSignature) dssesignatureOption {
-	return func(m *DsseSignatureMutation) {
-		m.oldValue = func(context.Context) (*DsseSignature, error) {
+// withSignature sets the old Signature of the mutation.
+func withSignature(node *Signature) signatureOption {
+	return func(m *SignatureMutation) {
+		m.oldValue = func(context.Context) (*Signature, error) {
 			return node, nil
 		}
 		m.id = &node.ID
@@ -966,7 +1054,7 @@ func withDsseSignature(node *DsseSignature) dssesignatureOption {
 
 // Client returns a new `ent.Client` from the mutation. If the mutation was
 // executed in a transaction (ent.Tx), a transactional client is returned.
-func (m DsseSignatureMutation) Client() *Client {
+func (m SignatureMutation) Client() *Client {
 	client := &Client{config: m.config}
 	client.init()
 	return client
@@ -974,7 +1062,7 @@ func (m DsseSignatureMutation) Client() *Client {
 
 // Tx returns an `ent.Tx` for mutations that were executed in transactions;
 // it returns an error otherwise.
-func (m DsseSignatureMutation) Tx() (*Tx, error) {
+func (m SignatureMutation) Tx() (*Tx, error) {
 	if _, ok := m.driver.(*txDriver); !ok {
 		return nil, errors.New("ent: mutation is not running in a transaction")
 	}
@@ -985,7 +1073,7 @@ func (m DsseSignatureMutation) Tx() (*Tx, error) {
 
 // ID returns the ID value in the mutation. Note that the ID is only available
 // if it was provided to the builder or after it was returned from the database.
-func (m *DsseSignatureMutation) ID() (id int, exists bool) {
+func (m *SignatureMutation) ID() (id int, exists bool) {
 	if m.id == nil {
 		return
 	}
@@ -996,7 +1084,7 @@ func (m *DsseSignatureMutation) ID() (id int, exists bool) {
 // That means, if the mutation is applied within a transaction with an isolation level such
 // as sql.LevelSerializable, the returned ids match the ids of the rows that will be updated
 // or updated by the mutation.
-func (m *DsseSignatureMutation) IDs(ctx context.Context) ([]int, error) {
+func (m *SignatureMutation) IDs(ctx context.Context) ([]int, error) {
 	switch {
 	case m.op.Is(OpUpdateOne | OpDeleteOne):
 		id, exists := m.ID()
@@ -1005,149 +1093,330 @@ func (m *DsseSignatureMutation) IDs(ctx context.Context) ([]int, error) {
 		}
 		fallthrough
 	case m.op.Is(OpUpdate | OpDelete):
-		return m.Client().DsseSignature.Query().Where(m.predicates...).IDs(ctx)
+		return m.Client().Signature.Query().Where(m.predicates...).IDs(ctx)
 	default:
 		return nil, fmt.Errorf("IDs is not allowed on %s operations", m.op)
 	}
 }
 
-// Where appends a list predicates to the DsseSignatureMutation builder.
-func (m *DsseSignatureMutation) Where(ps ...predicate.DsseSignature) {
+// SetKeyID sets the "key_id" field.
+func (m *SignatureMutation) SetKeyID(s string) {
+	m.key_id = &s
+}
+
+// KeyID returns the value of the "key_id" field in the mutation.
+func (m *SignatureMutation) KeyID() (r string, exists bool) {
+	v := m.key_id
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// OldKeyID returns the old "key_id" field's value of the Signature entity.
+// If the Signature object wasn't provided to the builder, the object is fetched from the database.
+// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
+func (m *SignatureMutation) OldKeyID(ctx context.Context) (v string, err error) {
+	if !m.op.Is(OpUpdateOne) {
+		return v, errors.New("OldKeyID is only allowed on UpdateOne operations")
+	}
+	if m.id == nil || m.oldValue == nil {
+		return v, errors.New("OldKeyID requires an ID field in the mutation")
+	}
+	oldValue, err := m.oldValue(ctx)
+	if err != nil {
+		return v, fmt.Errorf("querying old value for OldKeyID: %w", err)
+	}
+	return oldValue.KeyID, nil
+}
+
+// ResetKeyID resets all changes to the "key_id" field.
+func (m *SignatureMutation) ResetKeyID() {
+	m.key_id = nil
+}
+
+// SetSignature sets the "signature" field.
+func (m *SignatureMutation) SetSignature(s string) {
+	m.signature = &s
+}
+
+// Signature returns the value of the "signature" field in the mutation.
+func (m *SignatureMutation) Signature() (r string, exists bool) {
+	v := m.signature
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// OldSignature returns the old "signature" field's value of the Signature entity.
+// If the Signature object wasn't provided to the builder, the object is fetched from the database.
+// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
+func (m *SignatureMutation) OldSignature(ctx context.Context) (v string, err error) {
+	if !m.op.Is(OpUpdateOne) {
+		return v, errors.New("OldSignature is only allowed on UpdateOne operations")
+	}
+	if m.id == nil || m.oldValue == nil {
+		return v, errors.New("OldSignature requires an ID field in the mutation")
+	}
+	oldValue, err := m.oldValue(ctx)
+	if err != nil {
+		return v, fmt.Errorf("querying old value for OldSignature: %w", err)
+	}
+	return oldValue.Signature, nil
+}
+
+// ResetSignature resets all changes to the "signature" field.
+func (m *SignatureMutation) ResetSignature() {
+	m.signature = nil
+}
+
+// SetDsseID sets the "dsse" edge to the Dsse entity by id.
+func (m *SignatureMutation) SetDsseID(id int) {
+	m.dsse = &id
+}
+
+// ClearDsse clears the "dsse" edge to the Dsse entity.
+func (m *SignatureMutation) ClearDsse() {
+	m.cleareddsse = true
+}
+
+// DsseCleared reports if the "dsse" edge to the Dsse entity was cleared.
+func (m *SignatureMutation) DsseCleared() bool {
+	return m.cleareddsse
+}
+
+// DsseID returns the "dsse" edge ID in the mutation.
+func (m *SignatureMutation) DsseID() (id int, exists bool) {
+	if m.dsse != nil {
+		return *m.dsse, true
+	}
+	return
+}
+
+// DsseIDs returns the "dsse" edge IDs in the mutation.
+// Note that IDs always returns len(IDs) <= 1 for unique edges, and you should use
+// DsseID instead. It exists only for internal usage by the builders.
+func (m *SignatureMutation) DsseIDs() (ids []int) {
+	if id := m.dsse; id != nil {
+		ids = append(ids, *id)
+	}
+	return
+}
+
+// ResetDsse resets all changes to the "dsse" edge.
+func (m *SignatureMutation) ResetDsse() {
+	m.dsse = nil
+	m.cleareddsse = false
+}
+
+// Where appends a list predicates to the SignatureMutation builder.
+func (m *SignatureMutation) Where(ps ...predicate.Signature) {
 	m.predicates = append(m.predicates, ps...)
 }
 
 // Op returns the operation name.
-func (m *DsseSignatureMutation) Op() Op {
+func (m *SignatureMutation) Op() Op {
 	return m.op
 }
 
-// Type returns the node type of this mutation (DsseSignature).
-func (m *DsseSignatureMutation) Type() string {
+// Type returns the node type of this mutation (Signature).
+func (m *SignatureMutation) Type() string {
 	return m.typ
 }
 
 // Fields returns all fields that were changed during this mutation. Note that in
 // order to get all numeric fields that were incremented/decremented, call
 // AddedFields().
-func (m *DsseSignatureMutation) Fields() []string {
-	fields := make([]string, 0, 0)
+func (m *SignatureMutation) Fields() []string {
+	fields := make([]string, 0, 2)
+	if m.key_id != nil {
+		fields = append(fields, signature.FieldKeyID)
+	}
+	if m.signature != nil {
+		fields = append(fields, signature.FieldSignature)
+	}
 	return fields
 }
 
 // Field returns the value of a field with the given name. The second boolean
 // return value indicates that this field was not set, or was not defined in the
 // schema.
-func (m *DsseSignatureMutation) Field(name string) (ent.Value, bool) {
+func (m *SignatureMutation) Field(name string) (ent.Value, bool) {
+	switch name {
+	case signature.FieldKeyID:
+		return m.KeyID()
+	case signature.FieldSignature:
+		return m.Signature()
+	}
 	return nil, false
 }
 
 // OldField returns the old value of the field from the database. An error is
 // returned if the mutation operation is not UpdateOne, or the query to the
 // database failed.
-func (m *DsseSignatureMutation) OldField(ctx context.Context, name string) (ent.Value, error) {
-	return nil, fmt.Errorf("unknown DsseSignature field %s", name)
+func (m *SignatureMutation) OldField(ctx context.Context, name string) (ent.Value, error) {
+	switch name {
+	case signature.FieldKeyID:
+		return m.OldKeyID(ctx)
+	case signature.FieldSignature:
+		return m.OldSignature(ctx)
+	}
+	return nil, fmt.Errorf("unknown Signature field %s", name)
 }
 
 // SetField sets the value of a field with the given name. It returns an error if
 // the field is not defined in the schema, or if the type mismatched the field
 // type.
-func (m *DsseSignatureMutation) SetField(name string, value ent.Value) error {
+func (m *SignatureMutation) SetField(name string, value ent.Value) error {
 	switch name {
+	case signature.FieldKeyID:
+		v, ok := value.(string)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.SetKeyID(v)
+		return nil
+	case signature.FieldSignature:
+		v, ok := value.(string)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.SetSignature(v)
+		return nil
 	}
-	return fmt.Errorf("unknown DsseSignature field %s", name)
+	return fmt.Errorf("unknown Signature field %s", name)
 }
 
 // AddedFields returns all numeric fields that were incremented/decremented during
 // this mutation.
-func (m *DsseSignatureMutation) AddedFields() []string {
+func (m *SignatureMutation) AddedFields() []string {
 	return nil
 }
 
 // AddedField returns the numeric value that was incremented/decremented on a field
 // with the given name. The second boolean return value indicates that this field
 // was not set, or was not defined in the schema.
-func (m *DsseSignatureMutation) AddedField(name string) (ent.Value, bool) {
+func (m *SignatureMutation) AddedField(name string) (ent.Value, bool) {
 	return nil, false
 }
 
 // AddField adds the value to the field with the given name. It returns an error if
 // the field is not defined in the schema, or if the type mismatched the field
 // type.
-func (m *DsseSignatureMutation) AddField(name string, value ent.Value) error {
-	return fmt.Errorf("unknown DsseSignature numeric field %s", name)
+func (m *SignatureMutation) AddField(name string, value ent.Value) error {
+	switch name {
+	}
+	return fmt.Errorf("unknown Signature numeric field %s", name)
 }
 
 // ClearedFields returns all nullable fields that were cleared during this
 // mutation.
-func (m *DsseSignatureMutation) ClearedFields() []string {
+func (m *SignatureMutation) ClearedFields() []string {
 	return nil
 }
 
 // FieldCleared returns a boolean indicating if a field with the given name was
 // cleared in this mutation.
-func (m *DsseSignatureMutation) FieldCleared(name string) bool {
+func (m *SignatureMutation) FieldCleared(name string) bool {
 	_, ok := m.clearedFields[name]
 	return ok
 }
 
 // ClearField clears the value of the field with the given name. It returns an
 // error if the field is not defined in the schema.
-func (m *DsseSignatureMutation) ClearField(name string) error {
-	return fmt.Errorf("unknown DsseSignature nullable field %s", name)
+func (m *SignatureMutation) ClearField(name string) error {
+	return fmt.Errorf("unknown Signature nullable field %s", name)
 }
 
 // ResetField resets all changes in the mutation for the field with the given name.
 // It returns an error if the field is not defined in the schema.
-func (m *DsseSignatureMutation) ResetField(name string) error {
-	return fmt.Errorf("unknown DsseSignature field %s", name)
+func (m *SignatureMutation) ResetField(name string) error {
+	switch name {
+	case signature.FieldKeyID:
+		m.ResetKeyID()
+		return nil
+	case signature.FieldSignature:
+		m.ResetSignature()
+		return nil
+	}
+	return fmt.Errorf("unknown Signature field %s", name)
 }
 
 // AddedEdges returns all edge names that were set/added in this mutation.
-func (m *DsseSignatureMutation) AddedEdges() []string {
-	edges := make([]string, 0, 0)
+func (m *SignatureMutation) AddedEdges() []string {
+	edges := make([]string, 0, 1)
+	if m.dsse != nil {
+		edges = append(edges, signature.EdgeDsse)
+	}
 	return edges
 }
 
 // AddedIDs returns all IDs (to other nodes) that were added for the given edge
 // name in this mutation.
-func (m *DsseSignatureMutation) AddedIDs(name string) []ent.Value {
+func (m *SignatureMutation) AddedIDs(name string) []ent.Value {
+	switch name {
+	case signature.EdgeDsse:
+		if id := m.dsse; id != nil {
+			return []ent.Value{*id}
+		}
+	}
 	return nil
 }
 
 // RemovedEdges returns all edge names that were removed in this mutation.
-func (m *DsseSignatureMutation) RemovedEdges() []string {
-	edges := make([]string, 0, 0)
+func (m *SignatureMutation) RemovedEdges() []string {
+	edges := make([]string, 0, 1)
 	return edges
 }
 
 // RemovedIDs returns all IDs (to other nodes) that were removed for the edge with
 // the given name in this mutation.
-func (m *DsseSignatureMutation) RemovedIDs(name string) []ent.Value {
+func (m *SignatureMutation) RemovedIDs(name string) []ent.Value {
+	switch name {
+	}
 	return nil
 }
 
 // ClearedEdges returns all edge names that were cleared in this mutation.
-func (m *DsseSignatureMutation) ClearedEdges() []string {
-	edges := make([]string, 0, 0)
+func (m *SignatureMutation) ClearedEdges() []string {
+	edges := make([]string, 0, 1)
+	if m.cleareddsse {
+		edges = append(edges, signature.EdgeDsse)
+	}
 	return edges
 }
 
 // EdgeCleared returns a boolean which indicates if the edge with the given name
 // was cleared in this mutation.
-func (m *DsseSignatureMutation) EdgeCleared(name string) bool {
+func (m *SignatureMutation) EdgeCleared(name string) bool {
+	switch name {
+	case signature.EdgeDsse:
+		return m.cleareddsse
+	}
 	return false
 }
 
 // ClearEdge clears the value of the edge with the given name. It returns an error
 // if that edge is not defined in the schema.
-func (m *DsseSignatureMutation) ClearEdge(name string) error {
-	return fmt.Errorf("unknown DsseSignature unique edge %s", name)
+func (m *SignatureMutation) ClearEdge(name string) error {
+	switch name {
+	case signature.EdgeDsse:
+		m.ClearDsse()
+		return nil
+	}
+	return fmt.Errorf("unknown Signature unique edge %s", name)
 }
 
 // ResetEdge resets all changes to the edge with the given name in this mutation.
 // It returns an error if the edge is not defined in the schema.
-func (m *DsseSignatureMutation) ResetEdge(name string) error {
-	return fmt.Errorf("unknown DsseSignature edge %s", name)
+func (m *SignatureMutation) ResetEdge(name string) error {
+	switch name {
+	case signature.EdgeDsse:
+		m.ResetDsse()
+		return nil
+	}
+	return fmt.Errorf("unknown Signature edge %s", name)
 }
 
 // StatementMutation represents an operation that mutates the Statement nodes in the graph.
@@ -1586,8 +1855,7 @@ type SubjectMutation struct {
 	digests          map[int]struct{}
 	removeddigests   map[int]struct{}
 	cleareddigests   bool
-	statement        map[int]struct{}
-	removedstatement map[int]struct{}
+	statement        *int
 	clearedstatement bool
 	done             bool
 	oldValue         func(context.Context) (*Subject, error)
@@ -1782,14 +2050,9 @@ func (m *SubjectMutation) ResetDigests() {
 	m.removeddigests = nil
 }
 
-// AddStatementIDs adds the "statement" edge to the Statement entity by ids.
-func (m *SubjectMutation) AddStatementIDs(ids ...int) {
-	if m.statement == nil {
-		m.statement = make(map[int]struct{})
-	}
-	for i := range ids {
-		m.statement[ids[i]] = struct{}{}
-	}
+// SetStatementID sets the "statement" edge to the Statement entity by id.
+func (m *SubjectMutation) SetStatementID(id int) {
+	m.statement = &id
 }
 
 // ClearStatement clears the "statement" edge to the Statement entity.
@@ -1802,29 +2065,20 @@ func (m *SubjectMutation) StatementCleared() bool {
 	return m.clearedstatement
 }
 
-// RemoveStatementIDs removes the "statement" edge to the Statement entity by IDs.
-func (m *SubjectMutation) RemoveStatementIDs(ids ...int) {
-	if m.removedstatement == nil {
-		m.removedstatement = make(map[int]struct{})
-	}
-	for i := range ids {
-		delete(m.statement, ids[i])
-		m.removedstatement[ids[i]] = struct{}{}
-	}
-}
-
-// RemovedStatement returns the removed IDs of the "statement" edge to the Statement entity.
-func (m *SubjectMutation) RemovedStatementIDs() (ids []int) {
-	for id := range m.removedstatement {
-		ids = append(ids, id)
+// StatementID returns the "statement" edge ID in the mutation.
+func (m *SubjectMutation) StatementID() (id int, exists bool) {
+	if m.statement != nil {
+		return *m.statement, true
 	}
 	return
 }
 
 // StatementIDs returns the "statement" edge IDs in the mutation.
+// Note that IDs always returns len(IDs) <= 1 for unique edges, and you should use
+// StatementID instead. It exists only for internal usage by the builders.
 func (m *SubjectMutation) StatementIDs() (ids []int) {
-	for id := range m.statement {
-		ids = append(ids, id)
+	if id := m.statement; id != nil {
+		ids = append(ids, *id)
 	}
 	return
 }
@@ -1833,7 +2087,6 @@ func (m *SubjectMutation) StatementIDs() (ids []int) {
 func (m *SubjectMutation) ResetStatement() {
 	m.statement = nil
 	m.clearedstatement = false
-	m.removedstatement = nil
 }
 
 // Where appends a list predicates to the SubjectMutation builder.
@@ -1975,11 +2228,9 @@ func (m *SubjectMutation) AddedIDs(name string) []ent.Value {
 		}
 		return ids
 	case subject.EdgeStatement:
-		ids := make([]ent.Value, 0, len(m.statement))
-		for id := range m.statement {
-			ids = append(ids, id)
+		if id := m.statement; id != nil {
+			return []ent.Value{*id}
 		}
-		return ids
 	}
 	return nil
 }
@@ -1989,9 +2240,6 @@ func (m *SubjectMutation) RemovedEdges() []string {
 	edges := make([]string, 0, 2)
 	if m.removeddigests != nil {
 		edges = append(edges, subject.EdgeDigests)
-	}
-	if m.removedstatement != nil {
-		edges = append(edges, subject.EdgeStatement)
 	}
 	return edges
 }
@@ -2003,12 +2251,6 @@ func (m *SubjectMutation) RemovedIDs(name string) []ent.Value {
 	case subject.EdgeDigests:
 		ids := make([]ent.Value, 0, len(m.removeddigests))
 		for id := range m.removeddigests {
-			ids = append(ids, id)
-		}
-		return ids
-	case subject.EdgeStatement:
-		ids := make([]ent.Value, 0, len(m.removedstatement))
-		for id := range m.removedstatement {
 			ids = append(ids, id)
 		}
 		return ids
@@ -2044,6 +2286,9 @@ func (m *SubjectMutation) EdgeCleared(name string) bool {
 // if that edge is not defined in the schema.
 func (m *SubjectMutation) ClearEdge(name string) error {
 	switch name {
+	case subject.EdgeStatement:
+		m.ClearStatement()
+		return nil
 	}
 	return fmt.Errorf("unknown Subject unique edge %s", name)
 }

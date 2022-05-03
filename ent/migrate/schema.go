@@ -50,15 +50,26 @@ var (
 			},
 		},
 	}
-	// DsseSignaturesColumns holds the columns for the "dsse_signatures" table.
-	DsseSignaturesColumns = []*schema.Column{
+	// SignaturesColumns holds the columns for the "signatures" table.
+	SignaturesColumns = []*schema.Column{
 		{Name: "id", Type: field.TypeInt, Increment: true},
+		{Name: "key_id", Type: field.TypeString},
+		{Name: "signature", Type: field.TypeString, Unique: true},
+		{Name: "dsse_signatures", Type: field.TypeInt, Nullable: true},
 	}
-	// DsseSignaturesTable holds the schema information for the "dsse_signatures" table.
-	DsseSignaturesTable = &schema.Table{
-		Name:       "dsse_signatures",
-		Columns:    DsseSignaturesColumns,
-		PrimaryKey: []*schema.Column{DsseSignaturesColumns[0]},
+	// SignaturesTable holds the schema information for the "signatures" table.
+	SignaturesTable = &schema.Table{
+		Name:       "signatures",
+		Columns:    SignaturesColumns,
+		PrimaryKey: []*schema.Column{SignaturesColumns[0]},
+		ForeignKeys: []*schema.ForeignKey{
+			{
+				Symbol:     "signatures_dsses_signatures",
+				Columns:    []*schema.Column{SignaturesColumns[3]},
+				RefColumns: []*schema.Column{DssesColumns[0]},
+				OnDelete:   schema.SetNull,
+			},
+		},
 	}
 	// StatementsColumns holds the columns for the "statements" table.
 	StatementsColumns = []*schema.Column{
@@ -74,35 +85,19 @@ var (
 	SubjectsColumns = []*schema.Column{
 		{Name: "id", Type: field.TypeInt, Increment: true},
 		{Name: "name", Type: field.TypeString},
+		{Name: "statement_subjects", Type: field.TypeInt, Nullable: true},
 	}
 	// SubjectsTable holds the schema information for the "subjects" table.
 	SubjectsTable = &schema.Table{
 		Name:       "subjects",
 		Columns:    SubjectsColumns,
 		PrimaryKey: []*schema.Column{SubjectsColumns[0]},
-	}
-	// StatementSubjectsColumns holds the columns for the "statement_subjects" table.
-	StatementSubjectsColumns = []*schema.Column{
-		{Name: "statement_id", Type: field.TypeInt},
-		{Name: "subject_id", Type: field.TypeInt},
-	}
-	// StatementSubjectsTable holds the schema information for the "statement_subjects" table.
-	StatementSubjectsTable = &schema.Table{
-		Name:       "statement_subjects",
-		Columns:    StatementSubjectsColumns,
-		PrimaryKey: []*schema.Column{StatementSubjectsColumns[0], StatementSubjectsColumns[1]},
 		ForeignKeys: []*schema.ForeignKey{
 			{
-				Symbol:     "statement_subjects_statement_id",
-				Columns:    []*schema.Column{StatementSubjectsColumns[0]},
+				Symbol:     "subjects_statements_subjects",
+				Columns:    []*schema.Column{SubjectsColumns[2]},
 				RefColumns: []*schema.Column{StatementsColumns[0]},
-				OnDelete:   schema.Cascade,
-			},
-			{
-				Symbol:     "statement_subjects_subject_id",
-				Columns:    []*schema.Column{StatementSubjectsColumns[1]},
-				RefColumns: []*schema.Column{SubjectsColumns[0]},
-				OnDelete:   schema.Cascade,
+				OnDelete:   schema.SetNull,
 			},
 		},
 	}
@@ -110,16 +105,15 @@ var (
 	Tables = []*schema.Table{
 		DigestsTable,
 		DssesTable,
-		DsseSignaturesTable,
+		SignaturesTable,
 		StatementsTable,
 		SubjectsTable,
-		StatementSubjectsTable,
 	}
 )
 
 func init() {
 	DigestsTable.ForeignKeys[0].RefTable = SubjectsTable
 	DssesTable.ForeignKeys[0].RefTable = StatementsTable
-	StatementSubjectsTable.ForeignKeys[0].RefTable = StatementsTable
-	StatementSubjectsTable.ForeignKeys[1].RefTable = SubjectsTable
+	SignaturesTable.ForeignKeys[0].RefTable = DssesTable
+	SubjectsTable.ForeignKeys[0].RefTable = StatementsTable
 }

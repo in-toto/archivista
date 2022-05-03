@@ -7,6 +7,7 @@ import (
 	"strings"
 
 	"entgo.io/ent/dialect/sql"
+	"github.com/testifysec/archivist/ent/statement"
 	"github.com/testifysec/archivist/ent/subject"
 )
 
@@ -19,7 +20,8 @@ type Subject struct {
 	Name string `json:"name,omitempty"`
 	// Edges holds the relations/edges for other nodes in the graph.
 	// The values are being populated by the SubjectQuery when eager-loading is set.
-	Edges SubjectEdges `json:"edges"`
+	Edges              SubjectEdges `json:"edges"`
+	statement_subjects *int
 }
 
 // SubjectEdges holds the relations/edges for other nodes in the graph.
@@ -27,7 +29,7 @@ type SubjectEdges struct {
 	// Digests holds the value of the digests edge.
 	Digests []*Digest `json:"digests,omitempty"`
 	// Statement holds the value of the statement edge.
-	Statement []*Statement `json:"statement,omitempty"`
+	Statement *Statement `json:"statement,omitempty"`
 	// loadedTypes holds the information for reporting if a
 	// type was loaded (or requested) in eager-loading or not.
 	loadedTypes [2]bool
@@ -43,9 +45,14 @@ func (e SubjectEdges) DigestsOrErr() ([]*Digest, error) {
 }
 
 // StatementOrErr returns the Statement value or an error if the edge
-// was not loaded in eager-loading.
-func (e SubjectEdges) StatementOrErr() ([]*Statement, error) {
+// was not loaded in eager-loading, or loaded but was not found.
+func (e SubjectEdges) StatementOrErr() (*Statement, error) {
 	if e.loadedTypes[1] {
+		if e.Statement == nil {
+			// The edge statement was loaded in eager-loading,
+			// but was not found.
+			return nil, &NotFoundError{label: statement.Label}
+		}
 		return e.Statement, nil
 	}
 	return nil, &NotLoadedError{edge: "statement"}
@@ -60,6 +67,8 @@ func (*Subject) scanValues(columns []string) ([]interface{}, error) {
 			values[i] = new(sql.NullInt64)
 		case subject.FieldName:
 			values[i] = new(sql.NullString)
+		case subject.ForeignKeys[0]: // statement_subjects
+			values[i] = new(sql.NullInt64)
 		default:
 			return nil, fmt.Errorf("unexpected column %q for type Subject", columns[i])
 		}
@@ -86,6 +95,13 @@ func (s *Subject) assignValues(columns []string, values []interface{}) error {
 				return fmt.Errorf("unexpected type %T for field name", values[i])
 			} else if value.Valid {
 				s.Name = value.String
+			}
+		case subject.ForeignKeys[0]:
+			if value, ok := values[i].(*sql.NullInt64); !ok {
+				return fmt.Errorf("unexpected type %T for edge-field statement_subjects", value)
+			} else if value.Valid {
+				s.statement_subjects = new(int)
+				*s.statement_subjects = int(value.Int64)
 			}
 		}
 	}

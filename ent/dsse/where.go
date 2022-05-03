@@ -355,6 +355,34 @@ func HasStatementWith(preds ...predicate.Statement) predicate.Dsse {
 	})
 }
 
+// HasSignatures applies the HasEdge predicate on the "signatures" edge.
+func HasSignatures() predicate.Dsse {
+	return predicate.Dsse(func(s *sql.Selector) {
+		step := sqlgraph.NewStep(
+			sqlgraph.From(Table, FieldID),
+			sqlgraph.To(SignaturesTable, FieldID),
+			sqlgraph.Edge(sqlgraph.O2M, false, SignaturesTable, SignaturesColumn),
+		)
+		sqlgraph.HasNeighbors(s, step)
+	})
+}
+
+// HasSignaturesWith applies the HasEdge predicate on the "signatures" edge with a given conditions (other predicates).
+func HasSignaturesWith(preds ...predicate.Signature) predicate.Dsse {
+	return predicate.Dsse(func(s *sql.Selector) {
+		step := sqlgraph.NewStep(
+			sqlgraph.From(Table, FieldID),
+			sqlgraph.To(SignaturesInverseTable, FieldID),
+			sqlgraph.Edge(sqlgraph.O2M, false, SignaturesTable, SignaturesColumn),
+		)
+		sqlgraph.HasNeighborsWith(s, step, func(s *sql.Selector) {
+			for _, p := range preds {
+				p(s)
+			}
+		})
+	})
+}
+
 // And groups predicates with the AND operator between them.
 func And(predicates ...predicate.Dsse) predicate.Dsse {
 	return predicate.Dsse(func(s *sql.Selector) {

@@ -24,6 +24,6 @@ func (Subject) Edges() []ent.Edge {
 		edge.To("digests", Digest.Type),
 
 		edge.From("statement", Statement.Type).
-			Ref("subjects"),
+			Ref("subjects").Unique(),
 	}
 }

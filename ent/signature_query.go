@@ -4,7 +4,6 @@ package ent
 
 import (
 	"context"
-	"database/sql/driver"
 	"errors"
 	"fmt"
 	"math"
@@ -12,64 +11,62 @@ import (
 	"entgo.io/ent/dialect/sql"
 	"entgo.io/ent/dialect/sql/sqlgraph"
 	"entgo.io/ent/schema/field"
-	"github.com/testifysec/archivist/ent/digest"
+	"github.com/testifysec/archivist/ent/dsse"
 	"github.com/testifysec/archivist/ent/predicate"
-	"github.com/testifysec/archivist/ent/statement"
-	"github.com/testifysec/archivist/ent/subject"
+	"github.com/testifysec/archivist/ent/signature"
 )
 
-// SubjectQuery is the builder for querying Subject entities.
-type SubjectQuery struct {
+// SignatureQuery is the builder for querying Signature entities.
+type SignatureQuery struct {
 	config
 	limit      *int
 	offset     *int
 	unique     *bool
 	order      []OrderFunc
 	fields     []string
-	predicates []predicate.Subject
+	predicates []predicate.Signature
 	// eager-loading edges.
-	withDigests   *DigestQuery
-	withStatement *StatementQuery
-	withFKs       bool
+	withDsse *DsseQuery
+	withFKs  bool
 	// intermediate query (i.e. traversal path).
 	sql  *sql.Selector
 	path func(context.Context) (*sql.Selector, error)
 }
 
-// Where adds a new predicate for the SubjectQuery builder.
-func (sq *SubjectQuery) Where(ps ...predicate.Subject) *SubjectQuery {
+// Where adds a new predicate for the SignatureQuery builder.
+func (sq *SignatureQuery) Where(ps ...predicate.Signature) *SignatureQuery {
 	sq.predicates = append(sq.predicates, ps...)
 	return sq
 }
 
 // Limit adds a limit step to the query.
-func (sq *SubjectQuery) Limit(limit int) *SubjectQuery {
+func (sq *SignatureQuery) Limit(limit int) *SignatureQuery {
 	sq.limit = &limit
 	return sq
 }
 
 // Offset adds an offset step to the query.
-func (sq *SubjectQuery) Offset(offset int) *SubjectQuery {
+func (sq *SignatureQuery) Offset(offset int) *SignatureQuery {
 	sq.offset = &offset
 	return sq
 }
 
 // Unique configures the query builder to filter duplicate records on query.
 // By default, unique is set to true, and can be disabled using this method.
-func (sq *SubjectQuery) Unique(unique bool) *SubjectQuery {
+func (sq *SignatureQuery) Unique(unique bool) *SignatureQuery {
 	sq.unique = &unique
 	return sq
 }
 
 // Order adds an order step to the query.
-func (sq *SubjectQuery) Order(o ...OrderFunc) *SubjectQuery {
+func (sq *SignatureQuery) Order(o ...OrderFunc) *SignatureQuery {
 	sq.order = append(sq.order, o...)
 	return sq
 }
 
-// QueryDigests chains the current query on the "digests" edge.
-func (sq *SubjectQuery) QueryDigests() *DigestQuery {
-	query := &DigestQuery{config: sq.config}
+// QueryDsse chains the current query on the "dsse" edge.
+func (sq *SignatureQuery) QueryDsse() *DsseQuery {
+	query := &DsseQuery{config: sq.config}
 	query.path = func(ctx context.Context) (fromU *sql.Selector, err error) {
 		if err := sq.prepareQuery(ctx); err != nil {
 			return nil, err
@@ -79,9 +76,9 @@ func (sq *SubjectQuery) QueryDigests() *DigestQuery {
 			return nil, err
 		}
 		step := sqlgraph.NewStep(
-			sqlgraph.From(subject.Table, subject.FieldID, selector),
-			sqlgraph.To(digest.Table, digest.FieldID),
-			sqlgraph.Edge(sqlgraph.O2M, false, subject.DigestsTable, subject.DigestsColumn),
+			sqlgraph.From(signature.Table, signature.FieldID, selector),
+			sqlgraph.To(dsse.Table, dsse.FieldID),
+			sqlgraph.Edge(sqlgraph.M2O, true, signature.DsseTable, signature.DsseColumn),
 		)
 		fromU = sqlgraph.SetNeighbors(sq.driver.Dialect(), step)
 		return fromU, nil
@@ -89,43 +86,21 @@ func (sq *SubjectQuery) QueryDigests() *DigestQuery {
 	return query
 }
 
-// QueryStatement chains the current query on the "statement" edge.
-func (sq *SubjectQuery) QueryStatement() *StatementQuery {
-	query := &StatementQuery{config: sq.config}
-	query.path = func(ctx context.Context) (fromU *sql.Selector, err error) {
-		if err := sq.prepareQuery(ctx); err != nil {
-			return nil, err
-		}
-		selector := sq.sqlQuery(ctx)
-		if err := selector.Err(); err != nil {
-			return nil, err
-		}
-		step := sqlgraph.NewStep(
-			sqlgraph.From(subject.Table, subject.FieldID, selector),
-			sqlgraph.To(statement.Table, statement.FieldID),
-			sqlgraph.Edge(sqlgraph.M2O, true, subject.StatementTable, subject.StatementColumn),
-		)
-		fromU = sqlgraph.SetNeighbors(sq.driver.Dialect(), step)
-		return fromU, nil
-	}
-	return query
-}
-
-// First returns the first Subject entity from the query.
-// Returns a *NotFoundError when no Subject was found.
-func (sq *SubjectQuery) First(ctx context.Context) (*Subject, error) {
+// First returns the first Signature entity from the query.
+// Returns a *NotFoundError when no Signature was found.
+func (sq *SignatureQuery) First(ctx context.Context) (*Signature, error) {
 	nodes, err := sq.Limit(1).All(ctx)
 	if err != nil {
 		return nil, err
 	}
 	if len(nodes) == 0 {
-		return nil, &NotFoundError{subject.Label}
+		return nil, &NotFoundError{signature.Label}
 	}
 	return nodes[0], nil
 }
 
 // FirstX is like First, but panics if an error occurs.
-func (sq *SubjectQuery) FirstX(ctx context.Context) *Subject {
+func (sq *SignatureQuery) FirstX(ctx context.Context) *Signature {
 	node, err := sq.First(ctx)
 	if err != nil && !IsNotFound(err) {
 		panic(err)
@@ -133,22 +108,22 @@ func (sq *SubjectQuery) FirstX(ctx context.Context) *Subject {
 	return node
 }
 
-// FirstID returns the first Subject ID from the query.
-// Returns a *NotFoundError when no Subject ID was found.
-func (sq *SubjectQuery) FirstID(ctx context.Context) (id int, err error) {
+// FirstID returns the first Signature ID from the query.
+// Returns a *NotFoundError when no Signature ID was found.
+func (sq *SignatureQuery) FirstID(ctx context.Context) (id int, err error) {
 	var ids []int
 	if ids, err = sq.Limit(1).IDs(ctx); err != nil {
 		return
 	}
 	if len(ids) == 0 {
-		err = &NotFoundError{subject.Label}
+		err = &NotFoundError{signature.Label}
 		return
 	}
 	return ids[0], nil
 }
 
 // FirstIDX is like FirstID, but panics if an error occurs.
-func (sq *SubjectQuery) FirstIDX(ctx context.Context) int {
+func (sq *SignatureQuery) FirstIDX(ctx context.Context) int {
 	id, err := sq.FirstID(ctx)
 	if err != nil && !IsNotFound(err) {
 		panic(err)
@@ -156,10 +131,10 @@ func (sq *SubjectQuery) FirstIDX(ctx context.Context) int {
 	return id
 }
 
-// Only returns a single Subject entity found by the query, ensuring it only returns one.
-// Returns a *NotSingularError when more than one Subject entity is found.
-// Returns a *NotFoundError when no Subject entities are found.
-func (sq *SubjectQuery) Only(ctx context.Context) (*Subject, error) {
+// Only returns a single Signature entity found by the query, ensuring it only returns one.
+// Returns a *NotSingularError when more than one Signature entity is found.
+// Returns a *NotFoundError when no Signature entities are found.
+func (sq *SignatureQuery) Only(ctx context.Context) (*Signature, error) {
 	nodes, err := sq.Limit(2).All(ctx)
 	if err != nil {
 		return nil, err
@@ -168,14 +143,14 @@ func (sq *SubjectQuery) Only(ctx context.Context) (*Subject, error) {
 	case 1:
 		return nodes[0], nil
 	case 0:
-		return nil, &NotFoundError{subject.Label}
+		return nil, &NotFoundError{signature.Label}
 	default:
-		return nil, &NotSingularError{subject.Label}
+		return nil, &NotSingularError{signature.Label}
 	}
 }
 
 // OnlyX is like Only, but panics if an error occurs.
-func (sq *SubjectQuery) OnlyX(ctx context.Context) *Subject {
+func (sq *SignatureQuery) OnlyX(ctx context.Context) *Signature {
 	node, err := sq.Only(ctx)
 	if err != nil {
 		panic(err)
@@ -183,10 +158,10 @@ func (sq *SubjectQuery) OnlyX(ctx context.Context) *Subject {
 	return node
 }
 
-// OnlyID is like Only, but returns the only Subject ID in the query.
-// Returns a *NotSingularError when more than one Subject ID is found.
+// OnlyID is like Only, but returns the only Signature ID in the query.
+// Returns a *NotSingularError when more than one Signature ID is found.
 // Returns a *NotFoundError when no entities are found.
-func (sq *SubjectQuery) OnlyID(ctx context.Context) (id int, err error) {
+func (sq *SignatureQuery) OnlyID(ctx context.Context) (id int, err error) {
 	var ids []int
 	if ids, err = sq.Limit(2).IDs(ctx); err != nil {
 		return
@@ -195,15 +170,15 @@ func (sq *SubjectQuery) OnlyID(ctx context.Context) (id int, err error) {
 	case 1:
 		id = ids[0]
 	case 0:
-		err = &NotFoundError{subject.Label}
+		err = &NotFoundError{signature.Label}
 	default:
-		err = &NotSingularError{subject.Label}
+		err = &NotSingularError{signature.Label}
 	}
 	return
 }
 
 // OnlyIDX is like OnlyID, but panics if an error occurs.
-func (sq *SubjectQuery) OnlyIDX(ctx context.Context) int {
+func (sq *SignatureQuery) OnlyIDX(ctx context.Context) int {
 	id, err := sq.OnlyID(ctx)
 	if err != nil {
 		panic(err)
@@ -211,8 +186,8 @@ func (sq *SubjectQuery) OnlyIDX(ctx context.Context) int {
 	return id
 }
 
-// All executes the query and returns a list of Subjects.
-func (sq *SubjectQuery) All(ctx context.Context) ([]*Subject, error) {
+// All executes the query and returns a list of Signatures.
+func (sq *SignatureQuery) All(ctx context.Context) ([]*Signature, error) {
 	if err := sq.prepareQuery(ctx); err != nil {
 		return nil, err
 	}
@@ -220,7 +195,7 @@ func (sq *SubjectQuery) All(ctx context.Context) ([]*Subject, error) {
 }
 
 // AllX is like All, but panics if an error occurs.
-func (sq *SubjectQuery) AllX(ctx context.Context) []*Subject {
+func (sq *SignatureQuery) AllX(ctx context.Context) []*Signature {
 	nodes, err := sq.All(ctx)
 	if err != nil {
 		panic(err)
@@ -228,17 +203,17 @@ func (sq *SubjectQuery) AllX(ctx context.Context) []*Subject {
 	return nodes
 }
 
-// IDs executes the query and returns a list of Subject IDs.
-func (sq *SubjectQuery) IDs(ctx context.Context) ([]int, error) {
+// IDs executes the query and returns a list of Signature IDs.
+func (sq *SignatureQuery) IDs(ctx context.Context) ([]int, error) {
 	var ids []int
-	if err := sq.Select(subject.FieldID).Scan(ctx, &ids); err != nil {
+	if err := sq.Select(signature.FieldID).Scan(ctx, &ids); err != nil {
 		return nil, err
 	}
 	return ids, nil
 }
 
 // IDsX is like IDs, but panics if an error occurs.
-func (sq *SubjectQuery) IDsX(ctx context.Context) []int {
+func (sq *SignatureQuery) IDsX(ctx context.Context) []int {
 	ids, err := sq.IDs(ctx)
 	if err != nil {
 		panic(err)
@@ -247,7 +222,7 @@ func (sq *SubjectQuery) IDsX(ctx context.Context) []int {
 }
 
 // Count returns the count of the given query.
-func (sq *SubjectQuery) Count(ctx context.Context) (int, error) {
+func (sq *SignatureQuery) Count(ctx context.Context) (int, error) {
 	if err := sq.prepareQuery(ctx); err != nil {
 		return 0, err
 	}
@@ -255,7 +230,7 @@ func (sq *SubjectQuery) Count(ctx context.Context) (int, error) {
 }
 
 // CountX is like Count, but panics if an error occurs.
-func (sq *SubjectQuery) CountX(ctx context.Context) int {
+func (sq *SignatureQuery) CountX(ctx context.Context) int {
 	count, err := sq.Count(ctx)
 	if err != nil {
 		panic(err)
@@ -264,7 +239,7 @@ func (sq *SubjectQuery) CountX(ctx context.Context) int {
 }
 
 // Exist returns true if the query has elements in the graph.
-func (sq *SubjectQuery) Exist(ctx context.Context) (bool, error) {
+func (sq *SignatureQuery) Exist(ctx context.Context) (bool, error) {
 	if err := sq.prepareQuery(ctx); err != nil {
 		return false, err
 	}
@@ -272,7 +247,7 @@ func (sq *SubjectQuery) Exist(ctx context.Context) (bool, error) {
 }
 
 // ExistX is like Exist, but panics if an error occurs.
-func (sq *SubjectQuery) ExistX(ctx context.Context) bool {
+func (sq *SignatureQuery) ExistX(ctx context.Context) bool {
 	exist, err := sq.Exist(ctx)
 	if err != nil {
 		panic(err)
@@ -280,20 +255,19 @@ func (sq *SubjectQuery) ExistX(ctx context.Context) bool {
 	return exist
 }
 
-// Clone returns a duplicate of the SubjectQuery builder, including all associated steps. It can be
+// Clone returns a duplicate of the SignatureQuery builder, including all associated steps. It can be
 // used to prepare common query builders and use them differently after the clone is made.
-func (sq *SubjectQuery) Clone() *SubjectQuery {
+func (sq *SignatureQuery) Clone() *SignatureQuery {
 	if sq == nil {
 		return nil
 	}
-	return &SubjectQuery{
-		config:        sq.config,
-		limit:         sq.limit,
-		offset:        sq.offset,
-		order:         append([]OrderFunc{}, sq.order...),
-		predicates:    append([]predicate.Subject{}, sq.predicates...),
-		withDigests:   sq.withDigests.Clone(),
-		withStatement: sq.withStatement.Clone(),
+	return &SignatureQuery{
+		config:     sq.config,
+		limit:      sq.limit,
+		offset:     sq.offset,
+		order:      append([]OrderFunc{}, sq.order...),
+		predicates: append([]predicate.Signature{}, sq.predicates...),
+		withDsse:   sq.withDsse.Clone(),
 		// clone intermediate query.
 		sql:    sq.sql.Clone(),
 		path:   sq.path,
@@ -301,25 +275,14 @@ func (sq *SubjectQuery) Clone() *SubjectQuery {
 	}
 }
 
-// WithDigests tells the query-builder to eager-load the nodes that are connected to
-// the "digests" edge. The optional arguments are used to configure the query builder of the edge.
-func (sq *SubjectQuery) WithDigests(opts ...func(*DigestQuery)) *SubjectQuery {
-	query := &DigestQuery{config: sq.config}
+// WithDsse tells the query-builder to eager-load the nodes that are connected to
+// the "dsse" edge. The optional arguments are used to configure the query builder of the edge.
+func (sq *SignatureQuery) WithDsse(opts ...func(*DsseQuery)) *SignatureQuery {
+	query := &DsseQuery{config: sq.config}
 	for _, opt := range opts {
 		opt(query)
 	}
-	sq.withDigests = query
-	return sq
-}
-
-// WithStatement tells the query-builder to eager-load the nodes that are connected to
-// the "statement" edge. The optional arguments are used to configure the query builder of the edge.
-func (sq *SubjectQuery) WithStatement(opts ...func(*StatementQuery)) *SubjectQuery {
-	query := &StatementQuery{config: sq.config}
-	for _, opt := range opts {
-		opt(query)
-	}
-	sq.withStatement = query
+	sq.withDsse = query
 	return sq
 }
 
@@ -329,17 +292,17 @@ func (sq *SubjectQuery) WithStatement(opts ...func(*StatementQuery)) *SubjectQue
 // Example:
 //
 //	var v []struct {
-//		Name string `json:"name,omitempty"`
+//		KeyID string `json:"key_id,omitempty"`
 //		Count int `json:"count,omitempty"`
 //	}
 //
-//	client.Subject.Query().
-//		GroupBy(subject.FieldName).
+//	client.Signature.Query().
+//		GroupBy(signature.FieldKeyID).
 //		Aggregate(ent.Count()).
 //		Scan(ctx, &v)
 //
-func (sq *SubjectQuery) GroupBy(field string, fields ...string) *SubjectGroupBy {
-	group := &SubjectGroupBy{config: sq.config}
+func (sq *SignatureQuery) GroupBy(field string, fields ...string) *SignatureGroupBy {
+	group := &SignatureGroupBy{config: sq.config}
 	group.fields = append([]string{field}, fields...)
 	group.path = func(ctx context.Context) (prev *sql.Selector, err error) {
 		if err := sq.prepareQuery(ctx); err != nil {
@@ -356,21 +319,21 @@ func (sq *SubjectQuery) GroupBy(field string, fields ...string) *SubjectGroupBy 
 // Example:
 //
 //	var v []struct {
-//		Name string `json:"name,omitempty"`
+//		KeyID string `json:"key_id,omitempty"`
 //	}
 //
-//	client.Subject.Query().
-//		Select(subject.FieldName).
+//	client.Signature.Query().
+//		Select(signature.FieldKeyID).
 //		Scan(ctx, &v)
 //
-func (sq *SubjectQuery) Select(fields ...string) *SubjectSelect {
+func (sq *SignatureQuery) Select(fields ...string) *SignatureSelect {
 	sq.fields = append(sq.fields, fields...)
-	return &SubjectSelect{SubjectQuery: sq}
+	return &SignatureSelect{SignatureQuery: sq}
 }
 
-func (sq *SubjectQuery) prepareQuery(ctx context.Context) error {
+func (sq *SignatureQuery) prepareQuery(ctx context.Context) error {
 	for _, f := range sq.fields {
-		if !subject.ValidColumn(f) {
+		if !signature.ValidColumn(f) {
 			return &ValidationError{Name: f, err: fmt.Errorf("ent: invalid field %q for query", f)}
 		}
 	}
@@ -384,24 +347,23 @@ func (sq *SubjectQuery) prepareQuery(ctx context.Context) error {
 	return nil
 }
 
-func (sq *SubjectQuery) sqlAll(ctx context.Context) ([]*Subject, error) {
+func (sq *SignatureQuery) sqlAll(ctx context.Context) ([]*Signature, error) {
 	var (
-		nodes       = []*Subject{}
+		nodes       = []*Signature{}
 		withFKs     = sq.withFKs
 		_spec       = sq.querySpec()
-		loadedTypes = [2]bool{
-			sq.withDigests != nil,
-			sq.withStatement != nil,
+		loadedTypes = [1]bool{
+			sq.withDsse != nil,
 		}
 	)
-	if sq.withStatement != nil {
+	if sq.withDsse != nil {
 		withFKs = true
 	}
 	if withFKs {
-		_spec.Node.Columns = append(_spec.Node.Columns, subject.ForeignKeys...)
+		_spec.Node.Columns = append(_spec.Node.Columns, signature.ForeignKeys...)
 	}
 	_spec.ScanValues = func(columns []string) ([]interface{}, error) {
-		node := &Subject{config: sq.config}
+		node := &Signature{config: sq.config}
 		nodes = append(nodes, node)
 		return node.scanValues(columns)
 	}
@@ -420,49 +382,20 @@ func (sq *SubjectQuery) sqlAll(ctx context.Context) ([]*Subject, error) {
 		return nodes, nil
 	}
 
-	if query := sq.withDigests; query != nil {
-		fks := make([]driver.Value, 0, len(nodes))
-		nodeids := make(map[int]*Subject)
-		for i := range nodes {
-			fks = append(fks, nodes[i].ID)
-			nodeids[nodes[i].ID] = nodes[i]
-			nodes[i].Edges.Digests = []*Digest{}
-		}
-		query.withFKs = true
-		query.Where(predicate.Digest(func(s *sql.Selector) {
-			s.Where(sql.InValues(subject.DigestsColumn, fks...))
-		}))
-		neighbors, err := query.All(ctx)
-		if err != nil {
-			return nil, err
-		}
-		for _, n := range neighbors {
-			fk := n.subject_digests
-			if fk == nil {
-				return nil, fmt.Errorf(`foreign-key "subject_digests" is nil for node %v`, n.ID)
-			}
-			node, ok := nodeids[*fk]
-			if !ok {
-				return nil, fmt.Errorf(`unexpected foreign-key "subject_digests" returned %v for node %v`, *fk, n.ID)
-			}
-			node.Edges.Digests = append(node.Edges.Digests, n)
-		}
-	}
-
-	if query := sq.withStatement; query != nil {
+	if query := sq.withDsse; query != nil {
 		ids := make([]int, 0, len(nodes))
-		nodeids := make(map[int][]*Subject)
+		nodeids := make(map[int][]*Signature)
 		for i := range nodes {
-			if nodes[i].statement_subjects == nil {
+			if nodes[i].dsse_signatures == nil {
 				continue
 			}
-			fk := *nodes[i].statement_subjects
+			fk := *nodes[i].dsse_signatures
 			if _, ok := nodeids[fk]; !ok {
 				ids = append(ids, fk)
 			}
 			nodeids[fk] = append(nodeids[fk], nodes[i])
 		}
-		query.Where(statement.IDIn(ids...))
+		query.Where(dsse.IDIn(ids...))
 		neighbors, err := query.All(ctx)
 		if err != nil {
 			return nil, err
@@ -470,10 +403,10 @@ func (sq *SubjectQuery) sqlAll(ctx context.Context) ([]*Subject, error) {
 		for _, n := range neighbors {
 			nodes, ok := nodeids[n.ID]
 			if !ok {
-				return nil, fmt.Errorf(`unexpected foreign-key "statement_subjects" returned %v`, n.ID)
+				return nil, fmt.Errorf(`unexpected foreign-key "dsse_signatures" returned %v`, n.ID)
 			}
 			for i := range nodes {
-				nodes[i].Edges.Statement = n
+				nodes[i].Edges.Dsse = n
 			}
 		}
 	}
@@ -481,7 +414,7 @@ func (sq *SubjectQuery) sqlAll(ctx context.Context) ([]*Subject, error) {
 	return nodes, nil
 }
 
-func (sq *SubjectQuery) sqlCount(ctx context.Context) (int, error) {
+func (sq *SignatureQuery) sqlCount(ctx context.Context) (int, error) {
 	_spec := sq.querySpec()
 	_spec.Node.Columns = sq.fields
 	if len(sq.fields) > 0 {
@@ -490,7 +423,7 @@ func (sq *SubjectQuery) sqlCount(ctx context.Context) (int, error) {
 	return sqlgraph.CountNodes(ctx, sq.driver, _spec)
 }
 
-func (sq *SubjectQuery) sqlExist(ctx context.Context) (bool, error) {
+func (sq *SignatureQuery) sqlExist(ctx context.Context) (bool, error) {
 	n, err := sq.sqlCount(ctx)
 	if err != nil {
 		return false, fmt.Errorf("ent: check existence: %w", err)
@@ -498,14 +431,14 @@ func (sq *SubjectQuery) sqlExist(ctx context.Context) (bool, error) {
 	return n > 0, nil
 }
 
-func (sq *SubjectQuery) querySpec() *sqlgraph.QuerySpec {
+func (sq *SignatureQuery) querySpec() *sqlgraph.QuerySpec {
 	_spec := &sqlgraph.QuerySpec{
 		Node: &sqlgraph.NodeSpec{
-			Table:   subject.Table,
-			Columns: subject.Columns,
+			Table:   signature.Table,
+			Columns: signature.Columns,
 			ID: &sqlgraph.FieldSpec{
 				Type:   field.TypeInt,
-				Column: subject.FieldID,
+				Column: signature.FieldID,
 			},
 		},
 		From:   sq.sql,
@@ -516,9 +449,9 @@ func (sq *SubjectQuery) querySpec() *sqlgraph.QuerySpec {
 	}
 	if fields := sq.fields; len(fields) > 0 {
 		_spec.Node.Columns = make([]string, 0, len(fields))
-		_spec.Node.Columns = append(_spec.Node.Columns, subject.FieldID)
+		_spec.Node.Columns = append(_spec.Node.Columns, signature.FieldID)
 		for i := range fields {
-			if fields[i] != subject.FieldID {
+			if fields[i] != signature.FieldID {
 				_spec.Node.Columns = append(_spec.Node.Columns, fields[i])
 			}
 		}
@@ -546,12 +479,12 @@ func (sq *SubjectQuery) querySpec() *sqlgraph.QuerySpec {
 	return _spec
 }
 
-func (sq *SubjectQuery) sqlQuery(ctx context.Context) *sql.Selector {
+func (sq *SignatureQuery) sqlQuery(ctx context.Context) *sql.Selector {
 	builder := sql.Dialect(sq.driver.Dialect())
-	t1 := builder.Table(subject.Table)
+	t1 := builder.Table(signature.Table)
 	columns := sq.fields
 	if len(columns) == 0 {
-		columns = subject.Columns
+		columns = signature.Columns
 	}
 	selector := builder.Select(t1.Columns(columns...)...).From(t1)
 	if sq.sql != nil {
@@ -578,8 +511,8 @@ func (sq *SubjectQuery) sqlQuery(ctx context.Context) *sql.Selector {
 	return selector
 }
 
-// SubjectGroupBy is the group-by builder for Subject entities.
-type SubjectGroupBy struct {
+// SignatureGroupBy is the group-by builder for Signature entities.
+type SignatureGroupBy struct {
 	config
 	fields []string
 	fns    []AggregateFunc
@@ -589,13 +522,13 @@ type SubjectGroupBy struct {
 }
 
 // Aggregate adds the given aggregation functions to the group-by query.
-func (sgb *SubjectGroupBy) Aggregate(fns ...AggregateFunc) *SubjectGroupBy {
+func (sgb *SignatureGroupBy) Aggregate(fns ...AggregateFunc) *SignatureGroupBy {
 	sgb.fns = append(sgb.fns, fns...)
 	return sgb
 }
 
 // Scan applies the group-by query and scans the result into the given value.
-func (sgb *SubjectGroupBy) Scan(ctx context.Context, v interface{}) error {
+func (sgb *SignatureGroupBy) Scan(ctx context.Context, v interface{}) error {
 	query, err := sgb.path(ctx)
 	if err != nil {
 		return err
@@ -605,7 +538,7 @@ func (sgb *SubjectGroupBy) Scan(ctx context.Context, v interface{}) error {
 }
 
 // ScanX is like Scan, but panics if an error occurs.
-func (sgb *SubjectGroupBy) ScanX(ctx context.Context, v interface{}) {
+func (sgb *SignatureGroupBy) ScanX(ctx context.Context, v interface{}) {
 	if err := sgb.Scan(ctx, v); err != nil {
 		panic(err)
 	}
@@ -613,9 +546,9 @@ func (sgb *SubjectGroupBy) ScanX(ctx context.Context, v interface{}) {
 
 // Strings returns list of strings from group-by.
 // It is only allowed when executing a group-by query with one field.
-func (sgb *SubjectGroupBy) Strings(ctx context.Context) ([]string, error) {
+func (sgb *SignatureGroupBy) Strings(ctx context.Context) ([]string, error) {
 	if len(sgb.fields) > 1 {
-		return nil, errors.New("ent: SubjectGroupBy.Strings is not achievable when grouping more than 1 field")
+		return nil, errors.New("ent: SignatureGroupBy.Strings is not achievable when grouping more than 1 field")
 	}
 	var v []string
 	if err := sgb.Scan(ctx, &v); err != nil {
@@ -625,7 +558,7 @@ func (sgb *SubjectGroupBy) Strings(ctx context.Context) ([]string, error) {
 }
 
 // StringsX is like Strings, but panics if an error occurs.
-func (sgb *SubjectGroupBy) StringsX(ctx context.Context) []string {
+func (sgb *SignatureGroupBy) StringsX(ctx context.Context) []string {
 	v, err := sgb.Strings(ctx)
 	if err != nil {
 		panic(err)
@@ -635,7 +568,7 @@ func (sgb *SubjectGroupBy) StringsX(ctx context.Context) []string {
 
 // String returns a single string from a group-by query.
 // It is only allowed when executing a group-by query with one field.
-func (sgb *SubjectGroupBy) String(ctx context.Context) (_ string, err error) {
+func (sgb *SignatureGroupBy) String(ctx context.Context) (_ string, err error) {
 	var v []string
 	if v, err = sgb.Strings(ctx); err != nil {
 		return
@@ -644,15 +577,15 @@ func (sgb *SubjectGroupBy) String(ctx context.Context) (_ string, err error) {
 	case 1:
 		return v[0], nil
 	case 0:
-		err = &NotFoundError{subject.Label}
+		err = &NotFoundError{signature.Label}
 	default:
-		err = fmt.Errorf("ent: SubjectGroupBy.Strings returned %d results when one was expected", len(v))
+		err = fmt.Errorf("ent: SignatureGroupBy.Strings returned %d results when one was expected", len(v))
 	}
 	return
 }
 
 // StringX is like String, but panics if an error occurs.
-func (sgb *SubjectGroupBy) StringX(ctx context.Context) string {
+func (sgb *SignatureGroupBy) StringX(ctx context.Context) string {
 	v, err := sgb.String(ctx)
 	if err != nil {
 		panic(err)
@@ -662,9 +595,9 @@ func (sgb *SubjectGroupBy) StringX(ctx context.Context) string {
 
 // Ints returns list of ints from group-by.
 // It is only allowed when executing a group-by query with one field.
-func (sgb *SubjectGroupBy) Ints(ctx context.Context) ([]int, error) {
+func (sgb *SignatureGroupBy) Ints(ctx context.Context) ([]int, error) {
 	if len(sgb.fields) > 1 {
-		return nil, errors.New("ent: SubjectGroupBy.Ints is not achievable when grouping more than 1 field")
+		return nil, errors.New("ent: SignatureGroupBy.Ints is not achievable when grouping more than 1 field")
 	}
 	var v []int
 	if err := sgb.Scan(ctx, &v); err != nil {
@@ -674,7 +607,7 @@ func (sgb *SubjectGroupBy) Ints(ctx context.Context) ([]int, error) {
 }
 
 // IntsX is like Ints, but panics if an error occurs.
-func (sgb *SubjectGroupBy) IntsX(ctx context.Context) []int {
+func (sgb *SignatureGroupBy) IntsX(ctx context.Context) []int {
 	v, err := sgb.Ints(ctx)
 	if err != nil {
 		panic(err)
@@ -684,7 +617,7 @@ func (sgb *SubjectGroupBy) IntsX(ctx context.Context) []int {
 
 // Int returns a single int from a group-by query.
 // It is only allowed when executing a group-by query with one field.
-func (sgb *SubjectGroupBy) Int(ctx context.Context) (_ int, err error) {
+func (sgb *SignatureGroupBy) Int(ctx context.Context) (_ int, err error) {
 	var v []int
 	if v, err = sgb.Ints(ctx); err != nil {
 		return
@@ -693,15 +626,15 @@ func (sgb *SubjectGroupBy) Int(ctx context.Context) (_ int, err error) {
 	case 1:
 		return v[0], nil
 	case 0:
-		err = &NotFoundError{subject.Label}
+		err = &NotFoundError{signature.Label}
 	default:
-		err = fmt.Errorf("ent: SubjectGroupBy.Ints returned %d results when one was expected", len(v))
+		err = fmt.Errorf("ent: SignatureGroupBy.Ints returned %d results when one was expected", len(v))
 	}
 	return
 }
 
 // IntX is like Int, but panics if an error occurs.
-func (sgb *SubjectGroupBy) IntX(ctx context.Context) int {
+func (sgb *SignatureGroupBy) IntX(ctx context.Context) int {
 	v, err := sgb.Int(ctx)
 	if err != nil {
 		panic(err)
@@ -711,9 +644,9 @@ func (sgb *SubjectGroupBy) IntX(ctx context.Context) int {
 
 // Float64s returns list of float64s from group-by.
 // It is only allowed when executing a group-by query with one field.
-func (sgb *SubjectGroupBy) Float64s(ctx context.Context) ([]float64, error) {
+func (sgb *SignatureGroupBy) Float64s(ctx context.Context) ([]float64, error) {
 	if len(sgb.fields) > 1 {
-		return nil, errors.New("ent: SubjectGroupBy.Float64s is not achievable when grouping more than 1 field")
+		return nil, errors.New("ent: SignatureGroupBy.Float64s is not achievable when grouping more than 1 field")
 	}
 	var v []float64
 	if err := sgb.Scan(ctx, &v); err != nil {
@@ -723,7 +656,7 @@ func (sgb *SubjectGroupBy) Float64s(ctx context.Context) ([]float64, error) {
 }
 
 // Float64sX is like Float64s, but panics if an error occurs.
-func (sgb *SubjectGroupBy) Float64sX(ctx context.Context) []float64 {
+func (sgb *SignatureGroupBy) Float64sX(ctx context.Context) []float64 {
 	v, err := sgb.Float64s(ctx)
 	if err != nil {
 		panic(err)
@@ -733,7 +666,7 @@ func (sgb *SubjectGroupBy) Float64sX(ctx context.Context) []float64 {
 
 // Float64 returns a single float64 from a group-by query.
 // It is only allowed when executing a group-by query with one field.
-func (sgb *SubjectGroupBy) Float64(ctx context.Context) (_ float64, err error) {
+func (sgb *SignatureGroupBy) Float64(ctx context.Context) (_ float64, err error) {
 	var v []float64
 	if v, err = sgb.Float64s(ctx); err != nil {
 		return
@@ -742,15 +675,15 @@ func (sgb *SubjectGroupBy) Float64(ctx context.Context) (_ float64, err error) {
 	case 1:
 		return v[0], nil
 	case 0:
-		err = &NotFoundError{subject.Label}
+		err = &NotFoundError{signature.Label}
 	default:
-		err = fmt.Errorf("ent: SubjectGroupBy.Float64s returned %d results when one was expected", len(v))
+		err = fmt.Errorf("ent: SignatureGroupBy.Float64s returned %d results when one was expected", len(v))
 	}
 	return
 }
 
 // Float64X is like Float64, but panics if an error occurs.
-func (sgb *SubjectGroupBy) Float64X(ctx context.Context) float64 {
+func (sgb *SignatureGroupBy) Float64X(ctx context.Context) float64 {
 	v, err := sgb.Float64(ctx)
 	if err != nil {
 		panic(err)
@@ -760,9 +693,9 @@ func (sgb *SubjectGroupBy) Float64X(ctx context.Context) float64 {
 
 // Bools returns list of bools from group-by.
 // It is only allowed when executing a group-by query with one field.
-func (sgb *SubjectGroupBy) Bools(ctx context.Context) ([]bool, error) {
+func (sgb *SignatureGroupBy) Bools(ctx context.Context) ([]bool, error) {
 	if len(sgb.fields) > 1 {
-		return nil, errors.New("ent: SubjectGroupBy.Bools is not achievable when grouping more than 1 field")
+		return nil, errors.New("ent: SignatureGroupBy.Bools is not achievable when grouping more than 1 field")
 	}
 	var v []bool
 	if err := sgb.Scan(ctx, &v); err != nil {
@@ -772,7 +705,7 @@ func (sgb *SubjectGroupBy) Bools(ctx context.Context) ([]bool, error) {
 }
 
 // BoolsX is like Bools, but panics if an error occurs.
-func (sgb *SubjectGroupBy) BoolsX(ctx context.Context) []bool {
+func (sgb *SignatureGroupBy) BoolsX(ctx context.Context) []bool {
 	v, err := sgb.Bools(ctx)
 	if err != nil {
 		panic(err)
@@ -782,7 +715,7 @@ func (sgb *SubjectGroupBy) BoolsX(ctx context.Context) []bool {
 
 // Bool returns a single bool from a group-by query.
 // It is only allowed when executing a group-by query with one field.
-func (sgb *SubjectGroupBy) Bool(ctx context.Context) (_ bool, err error) {
+func (sgb *SignatureGroupBy) Bool(ctx context.Context) (_ bool, err error) {
 	var v []bool
 	if v, err = sgb.Bools(ctx); err != nil {
 		return
@@ -791,15 +724,15 @@ func (sgb *SubjectGroupBy) Bool(ctx context.Context) (_ bool, err error) {
 	case 1:
 		return v[0], nil
 	case 0:
-		err = &NotFoundError{subject.Label}
+		err = &NotFoundError{signature.Label}
 	default:
-		err = fmt.Errorf("ent: SubjectGroupBy.Bools returned %d results when one was expected", len(v))
+		err = fmt.Errorf("ent: SignatureGroupBy.Bools returned %d results when one was expected", len(v))
 	}
 	return
 }
 
 // BoolX is like Bool, but panics if an error occurs.
-func (sgb *SubjectGroupBy) BoolX(ctx context.Context) bool {
+func (sgb *SignatureGroupBy) BoolX(ctx context.Context) bool {
 	v, err := sgb.Bool(ctx)
 	if err != nil {
 		panic(err)
@@ -807,9 +740,9 @@ func (sgb *SubjectGroupBy) BoolX(ctx context.Context) bool {
 	return v
 }
 
-func (sgb *SubjectGroupBy) sqlScan(ctx context.Context, v interface{}) error {
+func (sgb *SignatureGroupBy) sqlScan(ctx context.Context, v interface{}) error {
 	for _, f := range sgb.fields {
-		if !subject.ValidColumn(f) {
+		if !signature.ValidColumn(f) {
 			return &ValidationError{Name: f, err: fmt.Errorf("invalid field %q for group-by", f)}
 		}
 	}
@@ -826,7 +759,7 @@ func (sgb *SubjectGroupBy) sqlScan(ctx context.Context, v interface{}) error {
 	return sql.ScanSlice(rows, v)
 }
 
-func (sgb *SubjectGroupBy) sqlQuery() *sql.Selector {
+func (sgb *SignatureGroupBy) sqlQuery() *sql.Selector {
 	selector := sgb.sql.Select()
 	aggregation := make([]string, 0, len(sgb.fns))
 	for _, fn := range sgb.fns {
@@ -845,33 +778,33 @@ func (sgb *SubjectGroupBy) sqlQuery() *sql.Selector {
 	return selector.GroupBy(selector.Columns(sgb.fields...)...)
 }
 
-// SubjectSelect is the builder for selecting fields of Subject entities.
-type SubjectSelect struct {
-	*SubjectQuery
+// SignatureSelect is the builder for selecting fields of Signature entities.
+type SignatureSelect struct {
+	*SignatureQuery
 	// intermediate query (i.e. traversal path).
 	sql *sql.Selector
 }
 
 // Scan applies the selector query and scans the result into the given value.
-func (ss *SubjectSelect) Scan(ctx context.Context, v interface{}) error {
+func (ss *SignatureSelect) Scan(ctx context.Context, v interface{}) error {
 	if err := ss.prepareQuery(ctx); err != nil {
 		return err
 	}
-	ss.sql = ss.SubjectQuery.sqlQuery(ctx)
+	ss.sql = ss.SignatureQuery.sqlQuery(ctx)
 	return ss.sqlScan(ctx, v)
 }
 
 // ScanX is like Scan, but panics if an error occurs.
-func (ss *SubjectSelect) ScanX(ctx context.Context, v interface{}) {
+func (ss *SignatureSelect) ScanX(ctx context.Context, v interface{}) {
 	if err := ss.Scan(ctx, v); err != nil {
 		panic(err)
 	}
 }
 
 // Strings returns list of strings from a selector. It is only allowed when selecting one field.
-func (ss *SubjectSelect) Strings(ctx context.Context) ([]string, error) {
+func (ss *SignatureSelect) Strings(ctx context.Context) ([]string, error) {
 	if len(ss.fields) > 1 {
-		return nil, errors.New("ent: SubjectSelect.Strings is not achievable when selecting more than 1 field")
+		return nil, errors.New("ent: SignatureSelect.Strings is not achievable when selecting more than 1 field")
 	}
 	var v []string
 	if err := ss.Scan(ctx, &v); err != nil {
@@ -881,7 +814,7 @@ func (ss *SubjectSelect) Strings(ctx context.Context) ([]string, error) {
 }
 
 // StringsX is like Strings, but panics if an error occurs.
-func (ss *SubjectSelect) StringsX(ctx context.Context) []string {
+func (ss *SignatureSelect) StringsX(ctx context.Context) []string {
 	v, err := ss.Strings(ctx)
 	if err != nil {
 		panic(err)
@@ -890,7 +823,7 @@ func (ss *SubjectSelect) StringsX(ctx context.Context) []string {
 }
 
 // String returns a single string from a selector. It is only allowed when selecting one field.
-func (ss *SubjectSelect) String(ctx context.Context) (_ string, err error) {
+func (ss *SignatureSelect) String(ctx context.Context) (_ string, err error) {
 	var v []string
 	if v, err = ss.Strings(ctx); err != nil {
 		return
@@ -899,15 +832,15 @@ func (ss *SubjectSelect) String(ctx context.Context) (_ string, err error) {
 	case 1:
 		return v[0], nil
 	case 0:
-		err = &NotFoundError{subject.Label}
+		err = &NotFoundError{signature.Label}
 	default:
-		err = fmt.Errorf("ent: SubjectSelect.Strings returned %d results when one was expected", len(v))
+		err = fmt.Errorf("ent: SignatureSelect.Strings returned %d results when one was expected", len(v))
 	}
 	return
 }
 
 // StringX is like String, but panics if an error occurs.
-func (ss *SubjectSelect) StringX(ctx context.Context) string {
+func (ss *SignatureSelect) StringX(ctx context.Context) string {
 	v, err := ss.String(ctx)
 	if err != nil {
 		panic(err)
@@ -916,9 +849,9 @@ func (ss *SubjectSelect) StringX(ctx context.Context) string {
 }
 
 // Ints returns list of ints from a selector. It is only allowed when selecting one field.
-func (ss *SubjectSelect) Ints(ctx context.Context) ([]int, error) {
+func (ss *SignatureSelect) Ints(ctx context.Context) ([]int, error) {
 	if len(ss.fields) > 1 {
-		return nil, errors.New("ent: SubjectSelect.Ints is not achievable when selecting more than 1 field")
+		return nil, errors.New("ent: SignatureSelect.Ints is not achievable when selecting more than 1 field")
 	}
 	var v []int
 	if err := ss.Scan(ctx, &v); err != nil {
@@ -928,7 +861,7 @@ func (ss *SubjectSelect) Ints(ctx context.Context) ([]int, error) {
 }
 
 // IntsX is like Ints, but panics if an error occurs.
-func (ss *SubjectSelect) IntsX(ctx context.Context) []int {
+func (ss *SignatureSelect) IntsX(ctx context.Context) []int {
 	v, err := ss.Ints(ctx)
 	if err != nil {
 		panic(err)
@@ -937,7 +870,7 @@ func (ss *SubjectSelect) IntsX(ctx context.Context) []int {
 }
 
 // Int returns a single int from a selector. It is only allowed when selecting one field.
-func (ss *SubjectSelect) Int(ctx context.Context) (_ int, err error) {
+func (ss *SignatureSelect) Int(ctx context.Context) (_ int, err error) {
 	var v []int
 	if v, err = ss.Ints(ctx); err != nil {
 		return
@@ -946,15 +879,15 @@ func (ss *SubjectSelect) Int(ctx context.Context) (_ int, err error) {
 	case 1:
 		return v[0], nil
 	case 0:
-		err = &NotFoundError{subject.Label}
+		err = &NotFoundError{signature.Label}
 	default:
-		err = fmt.Errorf("ent: SubjectSelect.Ints returned %d results when one was expected", len(v))
+		err = fmt.Errorf("ent: SignatureSelect.Ints returned %d results when one was expected", len(v))
 	}
 	return
 }
 
 // IntX is like Int, but panics if an error occurs.
-func (ss *SubjectSelect) IntX(ctx context.Context) int {
+func (ss *SignatureSelect) IntX(ctx context.Context) int {
 	v, err := ss.Int(ctx)
 	if err != nil {
 		panic(err)
@@ -963,9 +896,9 @@ func (ss *SubjectSelect) IntX(ctx context.Context) int {
 }
 
 // Float64s returns list of float64s from a selector. It is only allowed when selecting one field.
-func (ss *SubjectSelect) Float64s(ctx context.Context) ([]float64, error) {
+func (ss *SignatureSelect) Float64s(ctx context.Context) ([]float64, error) {
 	if len(ss.fields) > 1 {
-		return nil, errors.New("ent: SubjectSelect.Float64s is not achievable when selecting more than 1 field")
+		return nil, errors.New("ent: SignatureSelect.Float64s is not achievable when selecting more than 1 field")
 	}
 	var v []float64
 	if err := ss.Scan(ctx, &v); err != nil {
@@ -975,7 +908,7 @@ func (ss *SubjectSelect) Float64s(ctx context.Context) ([]float64, error) {
 }
 
 // Float64sX is like Float64s, but panics if an error occurs.
-func (ss *SubjectSelect) Float64sX(ctx context.Context) []float64 {
+func (ss *SignatureSelect) Float64sX(ctx context.Context) []float64 {
 	v, err := ss.Float64s(ctx)
 	if err != nil {
 		panic(err)
@@ -984,7 +917,7 @@ func (ss *SubjectSelect) Float64sX(ctx context.Context) []float64 {
 }
 
 // Float64 returns a single float64 from a selector. It is only allowed when selecting one field.
-func (ss *SubjectSelect) Float64(ctx context.Context) (_ float64, err error) {
+func (ss *SignatureSelect) Float64(ctx context.Context) (_ float64, err error) {
 	var v []float64
 	if v, err = ss.Float64s(ctx); err != nil {
 		return
@@ -993,15 +926,15 @@ func (ss *SubjectSelect) Float64(ctx context.Context) (_ float64, err error) {
 	case 1:
 		return v[0], nil
 	case 0:
-		err = &NotFoundError{subject.Label}
+		err = &NotFoundError{signature.Label}
 	default:
-		err = fmt.Errorf("ent: SubjectSelect.Float64s returned %d results when one was expected", len(v))
+		err = fmt.Errorf("ent: SignatureSelect.Float64s returned %d results when one was expected", len(v))
 	}
 	return
 }
 
 // Float64X is like Float64, but panics if an error occurs.
-func (ss *SubjectSelect) Float64X(ctx context.Context) float64 {
+func (ss *SignatureSelect) Float64X(ctx context.Context) float64 {
 	v, err := ss.Float64(ctx)
 	if err != nil {
 		panic(err)
@@ -1010,9 +943,9 @@ func (ss *SubjectSelect) Float64X(ctx context.Context) float64 {
 }
 
 // Bools returns list of bools from a selector. It is only allowed when selecting one field.
-func (ss *SubjectSelect) Bools(ctx context.Context) ([]bool, error) {
+func (ss *SignatureSelect) Bools(ctx context.Context) ([]bool, error) {
 	if len(ss.fields) > 1 {
-		return nil, errors.New("ent: SubjectSelect.Bools is not achievable when selecting more than 1 field")
+		return nil, errors.New("ent: SignatureSelect.Bools is not achievable when selecting more than 1 field")
 	}
 	var v []bool
 	if err := ss.Scan(ctx, &v); err != nil {
@@ -1022,7 +955,7 @@ func (ss *SubjectSelect) Bools(ctx context.Context) ([]bool, error) {
 }
 
 // BoolsX is like Bools, but panics if an error occurs.
-func (ss *SubjectSelect) BoolsX(ctx context.Context) []bool {
+func (ss *SignatureSelect) BoolsX(ctx context.Context) []bool {
 	v, err := ss.Bools(ctx)
 	if err != nil {
 		panic(err)
@@ -1031,7 +964,7 @@ func (ss *SubjectSelect) BoolsX(ctx context.Context) []bool {
 }
 
 // Bool returns a single bool from a selector. It is only allowed when selecting one field.
-func (ss *SubjectSelect) Bool(ctx context.Context) (_ bool, err error) {
+func (ss *SignatureSelect) Bool(ctx context.Context) (_ bool, err error) {
 	var v []bool
 	if v, err = ss.Bools(ctx); err != nil {
 		return
@@ -1040,15 +973,15 @@ func (ss *SubjectSelect) Bool(ctx context.Context) (_ bool, err error) {
 	case 1:
 		return v[0], nil
 	case 0:
-		err = &NotFoundError{subject.Label}
+		err = &NotFoundError{signature.Label}
 	default:
-		err = fmt.Errorf("ent: SubjectSelect.Bools returned %d results when one was expected", len(v))
+		err = fmt.Errorf("ent: SignatureSelect.Bools returned %d results when one was expected", len(v))
 	}
 	return
 }
 
 // BoolX is like Bool, but panics if an error occurs.
-func (ss *SubjectSelect) BoolX(ctx context.Context) bool {
+func (ss *SignatureSelect) BoolX(ctx context.Context) bool {
 	v, err := ss.Bool(ctx)
 	if err != nil {
 		panic(err)
@@ -1056,7 +989,7 @@ func (ss *SubjectSelect) BoolX(ctx context.Context) bool {
 	return v
 }
 
-func (ss *SubjectSelect) sqlScan(ctx context.Context, v interface{}) error {
+func (ss *SignatureSelect) sqlScan(ctx context.Context, v interface{}) error {
 	rows := &sql.Rows{}
 	query, args := ss.sql.Query()
 	if err := ss.driver.Query(ctx, query, args, rows); err != nil {

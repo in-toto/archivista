@@ -16,8 +16,8 @@ type Tx struct {
 	Digest *DigestClient
 	// Dsse is the client for interacting with the Dsse builders.
 	Dsse *DsseClient
-	// DsseSignature is the client for interacting with the DsseSignature builders.
-	DsseSignature *DsseSignatureClient
+	// Signature is the client for interacting with the Signature builders.
+	Signature *SignatureClient
 	// Statement is the client for interacting with the Statement builders.
 	Statement *StatementClient
 	// Subject is the client for interacting with the Subject builders.
@@ -159,7 +159,7 @@ func (tx *Tx) Client() *Client {
 func (tx *Tx) init() {
 	tx.Digest = NewDigestClient(tx.config)
 	tx.Dsse = NewDsseClient(tx.config)
-	tx.DsseSignature = NewDsseSignatureClient(tx.config)
+	tx.Signature = NewSignatureClient(tx.config)
 	tx.Statement = NewStatementClient(tx.config)
 	tx.Subject = NewSubjectClient(tx.config)
 }

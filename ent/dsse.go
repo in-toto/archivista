@@ -30,9 +30,11 @@ type Dsse struct {
 type DsseEdges struct {
 	// Statement holds the value of the statement edge.
 	Statement *Statement `json:"statement,omitempty"`
+	// Signatures holds the value of the signatures edge.
+	Signatures []*Signature `json:"signatures,omitempty"`
 	// loadedTypes holds the information for reporting if a
 	// type was loaded (or requested) in eager-loading or not.
-	loadedTypes [1]bool
+	loadedTypes [2]bool
 }
 
 // StatementOrErr returns the Statement value or an error if the edge
@@ -47,6 +49,15 @@ func (e DsseEdges) StatementOrErr() (*Statement, error) {
 		return e.Statement, nil
 	}
 	return nil, &NotLoadedError{edge: "statement"}
+}
+
+// SignaturesOrErr returns the Signatures value or an error if the edge
+// was not loaded in eager-loading.
+func (e DsseEdges) SignaturesOrErr() ([]*Signature, error) {
+	if e.loadedTypes[1] {
+		return e.Signatures, nil
+	}
+	return nil, &NotLoadedError{edge: "signatures"}
 }
 
 // scanValues returns the types for scanning values from sql.Rows.
@@ -108,6 +119,11 @@ func (d *Dsse) assignValues(columns []string, values []interface{}) error {
 // QueryStatement queries the "statement" edge of the Dsse entity.
 func (d *Dsse) QueryStatement() *StatementQuery {
 	return (&DsseClient{config: d.config}).QueryStatement(d)
+}
+
+// QuerySignatures queries the "signatures" edge of the Dsse entity.
+func (d *Dsse) QuerySignatures() *SignatureQuery {
+	return (&DsseClient{config: d.config}).QuerySignatures(d)
 }
 
 // Update returns a builder for updating this Dsse.

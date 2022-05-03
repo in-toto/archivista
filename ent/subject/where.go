@@ -243,7 +243,7 @@ func HasStatement() predicate.Subject {
 		step := sqlgraph.NewStep(
 			sqlgraph.From(Table, FieldID),
 			sqlgraph.To(StatementTable, FieldID),
-			sqlgraph.Edge(sqlgraph.M2M, true, StatementTable, StatementPrimaryKey...),
+			sqlgraph.Edge(sqlgraph.M2O, true, StatementTable, StatementColumn),
 		)
 		sqlgraph.HasNeighbors(s, step)
 	})
@@ -255,7 +255,7 @@ func HasStatementWith(preds ...predicate.Statement) predicate.Subject {
 		step := sqlgraph.NewStep(
 			sqlgraph.From(Table, FieldID),
 			sqlgraph.To(StatementInverseTable, FieldID),
-			sqlgraph.Edge(sqlgraph.M2M, true, StatementTable, StatementPrimaryKey...),
+			sqlgraph.Edge(sqlgraph.M2O, true, StatementTable, StatementColumn),
 		)
 		sqlgraph.HasNeighborsWith(s, step, func(s *sql.Selector) {
 			for _, p := range preds {

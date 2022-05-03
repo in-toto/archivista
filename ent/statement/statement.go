@@ -13,11 +13,13 @@ const (
 	EdgeDsse = "dsse"
 	// Table holds the table name of the statement in the database.
 	Table = "statements"
-	// SubjectsTable is the table that holds the subjects relation/edge. The primary key declared below.
-	SubjectsTable = "statement_subjects"
+	// SubjectsTable is the table that holds the subjects relation/edge.
+	SubjectsTable = "subjects"
 	// SubjectsInverseTable is the table name for the Subject entity.
 	// It exists in this package in order to avoid circular dependency with the "subject" package.
 	SubjectsInverseTable = "subjects"
+	// SubjectsColumn is the table column denoting the subjects relation/edge.
+	SubjectsColumn = "statement_subjects"
 	// DsseTable is the table that holds the dsse relation/edge.
 	DsseTable = "dsses"
 	// DsseInverseTable is the table name for the Dsse entity.
@@ -31,12 +33,6 @@ const (
 var Columns = []string{
 	FieldID,
 }
-
-var (
-	// SubjectsPrimaryKey and SubjectsColumn2 are the table columns denoting the
-	// primary key for the subjects relation (M2M).
-	SubjectsPrimaryKey = []string{"statement_id", "subject_id"}
-)
 
 // ValidColumn reports if the column name is valid (part of the table columns).
 func ValidColumn(column string) bool {

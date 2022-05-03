@@ -17,6 +17,7 @@ package mysqlstore
 import (
 	"ariga.io/sqlcomment"
 	"context"
+	"encoding/base64"
 	"encoding/json"
 	"fmt"
 	"github.com/git-bom/gitbom-go"
@@ -103,10 +104,8 @@ func (s *store) GetBySubjectDigest(ctx context.Context, request *archivist.GetBy
 
 	results := make([]string, 0)
 	for _, curDigest := range res {
-		for _, curStatement := range curDigest.Edges.Subject.Edges.Statement {
-			for _, curDsse := range curStatement.Edges.Dsse {
-				results = append(results, curDsse.GitbomSha256)
-			}
+		for _, curDsse := range curDigest.Edges.Subject.Edges.Statement.Edges.Dsse {
+			results = append(results, curDsse.GitbomSha256)
 		}
 	}
 
@@ -145,6 +144,17 @@ func (s *store) Store(ctx context.Context, request *archivist.StoreRequest) (*em
 		return nil, err
 	}
 
+	for _, sig := range envelope.Signatures {
+		_, err = tx.Signature.Create().
+			SetKeyID(sig.KeyID).
+			SetSignature(base64.StdEncoding.EncodeToString(sig.Signature)).
+			SetDsse(dsse).
+			Save(ctx)
+		if err != nil {
+			return nil, err
+		}
+	}
+
 	stmt, err := tx.Statement.Create().
 		AddDsse(dsse).
 		Save(ctx)
@@ -155,7 +165,7 @@ func (s *store) Store(ctx context.Context, request *archivist.StoreRequest) (*em
 	for _, subject := range payload.Subject {
 		storedSubject, err := tx.Subject.Create().
 			SetName(subject.Name).
-			AddStatement(stmt).
+			SetStatement(stmt).
 			Save(ctx)
 		if err != nil {
 			return nil, err

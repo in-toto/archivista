@@ -35,15 +35,15 @@ func (f DsseFunc) Mutate(ctx context.Context, m ent.Mutation) (ent.Value, error)
 	return f(ctx, mv)
 }
 
-// The DsseSignatureFunc type is an adapter to allow the use of ordinary
-// function as DsseSignature mutator.
-type DsseSignatureFunc func(context.Context, *ent.DsseSignatureMutation) (ent.Value, error)
+// The SignatureFunc type is an adapter to allow the use of ordinary
+// function as Signature mutator.
+type SignatureFunc func(context.Context, *ent.SignatureMutation) (ent.Value, error)
 
 // Mutate calls f(ctx, m).
-func (f DsseSignatureFunc) Mutate(ctx context.Context, m ent.Mutation) (ent.Value, error) {
-	mv, ok := m.(*ent.DsseSignatureMutation)
+func (f SignatureFunc) Mutate(ctx context.Context, m ent.Mutation) (ent.Value, error) {
+	mv, ok := m.(*ent.SignatureMutation)
 	if !ok {
-		return nil, fmt.Errorf("unexpected mutation type %T. expect *ent.DsseSignatureMutation", m)
+		return nil, fmt.Errorf("unexpected mutation type %T. expect *ent.SignatureMutation", m)
 	}
 	return f(ctx, mv)
 }

@@ -12,6 +12,7 @@ import (
 	"entgo.io/ent/schema/field"
 	"github.com/testifysec/archivist/ent/dsse"
 	"github.com/testifysec/archivist/ent/predicate"
+	"github.com/testifysec/archivist/ent/signature"
 	"github.com/testifysec/archivist/ent/statement"
 )
 
@@ -59,6 +60,21 @@ func (du *DsseUpdate) SetStatement(s *Statement) *DsseUpdate {
 	return du.SetStatementID(s.ID)
 }
 
+// AddSignatureIDs adds the "signatures" edge to the Signature entity by IDs.
+func (du *DsseUpdate) AddSignatureIDs(ids ...int) *DsseUpdate {
+	du.mutation.AddSignatureIDs(ids...)
+	return du
+}
+
+// AddSignatures adds the "signatures" edges to the Signature entity.
+func (du *DsseUpdate) AddSignatures(s ...*Signature) *DsseUpdate {
+	ids := make([]int, len(s))
+	for i := range s {
+		ids[i] = s[i].ID
+	}
+	return du.AddSignatureIDs(ids...)
+}
+
 // Mutation returns the DsseMutation object of the builder.
 func (du *DsseUpdate) Mutation() *DsseMutation {
 	return du.mutation
@@ -68,6 +84,27 @@ func (du *DsseUpdate) Mutation() *DsseMutation {
 func (du *DsseUpdate) ClearStatement() *DsseUpdate {
 	du.mutation.ClearStatement()
 	return du
+}
+
+// ClearSignatures clears all "signatures" edges to the Signature entity.
+func (du *DsseUpdate) ClearSignatures() *DsseUpdate {
+	du.mutation.ClearSignatures()
+	return du
+}
+
+// RemoveSignatureIDs removes the "signatures" edge to Signature entities by IDs.
+func (du *DsseUpdate) RemoveSignatureIDs(ids ...int) *DsseUpdate {
+	du.mutation.RemoveSignatureIDs(ids...)
+	return du
+}
+
+// RemoveSignatures removes "signatures" edges to Signature entities.
+func (du *DsseUpdate) RemoveSignatures(s ...*Signature) *DsseUpdate {
+	ids := make([]int, len(s))
+	for i := range s {
+		ids[i] = s[i].ID
+	}
+	return du.RemoveSignatureIDs(ids...)
 }
 
 // Save executes the query and returns the number of nodes affected by the update operation.
@@ -212,6 +249,60 @@ func (du *DsseUpdate) sqlSave(ctx context.Context) (n int, err error) {
 		}
 		_spec.Edges.Add = append(_spec.Edges.Add, edge)
 	}
+	if du.mutation.SignaturesCleared() {
+		edge := &sqlgraph.EdgeSpec{
+			Rel:     sqlgraph.O2M,
+			Inverse: false,
+			Table:   dsse.SignaturesTable,
+			Columns: []string{dsse.SignaturesColumn},
+			Bidi:    false,
+			Target: &sqlgraph.EdgeTarget{
+				IDSpec: &sqlgraph.FieldSpec{
+					Type:   field.TypeInt,
+					Column: signature.FieldID,
+				},
+			},
+		}
+		_spec.Edges.Clear = append(_spec.Edges.Clear, edge)
+	}
+	if nodes := du.mutation.RemovedSignaturesIDs(); len(nodes) > 0 && !du.mutation.SignaturesCleared() {
+		edge := &sqlgraph.EdgeSpec{
+			Rel:     sqlgraph.O2M,
+			Inverse: false,
+			Table:   dsse.SignaturesTable,
+			Columns: []string{dsse.SignaturesColumn},
+			Bidi:    false,
+			Target: &sqlgraph.EdgeTarget{
+				IDSpec: &sqlgraph.FieldSpec{
+					Type:   field.TypeInt,
+					Column: signature.FieldID,
+				},
+			},
+		}
+		for _, k := range nodes {
+			edge.Target.Nodes = append(edge.Target.Nodes, k)
+		}
+		_spec.Edges.Clear = append(_spec.Edges.Clear, edge)
+	}
+	if nodes := du.mutation.SignaturesIDs(); len(nodes) > 0 {
+		edge := &sqlgraph.EdgeSpec{
+			Rel:     sqlgraph.O2M,
+			Inverse: false,
+			Table:   dsse.SignaturesTable,
+			Columns: []string{dsse.SignaturesColumn},
+			Bidi:    false,
+			Target: &sqlgraph.EdgeTarget{
+				IDSpec: &sqlgraph.FieldSpec{
+					Type:   field.TypeInt,
+					Column: signature.FieldID,
+				},
+			},
+		}
+		for _, k := range nodes {
+			edge.Target.Nodes = append(edge.Target.Nodes, k)
+		}
+		_spec.Edges.Add = append(_spec.Edges.Add, edge)
+	}
 	if n, err = sqlgraph.UpdateNodes(ctx, du.driver, _spec); err != nil {
 		if _, ok := err.(*sqlgraph.NotFoundError); ok {
 			err = &NotFoundError{dsse.Label}
@@ -262,6 +353,21 @@ func (duo *DsseUpdateOne) SetStatement(s *Statement) *DsseUpdateOne {
 	return duo.SetStatementID(s.ID)
 }
 
+// AddSignatureIDs adds the "signatures" edge to the Signature entity by IDs.
+func (duo *DsseUpdateOne) AddSignatureIDs(ids ...int) *DsseUpdateOne {
+	duo.mutation.AddSignatureIDs(ids...)
+	return duo
+}
+
+// AddSignatures adds the "signatures" edges to the Signature entity.
+func (duo *DsseUpdateOne) AddSignatures(s ...*Signature) *DsseUpdateOne {
+	ids := make([]int, len(s))
+	for i := range s {
+		ids[i] = s[i].ID
+	}
+	return duo.AddSignatureIDs(ids...)
+}
+
 // Mutation returns the DsseMutation object of the builder.
 func (duo *DsseUpdateOne) Mutation() *DsseMutation {
 	return duo.mutation
@@ -271,6 +377,27 @@ func (duo *DsseUpdateOne) Mutation() *DsseMutation {
 func (duo *DsseUpdateOne) ClearStatement() *DsseUpdateOne {
 	duo.mutation.ClearStatement()
 	return duo
+}
+
+// ClearSignatures clears all "signatures" edges to the Signature entity.
+func (duo *DsseUpdateOne) ClearSignatures() *DsseUpdateOne {
+	duo.mutation.ClearSignatures()
+	return duo
+}
+
+// RemoveSignatureIDs removes the "signatures" edge to Signature entities by IDs.
+func (duo *DsseUpdateOne) RemoveSignatureIDs(ids ...int) *DsseUpdateOne {
+	duo.mutation.RemoveSignatureIDs(ids...)
+	return duo
+}
+
+// RemoveSignatures removes "signatures" edges to Signature entities.
+func (duo *DsseUpdateOne) RemoveSignatures(s ...*Signature) *DsseUpdateOne {
+	ids := make([]int, len(s))
+	for i := range s {
+		ids[i] = s[i].ID
+	}
+	return duo.RemoveSignatureIDs(ids...)
 }
 
 // Select allows selecting one or more fields (columns) of the returned entity.
@@ -431,6 +558,60 @@ func (duo *DsseUpdateOne) sqlSave(ctx context.Context) (_node *Dsse, err error) 
 				IDSpec: &sqlgraph.FieldSpec{
 					Type:   field.TypeInt,
 					Column: statement.FieldID,
+				},
+			},
+		}
+		for _, k := range nodes {
+			edge.Target.Nodes = append(edge.Target.Nodes, k)
+		}
+		_spec.Edges.Add = append(_spec.Edges.Add, edge)
+	}
+	if duo.mutation.SignaturesCleared() {
+		edge := &sqlgraph.EdgeSpec{
+			Rel:     sqlgraph.O2M,
+			Inverse: false,
+			Table:   dsse.SignaturesTable,
+			Columns: []string{dsse.SignaturesColumn},
+			Bidi:    false,
+			Target: &sqlgraph.EdgeTarget{
+				IDSpec: &sqlgraph.FieldSpec{
+					Type:   field.TypeInt,
+					Column: signature.FieldID,
+				},
+			},
+		}
+		_spec.Edges.Clear = append(_spec.Edges.Clear, edge)
+	}
+	if nodes := duo.mutation.RemovedSignaturesIDs(); len(nodes) > 0 && !duo.mutation.SignaturesCleared() {
+		edge := &sqlgraph.EdgeSpec{
+			Rel:     sqlgraph.O2M,
+			Inverse: false,
+			Table:   dsse.SignaturesTable,
+			Columns: []string{dsse.SignaturesColumn},
+			Bidi:    false,
+			Target: &sqlgraph.EdgeTarget{
+				IDSpec: &sqlgraph.FieldSpec{
+					Type:   field.TypeInt,
+					Column: signature.FieldID,
+				},
+			},
+		}
+		for _, k := range nodes {
+			edge.Target.Nodes = append(edge.Target.Nodes, k)
+		}
+		_spec.Edges.Clear = append(_spec.Edges.Clear, edge)
+	}
+	if nodes := duo.mutation.SignaturesIDs(); len(nodes) > 0 {
+		edge := &sqlgraph.EdgeSpec{
+			Rel:     sqlgraph.O2M,
+			Inverse: false,
+			Table:   dsse.SignaturesTable,
+			Columns: []string{dsse.SignaturesColumn},
+			Bidi:    false,
+			Target: &sqlgraph.EdgeTarget{
+				IDSpec: &sqlgraph.FieldSpec{
+					Type:   field.TypeInt,
+					Column: signature.FieldID,
 				},
 			},
 		}

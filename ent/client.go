@@ -11,7 +11,7 @@ import (
 
 	"github.com/testifysec/archivist/ent/digest"
 	"github.com/testifysec/archivist/ent/dsse"
-	"github.com/testifysec/archivist/ent/dssesignature"
+	"github.com/testifysec/archivist/ent/signature"
 	"github.com/testifysec/archivist/ent/statement"
 	"github.com/testifysec/archivist/ent/subject"
 
@@ -29,8 +29,8 @@ type Client struct {
 	Digest *DigestClient
 	// Dsse is the client for interacting with the Dsse builders.
 	Dsse *DsseClient
-	// DsseSignature is the client for interacting with the DsseSignature builders.
-	DsseSignature *DsseSignatureClient
+	// Signature is the client for interacting with the Signature builders.
+	Signature *SignatureClient
 	// Statement is the client for interacting with the Statement builders.
 	Statement *StatementClient
 	// Subject is the client for interacting with the Subject builders.
@@ -50,7 +50,7 @@ func (c *Client) init() {
 	c.Schema = migrate.NewSchema(c.driver)
 	c.Digest = NewDigestClient(c.config)
 	c.Dsse = NewDsseClient(c.config)
-	c.DsseSignature = NewDsseSignatureClient(c.config)
+	c.Signature = NewSignatureClient(c.config)
 	c.Statement = NewStatementClient(c.config)
 	c.Subject = NewSubjectClient(c.config)
 }
@@ -84,13 +84,13 @@ func (c *Client) Tx(ctx context.Context) (*Tx, error) {
 	cfg := c.config
 	cfg.driver = tx
 	return &Tx{
-		ctx:           ctx,
-		config:        cfg,
-		Digest:        NewDigestClient(cfg),
-		Dsse:          NewDsseClient(cfg),
-		DsseSignature: NewDsseSignatureClient(cfg),
-		Statement:     NewStatementClient(cfg),
-		Subject:       NewSubjectClient(cfg),
+		ctx:       ctx,
+		config:    cfg,
+		Digest:    NewDigestClient(cfg),
+		Dsse:      NewDsseClient(cfg),
+		Signature: NewSignatureClient(cfg),
+		Statement: NewStatementClient(cfg),
+		Subject:   NewSubjectClient(cfg),
 	}, nil
 }
 
@@ -108,13 +108,13 @@ func (c *Client) BeginTx(ctx context.Context, opts *sql.TxOptions) (*Tx, error) 
 	cfg := c.config
 	cfg.driver = &txDriver{tx: tx, drv: c.driver}
 	return &Tx{
-		ctx:           ctx,
-		config:        cfg,
-		Digest:        NewDigestClient(cfg),
-		Dsse:          NewDsseClient(cfg),
-		DsseSignature: NewDsseSignatureClient(cfg),
-		Statement:     NewStatementClient(cfg),
-		Subject:       NewSubjectClient(cfg),
+		ctx:       ctx,
+		config:    cfg,
+		Digest:    NewDigestClient(cfg),
+		Dsse:      NewDsseClient(cfg),
+		Signature: NewSignatureClient(cfg),
+		Statement: NewStatementClient(cfg),
+		Subject:   NewSubjectClient(cfg),
 	}, nil
 }
 
@@ -146,7 +146,7 @@ func (c *Client) Close() error {
 func (c *Client) Use(hooks ...Hook) {
 	c.Digest.Use(hooks...)
 	c.Dsse.Use(hooks...)
-	c.DsseSignature.Use(hooks...)
+	c.Signature.Use(hooks...)
 	c.Statement.Use(hooks...)
 	c.Subject.Use(hooks...)
 }
@@ -358,89 +358,105 @@ func (c *DsseClient) QueryStatement(d *Dsse) *StatementQuery {
 	return query
 }
 
+// QuerySignatures queries the signatures edge of a Dsse.
+func (c *DsseClient) QuerySignatures(d *Dsse) *SignatureQuery {
+	query := &SignatureQuery{config: c.config}
+	query.path = func(ctx context.Context) (fromV *sql.Selector, _ error) {
+		id := d.ID
+		step := sqlgraph.NewStep(
+			sqlgraph.From(dsse.Table, dsse.FieldID, id),
+			sqlgraph.To(signature.Table, signature.FieldID),
+			sqlgraph.Edge(sqlgraph.O2M, false, dsse.SignaturesTable, dsse.SignaturesColumn),
+		)
+		fromV = sqlgraph.Neighbors(d.driver.Dialect(), step)
+		return fromV, nil
+	}
+	return query
+}
+
 // Hooks returns the client hooks.
 func (c *DsseClient) Hooks() []Hook {
 	return c.hooks.Dsse
 }
 
-// DsseSignatureClient is a client for the DsseSignature schema.
-type DsseSignatureClient struct {
+// SignatureClient is a client for the Signature schema.
+type SignatureClient struct {
 	config
 }
 
-// NewDsseSignatureClient returns a client for the DsseSignature from the given config.
-func NewDsseSignatureClient(c config) *DsseSignatureClient {
-	return &DsseSignatureClient{config: c}
+// NewSignatureClient returns a client for the Signature from the given config.
+func NewSignatureClient(c config) *SignatureClient {
+	return &SignatureClient{config: c}
 }
 
 // Use adds a list of mutation hooks to the hooks stack.
-// A call to `Use(f, g, h)` equals to `dssesignature.Hooks(f(g(h())))`.
-func (c *DsseSignatureClient) Use(hooks ...Hook) {
-	c.hooks.DsseSignature = append(c.hooks.DsseSignature, hooks...)
+// A call to `Use(f, g, h)` equals to `signature.Hooks(f(g(h())))`.
+func (c *SignatureClient) Use(hooks ...Hook) {
+	c.hooks.Signature = append(c.hooks.Signature, hooks...)
 }
 
-// Create returns a create builder for DsseSignature.
-func (c *DsseSignatureClient) Create() *DsseSignatureCreate {
-	mutation := newDsseSignatureMutation(c.config, OpCreate)
-	return &DsseSignatureCreate{config: c.config, hooks: c.Hooks(), mutation: mutation}
+// Create returns a create builder for Signature.
+func (c *SignatureClient) Create() *SignatureCreate {
+	mutation := newSignatureMutation(c.config, OpCreate)
+	return &SignatureCreate{config: c.config, hooks: c.Hooks(), mutation: mutation}
 }
 
-// CreateBulk returns a builder for creating a bulk of DsseSignature entities.
-func (c *DsseSignatureClient) CreateBulk(builders ...*DsseSignatureCreate) *DsseSignatureCreateBulk {
-	return &DsseSignatureCreateBulk{config: c.config, builders: builders}
+// CreateBulk returns a builder for creating a bulk of Signature entities.
+func (c *SignatureClient) CreateBulk(builders ...*SignatureCreate) *SignatureCreateBulk {
+	return &SignatureCreateBulk{config: c.config, builders: builders}
 }
 
-// Update returns an update builder for DsseSignature.
-func (c *DsseSignatureClient) Update() *DsseSignatureUpdate {
-	mutation := newDsseSignatureMutation(c.config, OpUpdate)
-	return &DsseSignatureUpdate{config: c.config, hooks: c.Hooks(), mutation: mutation}
+// Update returns an update builder for Signature.
+func (c *SignatureClient) Update() *SignatureUpdate {
+	mutation := newSignatureMutation(c.config, OpUpdate)
+	return &SignatureUpdate{config: c.config, hooks: c.Hooks(), mutation: mutation}
 }
 
 // UpdateOne returns an update builder for the given entity.
-func (c *DsseSignatureClient) UpdateOne(ds *DsseSignature) *DsseSignatureUpdateOne {
-	mutation := newDsseSignatureMutation(c.config, OpUpdateOne, withDsseSignature(ds))
-	return &DsseSignatureUpdateOne{config: c.config, hooks: c.Hooks(), mutation: mutation}
+func (c *SignatureClient) UpdateOne(s *Signature) *SignatureUpdateOne {
+	mutation := newSignatureMutation(c.config, OpUpdateOne, withSignature(s))
+	return &SignatureUpdateOne{config: c.config, hooks: c.Hooks(), mutation: mutation}
 }
 
 // UpdateOneID returns an update builder for the given id.
-func (c *DsseSignatureClient) UpdateOneID(id int) *DsseSignatureUpdateOne {
-	mutation := newDsseSignatureMutation(c.config, OpUpdateOne, withDsseSignatureID(id))
-	return &DsseSignatureUpdateOne{config: c.config, hooks: c.Hooks(), mutation: mutation}
+func (c *SignatureClient) UpdateOneID(id int) *SignatureUpdateOne {
+	mutation := newSignatureMutation(c.config, OpUpdateOne, withSignatureID(id))
+	return &SignatureUpdateOne{config: c.config, hooks: c.Hooks(), mutation: mutation}
 }
 
-// Delete returns a delete builder for DsseSignature.
-func (c *DsseSignatureClient) Delete() *DsseSignatureDelete {
-	mutation := newDsseSignatureMutation(c.config, OpDelete)
-	return &DsseSignatureDelete{config: c.config, hooks: c.Hooks(), mutation: mutation}
+// Delete returns a delete builder for Signature.
+func (c *SignatureClient) Delete() *SignatureDelete {
+	mutation := newSignatureMutation(c.config, OpDelete)
+	return &SignatureDelete{config: c.config, hooks: c.Hooks(), mutation: mutation}
 }
 
 // DeleteOne returns a delete builder for the given entity.
-func (c *DsseSignatureClient) DeleteOne(ds *DsseSignature) *DsseSignatureDeleteOne {
-	return c.DeleteOneID(ds.ID)
+func (c *SignatureClient) DeleteOne(s *Signature) *SignatureDeleteOne {
+	return c.DeleteOneID(s.ID)
 }
 
 // DeleteOneID returns a delete builder for the given id.
-func (c *DsseSignatureClient) DeleteOneID(id int) *DsseSignatureDeleteOne {
-	builder := c.Delete().Where(dssesignature.ID(id))
+func (c *SignatureClient) DeleteOneID(id int) *SignatureDeleteOne {
+	builder := c.Delete().Where(signature.ID(id))
 	builder.mutation.id = &id
 	builder.mutation.op = OpDeleteOne
-	return &DsseSignatureDeleteOne{builder}
+	return &SignatureDeleteOne{builder}
 }
 
-// Query returns a query builder for DsseSignature.
-func (c *DsseSignatureClient) Query() *DsseSignatureQuery {
-	return &DsseSignatureQuery{
+// Query returns a query builder for Signature.
+func (c *SignatureClient) Query() *SignatureQuery {
+	return &SignatureQuery{
 		config: c.config,
 	}
 }
 
-// Get returns a DsseSignature entity by its id.
-func (c *DsseSignatureClient) Get(ctx context.Context, id int) (*DsseSignature, error) {
-	return c.Query().Where(dssesignature.ID(id)).Only(ctx)
+// Get returns a Signature entity by its id.
+func (c *SignatureClient) Get(ctx context.Context, id int) (*Signature, error) {
+	return c.Query().Where(signature.ID(id)).Only(ctx)
 }
 
 // GetX is like Get, but panics if an error occurs.
-func (c *DsseSignatureClient) GetX(ctx context.Context, id int) *DsseSignature {
+func (c *SignatureClient) GetX(ctx context.Context, id int) *Signature {
 	obj, err := c.Get(ctx, id)
 	if err != nil {
 		panic(err)
@@ -448,9 +464,25 @@ func (c *DsseSignatureClient) GetX(ctx context.Context, id int) *DsseSignature {
 	return obj
 }
 
+// QueryDsse queries the dsse edge of a Signature.
+func (c *SignatureClient) QueryDsse(s *Signature) *DsseQuery {
+	query := &DsseQuery{config: c.config}
+	query.path = func(ctx context.Context) (fromV *sql.Selector, _ error) {
+		id := s.ID
+		step := sqlgraph.NewStep(
+			sqlgraph.From(signature.Table, signature.FieldID, id),
+			sqlgraph.To(dsse.Table, dsse.FieldID),
+			sqlgraph.Edge(sqlgraph.M2O, true, signature.DsseTable, signature.DsseColumn),
+		)
+		fromV = sqlgraph.Neighbors(s.driver.Dialect(), step)
+		return fromV, nil
+	}
+	return query
+}
+
 // Hooks returns the client hooks.
-func (c *DsseSignatureClient) Hooks() []Hook {
-	return c.hooks.DsseSignature
+func (c *SignatureClient) Hooks() []Hook {
+	return c.hooks.Signature
 }
 
 // StatementClient is a client for the Statement schema.
@@ -546,7 +578,7 @@ func (c *StatementClient) QuerySubjects(s *Statement) *SubjectQuery {
 		step := sqlgraph.NewStep(
 			sqlgraph.From(statement.Table, statement.FieldID, id),
 			sqlgraph.To(subject.Table, subject.FieldID),
-			sqlgraph.Edge(sqlgraph.M2M, false, statement.SubjectsTable, statement.SubjectsPrimaryKey...),
+			sqlgraph.Edge(sqlgraph.O2M, false, statement.SubjectsTable, statement.SubjectsColumn),
 		)
 		fromV = sqlgraph.Neighbors(s.driver.Dialect(), step)
 		return fromV, nil
@@ -684,7 +716,7 @@ func (c *SubjectClient) QueryStatement(s *Subject) *StatementQuery {
 		step := sqlgraph.NewStep(
 			sqlgraph.From(subject.Table, subject.FieldID, id),
 			sqlgraph.To(statement.Table, statement.FieldID),
-			sqlgraph.Edge(sqlgraph.M2M, true, subject.StatementTable, subject.StatementPrimaryKey...),
+			sqlgraph.Edge(sqlgraph.M2O, true, subject.StatementTable, subject.StatementColumn),
 		)
 		fromV = sqlgraph.Neighbors(s.driver.Dialect(), step)
 		return fromV, nil

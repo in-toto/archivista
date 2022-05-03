@@ -22,11 +22,13 @@ const (
 	DigestsInverseTable = "digests"
 	// DigestsColumn is the table column denoting the digests relation/edge.
 	DigestsColumn = "subject_digests"
-	// StatementTable is the table that holds the statement relation/edge. The primary key declared below.
-	StatementTable = "statement_subjects"
+	// StatementTable is the table that holds the statement relation/edge.
+	StatementTable = "subjects"
 	// StatementInverseTable is the table name for the Statement entity.
 	// It exists in this package in order to avoid circular dependency with the "statement" package.
 	StatementInverseTable = "statements"
+	// StatementColumn is the table column denoting the statement relation/edge.
+	StatementColumn = "statement_subjects"
 )
 
 // Columns holds all SQL columns for subject fields.
@@ -35,16 +37,21 @@ var Columns = []string{
 	FieldName,
 }
 
-var (
-	// StatementPrimaryKey and StatementColumn2 are the table columns denoting the
-	// primary key for the statement relation (M2M).
-	StatementPrimaryKey = []string{"statement_id", "subject_id"}
-)
+// ForeignKeys holds the SQL foreign-keys that are owned by the "subjects"
+// table and are not defined as standalone fields in the schema.
+var ForeignKeys = []string{
+	"statement_subjects",
+}
 
 // ValidColumn reports if the column name is valid (part of the table columns).
 func ValidColumn(column string) bool {
 	for i := range Columns {
 		if column == Columns[i] {
+			return true
+		}
+	}
+	for i := range ForeignKeys {
+		if column == ForeignKeys[i] {
 			return true
 		}
 	}

@@ -9,68 +9,58 @@ import (
 
 	"entgo.io/ent/dialect/sql/sqlgraph"
 	"entgo.io/ent/schema/field"
-	"github.com/testifysec/archivist/ent/digest"
-	"github.com/testifysec/archivist/ent/statement"
-	"github.com/testifysec/archivist/ent/subject"
+	"github.com/testifysec/archivist/ent/dsse"
+	"github.com/testifysec/archivist/ent/signature"
 )
 
-// SubjectCreate is the builder for creating a Subject entity.
-type SubjectCreate struct {
+// SignatureCreate is the builder for creating a Signature entity.
+type SignatureCreate struct {
 	config
-	mutation *SubjectMutation
+	mutation *SignatureMutation
 	hooks    []Hook
 }
 
-// SetName sets the "name" field.
-func (sc *SubjectCreate) SetName(s string) *SubjectCreate {
-	sc.mutation.SetName(s)
+// SetKeyID sets the "key_id" field.
+func (sc *SignatureCreate) SetKeyID(s string) *SignatureCreate {
+	sc.mutation.SetKeyID(s)
 	return sc
 }
 
-// AddDigestIDs adds the "digests" edge to the Digest entity by IDs.
-func (sc *SubjectCreate) AddDigestIDs(ids ...int) *SubjectCreate {
-	sc.mutation.AddDigestIDs(ids...)
+// SetSignature sets the "signature" field.
+func (sc *SignatureCreate) SetSignature(s string) *SignatureCreate {
+	sc.mutation.SetSignature(s)
 	return sc
 }
 
-// AddDigests adds the "digests" edges to the Digest entity.
-func (sc *SubjectCreate) AddDigests(d ...*Digest) *SubjectCreate {
-	ids := make([]int, len(d))
-	for i := range d {
-		ids[i] = d[i].ID
-	}
-	return sc.AddDigestIDs(ids...)
-}
-
-// SetStatementID sets the "statement" edge to the Statement entity by ID.
-func (sc *SubjectCreate) SetStatementID(id int) *SubjectCreate {
-	sc.mutation.SetStatementID(id)
+// SetDsseID sets the "dsse" edge to the Dsse entity by ID.
+func (sc *SignatureCreate) SetDsseID(id int) *SignatureCreate {
+	sc.mutation.SetDsseID(id)
 	return sc
 }
 
-// SetNillableStatementID sets the "statement" edge to the Statement entity by ID if the given value is not nil.
-func (sc *SubjectCreate) SetNillableStatementID(id *int) *SubjectCreate {
+// SetNillableDsseID sets the "dsse" edge to the Dsse entity by ID if the given value is not nil.
+func (sc *SignatureCreate) SetNillableDsseID(id *int) *SignatureCreate {
 	if id != nil {
-		sc = sc.SetStatementID(*id)
+		sc = sc.SetDsseID(*id)
 	}
 	return sc
 }
 
-// SetStatement sets the "statement" edge to the Statement entity.
-func (sc *SubjectCreate) SetStatement(s *Statement) *SubjectCreate {
-	return sc.SetStatementID(s.ID)
+// SetDsse sets the "dsse" edge to the Dsse entity.
+func (sc *SignatureCreate) SetDsse(d *Dsse) *SignatureCreate {
+	return sc.SetDsseID(d.ID)
 }
 
-// Mutation returns the SubjectMutation object of the builder.
-func (sc *SubjectCreate) Mutation() *SubjectMutation {
+// Mutation returns the SignatureMutation object of the builder.
+func (sc *SignatureCreate) Mutation() *SignatureMutation {
 	return sc.mutation
 }
 
-// Save creates the Subject in the database.
-func (sc *SubjectCreate) Save(ctx context.Context) (*Subject, error) {
+// Save creates the Signature in the database.
+func (sc *SignatureCreate) Save(ctx context.Context) (*Signature, error) {
 	var (
 		err  error
-		node *Subject
+		node *Signature
 	)
 	if len(sc.hooks) == 0 {
 		if err = sc.check(); err != nil {
@@ -79,7 +69,7 @@ func (sc *SubjectCreate) Save(ctx context.Context) (*Subject, error) {
 		node, err = sc.sqlSave(ctx)
 	} else {
 		var mut Mutator = MutateFunc(func(ctx context.Context, m Mutation) (Value, error) {
-			mutation, ok := m.(*SubjectMutation)
+			mutation, ok := m.(*SignatureMutation)
 			if !ok {
 				return nil, fmt.Errorf("unexpected mutation type %T", m)
 			}
@@ -108,7 +98,7 @@ func (sc *SubjectCreate) Save(ctx context.Context) (*Subject, error) {
 }
 
 // SaveX calls Save and panics if Save returns an error.
-func (sc *SubjectCreate) SaveX(ctx context.Context) *Subject {
+func (sc *SignatureCreate) SaveX(ctx context.Context) *Signature {
 	v, err := sc.Save(ctx)
 	if err != nil {
 		panic(err)
@@ -117,32 +107,40 @@ func (sc *SubjectCreate) SaveX(ctx context.Context) *Subject {
 }
 
 // Exec executes the query.
-func (sc *SubjectCreate) Exec(ctx context.Context) error {
+func (sc *SignatureCreate) Exec(ctx context.Context) error {
 	_, err := sc.Save(ctx)
 	return err
 }
 
 // ExecX is like Exec, but panics if an error occurs.
-func (sc *SubjectCreate) ExecX(ctx context.Context) {
+func (sc *SignatureCreate) ExecX(ctx context.Context) {
 	if err := sc.Exec(ctx); err != nil {
 		panic(err)
 	}
 }
 
 // check runs all checks and user-defined validators on the builder.
-func (sc *SubjectCreate) check() error {
-	if _, ok := sc.mutation.Name(); !ok {
-		return &ValidationError{Name: "name", err: errors.New(`ent: missing required field "Subject.name"`)}
+func (sc *SignatureCreate) check() error {
+	if _, ok := sc.mutation.KeyID(); !ok {
+		return &ValidationError{Name: "key_id", err: errors.New(`ent: missing required field "Signature.key_id"`)}
 	}
-	if v, ok := sc.mutation.Name(); ok {
-		if err := subject.NameValidator(v); err != nil {
-			return &ValidationError{Name: "name", err: fmt.Errorf(`ent: validator failed for field "Subject.name": %w`, err)}
+	if v, ok := sc.mutation.KeyID(); ok {
+		if err := signature.KeyIDValidator(v); err != nil {
+			return &ValidationError{Name: "key_id", err: fmt.Errorf(`ent: validator failed for field "Signature.key_id": %w`, err)}
+		}
+	}
+	if _, ok := sc.mutation.Signature(); !ok {
+		return &ValidationError{Name: "signature", err: errors.New(`ent: missing required field "Signature.signature"`)}
+	}
+	if v, ok := sc.mutation.Signature(); ok {
+		if err := signature.SignatureValidator(v); err != nil {
+			return &ValidationError{Name: "signature", err: fmt.Errorf(`ent: validator failed for field "Signature.signature": %w`, err)}
 		}
 	}
 	return nil
 }
 
-func (sc *SubjectCreate) sqlSave(ctx context.Context) (*Subject, error) {
+func (sc *SignatureCreate) sqlSave(ctx context.Context) (*Signature, error) {
 	_node, _spec := sc.createSpec()
 	if err := sqlgraph.CreateNode(ctx, sc.driver, _spec); err != nil {
 		if sqlgraph.IsConstraintError(err) {
@@ -155,83 +153,72 @@ func (sc *SubjectCreate) sqlSave(ctx context.Context) (*Subject, error) {
 	return _node, nil
 }
 
-func (sc *SubjectCreate) createSpec() (*Subject, *sqlgraph.CreateSpec) {
+func (sc *SignatureCreate) createSpec() (*Signature, *sqlgraph.CreateSpec) {
 	var (
-		_node = &Subject{config: sc.config}
+		_node = &Signature{config: sc.config}
 		_spec = &sqlgraph.CreateSpec{
-			Table: subject.Table,
+			Table: signature.Table,
 			ID: &sqlgraph.FieldSpec{
 				Type:   field.TypeInt,
-				Column: subject.FieldID,
+				Column: signature.FieldID,
 			},
 		}
 	)
-	if value, ok := sc.mutation.Name(); ok {
+	if value, ok := sc.mutation.KeyID(); ok {
 		_spec.Fields = append(_spec.Fields, &sqlgraph.FieldSpec{
 			Type:   field.TypeString,
 			Value:  value,
-			Column: subject.FieldName,
+			Column: signature.FieldKeyID,
 		})
-		_node.Name = value
+		_node.KeyID = value
 	}
-	if nodes := sc.mutation.DigestsIDs(); len(nodes) > 0 {
-		edge := &sqlgraph.EdgeSpec{
-			Rel:     sqlgraph.O2M,
-			Inverse: false,
-			Table:   subject.DigestsTable,
-			Columns: []string{subject.DigestsColumn},
-			Bidi:    false,
-			Target: &sqlgraph.EdgeTarget{
-				IDSpec: &sqlgraph.FieldSpec{
-					Type:   field.TypeInt,
-					Column: digest.FieldID,
-				},
-			},
-		}
-		for _, k := range nodes {
-			edge.Target.Nodes = append(edge.Target.Nodes, k)
-		}
-		_spec.Edges = append(_spec.Edges, edge)
+	if value, ok := sc.mutation.Signature(); ok {
+		_spec.Fields = append(_spec.Fields, &sqlgraph.FieldSpec{
+			Type:   field.TypeString,
+			Value:  value,
+			Column: signature.FieldSignature,
+		})
+		_node.Signature = value
 	}
-	if nodes := sc.mutation.StatementIDs(); len(nodes) > 0 {
+	if nodes := sc.mutation.DsseIDs(); len(nodes) > 0 {
 		edge := &sqlgraph.EdgeSpec{
 			Rel:     sqlgraph.M2O,
 			Inverse: true,
-			Table:   subject.StatementTable,
-			Columns: []string{subject.StatementColumn},
+			Table:   signature.DsseTable,
+			Columns: []string{signature.DsseColumn},
 			Bidi:    false,
 			Target: &sqlgraph.EdgeTarget{
 				IDSpec: &sqlgraph.FieldSpec{
 					Type:   field.TypeInt,
-					Column: statement.FieldID,
+					Column: dsse.FieldID,
 				},
 			},
 		}
 		for _, k := range nodes {
 			edge.Target.Nodes = append(edge.Target.Nodes, k)
 		}
-		_node.statement_subjects = &nodes[0]
+		_node.dsse_signatures = &nodes[0]
 		_spec.Edges = append(_spec.Edges, edge)
 	}
 	return _node, _spec
 }
 
-// SubjectCreateBulk is the builder for creating many Subject entities in bulk.
-type SubjectCreateBulk struct {
+// SignatureCreateBulk is the builder for creating many Signature entities in bulk.
+type SignatureCreateBulk struct {
 	config
-	builders []*SubjectCreate
+	builders []*SignatureCreate
 }
 
-// Save creates the Subject entities in the database.
-func (scb *SubjectCreateBulk) Save(ctx context.Context) ([]*Subject, error) {
+// Save creates the Signature entities in the database.
+func (scb *SignatureCreateBulk) Save(ctx context.Context) ([]*Signature, error) {
 	specs := make([]*sqlgraph.CreateSpec, len(scb.builders))
-	nodes := make([]*Subject, len(scb.builders))
+	nodes := make([]*Signature, len(scb.builders))
 	mutators := make([]Mutator, len(scb.builders))
 	for i := range scb.builders {
 		func(i int, root context.Context) {
 			builder := scb.builders[i]
 			var mut Mutator = MutateFunc(func(ctx context.Context, m Mutation) (Value, error) {
-				mutation, ok := m.(*SubjectMutation)
+				mutation, ok := m.(*SignatureMutation)
 				if !ok {
 					return nil, fmt.Errorf("unexpected mutation type %T", m)
 				}
@@ -278,7 +265,7 @@ func (scb *SubjectCreateBulk) Save(ctx context.Context) ([]*Subject, error) {
 }
 
 // SaveX is like Save, but panics if an error occurs.
-func (scb *SubjectCreateBulk) SaveX(ctx context.Context) []*Subject {
+func (scb *SignatureCreateBulk) SaveX(ctx context.Context) []*Signature {
 	v, err := scb.Save(ctx)
 	if err != nil {
 		panic(err)
@@ -287,13 +274,13 @@ func (scb *SubjectCreateBulk) SaveX(ctx context.Context) []*Subject {
 }
 
 // Exec executes the query.
-func (scb *SubjectCreateBulk) Exec(ctx context.Context) error {
+func (scb *SignatureCreateBulk) Exec(ctx context.Context) error {
 	_, err := scb.Save(ctx)
 	return err
 }
 
 // ExecX is like Exec, but panics if an error occurs.
-func (scb *SubjectCreateBulk) ExecX(ctx context.Context) {
+func (scb *SignatureCreateBulk) ExecX(ctx context.Context) {
 	if err := scb.Exec(ctx); err != nil {
 		panic(err)
 	}

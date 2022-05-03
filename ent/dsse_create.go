@@ -10,6 +10,7 @@ import (
 	"entgo.io/ent/dialect/sql/sqlgraph"
 	"entgo.io/ent/schema/field"
 	"github.com/testifysec/archivist/ent/dsse"
+	"github.com/testifysec/archivist/ent/signature"
 	"github.com/testifysec/archivist/ent/statement"
 )
 
@@ -49,6 +50,21 @@ func (dc *DsseCreate) SetNillableStatementID(id *int) *DsseCreate {
 // SetStatement sets the "statement" edge to the Statement entity.
 func (dc *DsseCreate) SetStatement(s *Statement) *DsseCreate {
 	return dc.SetStatementID(s.ID)
+}
+
+// AddSignatureIDs adds the "signatures" edge to the Signature entity by IDs.
+func (dc *DsseCreate) AddSignatureIDs(ids ...int) *DsseCreate {
+	dc.mutation.AddSignatureIDs(ids...)
+	return dc
+}
+
+// AddSignatures adds the "signatures" edges to the Signature entity.
+func (dc *DsseCreate) AddSignatures(s ...*Signature) *DsseCreate {
+	ids := make([]int, len(s))
+	for i := range s {
+		ids[i] = s[i].ID
+	}
+	return dc.AddSignatureIDs(ids...)
 }
 
 // Mutation returns the DsseMutation object of the builder.
@@ -198,6 +214,25 @@ func (dc *DsseCreate) createSpec() (*Dsse, *sqlgraph.CreateSpec) {
 			edge.Target.Nodes = append(edge.Target.Nodes, k)
 		}
 		_node.dsse_statement = &nodes[0]
+		_spec.Edges = append(_spec.Edges, edge)
+	}
+	if nodes := dc.mutation.SignaturesIDs(); len(nodes) > 0 {
+		edge := &sqlgraph.EdgeSpec{
+			Rel:     sqlgraph.O2M,
+			Inverse: false,
+			Table:   dsse.SignaturesTable,
+			Columns: []string{dsse.SignaturesColumn},
+			Bidi:    false,
+			Target: &sqlgraph.EdgeTarget{
+				IDSpec: &sqlgraph.FieldSpec{
+					Type:   field.TypeInt,
+					Column: signature.FieldID,
+				},
+			},
+		}
+		for _, k := range nodes {
+			edge.Target.Nodes = append(edge.Target.Nodes, k)
+		}
 		_spec.Edges = append(_spec.Edges, edge)
 	}
 	return _node, _spec

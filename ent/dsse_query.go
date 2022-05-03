@@ -4,6 +4,7 @@ package ent
 
 import (
 	"context"
+	"database/sql/driver"
 	"errors"
 	"fmt"
 	"math"
@@ -13,6 +14,7 @@ import (
 	"entgo.io/ent/schema/field"
 	"github.com/testifysec/archivist/ent/dsse"
 	"github.com/testifysec/archivist/ent/predicate"
+	"github.com/testifysec/archivist/ent/signature"
 	"github.com/testifysec/archivist/ent/statement"
 )
 
@@ -26,8 +28,9 @@ type DsseQuery struct {
 	fields     []string
 	predicates []predicate.Dsse
 	// eager-loading edges.
-	withStatement *StatementQuery
-	withFKs       bool
+	withStatement  *StatementQuery
+	withSignatures *SignatureQuery
+	withFKs        bool
 	// intermediate query (i.e. traversal path).
 	sql  *sql.Selector
 	path func(context.Context) (*sql.Selector, error)
@@ -79,6 +82,28 @@ func (dq *DsseQuery) QueryStatement() *StatementQuery {
 			sqlgraph.From(dsse.Table, dsse.FieldID, selector),
 			sqlgraph.To(statement.Table, statement.FieldID),
 			sqlgraph.Edge(sqlgraph.M2O, false, dsse.StatementTable, dsse.StatementColumn),
+		)
+		fromU = sqlgraph.SetNeighbors(dq.driver.Dialect(), step)
+		return fromU, nil
+	}
+	return query
+}
+
+// QuerySignatures chains the current query on the "signatures" edge.
+func (dq *DsseQuery) QuerySignatures() *SignatureQuery {
+	query := &SignatureQuery{config: dq.config}
+	query.path = func(ctx context.Context) (fromU *sql.Selector, err error) {
+		if err := dq.prepareQuery(ctx); err != nil {
+			return nil, err
+		}
+		selector := dq.sqlQuery(ctx)
+		if err := selector.Err(); err != nil {
+			return nil, err
+		}
+		step := sqlgraph.NewStep(
+			sqlgraph.From(dsse.Table, dsse.FieldID, selector),
+			sqlgraph.To(signature.Table, signature.FieldID),
+			sqlgraph.Edge(sqlgraph.O2M, false, dsse.SignaturesTable, dsse.SignaturesColumn),
 		)
 		fromU = sqlgraph.SetNeighbors(dq.driver.Dialect(), step)
 		return fromU, nil
@@ -262,12 +287,13 @@ func (dq *DsseQuery) Clone() *DsseQuery {
 		return nil
 	}
 	return &DsseQuery{
-		config:        dq.config,
-		limit:         dq.limit,
-		offset:        dq.offset,
-		order:         append([]OrderFunc{}, dq.order...),
-		predicates:    append([]predicate.Dsse{}, dq.predicates...),
-		withStatement: dq.withStatement.Clone(),
+		config:         dq.config,
+		limit:          dq.limit,
+		offset:         dq.offset,
+		order:          append([]OrderFunc{}, dq.order...),
+		predicates:     append([]predicate.Dsse{}, dq.predicates...),
+		withStatement:  dq.withStatement.Clone(),
+		withSignatures: dq.withSignatures.Clone(),
 		// clone intermediate query.
 		sql:    dq.sql.Clone(),
 		path:   dq.path,
@@ -283,6 +309,17 @@ func (dq *DsseQuery) WithStatement(opts ...func(*StatementQuery)) *DsseQuery {
 		opt(query)
 	}
 	dq.withStatement = query
+	return dq
+}
+
+// WithSignatures tells the query-builder to eager-load the nodes that are connected to
+// the "signatures" edge. The optional arguments are used to configure the query builder of the edge.
+func (dq *DsseQuery) WithSignatures(opts ...func(*SignatureQuery)) *DsseQuery {
+	query := &SignatureQuery{config: dq.config}
+	for _, opt := range opts {
+		opt(query)
+	}
+	dq.withSignatures = query
 	return dq
 }
 
@@ -352,8 +389,9 @@ func (dq *DsseQuery) sqlAll(ctx context.Context) ([]*Dsse, error) {
 		nodes       = []*Dsse{}
 		withFKs     = dq.withFKs
 		_spec       = dq.querySpec()
-		loadedTypes = [1]bool{
+		loadedTypes = [2]bool{
 			dq.withStatement != nil,
+			dq.withSignatures != nil,
 		}
 	)
 	if dq.withStatement != nil {
@@ -408,6 +446,35 @@ func (dq *DsseQuery) sqlAll(ctx context.Context) ([]*Dsse, error) {
 			for i := range nodes {
 				nodes[i].Edges.Statement = n
 			}
+		}
+	}
+
+	if query := dq.withSignatures; query != nil {
+		fks := make([]driver.Value, 0, len(nodes))
+		nodeids := make(map[int]*Dsse)
+		for i := range nodes {
+			fks = append(fks, nodes[i].ID)
+			nodeids[nodes[i].ID] = nodes[i]
+			nodes[i].Edges.Signatures = []*Signature{}
+		}
+		query.withFKs = true
+		query.Where(predicate.Signature(func(s *sql.Selector) {
+			s.Where(sql.InValues(dsse.SignaturesColumn, fks...))
+		}))
+		neighbors, err := query.All(ctx)
+		if err != nil {
+			return nil, err
+		}
+		for _, n := range neighbors {
+			fk := n.dsse_signatures
+			if fk == nil {
+				return nil, fmt.Errorf(`foreign-key "dsse_signatures" is nil for node %v`, n.ID)
+			}
+			node, ok := nodeids[*fk]
+			if !ok {
+				return nil, fmt.Errorf(`unexpected foreign-key "dsse_signatures" returned %v for node %v`, *fk, n.ID)
+			}
+			node.Edges.Signatures = append(node.Edges.Signatures, n)
 		}
 	}
 

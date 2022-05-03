@@ -80,7 +80,7 @@ func (sq *StatementQuery) QuerySubjects() *SubjectQuery {
 		step := sqlgraph.NewStep(
 			sqlgraph.From(statement.Table, statement.FieldID, selector),
 			sqlgraph.To(subject.Table, subject.FieldID),
-			sqlgraph.Edge(sqlgraph.M2M, false, statement.SubjectsTable, statement.SubjectsPrimaryKey...),
+			sqlgraph.Edge(sqlgraph.O2M, false, statement.SubjectsTable, statement.SubjectsColumn),
 		)
 		fromU = sqlgraph.SetNeighbors(sq.driver.Dialect(), step)
 		return fromU, nil
@@ -390,66 +390,30 @@ func (sq *StatementQuery) sqlAll(ctx context.Context) ([]*Statement, error) {
 
 	if query := sq.withSubjects; query != nil {
 		fks := make([]driver.Value, 0, len(nodes))
-		ids := make(map[int]*Statement, len(nodes))
-		for _, node := range nodes {
-			ids[node.ID] = node
-			fks = append(fks, node.ID)
-			node.Edges.Subjects = []*Subject{}
+		nodeids := make(map[int]*Statement)
+		for i := range nodes {
+			fks = append(fks, nodes[i].ID)
+			nodeids[nodes[i].ID] = nodes[i]
+			nodes[i].Edges.Subjects = []*Subject{}
 		}
-		var (
-			edgeids []int
-			edges   = make(map[int][]*Statement)
-		)
-		_spec := &sqlgraph.EdgeQuerySpec{
-			Edge: &sqlgraph.EdgeSpec{
-				Inverse: false,
-				Table:   statement.SubjectsTable,
-				Columns: statement.SubjectsPrimaryKey,
-			},
-			Predicate: func(s *sql.Selector) {
-				s.Where(sql.InValues(statement.SubjectsPrimaryKey[0], fks...))
-			},
-			ScanValues: func() [2]interface{} {
-				return [2]interface{}{new(sql.NullInt64), new(sql.NullInt64)}
-			},
-			Assign: func(out, in interface{}) error {
-				eout, ok := out.(*sql.NullInt64)
-				if !ok || eout == nil {
-					return fmt.Errorf("unexpected id value for edge-out")
-				}
-				ein, ok := in.(*sql.NullInt64)
-				if !ok || ein == nil {
-					return fmt.Errorf("unexpected id value for edge-in")
-				}
-				outValue := int(eout.Int64)
-				inValue := int(ein.Int64)
-				node, ok := ids[outValue]
-				if !ok {
-					return fmt.Errorf("unexpected node id in edges: %v", outValue)
-				}
-				if _, ok := edges[inValue]; !ok {
-					edgeids = append(edgeids, inValue)
-				}
-				edges[inValue] = append(edges[inValue], node)
-				return nil
-			},
-		}
-		if err := sqlgraph.QueryEdges(ctx, sq.driver, _spec); err != nil {
-			return nil, fmt.Errorf(`query edges "subjects": %w`, err)
-		}
-		query.Where(subject.IDIn(edgeids...))
+		query.withFKs = true
+		query.Where(predicate.Subject(func(s *sql.Selector) {
+			s.Where(sql.InValues(statement.SubjectsColumn, fks...))
+		}))
 		neighbors, err := query.All(ctx)
 		if err != nil {
 			return nil, err
 		}
 		for _, n := range neighbors {
-			nodes, ok := edges[n.ID]
+			fk := n.statement_subjects
+			if fk == nil {
+				return nil, fmt.Errorf(`foreign-key "statement_subjects" is nil for node %v`, n.ID)
+			}
+			node, ok := nodeids[*fk]
 			if !ok {
-				return nil, fmt.Errorf(`unexpected "subjects" node returned %v`, n.ID)
+				return nil, fmt.Errorf(`unexpected foreign-key "statement_subjects" returned %v for node %v`, *fk, n.ID)
 			}
-			for i := range nodes {
-				nodes[i].Edges.Subjects = append(nodes[i].Edges.Subjects, n)
-			}
+			node.Edges.Subjects = append(node.Edges.Subjects, n)
 		}
 	}
 

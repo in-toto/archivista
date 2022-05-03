@@ -23,6 +23,6 @@ func (Dsse) Fields() []ent.Field {
 func (Dsse) Edges() []ent.Edge {
 	return []ent.Edge{
 		edge.To("statement", Statement.Type).Unique(),
-		//edge.To("signatures", DsseSignature.Type),
+		edge.To("signatures", Signature.Type),
 	}
 }
