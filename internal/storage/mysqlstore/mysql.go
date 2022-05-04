@@ -50,7 +50,7 @@ type store struct {
 }
 
 func NewServer(ctx context.Context, connectionstring string) (UnifiedStorage, chan error, error) {
-	drv, err := sql.Open("mysql", "root:example@tcp(db)/testify")
+	drv, err := sql.Open("mysql", connectionstring)
 	if err != nil {
 		return nil, nil, err
 	}

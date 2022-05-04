@@ -21,6 +21,8 @@ package main
 
 import (
 	"context"
+	"github.com/spiffe/go-spiffe/v2/spiffeid"
+	"github.com/testifysec/archivist/internal/storage/blob"
 	"os"
 	"os/signal"
 	"syscall"
@@ -54,28 +56,16 @@ func main() {
 	)
 	defer cancel()
 
-	// ********************************************************************************
-	// Setup logging
-	// ********************************************************************************
 	logrus.SetFormatter(&nested.Formatter{})
 	log.EnableTracing(true)
 	ctx = log.WithLog(ctx, logruslogger.New(ctx, map[string]interface{}{"cmd": os.Args[0]}))
 
-	// ********************************************************************************
-	// Debug self if necessary
-	// ********************************************************************************
-
 	if err := debug.Self(); err != nil {
 		log.FromContext(ctx).Infof("%s", err)
 	}
-
 	startTime := time.Now()
 
-	// enumerating phases
-
-	// ********************************************************************************
 	log.FromContext(ctx).Infof("executing phase 1: get config from environment (time since start: %s)", time.Since(startTime))
-	// ********************************************************************************
 	now := time.Now()
 
 	cfg := new(config.Config)
@@ -90,52 +80,48 @@ func main() {
 	logrus.SetLevel(level)
 
 	log.FromContext(ctx).WithField("duration", time.Since(now)).Infof("completed phase 1: get config from environment")
-	// ********************************************************************************
+
 	log.FromContext(ctx).Infof("executing phase 2: get spiffe svid (time since start: %s)", time.Since(startTime))
-	// ********************************************************************************
 	now = time.Now()
-	var source *workloadapi.X509Source
-	var svid *x509svid.SVID
+
+	log.FromContext(ctx).WithField("duration", time.Since(now)).Infof("completed phase 2: retrieve spiffe svid")
+	grpcOptions := make([]grpc.ServerOption, 0)
 	if cfg.EnableSPIFFE == true {
-		source, err = workloadapi.NewX509Source(ctx)
-		if err != nil {
-			logrus.Fatalf("error getting x509 source: %+v", err)
-		}
-		svid, err = source.GetX509SVID()
-		if err != nil {
-			logrus.Fatalf("error getting x509 svid: %+v", err)
-		}
-		logrus.Infof("SVID: %q", svid.ID)
-		log.FromContext(ctx).WithField("duration", time.Since(now)).Infof("completed phase 2: retrieve spiffe svid")
+		opts := initSpiffeConnection(ctx, cfg)
+		grpcOptions = append(grpcOptions, opts...)
 	} else {
 		log.FromContext(ctx).WithField("duration", time.Since(now)).Infof("completed phase 2: SKIPPED")
 	}
-	// ********************************************************************************
+
 	log.FromContext(ctx).Infof("executing phase 3: initializing badger (time since start: %s)", time.Since(startTime))
-	// ********************************************************************************
 	now = time.Now()
 
-	store, storeCh, err := mysqlstore.NewServer(ctx, "")
+	graphStore, storeCh, err := mysqlstore.NewServer(ctx, cfg.SQLStoreConnectionString)
 	if err != nil {
 		logrus.Fatalf("error starting badger store: %+v", err)
 	}
 
 	log.FromContext(ctx).WithField("duration", time.Since(now)).Infof("completed phase 3: initializing badger")
-	// ********************************************************************************
+
 	log.FromContext(ctx).Infof("executing phase 4: create and register grpc service (time since start: %s)", time.Since(startTime))
-	// ********************************************************************************
 	now = time.Now()
 
-	grpcOptions := make([]grpc.ServerOption, 0)
-	if cfg.EnableSPIFFE == true {
-		grpcOptions = append(grpcOptions, grpc.Creds(credentials.NewTLS(tlsconfig.MTLSServerConfig(source, source, tlsconfig.AuthorizeAny()))))
+	blobStore, err := blob.NewMinioClient(
+		cfg.BlobStoreEndpoint,
+		cfg.BlobStoreAccessKeyId,
+		cfg.BlobStoreSecretAccessKeyId,
+		cfg.BlobStoreBucketName,
+		cfg.BlobStoreUseSSL,
+	)
+	if err != nil {
+		logrus.Fatalf("failed to create blob store client: %v", err)
 	}
 
 	grpcServer := grpc.NewServer(grpcOptions...)
-	archivistService := server.NewArchivistServer(store)
+	archivistService := server.NewArchivistServer(graphStore, blobStore)
 	archivist.RegisterArchivistServer(grpcServer, archivistService)
 
-	collectorService := server.NewCollectorServer(store)
+	collectorService := server.NewCollectorServer(graphStore, blobStore)
 	archivist.RegisterCollectorServer(grpcServer, collectorService)
 
 	srvErrCh := grpcutils.ListenAndServe(ctx, &cfg.ListenOn, grpcServer)
@@ -149,9 +135,47 @@ func main() {
 	<-srvErrCh
 	<-storeCh
 
-	//// ********************************************************************************
 	log.FromContext(ctx).Infof("exiting, uptime: %v", time.Since(startTime))
-	//// ********************************************************************************
+}
+
+func initSpiffeConnection(ctx context.Context, cfg *config.Config) []grpc.ServerOption {
+	var source *workloadapi.X509Source
+	var svid *x509svid.SVID
+	var authorizer tlsconfig.Authorizer
+
+	if cfg.SPIFFETrustedServerId != "" {
+		trustID := spiffeid.RequireFromString(cfg.SPIFFETrustedServerId)
+		authorizer = tlsconfig.AuthorizeID(trustID)
+	} else {
+		authorizer = tlsconfig.AuthorizeAny()
+	}
+
+	picker := func(ids []*x509svid.SVID) *x509svid.SVID {
+		for _, id := range ids {
+			if id.ID.String() == "spiffe://witness.com/collector" {
+				return id
+			}
+		}
+		return nil
+	}
+	workloadOpts := []workloadapi.X509SourceOption{
+		workloadapi.WithDefaultX509SVIDPicker(picker),
+		workloadapi.WithClientOptions(workloadapi.WithAddr(cfg.SPIFFEAddress)),
+	}
+	source, err := workloadapi.NewX509Source(ctx, workloadOpts...)
+	if err != nil {
+		logrus.Fatalf("error getting x509 source: %+v", err)
+	}
+	opts := []grpc.ServerOption{
+		grpc.Creds(credentials.NewTLS(tlsconfig.MTLSServerConfig(source, source, authorizer))),
+	}
+
+	svid, err = source.GetX509SVID()
+	if err != nil {
+		logrus.Fatalf("error getting x509 svid: %+v", err)
+	}
+	logrus.Infof("SVID: %q", svid.ID)
+	return opts
 }
 
 func exitOnErrCh(ctx context.Context, cancel context.CancelFunc, errCh <-chan error) {
