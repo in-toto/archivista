@@ -64,7 +64,7 @@ func main() {
 	}
 
 	if len(obj.Payload) == 0 || obj.PayloadType == "" || len(obj.Signatures) == 0 {
-		logrus.Fatalln("obj is not DSSE %d %d %d", len(obj.Payload), len(obj.PayloadType), len(obj.Signatures))
+		logrus.Fatalf("obj is not DSSE %d %d %d", len(obj.Payload), len(obj.PayloadType), len(obj.Signatures))
 	}
 
 	_, err = collectorClient.Store(context.Background(), &archivist.StoreRequest{

@@ -51,7 +51,7 @@ type store struct {
 }
 
 func NewServer(ctx context.Context, connectionstring string, objectStorage archivist.CollectorServer) (UnifiedStorage, <-chan error, error) {
-	drv, err := sql.Open("mysql", "root:example@tcp(db)/testify")
+	drv, err := sql.Open("mysql", connectionstring)
 	if err != nil {
 		return nil, nil, err
 	}
@@ -192,12 +192,14 @@ func (s *store) Store(ctx context.Context, request *archivist.StoreRequest) (*em
 
 	fmt.Println("metadata stored")
 
-	_, err = s.objectStorage.Store(ctx, request)
-	if err != nil {
-		return nil, err
+	if s.objectStorage != nil {
+		_, err = s.objectStorage.Store(ctx, request)
+		if err != nil {
+			return nil, err
+		}
+
+		fmt.Println("object stored")
 	}
-
-	fmt.Println("object stored")
-
+	// ********************************************************************************
 	return &emptypb.Empty{}, nil
 }
