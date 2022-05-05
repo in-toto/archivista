@@ -1,0 +1,24 @@
+stages:
+  - build
+
+build-and-push-server:
+  variables:
+    KO_DOCKER_REPO: registry.gitlab.com/testifysec/witness-platform/archivist/archivist
+  stage: build
+  image:
+    name: registry.gitlab.com/testifysec/docker-images/ko:0.9.3
+    entrypoint: [""]
+  script:
+    - ko auth login -u ${CI_REGISTRY_USER} -p ${CI_REGISTRY_PASSWORD} ${CI_REGISTRY}
+    - ko publish --bare --tags=${CI_COMMIT_SHORT_SHA} ./cmd/archivist
+  
+build-and-push-client:
+  variables:
+    KO_DOCKER_REPO: registry.gitlab.com/testifysec/witness-platform/archivist/archivistctl
+  stage: build
+  image:
+    name: registry.gitlab.com/testifysec/docker-images/ko:0.9.3
+    entrypoint: [""]
+  script:
+    - ko auth login -u ${CI_REGISTRY_USER} -p ${CI_REGISTRY_PASSWORD} ${CI_REGISTRY}
+    - ko publish --bare --tags ${CI_COMMIT_SHORT_SHA} ./cmd/archivistctl
