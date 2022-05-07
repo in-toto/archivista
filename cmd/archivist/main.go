@@ -150,16 +150,7 @@ func initSpiffeConnection(ctx context.Context, cfg *config.Config) []grpc.Server
 		authorizer = tlsconfig.AuthorizeAny()
 	}
 
-	picker := func(ids []*x509svid.SVID) *x509svid.SVID {
-		for _, id := range ids {
-			if id.ID.String() == "spiffe://witness.com/collector" {
-				return id
-			}
-		}
-		return nil
-	}
 	workloadOpts := []workloadapi.X509SourceOption{
-		workloadapi.WithDefaultX509SVIDPicker(picker),
 		workloadapi.WithClientOptions(workloadapi.WithAddr(cfg.SPIFFEAddress)),
 	}
 	source, err := workloadapi.NewX509Source(ctx, workloadOpts...)
