@@ -8,11 +8,12 @@ require (
 	github.com/antonfisher/nested-logrus-formatter v1.3.1
 	github.com/git-bom/gitbom-go v0.0.0-20220502033008-4a48bb2317f7
 	github.com/go-sql-driver/mysql v1.6.0
+	github.com/gorilla/handlers v1.5.1
 	github.com/kelseyhightower/envconfig v1.4.0
 	github.com/networkservicemesh/sdk v1.3.0
 	github.com/sirupsen/logrus v1.8.1
 	github.com/spiffe/go-spiffe/v2 v2.0.0
-	github.com/testifysec/archivist-api v0.0.0-20220502044345-059a521f0ad1
+	github.com/testifysec/archivist-api v0.0.0-20220603060816-12e25ceccbf1
 	github.com/testifysec/witness v0.1.7
 	google.golang.org/grpc v1.46.0
 	google.golang.org/protobuf v1.28.0
@@ -23,6 +24,7 @@ require (
 	github.com/agext/levenshtein v1.2.1 // indirect
 	github.com/apparentlymart/go-textseg/v13 v13.0.0 // indirect
 	github.com/cenkalti/backoff/v4 v4.1.2 // indirect
+	github.com/felixge/httpsnoop v1.0.2 // indirect
 	github.com/go-logr/logr v1.2.1 // indirect
 	github.com/go-logr/stdr v1.2.0 // indirect
 	github.com/go-openapi/inflect v0.19.0 // indirect

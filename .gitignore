@@ -17,3 +17,10 @@
 *.json
 .gitignore
 .idea/
+
+## protect against development environment being leaked out
+*.pem
+*.nix
+archivist
+archivistctl
+.witness.yaml

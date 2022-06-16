@@ -26,6 +26,8 @@ import (
 	"syscall"
 	"time"
 
+	"github.com/testifysec/archivist/internal/storage/filestore"
+
 	"github.com/testifysec/archivist-api/pkg/api/archivist"
 	"github.com/testifysec/archivist/internal/config"
 	"github.com/testifysec/archivist/internal/server"
@@ -111,13 +113,16 @@ func main() {
 		log.FromContext(ctx).WithField("duration", time.Since(now)).Infof("completed phase 2: SKIPPED")
 	}
 	// ********************************************************************************
-	log.FromContext(ctx).Infof("executing phase 3: initializing badger (time since start: %s)", time.Since(startTime))
+	log.FromContext(ctx).Infof("executing phase 3: initializing storage clients (time since start: %s)", time.Since(startTime))
 	// ********************************************************************************
 	now = time.Now()
 
-	store, storeCh, err := mysqlstore.NewServer(ctx, "")
+	// TODO make the fileserver optional
+	fileStore, fileStoreCh, err := filestore.NewServer(ctx, cfg.FileDir, cfg.FileServeOn)
+
+	mysqlStore, mysqlStoreCh, err := mysqlstore.NewServer(ctx, "", fileStore)
 	if err != nil {
-		logrus.Fatalf("error starting badger store: %+v", err)
+		logrus.Fatalf("error starting badger mysqlStore: %+v", err)
 	}
 
 	log.FromContext(ctx).WithField("duration", time.Since(now)).Infof("completed phase 3: initializing badger")
@@ -132,10 +137,10 @@ func main() {
 	}
 
 	grpcServer := grpc.NewServer(grpcOptions...)
-	archivistService := server.NewArchivistServer(store)
+	archivistService := server.NewArchivistServer(mysqlStore)
 	archivist.RegisterArchivistServer(grpcServer, archivistService)
 
-	collectorService := server.NewCollectorServer(store)
+	collectorService := server.NewCollectorServer(mysqlStore)
 	archivist.RegisterCollectorServer(grpcServer, collectorService)
 
 	srvErrCh := grpcutils.ListenAndServe(ctx, &cfg.ListenOn, grpcServer)
@@ -147,7 +152,8 @@ func main() {
 
 	<-ctx.Done()
 	<-srvErrCh
-	<-storeCh
+	<-fileStoreCh
+	<-mysqlStoreCh
 
 	//// ********************************************************************************
 	log.FromContext(ctx).Infof("exiting, uptime: %v", time.Since(startTime))
