@@ -46,10 +46,11 @@ type store struct {
 	archivist.UnimplementedArchivistServer
 	archivist.UnimplementedCollectorServer
 
-	client *ent.Client
+	client        *ent.Client
+	objectStorage archivist.CollectorServer
 }
 
-func NewServer(ctx context.Context, connectionstring string) (UnifiedStorage, chan error, error) {
+func NewServer(ctx context.Context, connectionstring string, objectStorage archivist.CollectorServer) (UnifiedStorage, <-chan error, error) {
 	drv, err := sql.Open("mysql", "root:example@tcp(db)/testify")
 	if err != nil {
 		return nil, nil, err
@@ -86,7 +87,8 @@ func NewServer(ctx context.Context, connectionstring string) (UnifiedStorage, ch
 	}
 
 	return &store{
-		client: client,
+		client:        client,
+		objectStorage: objectStorage,
 	}, errCh, nil
 }
 
@@ -188,7 +190,14 @@ func (s *store) Store(ctx context.Context, request *archivist.StoreRequest) (*em
 		return nil, err
 	}
 
-	fmt.Println("stored!")
+	fmt.Println("metadata stored")
+
+	_, err = s.objectStorage.Store(ctx, request)
+	if err != nil {
+		return nil, err
+	}
+
+	fmt.Println("object stored")
 
 	return &emptypb.Empty{}, nil
 }

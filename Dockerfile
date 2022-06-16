@@ -8,4 +8,5 @@ RUN --mount=target=. --mount=target=/root/.cache,type=cache \
 
 FROM alpine
 COPY --from=build /out/archivist /bin/archivist
+RUN mkdir /tmp/archivist
 ENTRYPOINT ["/bin/archivist"]

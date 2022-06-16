@@ -2,7 +2,7 @@ version: '3.9'
 
 services:
   db:
-    image: mysql
+    image: mysql:oracle
     command: --default-authentication-plugin=mysql_native_password
     restart: always
     ports:
@@ -17,5 +17,8 @@ services:
     environment:
       ARCHIVIST_ENABLE_SPIFFE: "false"
       ARCHIVIST_LISTEN_ON: tcp://0.0.0.0:8080
+      ARCHIVIST_FILE_DIR: /tmp/archivist/
+      ARCHIVIST_FILE_SERVE_ON: :8081
     ports:
       - 8080:8080
+      - 8081:8081

@@ -15,14 +15,18 @@
 package config
 
 import (
-	"github.com/kelseyhightower/envconfig"
 	"net/url"
+
+	"github.com/kelseyhightower/envconfig"
 )
 
 type Config struct {
 	EnableSPIFFE bool    `default:"TRUE" desc:"Enable SPIFFE support" split_words:"true"`
 	ListenOn     url.URL `default:"unix:///listen.on.socket" desc:"url to listen on" split_words:"true"`
 	LogLevel     string  `default:"INFO" desc:"Log level" split_words:"true"`
+
+	FileServeOn string `default:"" desc:"What address to serve files on, leave empty to shut off" split_words:"true"`
+	FileDir     string `default:"/tmp/archivist/" desc:"Directory to store and serve files" split_words:"true"`
 }
 
 // Process reads config from env
