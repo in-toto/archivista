@@ -3,7 +3,7 @@ stages:
 
 build-and-push-server:
   variables:
-    KO_DOCKER_REPO: registry.gitlab.com/testifysec/witness-platform/archivist/archivist
+    KO_DOCKER_REPO: registry.gitlab.com/testifysec/judge-platform/archivist/archivist
   stage: build
   image:
     name: registry.gitlab.com/testifysec/docker-images/ko:0.9.3
@@ -14,7 +14,7 @@ build-and-push-server:
   
 build-and-push-client:
   variables:
-    KO_DOCKER_REPO: registry.gitlab.com/testifysec/witness-platform/archivist/archivistctl
+    KO_DOCKER_REPO: registry.gitlab.com/testifysec/judge-platform/archivist/archivistctl
   stage: build
   image:
     name: registry.gitlab.com/testifysec/docker-images/ko:0.9.3
