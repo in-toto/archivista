@@ -91,6 +91,124 @@ func IDLTE(id int) predicate.Statement {
 	})
 }
 
+// Predicate applies equality check predicate on the "predicate" field. It's identical to PredicateEQ.
+func Predicate(v string) predicate.Statement {
+	return predicate.Statement(func(s *sql.Selector) {
+		s.Where(sql.EQ(s.C(FieldPredicate), v))
+	})
+}
+
+// PredicateEQ applies the EQ predicate on the "predicate" field.
+func PredicateEQ(v string) predicate.Statement {
+	return predicate.Statement(func(s *sql.Selector) {
+		s.Where(sql.EQ(s.C(FieldPredicate), v))
+	})
+}
+
+// PredicateNEQ applies the NEQ predicate on the "predicate" field.
+func PredicateNEQ(v string) predicate.Statement {
+	return predicate.Statement(func(s *sql.Selector) {
+		s.Where(sql.NEQ(s.C(FieldPredicate), v))
+	})
+}
+
+// PredicateIn applies the In predicate on the "predicate" field.
+func PredicateIn(vs ...string) predicate.Statement {
+	v := make([]interface{}, len(vs))
+	for i := range v {
+		v[i] = vs[i]
+	}
+	return predicate.Statement(func(s *sql.Selector) {
+		// if not arguments were provided, append the FALSE constants,
+		// since we can't apply "IN ()". This will make this predicate falsy.
+		if len(v) == 0 {
+			s.Where(sql.False())
+			return
+		}
+		s.Where(sql.In(s.C(FieldPredicate), v...))
+	})
+}
+
+// PredicateNotIn applies the NotIn predicate on the "predicate" field.
+func PredicateNotIn(vs ...string) predicate.Statement {
+	v := make([]interface{}, len(vs))
+	for i := range v {
+		v[i] = vs[i]
+	}
+	return predicate.Statement(func(s *sql.Selector) {
+		// if not arguments were provided, append the FALSE constants,
+		// since we can't apply "IN ()". This will make this predicate falsy.
+		if len(v) == 0 {
+			s.Where(sql.False())
+			return
+		}
+		s.Where(sql.NotIn(s.C(FieldPredicate), v...))
+	})
+}
+
+// PredicateGT applies the GT predicate on the "predicate" field.
+func PredicateGT(v string) predicate.Statement {
+	return predicate.Statement(func(s *sql.Selector) {
+		s.Where(sql.GT(s.C(FieldPredicate), v))
+	})
+}
+
+// PredicateGTE applies the GTE predicate on the "predicate" field.
+func PredicateGTE(v string) predicate.Statement {
+	return predicate.Statement(func(s *sql.Selector) {
+		s.Where(sql.GTE(s.C(FieldPredicate), v))
+	})
+}
+
+// PredicateLT applies the LT predicate on the "predicate" field.
+func PredicateLT(v string) predicate.Statement {
+	return predicate.Statement(func(s *sql.Selector) {
+		s.Where(sql.LT(s.C(FieldPredicate), v))
+	})
+}
+
+// PredicateLTE applies the LTE predicate on the "predicate" field.
+func PredicateLTE(v string) predicate.Statement {
+	return predicate.Statement(func(s *sql.Selector) {
+		s.Where(sql.LTE(s.C(FieldPredicate), v))
+	})
+}
+
+// PredicateContains applies the Contains predicate on the "predicate" field.
+func PredicateContains(v string) predicate.Statement {
+	return predicate.Statement(func(s *sql.Selector) {
+		s.Where(sql.Contains(s.C(FieldPredicate), v))
+	})
+}
+
+// PredicateHasPrefix applies the HasPrefix predicate on the "predicate" field.
+func PredicateHasPrefix(v string) predicate.Statement {
+	return predicate.Statement(func(s *sql.Selector) {
+		s.Where(sql.HasPrefix(s.C(FieldPredicate), v))
+	})
+}
+
+// PredicateHasSuffix applies the HasSuffix predicate on the "predicate" field.
+func PredicateHasSuffix(v string) predicate.Statement {
+	return predicate.Statement(func(s *sql.Selector) {
+		s.Where(sql.HasSuffix(s.C(FieldPredicate), v))
+	})
+}
+
+// PredicateEqualFold applies the EqualFold predicate on the "predicate" field.
+func PredicateEqualFold(v string) predicate.Statement {
+	return predicate.Statement(func(s *sql.Selector) {
+		s.Where(sql.EqualFold(s.C(FieldPredicate), v))
+	})
+}
+
+// PredicateContainsFold applies the ContainsFold predicate on the "predicate" field.
+func PredicateContainsFold(v string) predicate.Statement {
+	return predicate.Statement(func(s *sql.Selector) {
+		s.Where(sql.ContainsFold(s.C(FieldPredicate), v))
+	})
+}
+
 // HasSubjects applies the HasEdge predicate on the "subjects" edge.
 func HasSubjects() predicate.Statement {
 	return predicate.Statement(func(s *sql.Selector) {
@@ -110,6 +228,34 @@ func HasSubjectsWith(preds ...predicate.Subject) predicate.Statement {
 			sqlgraph.From(Table, FieldID),
 			sqlgraph.To(SubjectsInverseTable, FieldID),
 			sqlgraph.Edge(sqlgraph.O2M, false, SubjectsTable, SubjectsColumn),
+		)
+		sqlgraph.HasNeighborsWith(s, step, func(s *sql.Selector) {
+			for _, p := range preds {
+				p(s)
+			}
+		})
+	})
+}
+
+// HasAttestationCollections applies the HasEdge predicate on the "attestation_collections" edge.
+func HasAttestationCollections() predicate.Statement {
+	return predicate.Statement(func(s *sql.Selector) {
+		step := sqlgraph.NewStep(
+			sqlgraph.From(Table, FieldID),
+			sqlgraph.To(AttestationCollectionsTable, FieldID),
+			sqlgraph.Edge(sqlgraph.O2O, false, AttestationCollectionsTable, AttestationCollectionsColumn),
+		)
+		sqlgraph.HasNeighbors(s, step)
+	})
+}
+
+// HasAttestationCollectionsWith applies the HasEdge predicate on the "attestation_collections" edge with a given conditions (other predicates).
+func HasAttestationCollectionsWith(preds ...predicate.AttestationCollection) predicate.Statement {
+	return predicate.Statement(func(s *sql.Selector) {
+		step := sqlgraph.NewStep(
+			sqlgraph.From(Table, FieldID),
+			sqlgraph.To(AttestationCollectionsInverseTable, FieldID),
+			sqlgraph.Edge(sqlgraph.O2O, false, AttestationCollectionsTable, AttestationCollectionsColumn),
 		)
 		sqlgraph.HasNeighborsWith(s, step, func(s *sql.Selector) {
 			for _, p := range preds {

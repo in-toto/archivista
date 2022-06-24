@@ -10,6 +10,7 @@ import (
 	"entgo.io/ent/dialect/sql"
 	"entgo.io/ent/dialect/sql/sqlgraph"
 	"entgo.io/ent/schema/field"
+	"github.com/testifysec/archivist/ent/attestationcollection"
 	"github.com/testifysec/archivist/ent/dsse"
 	"github.com/testifysec/archivist/ent/predicate"
 	"github.com/testifysec/archivist/ent/statement"
@@ -29,6 +30,12 @@ func (su *StatementUpdate) Where(ps ...predicate.Statement) *StatementUpdate {
 	return su
 }
 
+// SetPredicate sets the "predicate" field.
+func (su *StatementUpdate) SetPredicate(s string) *StatementUpdate {
+	su.mutation.SetPredicate(s)
+	return su
+}
+
 // AddSubjectIDs adds the "subjects" edge to the Subject entity by IDs.
 func (su *StatementUpdate) AddSubjectIDs(ids ...int) *StatementUpdate {
 	su.mutation.AddSubjectIDs(ids...)
@@ -42,6 +49,25 @@ func (su *StatementUpdate) AddSubjects(s ...*Subject) *StatementUpdate {
 		ids[i] = s[i].ID
 	}
 	return su.AddSubjectIDs(ids...)
+}
+
+// SetAttestationCollectionsID sets the "attestation_collections" edge to the AttestationCollection entity by ID.
+func (su *StatementUpdate) SetAttestationCollectionsID(id int) *StatementUpdate {
+	su.mutation.SetAttestationCollectionsID(id)
+	return su
+}
+
+// SetNillableAttestationCollectionsID sets the "attestation_collections" edge to the AttestationCollection entity by ID if the given value is not nil.
+func (su *StatementUpdate) SetNillableAttestationCollectionsID(id *int) *StatementUpdate {
+	if id != nil {
+		su = su.SetAttestationCollectionsID(*id)
+	}
+	return su
+}
+
+// SetAttestationCollections sets the "attestation_collections" edge to the AttestationCollection entity.
+func (su *StatementUpdate) SetAttestationCollections(a *AttestationCollection) *StatementUpdate {
+	return su.SetAttestationCollectionsID(a.ID)
 }
 
 // AddDsseIDs adds the "dsse" edge to the Dsse entity by IDs.
@@ -85,6 +111,12 @@ func (su *StatementUpdate) RemoveSubjects(s ...*Subject) *StatementUpdate {
 	return su.RemoveSubjectIDs(ids...)
 }
 
+// ClearAttestationCollections clears the "attestation_collections" edge to the AttestationCollection entity.
+func (su *StatementUpdate) ClearAttestationCollections() *StatementUpdate {
+	su.mutation.ClearAttestationCollections()
+	return su
+}
+
 // ClearDsse clears all "dsse" edges to the Dsse entity.
 func (su *StatementUpdate) ClearDsse() *StatementUpdate {
 	su.mutation.ClearDsse()
@@ -113,12 +145,18 @@ func (su *StatementUpdate) Save(ctx context.Context) (int, error) {
 		affected int
 	)
 	if len(su.hooks) == 0 {
+		if err = su.check(); err != nil {
+			return 0, err
+		}
 		affected, err = su.sqlSave(ctx)
 	} else {
 		var mut Mutator = MutateFunc(func(ctx context.Context, m Mutation) (Value, error) {
 			mutation, ok := m.(*StatementMutation)
 			if !ok {
 				return nil, fmt.Errorf("unexpected mutation type %T", m)
+			}
+			if err = su.check(); err != nil {
+				return 0, err
 			}
 			su.mutation = mutation
 			affected, err = su.sqlSave(ctx)
@@ -160,6 +198,16 @@ func (su *StatementUpdate) ExecX(ctx context.Context) {
 	}
 }
 
+// check runs all checks and user-defined validators on the builder.
+func (su *StatementUpdate) check() error {
+	if v, ok := su.mutation.Predicate(); ok {
+		if err := statement.PredicateValidator(v); err != nil {
+			return &ValidationError{Name: "predicate", err: fmt.Errorf(`ent: validator failed for field "Statement.predicate": %w`, err)}
+		}
+	}
+	return nil
+}
+
 func (su *StatementUpdate) sqlSave(ctx context.Context) (n int, err error) {
 	_spec := &sqlgraph.UpdateSpec{
 		Node: &sqlgraph.NodeSpec{
@@ -177,6 +225,13 @@ func (su *StatementUpdate) sqlSave(ctx context.Context) (n int, err error) {
 				ps[i](selector)
 			}
 		}
+	}
+	if value, ok := su.mutation.Predicate(); ok {
+		_spec.Fields.Set = append(_spec.Fields.Set, &sqlgraph.FieldSpec{
+			Type:   field.TypeString,
+			Value:  value,
+			Column: statement.FieldPredicate,
+		})
 	}
 	if su.mutation.SubjectsCleared() {
 		edge := &sqlgraph.EdgeSpec{
@@ -224,6 +279,41 @@ func (su *StatementUpdate) sqlSave(ctx context.Context) (n int, err error) {
 				IDSpec: &sqlgraph.FieldSpec{
 					Type:   field.TypeInt,
 					Column: subject.FieldID,
+				},
+			},
+		}
+		for _, k := range nodes {
+			edge.Target.Nodes = append(edge.Target.Nodes, k)
+		}
+		_spec.Edges.Add = append(_spec.Edges.Add, edge)
+	}
+	if su.mutation.AttestationCollectionsCleared() {
+		edge := &sqlgraph.EdgeSpec{
+			Rel:     sqlgraph.O2O,
+			Inverse: false,
+			Table:   statement.AttestationCollectionsTable,
+			Columns: []string{statement.AttestationCollectionsColumn},
+			Bidi:    false,
+			Target: &sqlgraph.EdgeTarget{
+				IDSpec: &sqlgraph.FieldSpec{
+					Type:   field.TypeInt,
+					Column: attestationcollection.FieldID,
+				},
+			},
+		}
+		_spec.Edges.Clear = append(_spec.Edges.Clear, edge)
+	}
+	if nodes := su.mutation.AttestationCollectionsIDs(); len(nodes) > 0 {
+		edge := &sqlgraph.EdgeSpec{
+			Rel:     sqlgraph.O2O,
+			Inverse: false,
+			Table:   statement.AttestationCollectionsTable,
+			Columns: []string{statement.AttestationCollectionsColumn},
+			Bidi:    false,
+			Target: &sqlgraph.EdgeTarget{
+				IDSpec: &sqlgraph.FieldSpec{
+					Type:   field.TypeInt,
+					Column: attestationcollection.FieldID,
 				},
 			},
 		}
@@ -305,6 +395,12 @@ type StatementUpdateOne struct {
 	mutation *StatementMutation
 }
 
+// SetPredicate sets the "predicate" field.
+func (suo *StatementUpdateOne) SetPredicate(s string) *StatementUpdateOne {
+	suo.mutation.SetPredicate(s)
+	return suo
+}
+
 // AddSubjectIDs adds the "subjects" edge to the Subject entity by IDs.
 func (suo *StatementUpdateOne) AddSubjectIDs(ids ...int) *StatementUpdateOne {
 	suo.mutation.AddSubjectIDs(ids...)
@@ -318,6 +414,25 @@ func (suo *StatementUpdateOne) AddSubjects(s ...*Subject) *StatementUpdateOne {
 		ids[i] = s[i].ID
 	}
 	return suo.AddSubjectIDs(ids...)
+}
+
+// SetAttestationCollectionsID sets the "attestation_collections" edge to the AttestationCollection entity by ID.
+func (suo *StatementUpdateOne) SetAttestationCollectionsID(id int) *StatementUpdateOne {
+	suo.mutation.SetAttestationCollectionsID(id)
+	return suo
+}
+
+// SetNillableAttestationCollectionsID sets the "attestation_collections" edge to the AttestationCollection entity by ID if the given value is not nil.
+func (suo *StatementUpdateOne) SetNillableAttestationCollectionsID(id *int) *StatementUpdateOne {
+	if id != nil {
+		suo = suo.SetAttestationCollectionsID(*id)
+	}
+	return suo
+}
+
+// SetAttestationCollections sets the "attestation_collections" edge to the AttestationCollection entity.
+func (suo *StatementUpdateOne) SetAttestationCollections(a *AttestationCollection) *StatementUpdateOne {
+	return suo.SetAttestationCollectionsID(a.ID)
 }
 
 // AddDsseIDs adds the "dsse" edge to the Dsse entity by IDs.
@@ -361,6 +476,12 @@ func (suo *StatementUpdateOne) RemoveSubjects(s ...*Subject) *StatementUpdateOne
 	return suo.RemoveSubjectIDs(ids...)
 }
 
+// ClearAttestationCollections clears the "attestation_collections" edge to the AttestationCollection entity.
+func (suo *StatementUpdateOne) ClearAttestationCollections() *StatementUpdateOne {
+	suo.mutation.ClearAttestationCollections()
+	return suo
+}
+
 // ClearDsse clears all "dsse" edges to the Dsse entity.
 func (suo *StatementUpdateOne) ClearDsse() *StatementUpdateOne {
 	suo.mutation.ClearDsse()
@@ -396,12 +517,18 @@ func (suo *StatementUpdateOne) Save(ctx context.Context) (*Statement, error) {
 		node *Statement
 	)
 	if len(suo.hooks) == 0 {
+		if err = suo.check(); err != nil {
+			return nil, err
+		}
 		node, err = suo.sqlSave(ctx)
 	} else {
 		var mut Mutator = MutateFunc(func(ctx context.Context, m Mutation) (Value, error) {
 			mutation, ok := m.(*StatementMutation)
 			if !ok {
 				return nil, fmt.Errorf("unexpected mutation type %T", m)
+			}
+			if err = suo.check(); err != nil {
+				return nil, err
 			}
 			suo.mutation = mutation
 			node, err = suo.sqlSave(ctx)
@@ -443,6 +570,16 @@ func (suo *StatementUpdateOne) ExecX(ctx context.Context) {
 	}
 }
 
+// check runs all checks and user-defined validators on the builder.
+func (suo *StatementUpdateOne) check() error {
+	if v, ok := suo.mutation.Predicate(); ok {
+		if err := statement.PredicateValidator(v); err != nil {
+			return &ValidationError{Name: "predicate", err: fmt.Errorf(`ent: validator failed for field "Statement.predicate": %w`, err)}
+		}
+	}
+	return nil
+}
+
 func (suo *StatementUpdateOne) sqlSave(ctx context.Context) (_node *Statement, err error) {
 	_spec := &sqlgraph.UpdateSpec{
 		Node: &sqlgraph.NodeSpec{
@@ -477,6 +614,13 @@ func (suo *StatementUpdateOne) sqlSave(ctx context.Context) (_node *Statement, e
 				ps[i](selector)
 			}
 		}
+	}
+	if value, ok := suo.mutation.Predicate(); ok {
+		_spec.Fields.Set = append(_spec.Fields.Set, &sqlgraph.FieldSpec{
+			Type:   field.TypeString,
+			Value:  value,
+			Column: statement.FieldPredicate,
+		})
 	}
 	if suo.mutation.SubjectsCleared() {
 		edge := &sqlgraph.EdgeSpec{
@@ -524,6 +668,41 @@ func (suo *StatementUpdateOne) sqlSave(ctx context.Context) (_node *Statement, e
 				IDSpec: &sqlgraph.FieldSpec{
 					Type:   field.TypeInt,
 					Column: subject.FieldID,
+				},
+			},
+		}
+		for _, k := range nodes {
+			edge.Target.Nodes = append(edge.Target.Nodes, k)
+		}
+		_spec.Edges.Add = append(_spec.Edges.Add, edge)
+	}
+	if suo.mutation.AttestationCollectionsCleared() {
+		edge := &sqlgraph.EdgeSpec{
+			Rel:     sqlgraph.O2O,
+			Inverse: false,
+			Table:   statement.AttestationCollectionsTable,
+			Columns: []string{statement.AttestationCollectionsColumn},
+			Bidi:    false,
+			Target: &sqlgraph.EdgeTarget{
+				IDSpec: &sqlgraph.FieldSpec{
+					Type:   field.TypeInt,
+					Column: attestationcollection.FieldID,
+				},
+			},
+		}
+		_spec.Edges.Clear = append(_spec.Edges.Clear, edge)
+	}
+	if nodes := suo.mutation.AttestationCollectionsIDs(); len(nodes) > 0 {
+		edge := &sqlgraph.EdgeSpec{
+			Rel:     sqlgraph.O2O,
+			Inverse: false,
+			Table:   statement.AttestationCollectionsTable,
+			Columns: []string{statement.AttestationCollectionsColumn},
+			Bidi:    false,
+			Target: &sqlgraph.EdgeTarget{
+				IDSpec: &sqlgraph.FieldSpec{
+					Type:   field.TypeInt,
+					Column: attestationcollection.FieldID,
 				},
 			},
 		}

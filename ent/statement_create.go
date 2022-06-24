@@ -4,10 +4,12 @@ package ent
 
 import (
 	"context"
+	"errors"
 	"fmt"
 
 	"entgo.io/ent/dialect/sql/sqlgraph"
 	"entgo.io/ent/schema/field"
+	"github.com/testifysec/archivist/ent/attestationcollection"
 	"github.com/testifysec/archivist/ent/dsse"
 	"github.com/testifysec/archivist/ent/statement"
 	"github.com/testifysec/archivist/ent/subject"
@@ -18,6 +20,12 @@ type StatementCreate struct {
 	config
 	mutation *StatementMutation
 	hooks    []Hook
+}
+
+// SetPredicate sets the "predicate" field.
+func (sc *StatementCreate) SetPredicate(s string) *StatementCreate {
+	sc.mutation.SetPredicate(s)
+	return sc
 }
 
 // AddSubjectIDs adds the "subjects" edge to the Subject entity by IDs.
@@ -33,6 +41,25 @@ func (sc *StatementCreate) AddSubjects(s ...*Subject) *StatementCreate {
 		ids[i] = s[i].ID
 	}
 	return sc.AddSubjectIDs(ids...)
+}
+
+// SetAttestationCollectionsID sets the "attestation_collections" edge to the AttestationCollection entity by ID.
+func (sc *StatementCreate) SetAttestationCollectionsID(id int) *StatementCreate {
+	sc.mutation.SetAttestationCollectionsID(id)
+	return sc
+}
+
+// SetNillableAttestationCollectionsID sets the "attestation_collections" edge to the AttestationCollection entity by ID if the given value is not nil.
+func (sc *StatementCreate) SetNillableAttestationCollectionsID(id *int) *StatementCreate {
+	if id != nil {
+		sc = sc.SetAttestationCollectionsID(*id)
+	}
+	return sc
+}
+
+// SetAttestationCollections sets the "attestation_collections" edge to the AttestationCollection entity.
+func (sc *StatementCreate) SetAttestationCollections(a *AttestationCollection) *StatementCreate {
+	return sc.SetAttestationCollectionsID(a.ID)
 }
 
 // AddDsseIDs adds the "dsse" edge to the Dsse entity by IDs.
@@ -120,6 +147,14 @@ func (sc *StatementCreate) ExecX(ctx context.Context) {
 
 // check runs all checks and user-defined validators on the builder.
 func (sc *StatementCreate) check() error {
+	if _, ok := sc.mutation.Predicate(); !ok {
+		return &ValidationError{Name: "predicate", err: errors.New(`ent: missing required field "Statement.predicate"`)}
+	}
+	if v, ok := sc.mutation.Predicate(); ok {
+		if err := statement.PredicateValidator(v); err != nil {
+			return &ValidationError{Name: "predicate", err: fmt.Errorf(`ent: validator failed for field "Statement.predicate": %w`, err)}
+		}
+	}
 	return nil
 }
 
@@ -147,6 +182,14 @@ func (sc *StatementCreate) createSpec() (*Statement, *sqlgraph.CreateSpec) {
 			},
 		}
 	)
+	if value, ok := sc.mutation.Predicate(); ok {
+		_spec.Fields = append(_spec.Fields, &sqlgraph.FieldSpec{
+			Type:   field.TypeString,
+			Value:  value,
+			Column: statement.FieldPredicate,
+		})
+		_node.Predicate = value
+	}
 	if nodes := sc.mutation.SubjectsIDs(); len(nodes) > 0 {
 		edge := &sqlgraph.EdgeSpec{
 			Rel:     sqlgraph.O2M,
@@ -158,6 +201,25 @@ func (sc *StatementCreate) createSpec() (*Statement, *sqlgraph.CreateSpec) {
 				IDSpec: &sqlgraph.FieldSpec{
 					Type:   field.TypeInt,
 					Column: subject.FieldID,
+				},
+			},
+		}
+		for _, k := range nodes {
+			edge.Target.Nodes = append(edge.Target.Nodes, k)
+		}
+		_spec.Edges = append(_spec.Edges, edge)
+	}
+	if nodes := sc.mutation.AttestationCollectionsIDs(); len(nodes) > 0 {
+		edge := &sqlgraph.EdgeSpec{
+			Rel:     sqlgraph.O2O,
+			Inverse: false,
+			Table:   statement.AttestationCollectionsTable,
+			Columns: []string{statement.AttestationCollectionsColumn},
+			Bidi:    false,
+			Target: &sqlgraph.EdgeTarget{
+				IDSpec: &sqlgraph.FieldSpec{
+					Type:   field.TypeInt,
+					Column: attestationcollection.FieldID,
 				},
 			},
 		}

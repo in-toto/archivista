@@ -7,14 +7,17 @@ import (
 	"strings"
 
 	"entgo.io/ent/dialect/sql"
+	"github.com/testifysec/archivist/ent/attestationcollection"
 	"github.com/testifysec/archivist/ent/statement"
 )
 
 // Statement is the model entity for the Statement schema.
 type Statement struct {
-	config
+	config `json:"-"`
 	// ID of the ent.
 	ID int `json:"id,omitempty"`
+	// Predicate holds the value of the "predicate" field.
+	Predicate string `json:"predicate,omitempty"`
 	// Edges holds the relations/edges for other nodes in the graph.
 	// The values are being populated by the StatementQuery when eager-loading is set.
 	Edges StatementEdges `json:"edges"`
@@ -24,11 +27,13 @@ type Statement struct {
 type StatementEdges struct {
 	// Subjects holds the value of the subjects edge.
 	Subjects []*Subject `json:"subjects,omitempty"`
+	// AttestationCollections holds the value of the attestation_collections edge.
+	AttestationCollections *AttestationCollection `json:"attestation_collections,omitempty"`
 	// Dsse holds the value of the dsse edge.
 	Dsse []*Dsse `json:"dsse,omitempty"`
 	// loadedTypes holds the information for reporting if a
 	// type was loaded (or requested) in eager-loading or not.
-	loadedTypes [2]bool
+	loadedTypes [3]bool
 }
 
 // SubjectsOrErr returns the Subjects value or an error if the edge
@@ -40,10 +45,24 @@ func (e StatementEdges) SubjectsOrErr() ([]*Subject, error) {
 	return nil, &NotLoadedError{edge: "subjects"}
 }
 
+// AttestationCollectionsOrErr returns the AttestationCollections value or an error if the edge
+// was not loaded in eager-loading, or loaded but was not found.
+func (e StatementEdges) AttestationCollectionsOrErr() (*AttestationCollection, error) {
+	if e.loadedTypes[1] {
+		if e.AttestationCollections == nil {
+			// The edge attestation_collections was loaded in eager-loading,
+			// but was not found.
+			return nil, &NotFoundError{label: attestationcollection.Label}
+		}
+		return e.AttestationCollections, nil
+	}
+	return nil, &NotLoadedError{edge: "attestation_collections"}
+}
+
 // DsseOrErr returns the Dsse value or an error if the edge
 // was not loaded in eager-loading.
 func (e StatementEdges) DsseOrErr() ([]*Dsse, error) {
-	if e.loadedTypes[1] {
+	if e.loadedTypes[2] {
 		return e.Dsse, nil
 	}
 	return nil, &NotLoadedError{edge: "dsse"}
@@ -56,6 +75,8 @@ func (*Statement) scanValues(columns []string) ([]interface{}, error) {
 		switch columns[i] {
 		case statement.FieldID:
 			values[i] = new(sql.NullInt64)
+		case statement.FieldPredicate:
+			values[i] = new(sql.NullString)
 		default:
 			return nil, fmt.Errorf("unexpected column %q for type Statement", columns[i])
 		}
@@ -77,6 +98,12 @@ func (s *Statement) assignValues(columns []string, values []interface{}) error {
 				return fmt.Errorf("unexpected type %T for field id", value)
 			}
 			s.ID = int(value.Int64)
+		case statement.FieldPredicate:
+			if value, ok := values[i].(*sql.NullString); !ok {
+				return fmt.Errorf("unexpected type %T for field predicate", values[i])
+			} else if value.Valid {
+				s.Predicate = value.String
+			}
 		}
 	}
 	return nil
@@ -85,6 +112,11 @@ func (s *Statement) assignValues(columns []string, values []interface{}) error {
 // QuerySubjects queries the "subjects" edge of the Statement entity.
 func (s *Statement) QuerySubjects() *SubjectQuery {
 	return (&StatementClient{config: s.config}).QuerySubjects(s)
+}
+
+// QueryAttestationCollections queries the "attestation_collections" edge of the Statement entity.
+func (s *Statement) QueryAttestationCollections() *AttestationCollectionQuery {
+	return (&StatementClient{config: s.config}).QueryAttestationCollections(s)
 }
 
 // QueryDsse queries the "dsse" edge of the Statement entity.
@@ -115,6 +147,8 @@ func (s *Statement) String() string {
 	var builder strings.Builder
 	builder.WriteString("Statement(")
 	builder.WriteString(fmt.Sprintf("id=%v", s.ID))
+	builder.WriteString(", predicate=")
+	builder.WriteString(s.Predicate)
 	builder.WriteByte(')')
 	return builder.String()
 }

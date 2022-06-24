@@ -9,6 +9,32 @@ import (
 	"github.com/testifysec/archivist/ent"
 )
 
+// The AttestationFunc type is an adapter to allow the use of ordinary
+// function as Attestation mutator.
+type AttestationFunc func(context.Context, *ent.AttestationMutation) (ent.Value, error)
+
+// Mutate calls f(ctx, m).
+func (f AttestationFunc) Mutate(ctx context.Context, m ent.Mutation) (ent.Value, error) {
+	mv, ok := m.(*ent.AttestationMutation)
+	if !ok {
+		return nil, fmt.Errorf("unexpected mutation type %T. expect *ent.AttestationMutation", m)
+	}
+	return f(ctx, mv)
+}
+
+// The AttestationCollectionFunc type is an adapter to allow the use of ordinary
+// function as AttestationCollection mutator.
+type AttestationCollectionFunc func(context.Context, *ent.AttestationCollectionMutation) (ent.Value, error)
+
+// Mutate calls f(ctx, m).
+func (f AttestationCollectionFunc) Mutate(ctx context.Context, m ent.Mutation) (ent.Value, error) {
+	mv, ok := m.(*ent.AttestationCollectionMutation)
+	if !ok {
+		return nil, fmt.Errorf("unexpected mutation type %T. expect *ent.AttestationCollectionMutation", m)
+	}
+	return f(ctx, mv)
+}
+
 // The DigestFunc type is an adapter to allow the use of ordinary
 // function as Digest mutator.
 type DigestFunc func(context.Context, *ent.DigestMutation) (ent.Value, error)

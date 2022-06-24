@@ -12,6 +12,10 @@ import (
 // Tx is a transactional client that is created by calling Client.Tx().
 type Tx struct {
 	config
+	// Attestation is the client for interacting with the Attestation builders.
+	Attestation *AttestationClient
+	// AttestationCollection is the client for interacting with the AttestationCollection builders.
+	AttestationCollection *AttestationCollectionClient
 	// Digest is the client for interacting with the Digest builders.
 	Digest *DigestClient
 	// Dsse is the client for interacting with the Dsse builders.
@@ -157,6 +161,8 @@ func (tx *Tx) Client() *Client {
 }
 
 func (tx *Tx) init() {
+	tx.Attestation = NewAttestationClient(tx.config)
+	tx.AttestationCollection = NewAttestationCollectionClient(tx.config)
 	tx.Digest = NewDigestClient(tx.config)
 	tx.Dsse = NewDsseClient(tx.config)
 	tx.Signature = NewSignatureClient(tx.config)
@@ -171,7 +177,7 @@ func (tx *Tx) init() {
 // of them in order to commit or rollback the transaction.
 //
 // If a closed transaction is embedded in one of the generated entities, and the entity
-// applies a query, for example: Digest.QueryXXX(), the query will be executed
+// applies a query, for example: Attestation.QueryXXX(), the query will be executed
 // through the driver which created this transaction.
 //
 // Note that txDriver is not goroutine safe.

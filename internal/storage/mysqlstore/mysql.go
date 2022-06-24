@@ -25,6 +25,7 @@ import (
 	"github.com/testifysec/archivist-api/pkg/api/archivist"
 	"github.com/testifysec/archivist/ent"
 	"github.com/testifysec/archivist/ent/digest"
+	"github.com/testifysec/go-witness/attestation"
 	"github.com/testifysec/go-witness/dsse"
 	"github.com/testifysec/go-witness/intoto"
 	"google.golang.org/protobuf/types/known/emptypb"
@@ -114,6 +115,17 @@ func (s *store) GetBySubjectDigest(ctx context.Context, request *archivist.GetBy
 	return &archivist.GetBySubjectDigestResponse{Object: results}, err
 }
 
+// attestation.Collection from go-witness will try to parse each of the attestations by calling their factory functions,
+// which require the attestations to be registered in the go-witness library.  We don't really care about the actual attestation
+// data for the purposes here, so just leave it as a raw message.
+type parsedCollection struct {
+	attestation.Collection
+	Attestations []struct {
+		Type        string          `json:"type"`
+		Attestation json.RawMessage `json:"attestation"`
+	} `json:"attestations"`
+}
+
 func (s *store) Store(ctx context.Context, request *archivist.StoreRequest) (*emptypb.Empty, error) {
 	tx, err := s.client.Tx(ctx)
 	fmt.Println("STORING")
@@ -128,6 +140,11 @@ func (s *store) Store(ctx context.Context, request *archivist.StoreRequest) (*em
 	payload := &intoto.Statement{}
 
 	if err := json.Unmarshal(envelope.Payload, payload); err != nil {
+		return nil, err
+	}
+
+	parsedCollection := &parsedCollection{}
+	if err := json.Unmarshal(payload.Predicate, parsedCollection); err != nil {
 		return nil, err
 	}
 
@@ -158,6 +175,7 @@ func (s *store) Store(ctx context.Context, request *archivist.StoreRequest) (*em
 	}
 
 	stmt, err := tx.Statement.Create().
+		SetPredicate(payload.PredicateType).
 		AddDsse(dsse).
 		Save(ctx)
 	if err != nil {
@@ -180,6 +198,23 @@ func (s *store) Store(ctx context.Context, request *archivist.StoreRequest) (*em
 				Exec(ctx); err != nil {
 				return nil, err
 			}
+		}
+	}
+
+	collection, err := tx.AttestationCollection.Create().
+		SetStatementID(stmt.ID).
+		SetName(parsedCollection.Name).
+		Save(ctx)
+	if err != nil {
+		return nil, err
+	}
+
+	for _, a := range parsedCollection.Attestations {
+		if err := tx.Attestation.Create().
+			SetAttestationCollectionID(collection.ID).
+			SetType(a.Type).
+			Exec(ctx); err != nil {
+			return nil, err
 		}
 	}
 

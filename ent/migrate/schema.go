@@ -8,6 +8,46 @@ import (
 )
 
 var (
+	// AttestationsColumns holds the columns for the "attestations" table.
+	AttestationsColumns = []*schema.Column{
+		{Name: "id", Type: field.TypeInt, Increment: true},
+		{Name: "type", Type: field.TypeString},
+		{Name: "attestation_collection_attestations", Type: field.TypeInt},
+	}
+	// AttestationsTable holds the schema information for the "attestations" table.
+	AttestationsTable = &schema.Table{
+		Name:       "attestations",
+		Columns:    AttestationsColumns,
+		PrimaryKey: []*schema.Column{AttestationsColumns[0]},
+		ForeignKeys: []*schema.ForeignKey{
+			{
+				Symbol:     "attestations_attestation_collections_attestations",
+				Columns:    []*schema.Column{AttestationsColumns[2]},
+				RefColumns: []*schema.Column{AttestationCollectionsColumns[0]},
+				OnDelete:   schema.NoAction,
+			},
+		},
+	}
+	// AttestationCollectionsColumns holds the columns for the "attestation_collections" table.
+	AttestationCollectionsColumns = []*schema.Column{
+		{Name: "id", Type: field.TypeInt, Increment: true},
+		{Name: "name", Type: field.TypeString},
+		{Name: "statement_attestation_collections", Type: field.TypeInt, Unique: true},
+	}
+	// AttestationCollectionsTable holds the schema information for the "attestation_collections" table.
+	AttestationCollectionsTable = &schema.Table{
+		Name:       "attestation_collections",
+		Columns:    AttestationCollectionsColumns,
+		PrimaryKey: []*schema.Column{AttestationCollectionsColumns[0]},
+		ForeignKeys: []*schema.ForeignKey{
+			{
+				Symbol:     "attestation_collections_statements_attestation_collections",
+				Columns:    []*schema.Column{AttestationCollectionsColumns[2]},
+				RefColumns: []*schema.Column{StatementsColumns[0]},
+				OnDelete:   schema.NoAction,
+			},
+		},
+	}
 	// DigestsColumns holds the columns for the "digests" table.
 	DigestsColumns = []*schema.Column{
 		{Name: "id", Type: field.TypeInt, Increment: true},
@@ -74,6 +114,7 @@ var (
 	// StatementsColumns holds the columns for the "statements" table.
 	StatementsColumns = []*schema.Column{
 		{Name: "id", Type: field.TypeInt, Increment: true},
+		{Name: "predicate", Type: field.TypeString},
 	}
 	// StatementsTable holds the schema information for the "statements" table.
 	StatementsTable = &schema.Table{
@@ -103,6 +144,8 @@ var (
 	}
 	// Tables holds all the tables in the schema.
 	Tables = []*schema.Table{
+		AttestationsTable,
+		AttestationCollectionsTable,
 		DigestsTable,
 		DssesTable,
 		SignaturesTable,
@@ -112,6 +155,8 @@ var (
 )
 
 func init() {
+	AttestationsTable.ForeignKeys[0].RefTable = AttestationCollectionsTable
+	AttestationCollectionsTable.ForeignKeys[0].RefTable = StatementsTable
 	DigestsTable.ForeignKeys[0].RefTable = SubjectsTable
 	DssesTable.ForeignKeys[0].RefTable = StatementsTable
 	SignaturesTable.ForeignKeys[0].RefTable = DssesTable

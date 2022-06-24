@@ -6,6 +6,12 @@ import (
 	"entgo.io/ent/dialect/sql"
 )
 
+// Attestation is the predicate function for attestation builders.
+type Attestation func(*sql.Selector)
+
+// AttestationCollection is the predicate function for attestationcollection builders.
+type AttestationCollection func(*sql.Selector)
+
 // Digest is the predicate function for digest builders.
 type Digest func(*sql.Selector)
 

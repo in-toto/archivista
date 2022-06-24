@@ -3,10 +3,13 @@
 package ent
 
 import (
+	"github.com/testifysec/archivist/ent/attestation"
+	"github.com/testifysec/archivist/ent/attestationcollection"
 	"github.com/testifysec/archivist/ent/digest"
 	"github.com/testifysec/archivist/ent/dsse"
 	"github.com/testifysec/archivist/ent/schema"
 	"github.com/testifysec/archivist/ent/signature"
+	"github.com/testifysec/archivist/ent/statement"
 	"github.com/testifysec/archivist/ent/subject"
 )
 
@@ -14,6 +17,18 @@ import (
 // (default values, validators, hooks and policies) and stitches it
 // to their package variables.
 func init() {
+	attestationFields := schema.Attestation{}.Fields()
+	_ = attestationFields
+	// attestationDescType is the schema descriptor for type field.
+	attestationDescType := attestationFields[0].Descriptor()
+	// attestation.TypeValidator is a validator for the "type" field. It is called by the builders before save.
+	attestation.TypeValidator = attestationDescType.Validators[0].(func(string) error)
+	attestationcollectionFields := schema.AttestationCollection{}.Fields()
+	_ = attestationcollectionFields
+	// attestationcollectionDescName is the schema descriptor for name field.
+	attestationcollectionDescName := attestationcollectionFields[0].Descriptor()
+	// attestationcollection.NameValidator is a validator for the "name" field. It is called by the builders before save.
+	attestationcollection.NameValidator = attestationcollectionDescName.Validators[0].(func(string) error)
 	digestFields := schema.Digest{}.Fields()
 	_ = digestFields
 	// digestDescAlgorithm is the schema descriptor for algorithm field.
@@ -44,6 +59,12 @@ func init() {
 	signatureDescSignature := signatureFields[1].Descriptor()
 	// signature.SignatureValidator is a validator for the "signature" field. It is called by the builders before save.
 	signature.SignatureValidator = signatureDescSignature.Validators[0].(func(string) error)
+	statementFields := schema.Statement{}.Fields()
+	_ = statementFields
+	// statementDescPredicate is the schema descriptor for predicate field.
+	statementDescPredicate := statementFields[0].Descriptor()
+	// statement.PredicateValidator is a validator for the "predicate" field. It is called by the builders before save.
+	statement.PredicateValidator = statementDescPredicate.Validators[0].(func(string) error)
 	subjectFields := schema.Subject{}.Fields()
 	_ = subjectFields
 	// subjectDescName is the schema descriptor for name field.

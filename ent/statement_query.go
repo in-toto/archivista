@@ -12,6 +12,7 @@ import (
 	"entgo.io/ent/dialect/sql"
 	"entgo.io/ent/dialect/sql/sqlgraph"
 	"entgo.io/ent/schema/field"
+	"github.com/testifysec/archivist/ent/attestationcollection"
 	"github.com/testifysec/archivist/ent/dsse"
 	"github.com/testifysec/archivist/ent/predicate"
 	"github.com/testifysec/archivist/ent/statement"
@@ -28,8 +29,9 @@ type StatementQuery struct {
 	fields     []string
 	predicates []predicate.Statement
 	// eager-loading edges.
-	withSubjects *SubjectQuery
-	withDsse     *DsseQuery
+	withSubjects               *SubjectQuery
+	withAttestationCollections *AttestationCollectionQuery
+	withDsse                   *DsseQuery
 	// intermediate query (i.e. traversal path).
 	sql  *sql.Selector
 	path func(context.Context) (*sql.Selector, error)
@@ -81,6 +83,28 @@ func (sq *StatementQuery) QuerySubjects() *SubjectQuery {
 			sqlgraph.From(statement.Table, statement.FieldID, selector),
 			sqlgraph.To(subject.Table, subject.FieldID),
 			sqlgraph.Edge(sqlgraph.O2M, false, statement.SubjectsTable, statement.SubjectsColumn),
+		)
+		fromU = sqlgraph.SetNeighbors(sq.driver.Dialect(), step)
+		return fromU, nil
+	}
+	return query
+}
+
+// QueryAttestationCollections chains the current query on the "attestation_collections" edge.
+func (sq *StatementQuery) QueryAttestationCollections() *AttestationCollectionQuery {
+	query := &AttestationCollectionQuery{config: sq.config}
+	query.path = func(ctx context.Context) (fromU *sql.Selector, err error) {
+		if err := sq.prepareQuery(ctx); err != nil {
+			return nil, err
+		}
+		selector := sq.sqlQuery(ctx)
+		if err := selector.Err(); err != nil {
+			return nil, err
+		}
+		step := sqlgraph.NewStep(
+			sqlgraph.From(statement.Table, statement.FieldID, selector),
+			sqlgraph.To(attestationcollection.Table, attestationcollection.FieldID),
+			sqlgraph.Edge(sqlgraph.O2O, false, statement.AttestationCollectionsTable, statement.AttestationCollectionsColumn),
 		)
 		fromU = sqlgraph.SetNeighbors(sq.driver.Dialect(), step)
 		return fromU, nil
@@ -286,13 +310,14 @@ func (sq *StatementQuery) Clone() *StatementQuery {
 		return nil
 	}
 	return &StatementQuery{
-		config:       sq.config,
-		limit:        sq.limit,
-		offset:       sq.offset,
-		order:        append([]OrderFunc{}, sq.order...),
-		predicates:   append([]predicate.Statement{}, sq.predicates...),
-		withSubjects: sq.withSubjects.Clone(),
-		withDsse:     sq.withDsse.Clone(),
+		config:                     sq.config,
+		limit:                      sq.limit,
+		offset:                     sq.offset,
+		order:                      append([]OrderFunc{}, sq.order...),
+		predicates:                 append([]predicate.Statement{}, sq.predicates...),
+		withSubjects:               sq.withSubjects.Clone(),
+		withAttestationCollections: sq.withAttestationCollections.Clone(),
+		withDsse:                   sq.withDsse.Clone(),
 		// clone intermediate query.
 		sql:    sq.sql.Clone(),
 		path:   sq.path,
@@ -311,6 +336,17 @@ func (sq *StatementQuery) WithSubjects(opts ...func(*SubjectQuery)) *StatementQu
 	return sq
 }
 
+// WithAttestationCollections tells the query-builder to eager-load the nodes that are connected to
+// the "attestation_collections" edge. The optional arguments are used to configure the query builder of the edge.
+func (sq *StatementQuery) WithAttestationCollections(opts ...func(*AttestationCollectionQuery)) *StatementQuery {
+	query := &AttestationCollectionQuery{config: sq.config}
+	for _, opt := range opts {
+		opt(query)
+	}
+	sq.withAttestationCollections = query
+	return sq
+}
+
 // WithDsse tells the query-builder to eager-load the nodes that are connected to
 // the "dsse" edge. The optional arguments are used to configure the query builder of the edge.
 func (sq *StatementQuery) WithDsse(opts ...func(*DsseQuery)) *StatementQuery {
@@ -324,6 +360,19 @@ func (sq *StatementQuery) WithDsse(opts ...func(*DsseQuery)) *StatementQuery {
 
 // GroupBy is used to group vertices by one or more fields/columns.
 // It is often used with aggregate functions, like: count, max, mean, min, sum.
+//
+// Example:
+//
+//	var v []struct {
+//		Predicate string `json:"predicate,omitempty"`
+//		Count int `json:"count,omitempty"`
+//	}
+//
+//	client.Statement.Query().
+//		GroupBy(statement.FieldPredicate).
+//		Aggregate(ent.Count()).
+//		Scan(ctx, &v)
+//
 func (sq *StatementQuery) GroupBy(field string, fields ...string) *StatementGroupBy {
 	group := &StatementGroupBy{config: sq.config}
 	group.fields = append([]string{field}, fields...)
@@ -338,6 +387,17 @@ func (sq *StatementQuery) GroupBy(field string, fields ...string) *StatementGrou
 
 // Select allows the selection one or more fields/columns for the given query,
 // instead of selecting all fields in the entity.
+//
+// Example:
+//
+//	var v []struct {
+//		Predicate string `json:"predicate,omitempty"`
+//	}
+//
+//	client.Statement.Query().
+//		Select(statement.FieldPredicate).
+//		Scan(ctx, &v)
+//
 func (sq *StatementQuery) Select(fields ...string) *StatementSelect {
 	sq.fields = append(sq.fields, fields...)
 	return &StatementSelect{StatementQuery: sq}
@@ -363,8 +423,9 @@ func (sq *StatementQuery) sqlAll(ctx context.Context) ([]*Statement, error) {
 	var (
 		nodes       = []*Statement{}
 		_spec       = sq.querySpec()
-		loadedTypes = [2]bool{
+		loadedTypes = [3]bool{
 			sq.withSubjects != nil,
+			sq.withAttestationCollections != nil,
 			sq.withDsse != nil,
 		}
 	)
@@ -414,6 +475,34 @@ func (sq *StatementQuery) sqlAll(ctx context.Context) ([]*Statement, error) {
 				return nil, fmt.Errorf(`unexpected foreign-key "statement_subjects" returned %v for node %v`, *fk, n.ID)
 			}
 			node.Edges.Subjects = append(node.Edges.Subjects, n)
+		}
+	}
+
+	if query := sq.withAttestationCollections; query != nil {
+		fks := make([]driver.Value, 0, len(nodes))
+		nodeids := make(map[int]*Statement)
+		for i := range nodes {
+			fks = append(fks, nodes[i].ID)
+			nodeids[nodes[i].ID] = nodes[i]
+		}
+		query.withFKs = true
+		query.Where(predicate.AttestationCollection(func(s *sql.Selector) {
+			s.Where(sql.InValues(statement.AttestationCollectionsColumn, fks...))
+		}))
+		neighbors, err := query.All(ctx)
+		if err != nil {
+			return nil, err
+		}
+		for _, n := range neighbors {
+			fk := n.statement_attestation_collections
+			if fk == nil {
+				return nil, fmt.Errorf(`foreign-key "statement_attestation_collections" is nil for node %v`, n.ID)
+			}
+			node, ok := nodeids[*fk]
+			if !ok {
+				return nil, fmt.Errorf(`unexpected foreign-key "statement_attestation_collections" returned %v for node %v`, *fk, n.ID)
+			}
+			node.Edges.AttestationCollections = n
 		}
 	}
 
