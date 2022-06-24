@@ -26,11 +26,12 @@ type config struct {
 type hooks struct {
 	Attestation           []ent.Hook
 	AttestationCollection []ent.Hook
-	Digest                []ent.Hook
 	Dsse                  []ent.Hook
+	PayloadDigest         []ent.Hook
 	Signature             []ent.Hook
 	Statement             []ent.Hook
 	Subject               []ent.Hook
+	SubjectDigest         []ent.Hook
 }
 
 // Options applies the options on the config object.

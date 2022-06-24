@@ -6,7 +6,7 @@ import (
 	"entgo.io/ent/schema/field"
 )
 
-// Subject holds the schema definition for the Subject entity.
+// Subject represents subjects from an in-toto statement.
 type Subject struct {
 	ent.Schema
 }
@@ -21,7 +21,7 @@ func (Subject) Fields() []ent.Field {
 // Edges of the Subject.
 func (Subject) Edges() []ent.Edge {
 	return []ent.Edge{
-		edge.To("digests", Digest.Type),
+		edge.To("subject_digests", SubjectDigest.Type),
 
 		edge.From("statement", Statement.Type).
 			Ref("subjects").Unique(),

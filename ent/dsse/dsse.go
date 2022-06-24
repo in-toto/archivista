@@ -15,6 +15,8 @@ const (
 	EdgeStatement = "statement"
 	// EdgeSignatures holds the string denoting the signatures edge name in mutations.
 	EdgeSignatures = "signatures"
+	// EdgePayloadDigests holds the string denoting the payload_digests edge name in mutations.
+	EdgePayloadDigests = "payload_digests"
 	// Table holds the table name of the dsse in the database.
 	Table = "dsses"
 	// StatementTable is the table that holds the statement relation/edge.
@@ -31,6 +33,13 @@ const (
 	SignaturesInverseTable = "signatures"
 	// SignaturesColumn is the table column denoting the signatures relation/edge.
 	SignaturesColumn = "dsse_signatures"
+	// PayloadDigestsTable is the table that holds the payload_digests relation/edge.
+	PayloadDigestsTable = "payload_digests"
+	// PayloadDigestsInverseTable is the table name for the PayloadDigest entity.
+	// It exists in this package in order to avoid circular dependency with the "payloaddigest" package.
+	PayloadDigestsInverseTable = "payload_digests"
+	// PayloadDigestsColumn is the table column denoting the payload_digests relation/edge.
+	PayloadDigestsColumn = "dsse_payload_digests"
 )
 
 // Columns holds all SQL columns for dsse fields.

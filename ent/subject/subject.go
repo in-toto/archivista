@@ -9,19 +9,19 @@ const (
 	FieldID = "id"
 	// FieldName holds the string denoting the name field in the database.
 	FieldName = "name"
-	// EdgeDigests holds the string denoting the digests edge name in mutations.
-	EdgeDigests = "digests"
+	// EdgeSubjectDigests holds the string denoting the subject_digests edge name in mutations.
+	EdgeSubjectDigests = "subject_digests"
 	// EdgeStatement holds the string denoting the statement edge name in mutations.
 	EdgeStatement = "statement"
 	// Table holds the table name of the subject in the database.
 	Table = "subjects"
-	// DigestsTable is the table that holds the digests relation/edge.
-	DigestsTable = "digests"
-	// DigestsInverseTable is the table name for the Digest entity.
-	// It exists in this package in order to avoid circular dependency with the "digest" package.
-	DigestsInverseTable = "digests"
-	// DigestsColumn is the table column denoting the digests relation/edge.
-	DigestsColumn = "subject_digests"
+	// SubjectDigestsTable is the table that holds the subject_digests relation/edge.
+	SubjectDigestsTable = "subject_digests"
+	// SubjectDigestsInverseTable is the table name for the SubjectDigest entity.
+	// It exists in this package in order to avoid circular dependency with the "subjectdigest" package.
+	SubjectDigestsInverseTable = "subject_digests"
+	// SubjectDigestsColumn is the table column denoting the subject_digests relation/edge.
+	SubjectDigestsColumn = "subject_subject_digests"
 	// StatementTable is the table that holds the statement relation/edge.
 	StatementTable = "subjects"
 	// StatementInverseTable is the table name for the Statement entity.

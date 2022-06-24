@@ -6,7 +6,7 @@ import (
 	"entgo.io/ent/schema/field"
 )
 
-// Statement holds the schema definition for the Statement entity.
+// Statement represents an in-toto statement from an archived dsse envelope
 type Statement struct {
 	ent.Schema
 }

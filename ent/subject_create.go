@@ -9,9 +9,9 @@ import (
 
 	"entgo.io/ent/dialect/sql/sqlgraph"
 	"entgo.io/ent/schema/field"
-	"github.com/testifysec/archivist/ent/digest"
 	"github.com/testifysec/archivist/ent/statement"
 	"github.com/testifysec/archivist/ent/subject"
+	"github.com/testifysec/archivist/ent/subjectdigest"
 )
 
 // SubjectCreate is the builder for creating a Subject entity.
@@ -27,19 +27,19 @@ func (sc *SubjectCreate) SetName(s string) *SubjectCreate {
 	return sc
 }
 
-// AddDigestIDs adds the "digests" edge to the Digest entity by IDs.
-func (sc *SubjectCreate) AddDigestIDs(ids ...int) *SubjectCreate {
-	sc.mutation.AddDigestIDs(ids...)
+// AddSubjectDigestIDs adds the "subject_digests" edge to the SubjectDigest entity by IDs.
+func (sc *SubjectCreate) AddSubjectDigestIDs(ids ...int) *SubjectCreate {
+	sc.mutation.AddSubjectDigestIDs(ids...)
 	return sc
 }
 
-// AddDigests adds the "digests" edges to the Digest entity.
-func (sc *SubjectCreate) AddDigests(d ...*Digest) *SubjectCreate {
-	ids := make([]int, len(d))
-	for i := range d {
-		ids[i] = d[i].ID
+// AddSubjectDigests adds the "subject_digests" edges to the SubjectDigest entity.
+func (sc *SubjectCreate) AddSubjectDigests(s ...*SubjectDigest) *SubjectCreate {
+	ids := make([]int, len(s))
+	for i := range s {
+		ids[i] = s[i].ID
 	}
-	return sc.AddDigestIDs(ids...)
+	return sc.AddSubjectDigestIDs(ids...)
 }
 
 // SetStatementID sets the "statement" edge to the Statement entity by ID.
@@ -174,17 +174,17 @@ func (sc *SubjectCreate) createSpec() (*Subject, *sqlgraph.CreateSpec) {
 		})
 		_node.Name = value
 	}
-	if nodes := sc.mutation.DigestsIDs(); len(nodes) > 0 {
+	if nodes := sc.mutation.SubjectDigestsIDs(); len(nodes) > 0 {
 		edge := &sqlgraph.EdgeSpec{
 			Rel:     sqlgraph.O2M,
 			Inverse: false,
-			Table:   subject.DigestsTable,
-			Columns: []string{subject.DigestsColumn},
+			Table:   subject.SubjectDigestsTable,
+			Columns: []string{subject.SubjectDigestsColumn},
 			Bidi:    false,
 			Target: &sqlgraph.EdgeTarget{
 				IDSpec: &sqlgraph.FieldSpec{
 					Type:   field.TypeInt,
-					Column: digest.FieldID,
+					Column: subjectdigest.FieldID,
 				},
 			},
 		}

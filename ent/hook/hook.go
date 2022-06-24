@@ -35,19 +35,6 @@ func (f AttestationCollectionFunc) Mutate(ctx context.Context, m ent.Mutation) (
 	return f(ctx, mv)
 }
 
-// The DigestFunc type is an adapter to allow the use of ordinary
-// function as Digest mutator.
-type DigestFunc func(context.Context, *ent.DigestMutation) (ent.Value, error)
-
-// Mutate calls f(ctx, m).
-func (f DigestFunc) Mutate(ctx context.Context, m ent.Mutation) (ent.Value, error) {
-	mv, ok := m.(*ent.DigestMutation)
-	if !ok {
-		return nil, fmt.Errorf("unexpected mutation type %T. expect *ent.DigestMutation", m)
-	}
-	return f(ctx, mv)
-}
-
 // The DsseFunc type is an adapter to allow the use of ordinary
 // function as Dsse mutator.
 type DsseFunc func(context.Context, *ent.DsseMutation) (ent.Value, error)
@@ -57,6 +44,19 @@ func (f DsseFunc) Mutate(ctx context.Context, m ent.Mutation) (ent.Value, error)
 	mv, ok := m.(*ent.DsseMutation)
 	if !ok {
 		return nil, fmt.Errorf("unexpected mutation type %T. expect *ent.DsseMutation", m)
+	}
+	return f(ctx, mv)
+}
+
+// The PayloadDigestFunc type is an adapter to allow the use of ordinary
+// function as PayloadDigest mutator.
+type PayloadDigestFunc func(context.Context, *ent.PayloadDigestMutation) (ent.Value, error)
+
+// Mutate calls f(ctx, m).
+func (f PayloadDigestFunc) Mutate(ctx context.Context, m ent.Mutation) (ent.Value, error) {
+	mv, ok := m.(*ent.PayloadDigestMutation)
+	if !ok {
+		return nil, fmt.Errorf("unexpected mutation type %T. expect *ent.PayloadDigestMutation", m)
 	}
 	return f(ctx, mv)
 }
@@ -96,6 +96,19 @@ func (f SubjectFunc) Mutate(ctx context.Context, m ent.Mutation) (ent.Value, err
 	mv, ok := m.(*ent.SubjectMutation)
 	if !ok {
 		return nil, fmt.Errorf("unexpected mutation type %T. expect *ent.SubjectMutation", m)
+	}
+	return f(ctx, mv)
+}
+
+// The SubjectDigestFunc type is an adapter to allow the use of ordinary
+// function as SubjectDigest mutator.
+type SubjectDigestFunc func(context.Context, *ent.SubjectDigestMutation) (ent.Value, error)
+
+// Mutate calls f(ctx, m).
+func (f SubjectDigestFunc) Mutate(ctx context.Context, m ent.Mutation) (ent.Value, error) {
+	mv, ok := m.(*ent.SubjectDigestMutation)
+	if !ok {
+		return nil, fmt.Errorf("unexpected mutation type %T. expect *ent.SubjectDigestMutation", m)
 	}
 	return f(ctx, mv)
 }

@@ -7,12 +7,12 @@ import (
 	"strings"
 
 	"entgo.io/ent/dialect/sql"
-	"github.com/testifysec/archivist/ent/digest"
 	"github.com/testifysec/archivist/ent/subject"
+	"github.com/testifysec/archivist/ent/subjectdigest"
 )
 
-// Digest is the model entity for the Digest schema.
-type Digest struct {
+// SubjectDigest is the model entity for the SubjectDigest schema.
+type SubjectDigest struct {
 	config `json:"-"`
 	// ID of the ent.
 	ID int `json:"id,omitempty"`
@@ -21,13 +21,13 @@ type Digest struct {
 	// Value holds the value of the "value" field.
 	Value string `json:"value,omitempty"`
 	// Edges holds the relations/edges for other nodes in the graph.
-	// The values are being populated by the DigestQuery when eager-loading is set.
-	Edges           DigestEdges `json:"edges"`
-	subject_digests *int
+	// The values are being populated by the SubjectDigestQuery when eager-loading is set.
+	Edges                   SubjectDigestEdges `json:"edges"`
+	subject_subject_digests *int
 }
 
-// DigestEdges holds the relations/edges for other nodes in the graph.
-type DigestEdges struct {
+// SubjectDigestEdges holds the relations/edges for other nodes in the graph.
+type SubjectDigestEdges struct {
 	// Subject holds the value of the subject edge.
 	Subject *Subject `json:"subject,omitempty"`
 	// loadedTypes holds the information for reporting if a
@@ -37,7 +37,7 @@ type DigestEdges struct {
 
 // SubjectOrErr returns the Subject value or an error if the edge
 // was not loaded in eager-loading, or loaded but was not found.
-func (e DigestEdges) SubjectOrErr() (*Subject, error) {
+func (e SubjectDigestEdges) SubjectOrErr() (*Subject, error) {
 	if e.loadedTypes[0] {
 		if e.Subject == nil {
 			// The edge subject was loaded in eager-loading,
@@ -50,102 +50,102 @@ func (e DigestEdges) SubjectOrErr() (*Subject, error) {
 }
 
 // scanValues returns the types for scanning values from sql.Rows.
-func (*Digest) scanValues(columns []string) ([]interface{}, error) {
+func (*SubjectDigest) scanValues(columns []string) ([]interface{}, error) {
 	values := make([]interface{}, len(columns))
 	for i := range columns {
 		switch columns[i] {
-		case digest.FieldID:
+		case subjectdigest.FieldID:
 			values[i] = new(sql.NullInt64)
-		case digest.FieldAlgorithm, digest.FieldValue:
+		case subjectdigest.FieldAlgorithm, subjectdigest.FieldValue:
 			values[i] = new(sql.NullString)
-		case digest.ForeignKeys[0]: // subject_digests
+		case subjectdigest.ForeignKeys[0]: // subject_subject_digests
 			values[i] = new(sql.NullInt64)
 		default:
-			return nil, fmt.Errorf("unexpected column %q for type Digest", columns[i])
+			return nil, fmt.Errorf("unexpected column %q for type SubjectDigest", columns[i])
 		}
 	}
 	return values, nil
 }
 
 // assignValues assigns the values that were returned from sql.Rows (after scanning)
-// to the Digest fields.
-func (d *Digest) assignValues(columns []string, values []interface{}) error {
+// to the SubjectDigest fields.
+func (sd *SubjectDigest) assignValues(columns []string, values []interface{}) error {
 	if m, n := len(values), len(columns); m < n {
 		return fmt.Errorf("mismatch number of scan values: %d != %d", m, n)
 	}
 	for i := range columns {
 		switch columns[i] {
-		case digest.FieldID:
+		case subjectdigest.FieldID:
 			value, ok := values[i].(*sql.NullInt64)
 			if !ok {
 				return fmt.Errorf("unexpected type %T for field id", value)
 			}
-			d.ID = int(value.Int64)
-		case digest.FieldAlgorithm:
+			sd.ID = int(value.Int64)
+		case subjectdigest.FieldAlgorithm:
 			if value, ok := values[i].(*sql.NullString); !ok {
 				return fmt.Errorf("unexpected type %T for field algorithm", values[i])
 			} else if value.Valid {
-				d.Algorithm = value.String
+				sd.Algorithm = value.String
 			}
-		case digest.FieldValue:
+		case subjectdigest.FieldValue:
 			if value, ok := values[i].(*sql.NullString); !ok {
 				return fmt.Errorf("unexpected type %T for field value", values[i])
 			} else if value.Valid {
-				d.Value = value.String
+				sd.Value = value.String
 			}
-		case digest.ForeignKeys[0]:
+		case subjectdigest.ForeignKeys[0]:
 			if value, ok := values[i].(*sql.NullInt64); !ok {
-				return fmt.Errorf("unexpected type %T for edge-field subject_digests", value)
+				return fmt.Errorf("unexpected type %T for edge-field subject_subject_digests", value)
 			} else if value.Valid {
-				d.subject_digests = new(int)
-				*d.subject_digests = int(value.Int64)
+				sd.subject_subject_digests = new(int)
+				*sd.subject_subject_digests = int(value.Int64)
 			}
 		}
 	}
 	return nil
 }
 
-// QuerySubject queries the "subject" edge of the Digest entity.
-func (d *Digest) QuerySubject() *SubjectQuery {
-	return (&DigestClient{config: d.config}).QuerySubject(d)
+// QuerySubject queries the "subject" edge of the SubjectDigest entity.
+func (sd *SubjectDigest) QuerySubject() *SubjectQuery {
+	return (&SubjectDigestClient{config: sd.config}).QuerySubject(sd)
 }
 
-// Update returns a builder for updating this Digest.
-// Note that you need to call Digest.Unwrap() before calling this method if this Digest
+// Update returns a builder for updating this SubjectDigest.
+// Note that you need to call SubjectDigest.Unwrap() before calling this method if this SubjectDigest
 // was returned from a transaction, and the transaction was committed or rolled back.
-func (d *Digest) Update() *DigestUpdateOne {
-	return (&DigestClient{config: d.config}).UpdateOne(d)
+func (sd *SubjectDigest) Update() *SubjectDigestUpdateOne {
+	return (&SubjectDigestClient{config: sd.config}).UpdateOne(sd)
 }
 
-// Unwrap unwraps the Digest entity that was returned from a transaction after it was closed,
+// Unwrap unwraps the SubjectDigest entity that was returned from a transaction after it was closed,
 // so that all future queries will be executed through the driver which created the transaction.
-func (d *Digest) Unwrap() *Digest {
-	tx, ok := d.config.driver.(*txDriver)
+func (sd *SubjectDigest) Unwrap() *SubjectDigest {
+	tx, ok := sd.config.driver.(*txDriver)
 	if !ok {
-		panic("ent: Digest is not a transactional entity")
+		panic("ent: SubjectDigest is not a transactional entity")
 	}
-	d.config.driver = tx.drv
-	return d
+	sd.config.driver = tx.drv
+	return sd
 }
 
 // String implements the fmt.Stringer.
-func (d *Digest) String() string {
+func (sd *SubjectDigest) String() string {
 	var builder strings.Builder
-	builder.WriteString("Digest(")
-	builder.WriteString(fmt.Sprintf("id=%v", d.ID))
+	builder.WriteString("SubjectDigest(")
+	builder.WriteString(fmt.Sprintf("id=%v", sd.ID))
 	builder.WriteString(", algorithm=")
-	builder.WriteString(d.Algorithm)
+	builder.WriteString(sd.Algorithm)
 	builder.WriteString(", value=")
-	builder.WriteString(d.Value)
+	builder.WriteString(sd.Value)
 	builder.WriteByte(')')
 	return builder.String()
 }
 
-// Digests is a parsable slice of Digest.
-type Digests []*Digest
+// SubjectDigests is a parsable slice of SubjectDigest.
+type SubjectDigests []*SubjectDigest
 
-func (d Digests) config(cfg config) {
-	for _i := range d {
-		d[_i].config = cfg
+func (sd SubjectDigests) config(cfg config) {
+	for _i := range sd {
+		sd[_i].config = cfg
 	}
 }

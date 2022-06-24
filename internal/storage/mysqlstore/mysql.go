@@ -15,25 +15,25 @@
 package mysqlstore
 
 import (
-	"ariga.io/sqlcomment"
 	"context"
+	"crypto"
 	"encoding/base64"
 	"encoding/json"
 	"fmt"
+	"time"
+
+	"ariga.io/sqlcomment"
+	"entgo.io/ent/dialect/sql"
 	"github.com/git-bom/gitbom-go"
 	"github.com/sirupsen/logrus"
 	"github.com/testifysec/archivist-api/pkg/api/archivist"
 	"github.com/testifysec/archivist/ent"
-	"github.com/testifysec/archivist/ent/digest"
+	"github.com/testifysec/archivist/ent/subjectdigest"
 	"github.com/testifysec/go-witness/attestation"
+	"github.com/testifysec/go-witness/cryptoutil"
 	"github.com/testifysec/go-witness/dsse"
 	"github.com/testifysec/go-witness/intoto"
 	"google.golang.org/protobuf/types/known/emptypb"
-	"time"
-
-	//"google.golang.org/protobuf/types/known/emptypb"
-
-	"entgo.io/ent/dialect/sql"
 
 	_ "github.com/go-sql-driver/mysql"
 )
@@ -94,10 +94,10 @@ func NewServer(ctx context.Context, connectionstring string, objectStorage archi
 }
 
 func (s *store) GetBySubjectDigest(ctx context.Context, request *archivist.GetBySubjectDigestRequest) (*archivist.GetBySubjectDigestResponse, error) {
-	res, err := s.client.Digest.Query().Where(
-		digest.And(
-			digest.Algorithm(request.Algorithm),
-			digest.Value(request.Value),
+	res, err := s.client.SubjectDigest.Query().Where(
+		subjectdigest.And(
+			subjectdigest.Algorithm(request.Algorithm),
+			subjectdigest.Value(request.Value),
 		),
 	).WithSubject(func(q *ent.SubjectQuery) {
 		q.WithStatement(func(q *ent.StatementQuery) {
@@ -127,18 +127,20 @@ type parsedCollection struct {
 }
 
 func (s *store) Store(ctx context.Context, request *archivist.StoreRequest) (*emptypb.Empty, error) {
-	tx, err := s.client.Tx(ctx)
 	fmt.Println("STORING")
+
 	obj := request.GetObject()
-
 	envelope := &dsse.Envelope{}
-
 	if err := json.Unmarshal([]byte(obj), envelope); err != nil {
 		return nil, err
 	}
 
-	payload := &intoto.Statement{}
+	payloadDigestSet, err := cryptoutil.CalculateDigestSetFromBytes(envelope.Payload, []crypto.Hash{crypto.SHA256})
+	if err != nil {
+		return nil, err
+	}
 
+	payload := &intoto.Statement{}
 	if err := json.Unmarshal(envelope.Payload, payload); err != nil {
 		return nil, err
 	}
@@ -155,6 +157,7 @@ func (s *store) Store(ctx context.Context, request *archivist.StoreRequest) (*em
 		return nil, err
 	}
 
+	tx, err := s.client.Tx(ctx)
 	dsse, err := tx.Dsse.Create().
 		SetPayloadType(envelope.PayloadType).
 		SetGitbomSha256(gb.Identity()).
@@ -170,6 +173,21 @@ func (s *store) Store(ctx context.Context, request *archivist.StoreRequest) (*em
 			SetDsse(dsse).
 			Save(ctx)
 		if err != nil {
+			return nil, err
+		}
+	}
+
+	for hashFn, digest := range payloadDigestSet {
+		hashName, err := cryptoutil.HashToString(hashFn)
+		if err != nil {
+			return nil, err
+		}
+
+		if _, err := tx.PayloadDigest.Create().
+			SetDsse(dsse).
+			SetAlgorithm(hashName).
+			SetValue(digest).
+			Save(ctx); err != nil {
 			return nil, err
 		}
 	}
@@ -192,7 +210,7 @@ func (s *store) Store(ctx context.Context, request *archivist.StoreRequest) (*em
 		}
 
 		for algorithm, value := range subject.Digest {
-			if err := tx.Digest.Create().
+			if err := tx.SubjectDigest.Create().
 				SetAlgorithm(algorithm).
 				SetValue(value).SetSubject(storedSubject).
 				Exec(ctx); err != nil {

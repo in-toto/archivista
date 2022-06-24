@@ -6,7 +6,7 @@ import (
 	"entgo.io/ent/schema/field"
 )
 
-// Statement holds the schema definition for the Statement entity.
+// Dsse represents some metadata about an archived DSSE envelope
 type Dsse struct {
 	ent.Schema
 }
@@ -24,5 +24,6 @@ func (Dsse) Edges() []ent.Edge {
 	return []ent.Edge{
 		edge.To("statement", Statement.Type).Unique(),
 		edge.To("signatures", Signature.Type),
+		edge.To("payload_digests", PayloadDigest.Type),
 	}
 }

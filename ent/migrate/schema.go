@@ -48,27 +48,6 @@ var (
 			},
 		},
 	}
-	// DigestsColumns holds the columns for the "digests" table.
-	DigestsColumns = []*schema.Column{
-		{Name: "id", Type: field.TypeInt, Increment: true},
-		{Name: "algorithm", Type: field.TypeString},
-		{Name: "value", Type: field.TypeString},
-		{Name: "subject_digests", Type: field.TypeInt, Nullable: true},
-	}
-	// DigestsTable holds the schema information for the "digests" table.
-	DigestsTable = &schema.Table{
-		Name:       "digests",
-		Columns:    DigestsColumns,
-		PrimaryKey: []*schema.Column{DigestsColumns[0]},
-		ForeignKeys: []*schema.ForeignKey{
-			{
-				Symbol:     "digests_subjects_digests",
-				Columns:    []*schema.Column{DigestsColumns[3]},
-				RefColumns: []*schema.Column{SubjectsColumns[0]},
-				OnDelete:   schema.SetNull,
-			},
-		},
-	}
 	// DssesColumns holds the columns for the "dsses" table.
 	DssesColumns = []*schema.Column{
 		{Name: "id", Type: field.TypeInt, Increment: true},
@@ -86,6 +65,27 @@ var (
 				Symbol:     "dsses_statements_statement",
 				Columns:    []*schema.Column{DssesColumns[3]},
 				RefColumns: []*schema.Column{StatementsColumns[0]},
+				OnDelete:   schema.SetNull,
+			},
+		},
+	}
+	// PayloadDigestsColumns holds the columns for the "payload_digests" table.
+	PayloadDigestsColumns = []*schema.Column{
+		{Name: "id", Type: field.TypeInt, Increment: true},
+		{Name: "algorithm", Type: field.TypeString},
+		{Name: "value", Type: field.TypeString},
+		{Name: "dsse_payload_digests", Type: field.TypeInt, Nullable: true},
+	}
+	// PayloadDigestsTable holds the schema information for the "payload_digests" table.
+	PayloadDigestsTable = &schema.Table{
+		Name:       "payload_digests",
+		Columns:    PayloadDigestsColumns,
+		PrimaryKey: []*schema.Column{PayloadDigestsColumns[0]},
+		ForeignKeys: []*schema.ForeignKey{
+			{
+				Symbol:     "payload_digests_dsses_payload_digests",
+				Columns:    []*schema.Column{PayloadDigestsColumns[3]},
+				RefColumns: []*schema.Column{DssesColumns[0]},
 				OnDelete:   schema.SetNull,
 			},
 		},
@@ -142,23 +142,46 @@ var (
 			},
 		},
 	}
+	// SubjectDigestsColumns holds the columns for the "subject_digests" table.
+	SubjectDigestsColumns = []*schema.Column{
+		{Name: "id", Type: field.TypeInt, Increment: true},
+		{Name: "algorithm", Type: field.TypeString},
+		{Name: "value", Type: field.TypeString},
+		{Name: "subject_subject_digests", Type: field.TypeInt, Nullable: true},
+	}
+	// SubjectDigestsTable holds the schema information for the "subject_digests" table.
+	SubjectDigestsTable = &schema.Table{
+		Name:       "subject_digests",
+		Columns:    SubjectDigestsColumns,
+		PrimaryKey: []*schema.Column{SubjectDigestsColumns[0]},
+		ForeignKeys: []*schema.ForeignKey{
+			{
+				Symbol:     "subject_digests_subjects_subject_digests",
+				Columns:    []*schema.Column{SubjectDigestsColumns[3]},
+				RefColumns: []*schema.Column{SubjectsColumns[0]},
+				OnDelete:   schema.SetNull,
+			},
+		},
+	}
 	// Tables holds all the tables in the schema.
 	Tables = []*schema.Table{
 		AttestationsTable,
 		AttestationCollectionsTable,
-		DigestsTable,
 		DssesTable,
+		PayloadDigestsTable,
 		SignaturesTable,
 		StatementsTable,
 		SubjectsTable,
+		SubjectDigestsTable,
 	}
 )
 
 func init() {
 	AttestationsTable.ForeignKeys[0].RefTable = AttestationCollectionsTable
 	AttestationCollectionsTable.ForeignKeys[0].RefTable = StatementsTable
-	DigestsTable.ForeignKeys[0].RefTable = SubjectsTable
 	DssesTable.ForeignKeys[0].RefTable = StatementsTable
+	PayloadDigestsTable.ForeignKeys[0].RefTable = DssesTable
 	SignaturesTable.ForeignKeys[0].RefTable = DssesTable
 	SubjectsTable.ForeignKeys[0].RefTable = StatementsTable
+	SubjectDigestsTable.ForeignKeys[0].RefTable = SubjectsTable
 }

@@ -6,6 +6,7 @@ import (
 	"entgo.io/ent/schema/field"
 )
 
+// Attestation represents an attestation from a witness attestation collection
 type Attestation struct {
 	ent.Schema
 }

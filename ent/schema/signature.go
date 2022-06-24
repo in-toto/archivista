@@ -6,7 +6,7 @@ import (
 	"entgo.io/ent/schema/field"
 )
 
-// Signature holds the schema definition for the Signature entity.
+// Signature represents signatures on a DSSE envelope
 type Signature struct {
 	ent.Schema
 }

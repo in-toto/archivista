@@ -10,10 +10,10 @@ import (
 	"entgo.io/ent/dialect/sql"
 	"entgo.io/ent/dialect/sql/sqlgraph"
 	"entgo.io/ent/schema/field"
-	"github.com/testifysec/archivist/ent/digest"
 	"github.com/testifysec/archivist/ent/predicate"
 	"github.com/testifysec/archivist/ent/statement"
 	"github.com/testifysec/archivist/ent/subject"
+	"github.com/testifysec/archivist/ent/subjectdigest"
 )
 
 // SubjectUpdate is the builder for updating Subject entities.
@@ -35,19 +35,19 @@ func (su *SubjectUpdate) SetName(s string) *SubjectUpdate {
 	return su
 }
 
-// AddDigestIDs adds the "digests" edge to the Digest entity by IDs.
-func (su *SubjectUpdate) AddDigestIDs(ids ...int) *SubjectUpdate {
-	su.mutation.AddDigestIDs(ids...)
+// AddSubjectDigestIDs adds the "subject_digests" edge to the SubjectDigest entity by IDs.
+func (su *SubjectUpdate) AddSubjectDigestIDs(ids ...int) *SubjectUpdate {
+	su.mutation.AddSubjectDigestIDs(ids...)
 	return su
 }
 
-// AddDigests adds the "digests" edges to the Digest entity.
-func (su *SubjectUpdate) AddDigests(d ...*Digest) *SubjectUpdate {
-	ids := make([]int, len(d))
-	for i := range d {
-		ids[i] = d[i].ID
+// AddSubjectDigests adds the "subject_digests" edges to the SubjectDigest entity.
+func (su *SubjectUpdate) AddSubjectDigests(s ...*SubjectDigest) *SubjectUpdate {
+	ids := make([]int, len(s))
+	for i := range s {
+		ids[i] = s[i].ID
 	}
-	return su.AddDigestIDs(ids...)
+	return su.AddSubjectDigestIDs(ids...)
 }
 
 // SetStatementID sets the "statement" edge to the Statement entity by ID.
@@ -74,25 +74,25 @@ func (su *SubjectUpdate) Mutation() *SubjectMutation {
 	return su.mutation
 }
 
-// ClearDigests clears all "digests" edges to the Digest entity.
-func (su *SubjectUpdate) ClearDigests() *SubjectUpdate {
-	su.mutation.ClearDigests()
+// ClearSubjectDigests clears all "subject_digests" edges to the SubjectDigest entity.
+func (su *SubjectUpdate) ClearSubjectDigests() *SubjectUpdate {
+	su.mutation.ClearSubjectDigests()
 	return su
 }
 
-// RemoveDigestIDs removes the "digests" edge to Digest entities by IDs.
-func (su *SubjectUpdate) RemoveDigestIDs(ids ...int) *SubjectUpdate {
-	su.mutation.RemoveDigestIDs(ids...)
+// RemoveSubjectDigestIDs removes the "subject_digests" edge to SubjectDigest entities by IDs.
+func (su *SubjectUpdate) RemoveSubjectDigestIDs(ids ...int) *SubjectUpdate {
+	su.mutation.RemoveSubjectDigestIDs(ids...)
 	return su
 }
 
-// RemoveDigests removes "digests" edges to Digest entities.
-func (su *SubjectUpdate) RemoveDigests(d ...*Digest) *SubjectUpdate {
-	ids := make([]int, len(d))
-	for i := range d {
-		ids[i] = d[i].ID
+// RemoveSubjectDigests removes "subject_digests" edges to SubjectDigest entities.
+func (su *SubjectUpdate) RemoveSubjectDigests(s ...*SubjectDigest) *SubjectUpdate {
+	ids := make([]int, len(s))
+	for i := range s {
+		ids[i] = s[i].ID
 	}
-	return su.RemoveDigestIDs(ids...)
+	return su.RemoveSubjectDigestIDs(ids...)
 }
 
 // ClearStatement clears the "statement" edge to the Statement entity.
@@ -196,33 +196,33 @@ func (su *SubjectUpdate) sqlSave(ctx context.Context) (n int, err error) {
 			Column: subject.FieldName,
 		})
 	}
-	if su.mutation.DigestsCleared() {
+	if su.mutation.SubjectDigestsCleared() {
 		edge := &sqlgraph.EdgeSpec{
 			Rel:     sqlgraph.O2M,
 			Inverse: false,
-			Table:   subject.DigestsTable,
-			Columns: []string{subject.DigestsColumn},
+			Table:   subject.SubjectDigestsTable,
+			Columns: []string{subject.SubjectDigestsColumn},
 			Bidi:    false,
 			Target: &sqlgraph.EdgeTarget{
 				IDSpec: &sqlgraph.FieldSpec{
 					Type:   field.TypeInt,
-					Column: digest.FieldID,
+					Column: subjectdigest.FieldID,
 				},
 			},
 		}
 		_spec.Edges.Clear = append(_spec.Edges.Clear, edge)
 	}
-	if nodes := su.mutation.RemovedDigestsIDs(); len(nodes) > 0 && !su.mutation.DigestsCleared() {
+	if nodes := su.mutation.RemovedSubjectDigestsIDs(); len(nodes) > 0 && !su.mutation.SubjectDigestsCleared() {
 		edge := &sqlgraph.EdgeSpec{
 			Rel:     sqlgraph.O2M,
 			Inverse: false,
-			Table:   subject.DigestsTable,
-			Columns: []string{subject.DigestsColumn},
+			Table:   subject.SubjectDigestsTable,
+			Columns: []string{subject.SubjectDigestsColumn},
 			Bidi:    false,
 			Target: &sqlgraph.EdgeTarget{
 				IDSpec: &sqlgraph.FieldSpec{
 					Type:   field.TypeInt,
-					Column: digest.FieldID,
+					Column: subjectdigest.FieldID,
 				},
 			},
 		}
@@ -231,17 +231,17 @@ func (su *SubjectUpdate) sqlSave(ctx context.Context) (n int, err error) {
 		}
 		_spec.Edges.Clear = append(_spec.Edges.Clear, edge)
 	}
-	if nodes := su.mutation.DigestsIDs(); len(nodes) > 0 {
+	if nodes := su.mutation.SubjectDigestsIDs(); len(nodes) > 0 {
 		edge := &sqlgraph.EdgeSpec{
 			Rel:     sqlgraph.O2M,
 			Inverse: false,
-			Table:   subject.DigestsTable,
-			Columns: []string{subject.DigestsColumn},
+			Table:   subject.SubjectDigestsTable,
+			Columns: []string{subject.SubjectDigestsColumn},
 			Bidi:    false,
 			Target: &sqlgraph.EdgeTarget{
 				IDSpec: &sqlgraph.FieldSpec{
 					Type:   field.TypeInt,
-					Column: digest.FieldID,
+					Column: subjectdigest.FieldID,
 				},
 			},
 		}
@@ -310,19 +310,19 @@ func (suo *SubjectUpdateOne) SetName(s string) *SubjectUpdateOne {
 	return suo
 }
 
-// AddDigestIDs adds the "digests" edge to the Digest entity by IDs.
-func (suo *SubjectUpdateOne) AddDigestIDs(ids ...int) *SubjectUpdateOne {
-	suo.mutation.AddDigestIDs(ids...)
+// AddSubjectDigestIDs adds the "subject_digests" edge to the SubjectDigest entity by IDs.
+func (suo *SubjectUpdateOne) AddSubjectDigestIDs(ids ...int) *SubjectUpdateOne {
+	suo.mutation.AddSubjectDigestIDs(ids...)
 	return suo
 }
 
-// AddDigests adds the "digests" edges to the Digest entity.
-func (suo *SubjectUpdateOne) AddDigests(d ...*Digest) *SubjectUpdateOne {
-	ids := make([]int, len(d))
-	for i := range d {
-		ids[i] = d[i].ID
+// AddSubjectDigests adds the "subject_digests" edges to the SubjectDigest entity.
+func (suo *SubjectUpdateOne) AddSubjectDigests(s ...*SubjectDigest) *SubjectUpdateOne {
+	ids := make([]int, len(s))
+	for i := range s {
+		ids[i] = s[i].ID
 	}
-	return suo.AddDigestIDs(ids...)
+	return suo.AddSubjectDigestIDs(ids...)
 }
 
 // SetStatementID sets the "statement" edge to the Statement entity by ID.
@@ -349,25 +349,25 @@ func (suo *SubjectUpdateOne) Mutation() *SubjectMutation {
 	return suo.mutation
 }
 
-// ClearDigests clears all "digests" edges to the Digest entity.
-func (suo *SubjectUpdateOne) ClearDigests() *SubjectUpdateOne {
-	suo.mutation.ClearDigests()
+// ClearSubjectDigests clears all "subject_digests" edges to the SubjectDigest entity.
+func (suo *SubjectUpdateOne) ClearSubjectDigests() *SubjectUpdateOne {
+	suo.mutation.ClearSubjectDigests()
 	return suo
 }
 
-// RemoveDigestIDs removes the "digests" edge to Digest entities by IDs.
-func (suo *SubjectUpdateOne) RemoveDigestIDs(ids ...int) *SubjectUpdateOne {
-	suo.mutation.RemoveDigestIDs(ids...)
+// RemoveSubjectDigestIDs removes the "subject_digests" edge to SubjectDigest entities by IDs.
+func (suo *SubjectUpdateOne) RemoveSubjectDigestIDs(ids ...int) *SubjectUpdateOne {
+	suo.mutation.RemoveSubjectDigestIDs(ids...)
 	return suo
 }
 
-// RemoveDigests removes "digests" edges to Digest entities.
-func (suo *SubjectUpdateOne) RemoveDigests(d ...*Digest) *SubjectUpdateOne {
-	ids := make([]int, len(d))
-	for i := range d {
-		ids[i] = d[i].ID
+// RemoveSubjectDigests removes "subject_digests" edges to SubjectDigest entities.
+func (suo *SubjectUpdateOne) RemoveSubjectDigests(s ...*SubjectDigest) *SubjectUpdateOne {
+	ids := make([]int, len(s))
+	for i := range s {
+		ids[i] = s[i].ID
 	}
-	return suo.RemoveDigestIDs(ids...)
+	return suo.RemoveSubjectDigestIDs(ids...)
 }
 
 // ClearStatement clears the "statement" edge to the Statement entity.
@@ -495,33 +495,33 @@ func (suo *SubjectUpdateOne) sqlSave(ctx context.Context) (_node *Subject, err e
 			Column: subject.FieldName,
 		})
 	}
-	if suo.mutation.DigestsCleared() {
+	if suo.mutation.SubjectDigestsCleared() {
 		edge := &sqlgraph.EdgeSpec{
 			Rel:     sqlgraph.O2M,
 			Inverse: false,
-			Table:   subject.DigestsTable,
-			Columns: []string{subject.DigestsColumn},
+			Table:   subject.SubjectDigestsTable,
+			Columns: []string{subject.SubjectDigestsColumn},
 			Bidi:    false,
 			Target: &sqlgraph.EdgeTarget{
 				IDSpec: &sqlgraph.FieldSpec{
 					Type:   field.TypeInt,
-					Column: digest.FieldID,
+					Column: subjectdigest.FieldID,
 				},
 			},
 		}
 		_spec.Edges.Clear = append(_spec.Edges.Clear, edge)
 	}
-	if nodes := suo.mutation.RemovedDigestsIDs(); len(nodes) > 0 && !suo.mutation.DigestsCleared() {
+	if nodes := suo.mutation.RemovedSubjectDigestsIDs(); len(nodes) > 0 && !suo.mutation.SubjectDigestsCleared() {
 		edge := &sqlgraph.EdgeSpec{
 			Rel:     sqlgraph.O2M,
 			Inverse: false,
-			Table:   subject.DigestsTable,
-			Columns: []string{subject.DigestsColumn},
+			Table:   subject.SubjectDigestsTable,
+			Columns: []string{subject.SubjectDigestsColumn},
 			Bidi:    false,
 			Target: &sqlgraph.EdgeTarget{
 				IDSpec: &sqlgraph.FieldSpec{
 					Type:   field.TypeInt,
-					Column: digest.FieldID,
+					Column: subjectdigest.FieldID,
 				},
 			},
 		}
@@ -530,17 +530,17 @@ func (suo *SubjectUpdateOne) sqlSave(ctx context.Context) (_node *Subject, err e
 		}
 		_spec.Edges.Clear = append(_spec.Edges.Clear, edge)
 	}
-	if nodes := suo.mutation.DigestsIDs(); len(nodes) > 0 {
+	if nodes := suo.mutation.SubjectDigestsIDs(); len(nodes) > 0 {
 		edge := &sqlgraph.EdgeSpec{
 			Rel:     sqlgraph.O2M,
 			Inverse: false,
-			Table:   subject.DigestsTable,
-			Columns: []string{subject.DigestsColumn},
+			Table:   subject.SubjectDigestsTable,
+			Columns: []string{subject.SubjectDigestsColumn},
 			Bidi:    false,
 			Target: &sqlgraph.EdgeTarget{
 				IDSpec: &sqlgraph.FieldSpec{
 					Type:   field.TypeInt,
-					Column: digest.FieldID,
+					Column: subjectdigest.FieldID,
 				},
 			},
 		}

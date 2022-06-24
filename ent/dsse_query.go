@@ -13,6 +13,7 @@ import (
 	"entgo.io/ent/dialect/sql/sqlgraph"
 	"entgo.io/ent/schema/field"
 	"github.com/testifysec/archivist/ent/dsse"
+	"github.com/testifysec/archivist/ent/payloaddigest"
 	"github.com/testifysec/archivist/ent/predicate"
 	"github.com/testifysec/archivist/ent/signature"
 	"github.com/testifysec/archivist/ent/statement"
@@ -28,9 +29,10 @@ type DsseQuery struct {
 	fields     []string
 	predicates []predicate.Dsse
 	// eager-loading edges.
-	withStatement  *StatementQuery
-	withSignatures *SignatureQuery
-	withFKs        bool
+	withStatement      *StatementQuery
+	withSignatures     *SignatureQuery
+	withPayloadDigests *PayloadDigestQuery
+	withFKs            bool
 	// intermediate query (i.e. traversal path).
 	sql  *sql.Selector
 	path func(context.Context) (*sql.Selector, error)
@@ -104,6 +106,28 @@ func (dq *DsseQuery) QuerySignatures() *SignatureQuery {
 			sqlgraph.From(dsse.Table, dsse.FieldID, selector),
 			sqlgraph.To(signature.Table, signature.FieldID),
 			sqlgraph.Edge(sqlgraph.O2M, false, dsse.SignaturesTable, dsse.SignaturesColumn),
+		)
+		fromU = sqlgraph.SetNeighbors(dq.driver.Dialect(), step)
+		return fromU, nil
+	}
+	return query
+}
+
+// QueryPayloadDigests chains the current query on the "payload_digests" edge.
+func (dq *DsseQuery) QueryPayloadDigests() *PayloadDigestQuery {
+	query := &PayloadDigestQuery{config: dq.config}
+	query.path = func(ctx context.Context) (fromU *sql.Selector, err error) {
+		if err := dq.prepareQuery(ctx); err != nil {
+			return nil, err
+		}
+		selector := dq.sqlQuery(ctx)
+		if err := selector.Err(); err != nil {
+			return nil, err
+		}
+		step := sqlgraph.NewStep(
+			sqlgraph.From(dsse.Table, dsse.FieldID, selector),
+			sqlgraph.To(payloaddigest.Table, payloaddigest.FieldID),
+			sqlgraph.Edge(sqlgraph.O2M, false, dsse.PayloadDigestsTable, dsse.PayloadDigestsColumn),
 		)
 		fromU = sqlgraph.SetNeighbors(dq.driver.Dialect(), step)
 		return fromU, nil
@@ -287,13 +311,14 @@ func (dq *DsseQuery) Clone() *DsseQuery {
 		return nil
 	}
 	return &DsseQuery{
-		config:         dq.config,
-		limit:          dq.limit,
-		offset:         dq.offset,
-		order:          append([]OrderFunc{}, dq.order...),
-		predicates:     append([]predicate.Dsse{}, dq.predicates...),
-		withStatement:  dq.withStatement.Clone(),
-		withSignatures: dq.withSignatures.Clone(),
+		config:             dq.config,
+		limit:              dq.limit,
+		offset:             dq.offset,
+		order:              append([]OrderFunc{}, dq.order...),
+		predicates:         append([]predicate.Dsse{}, dq.predicates...),
+		withStatement:      dq.withStatement.Clone(),
+		withSignatures:     dq.withSignatures.Clone(),
+		withPayloadDigests: dq.withPayloadDigests.Clone(),
 		// clone intermediate query.
 		sql:    dq.sql.Clone(),
 		path:   dq.path,
@@ -320,6 +345,17 @@ func (dq *DsseQuery) WithSignatures(opts ...func(*SignatureQuery)) *DsseQuery {
 		opt(query)
 	}
 	dq.withSignatures = query
+	return dq
+}
+
+// WithPayloadDigests tells the query-builder to eager-load the nodes that are connected to
+// the "payload_digests" edge. The optional arguments are used to configure the query builder of the edge.
+func (dq *DsseQuery) WithPayloadDigests(opts ...func(*PayloadDigestQuery)) *DsseQuery {
+	query := &PayloadDigestQuery{config: dq.config}
+	for _, opt := range opts {
+		opt(query)
+	}
+	dq.withPayloadDigests = query
 	return dq
 }
 
@@ -389,9 +425,10 @@ func (dq *DsseQuery) sqlAll(ctx context.Context) ([]*Dsse, error) {
 		nodes       = []*Dsse{}
 		withFKs     = dq.withFKs
 		_spec       = dq.querySpec()
-		loadedTypes = [2]bool{
+		loadedTypes = [3]bool{
 			dq.withStatement != nil,
 			dq.withSignatures != nil,
+			dq.withPayloadDigests != nil,
 		}
 	)
 	if dq.withStatement != nil {
@@ -475,6 +512,35 @@ func (dq *DsseQuery) sqlAll(ctx context.Context) ([]*Dsse, error) {
 				return nil, fmt.Errorf(`unexpected foreign-key "dsse_signatures" returned %v for node %v`, *fk, n.ID)
 			}
 			node.Edges.Signatures = append(node.Edges.Signatures, n)
+		}
+	}
+
+	if query := dq.withPayloadDigests; query != nil {
+		fks := make([]driver.Value, 0, len(nodes))
+		nodeids := make(map[int]*Dsse)
+		for i := range nodes {
+			fks = append(fks, nodes[i].ID)
+			nodeids[nodes[i].ID] = nodes[i]
+			nodes[i].Edges.PayloadDigests = []*PayloadDigest{}
+		}
+		query.withFKs = true
+		query.Where(predicate.PayloadDigest(func(s *sql.Selector) {
+			s.Where(sql.InValues(dsse.PayloadDigestsColumn, fks...))
+		}))
+		neighbors, err := query.All(ctx)
+		if err != nil {
+			return nil, err
+		}
+		for _, n := range neighbors {
+			fk := n.dsse_payload_digests
+			if fk == nil {
+				return nil, fmt.Errorf(`foreign-key "dsse_payload_digests" is nil for node %v`, n.ID)
+			}
+			node, ok := nodeids[*fk]
+			if !ok {
+				return nil, fmt.Errorf(`unexpected foreign-key "dsse_payload_digests" returned %v for node %v`, *fk, n.ID)
+			}
+			node.Edges.PayloadDigests = append(node.Edges.PayloadDigests, n)
 		}
 	}
 

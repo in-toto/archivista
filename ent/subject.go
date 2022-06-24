@@ -26,8 +26,8 @@ type Subject struct {
 
 // SubjectEdges holds the relations/edges for other nodes in the graph.
 type SubjectEdges struct {
-	// Digests holds the value of the digests edge.
-	Digests []*Digest `json:"digests,omitempty"`
+	// SubjectDigests holds the value of the subject_digests edge.
+	SubjectDigests []*SubjectDigest `json:"subject_digests,omitempty"`
 	// Statement holds the value of the statement edge.
 	Statement *Statement `json:"statement,omitempty"`
 	// loadedTypes holds the information for reporting if a
@@ -35,13 +35,13 @@ type SubjectEdges struct {
 	loadedTypes [2]bool
 }
 
-// DigestsOrErr returns the Digests value or an error if the edge
+// SubjectDigestsOrErr returns the SubjectDigests value or an error if the edge
 // was not loaded in eager-loading.
-func (e SubjectEdges) DigestsOrErr() ([]*Digest, error) {
+func (e SubjectEdges) SubjectDigestsOrErr() ([]*SubjectDigest, error) {
 	if e.loadedTypes[0] {
-		return e.Digests, nil
+		return e.SubjectDigests, nil
 	}
-	return nil, &NotLoadedError{edge: "digests"}
+	return nil, &NotLoadedError{edge: "subject_digests"}
 }
 
 // StatementOrErr returns the Statement value or an error if the edge
@@ -108,9 +108,9 @@ func (s *Subject) assignValues(columns []string, values []interface{}) error {
 	return nil
 }
 
-// QueryDigests queries the "digests" edge of the Subject entity.
-func (s *Subject) QueryDigests() *DigestQuery {
-	return (&SubjectClient{config: s.config}).QueryDigests(s)
+// QuerySubjectDigests queries the "subject_digests" edge of the Subject entity.
+func (s *Subject) QuerySubjectDigests() *SubjectDigestQuery {
+	return (&SubjectClient{config: s.config}).QuerySubjectDigests(s)
 }
 
 // QueryStatement queries the "statement" edge of the Subject entity.
