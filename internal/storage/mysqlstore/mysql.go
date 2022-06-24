@@ -25,8 +25,8 @@ import (
 	"github.com/testifysec/archivist-api/pkg/api/archivist"
 	"github.com/testifysec/archivist/ent"
 	"github.com/testifysec/archivist/ent/digest"
-	"github.com/testifysec/witness/pkg/dsse"
-	"github.com/testifysec/witness/pkg/intoto"
+	"github.com/testifysec/go-witness/dsse"
+	"github.com/testifysec/go-witness/intoto"
 	"google.golang.org/protobuf/types/known/emptypb"
 	"time"
 

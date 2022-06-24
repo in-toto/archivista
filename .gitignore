@@ -21,6 +21,6 @@
 ## protect against development environment being leaked out
 *.pem
 *.nix
-archivist
-archivistctl
+./archivist
+./archivistctl
 .witness.yaml
