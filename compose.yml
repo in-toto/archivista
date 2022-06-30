@@ -10,6 +10,8 @@ services:
     environment:
       MYSQL_DATABASE: testify
       MYSQL_ROOT_PASSWORD: example
+    volumes:
+      - mysqldata:/var/lib/mysql
 
   archivist:
     build: .
@@ -17,8 +19,41 @@ services:
     environment:
       ARCHIVIST_ENABLE_SPIFFE: "false"
       ARCHIVIST_LISTEN_ON: tcp://0.0.0.0:8080
+      ARCHIVIST_STORAGE_BACKEND: BLOB
       ARCHIVIST_FILE_DIR: /tmp/archivist/
       ARCHIVIST_FILE_SERVE_ON: :8081
+      ARCHIVIST_BLOB_STORE_USE_SSL: "false"
+      ARCHIVIST_BLOB_STORE_ACCESS_KEY_ID: testifytestifytestify
+      ARCHIVIST_BLOB_STORE_SECRET_ACCESS_KEY_ID: exampleexampleexample
+      ARCHIVIST_BLOB_STORE_BUCKET_NAME: attestations 
+      ARCHIVIST_BLOB_STORE_ENDPOINT: minio:9000
     ports:
       - 8080:8080
       - 8081:8081
+    volumes:
+      - fileserver:/tmp/archivist
+
+  minio:
+    image: quay.io/minio/minio
+    restart: always
+    command: server /data --console-address ":9001"
+    ports:
+      - 9000:9000
+      - 9001:9001
+    environment:
+      MINIO_ROOT_USER: testifytestifytestify
+      MINIO_ROOT_PASSWORD: exampleexampleexample
+    volumes:
+      - miniodata:/data
+
+  minio-init:
+    image: quay.io/minio/mc
+    restart: on-failure
+    command: mb --insecure testminio/attestations
+    environment:
+      MC_HOST_testminio: http://testifytestifytestify:exampleexampleexample@minio:9000
+
+volumes:
+  fileserver:
+  miniodata:
+  mysqldata:

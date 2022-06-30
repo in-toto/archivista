@@ -46,7 +46,7 @@ func NewServer(ctx context.Context, directory string, address string) (UnifiedSt
 func (s *store) Get(ctx context.Context, request *archivist.GetRequest) (*archivist.GetResponse, error) {
 	res, err := ioutil.ReadFile(filepath.Join(s.prefix, request.GetGitoid()))
 	if err != nil {
-		logrus.WithContext(ctx).Errorf("failed to retrieve object", err)
+		logrus.WithContext(ctx).Errorf("failed to retrieve object: %+v", err)
 		return nil, err
 	}
 	return &archivist.GetResponse{

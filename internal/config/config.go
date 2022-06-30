@@ -21,12 +21,22 @@ import (
 )
 
 type Config struct {
-	EnableSPIFFE bool    `default:"TRUE" desc:"Enable SPIFFE support" split_words:"true"`
-	ListenOn     url.URL `default:"unix:///listen.on.socket" desc:"url to listen on" split_words:"true"`
-	LogLevel     string  `default:"INFO" desc:"Log level" split_words:"true"`
+	ListenOn url.URL `default:"unix:///listen.on.socket" desc:"url to listen on" split_words:"true"`
+	LogLevel string  `default:"INFO" desc:"Log level" split_words:"true"`
 
-	FileServeOn string `default:"" desc:"What address to serve files on, leave empty to shut off" split_words:"true"`
-	FileDir     string `default:"/tmp/archivist/" desc:"Directory to store and serve files" split_words:"true"`
+	EnableSPIFFE             bool   `default:"TRUE" desc:"Enable SPIFFE support" split_words:"true"`
+	SPIFFEAddress            string `default:"unix:///tmp/spire-agent/public/api.sock" desc:"SPIFFE server address" split_words:"true"`
+	SPIFFETrustedServerId    string `default:"" desc:"Trusted SPIFFE server ID; defaults to any" split_words:"true"`
+	SQLStoreConnectionString string `default:"root:example@tcp(db)/testify" desc:"SQL store connection string" split_words:"true"`
+
+	StorageBackend             string `default:"" desc:"Backend to use for attestation storage. Options are FILE, BLOB, or empty string for disabled." split_words:"true"`
+	FileServeOn                string `default:"" desc:"What address to serve files on. Only valid when using FILE storage backend." split_words:"true"`
+	FileDir                    string `default:"/tmp/archivist/" desc:"Directory to store and serve files. Only valid when using FILE storage backend." split_words:"true"`
+	BlobStoreEndpoint          string `default:"127.0.0.1:9000" desc:"URL endpoint for blob storage. Only valid when using BLOB storage backend." split_words:"true"`
+	BlobStoreAccessKeyId       string `default:"" desc:"Blob store access key id. Only valid when using BLOB storage backend." split_words:"true"`
+	BlobStoreSecretAccessKeyId string `default:"" desc:"Blob store secret access key id. Only valid when using BLOB storage backend." split_words:"true"`
+	BlobStoreUseSSL            bool   `default:"TRUE" desc:"Use SSL for BLOB storage backend. Only valid when using BLOB storage backend." split_words:"true"`
+	BlobStoreBucketName        string `default:"" desc:"Bucket to use for storage.  Only valid when using BLOB storage backend." split_words:"true"`
 }
 
 // Process reads config from env

@@ -21,16 +21,18 @@ package main
 
 import (
 	"context"
+	"fmt"
 	"os"
 	"os/signal"
+	"strings"
 	"syscall"
 	"time"
-
-	"github.com/testifysec/archivist/internal/storage/filestore"
 
 	"github.com/testifysec/archivist-api/pkg/api/archivist"
 	"github.com/testifysec/archivist/internal/config"
 	"github.com/testifysec/archivist/internal/server"
+	"github.com/testifysec/archivist/internal/storage/blob"
+	"github.com/testifysec/archivist/internal/storage/filestore"
 	"github.com/testifysec/archivist/internal/storage/mysqlstore"
 
 	nested "github.com/antonfisher/nested-logrus-formatter"
@@ -39,6 +41,7 @@ import (
 	"github.com/networkservicemesh/sdk/pkg/tools/log"
 	"github.com/networkservicemesh/sdk/pkg/tools/log/logruslogger"
 	"github.com/sirupsen/logrus"
+	"github.com/spiffe/go-spiffe/v2/spiffeid"
 	"github.com/spiffe/go-spiffe/v2/spiffetls/tlsconfig"
 	"github.com/spiffe/go-spiffe/v2/svid/x509svid"
 	"github.com/spiffe/go-spiffe/v2/workloadapi"
@@ -56,28 +59,16 @@ func main() {
 	)
 	defer cancel()
 
-	// ********************************************************************************
-	// Setup logging
-	// ********************************************************************************
 	logrus.SetFormatter(&nested.Formatter{})
 	log.EnableTracing(true)
 	ctx = log.WithLog(ctx, logruslogger.New(ctx, map[string]interface{}{"cmd": os.Args[0]}))
 
-	// ********************************************************************************
-	// Debug self if necessary
-	// ********************************************************************************
-
 	if err := debug.Self(); err != nil {
 		log.FromContext(ctx).Infof("%s", err)
 	}
-
 	startTime := time.Now()
 
-	// enumerating phases
-
-	// ********************************************************************************
 	log.FromContext(ctx).Infof("executing phase 1: get config from environment (time since start: %s)", time.Since(startTime))
-	// ********************************************************************************
 	now := time.Now()
 
 	cfg := new(config.Config)
@@ -92,49 +83,35 @@ func main() {
 	logrus.SetLevel(level)
 
 	log.FromContext(ctx).WithField("duration", time.Since(now)).Infof("completed phase 1: get config from environment")
-	// ********************************************************************************
+
 	log.FromContext(ctx).Infof("executing phase 2: get spiffe svid (time since start: %s)", time.Since(startTime))
-	// ********************************************************************************
 	now = time.Now()
-	var source *workloadapi.X509Source
-	var svid *x509svid.SVID
+
+	log.FromContext(ctx).WithField("duration", time.Since(now)).Infof("completed phase 2: retrieve spiffe svid")
+	grpcOptions := make([]grpc.ServerOption, 0)
 	if cfg.EnableSPIFFE == true {
-		source, err = workloadapi.NewX509Source(ctx)
-		if err != nil {
-			logrus.Fatalf("error getting x509 source: %+v", err)
-		}
-		svid, err = source.GetX509SVID()
-		if err != nil {
-			logrus.Fatalf("error getting x509 svid: %+v", err)
-		}
-		logrus.Infof("SVID: %q", svid.ID)
-		log.FromContext(ctx).WithField("duration", time.Since(now)).Infof("completed phase 2: retrieve spiffe svid")
+		opts := initSpiffeConnection(ctx, cfg)
+		grpcOptions = append(grpcOptions, opts...)
 	} else {
 		log.FromContext(ctx).WithField("duration", time.Since(now)).Infof("completed phase 2: SKIPPED")
 	}
+
 	// ********************************************************************************
 	log.FromContext(ctx).Infof("executing phase 3: initializing storage clients (time since start: %s)", time.Since(startTime))
 	// ********************************************************************************
 	now = time.Now()
-
-	// TODO make the fileserver optional
-	fileStore, fileStoreCh, err := filestore.NewServer(ctx, cfg.FileDir, cfg.FileServeOn)
-
-	mysqlStore, mysqlStoreCh, err := mysqlstore.NewServer(ctx, "", fileStore)
+	fileStore, fileStoreCh, err := initObjectStore(ctx, cfg)
 	if err != nil {
-		logrus.Fatalf("error starting badger mysqlStore: %+v", err)
+		logrus.Fatalf("error initializing storage clients: %+v", err)
 	}
 
-	log.FromContext(ctx).WithField("duration", time.Since(now)).Infof("completed phase 3: initializing badger")
+	mysqlStore, mysqlStoreCh, err := mysqlstore.NewServer(ctx, cfg.SQLStoreConnectionString, fileStore)
+
+	log.FromContext(ctx).WithField("duration", time.Since(now)).Infof("completed phase 3: initializing storage clients")
 	// ********************************************************************************
 	log.FromContext(ctx).Infof("executing phase 4: create and register grpc service (time since start: %s)", time.Since(startTime))
 	// ********************************************************************************
 	now = time.Now()
-
-	grpcOptions := make([]grpc.ServerOption, 0)
-	if cfg.EnableSPIFFE == true {
-		grpcOptions = append(grpcOptions, grpc.Creds(credentials.NewTLS(tlsconfig.MTLSServerConfig(source, source, tlsconfig.AuthorizeAny()))))
-	}
 
 	grpcServer := grpc.NewServer(grpcOptions...)
 	archivistService := server.NewArchivistServer(mysqlStore)
@@ -155,9 +132,66 @@ func main() {
 	<-fileStoreCh
 	<-mysqlStoreCh
 
-	//// ********************************************************************************
 	log.FromContext(ctx).Infof("exiting, uptime: %v", time.Since(startTime))
-	//// ********************************************************************************
+}
+
+func initSpiffeConnection(ctx context.Context, cfg *config.Config) []grpc.ServerOption {
+	var source *workloadapi.X509Source
+	var svid *x509svid.SVID
+	var authorizer tlsconfig.Authorizer
+
+	if cfg.SPIFFETrustedServerId != "" {
+		trustID := spiffeid.RequireFromString(cfg.SPIFFETrustedServerId)
+		authorizer = tlsconfig.AuthorizeID(trustID)
+	} else {
+		authorizer = tlsconfig.AuthorizeAny()
+	}
+
+	workloadOpts := []workloadapi.X509SourceOption{
+		workloadapi.WithClientOptions(workloadapi.WithAddr(cfg.SPIFFEAddress)),
+	}
+	source, err := workloadapi.NewX509Source(ctx, workloadOpts...)
+	if err != nil {
+		logrus.Fatalf("error getting x509 source: %+v", err)
+	}
+	opts := []grpc.ServerOption{
+		grpc.Creds(credentials.NewTLS(tlsconfig.MTLSServerConfig(source, source, authorizer))),
+	}
+
+	svid, err = source.GetX509SVID()
+	if err != nil {
+		logrus.Fatalf("error getting x509 svid: %+v", err)
+	}
+	logrus.Infof("SVID: %q", svid.ID)
+	return opts
+}
+
+func initObjectStore(ctx context.Context, cfg *config.Config) (archivist.CollectorServer, <-chan error, error) {
+	switch strings.ToUpper(cfg.StorageBackend) {
+	case "FILE":
+		return filestore.NewServer(ctx, cfg.FileDir, cfg.FileServeOn)
+
+	case "BLOB":
+		return blob.NewMinioClient(
+			ctx,
+			cfg.BlobStoreEndpoint,
+			cfg.BlobStoreAccessKeyId,
+			cfg.BlobStoreSecretAccessKeyId,
+			cfg.BlobStoreBucketName,
+			cfg.BlobStoreUseSSL,
+		)
+
+	case "":
+		errCh := make(chan error)
+		go func() {
+			<-ctx.Done()
+			close(errCh)
+		}()
+		return nil, errCh, nil
+
+	default:
+		return nil, nil, fmt.Errorf("unknown storage backend: %s", cfg.StorageBackend)
+	}
 }
 
 func exitOnErrCh(ctx context.Context, cancel context.CancelFunc, errCh <-chan error) {
