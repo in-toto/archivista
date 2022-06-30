@@ -25,7 +25,7 @@ services:
       ARCHIVIST_BLOB_STORE_USE_SSL: "false"
       ARCHIVIST_BLOB_STORE_ACCESS_KEY_ID: testifytestifytestify
       ARCHIVIST_BLOB_STORE_SECRET_ACCESS_KEY_ID: exampleexampleexample
-      ARCHIVIST_BLOB_STORE_BUCKET_NAME: attestations 
+      ARCHIVIST_BLOB_STORE_BUCKET_NAME: attestations
       ARCHIVIST_BLOB_STORE_ENDPOINT: minio:9000
     ports:
       - 8080:8080
@@ -49,7 +49,7 @@ services:
   minio-init:
     image: quay.io/minio/mc
     restart: on-failure
-    command: mb --insecure testminio/attestations
+    command: mb --insecure --ignore-existing testminio/attestations
     environment:
       MC_HOST_testminio: http://testifytestifytestify:exampleexampleexample@minio:9000
 
