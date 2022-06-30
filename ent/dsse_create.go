@@ -10,6 +10,7 @@ import (
 	"entgo.io/ent/dialect/sql/sqlgraph"
 	"entgo.io/ent/schema/field"
 	"github.com/testifysec/archivist/ent/dsse"
+	"github.com/testifysec/archivist/ent/payloaddigest"
 	"github.com/testifysec/archivist/ent/signature"
 	"github.com/testifysec/archivist/ent/statement"
 )
@@ -65,6 +66,21 @@ func (dc *DsseCreate) AddSignatures(s ...*Signature) *DsseCreate {
 		ids[i] = s[i].ID
 	}
 	return dc.AddSignatureIDs(ids...)
+}
+
+// AddPayloadDigestIDs adds the "payload_digests" edge to the PayloadDigest entity by IDs.
+func (dc *DsseCreate) AddPayloadDigestIDs(ids ...int) *DsseCreate {
+	dc.mutation.AddPayloadDigestIDs(ids...)
+	return dc
+}
+
+// AddPayloadDigests adds the "payload_digests" edges to the PayloadDigest entity.
+func (dc *DsseCreate) AddPayloadDigests(p ...*PayloadDigest) *DsseCreate {
+	ids := make([]int, len(p))
+	for i := range p {
+		ids[i] = p[i].ID
+	}
+	return dc.AddPayloadDigestIDs(ids...)
 }
 
 // Mutation returns the DsseMutation object of the builder.
@@ -227,6 +243,25 @@ func (dc *DsseCreate) createSpec() (*Dsse, *sqlgraph.CreateSpec) {
 				IDSpec: &sqlgraph.FieldSpec{
 					Type:   field.TypeInt,
 					Column: signature.FieldID,
+				},
+			},
+		}
+		for _, k := range nodes {
+			edge.Target.Nodes = append(edge.Target.Nodes, k)
+		}
+		_spec.Edges = append(_spec.Edges, edge)
+	}
+	if nodes := dc.mutation.PayloadDigestsIDs(); len(nodes) > 0 {
+		edge := &sqlgraph.EdgeSpec{
+			Rel:     sqlgraph.O2M,
+			Inverse: false,
+			Table:   dsse.PayloadDigestsTable,
+			Columns: []string{dsse.PayloadDigestsColumn},
+			Bidi:    false,
+			Target: &sqlgraph.EdgeTarget{
+				IDSpec: &sqlgraph.FieldSpec{
+					Type:   field.TypeInt,
+					Column: payloaddigest.FieldID,
 				},
 			},
 		}

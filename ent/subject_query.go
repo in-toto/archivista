@@ -12,10 +12,10 @@ import (
 	"entgo.io/ent/dialect/sql"
 	"entgo.io/ent/dialect/sql/sqlgraph"
 	"entgo.io/ent/schema/field"
-	"github.com/testifysec/archivist/ent/digest"
 	"github.com/testifysec/archivist/ent/predicate"
 	"github.com/testifysec/archivist/ent/statement"
 	"github.com/testifysec/archivist/ent/subject"
+	"github.com/testifysec/archivist/ent/subjectdigest"
 )
 
 // SubjectQuery is the builder for querying Subject entities.
@@ -28,9 +28,9 @@ type SubjectQuery struct {
 	fields     []string
 	predicates []predicate.Subject
 	// eager-loading edges.
-	withDigests   *DigestQuery
-	withStatement *StatementQuery
-	withFKs       bool
+	withSubjectDigests *SubjectDigestQuery
+	withStatement      *StatementQuery
+	withFKs            bool
 	// intermediate query (i.e. traversal path).
 	sql  *sql.Selector
 	path func(context.Context) (*sql.Selector, error)
@@ -67,9 +67,9 @@ func (sq *SubjectQuery) Order(o ...OrderFunc) *SubjectQuery {
 	return sq
 }
 
-// QueryDigests chains the current query on the "digests" edge.
-func (sq *SubjectQuery) QueryDigests() *DigestQuery {
-	query := &DigestQuery{config: sq.config}
+// QuerySubjectDigests chains the current query on the "subject_digests" edge.
+func (sq *SubjectQuery) QuerySubjectDigests() *SubjectDigestQuery {
+	query := &SubjectDigestQuery{config: sq.config}
 	query.path = func(ctx context.Context) (fromU *sql.Selector, err error) {
 		if err := sq.prepareQuery(ctx); err != nil {
 			return nil, err
@@ -80,8 +80,8 @@ func (sq *SubjectQuery) QueryDigests() *DigestQuery {
 		}
 		step := sqlgraph.NewStep(
 			sqlgraph.From(subject.Table, subject.FieldID, selector),
-			sqlgraph.To(digest.Table, digest.FieldID),
-			sqlgraph.Edge(sqlgraph.O2M, false, subject.DigestsTable, subject.DigestsColumn),
+			sqlgraph.To(subjectdigest.Table, subjectdigest.FieldID),
+			sqlgraph.Edge(sqlgraph.O2M, false, subject.SubjectDigestsTable, subject.SubjectDigestsColumn),
 		)
 		fromU = sqlgraph.SetNeighbors(sq.driver.Dialect(), step)
 		return fromU, nil
@@ -287,13 +287,13 @@ func (sq *SubjectQuery) Clone() *SubjectQuery {
 		return nil
 	}
 	return &SubjectQuery{
-		config:        sq.config,
-		limit:         sq.limit,
-		offset:        sq.offset,
-		order:         append([]OrderFunc{}, sq.order...),
-		predicates:    append([]predicate.Subject{}, sq.predicates...),
-		withDigests:   sq.withDigests.Clone(),
-		withStatement: sq.withStatement.Clone(),
+		config:             sq.config,
+		limit:              sq.limit,
+		offset:             sq.offset,
+		order:              append([]OrderFunc{}, sq.order...),
+		predicates:         append([]predicate.Subject{}, sq.predicates...),
+		withSubjectDigests: sq.withSubjectDigests.Clone(),
+		withStatement:      sq.withStatement.Clone(),
 		// clone intermediate query.
 		sql:    sq.sql.Clone(),
 		path:   sq.path,
@@ -301,14 +301,14 @@ func (sq *SubjectQuery) Clone() *SubjectQuery {
 	}
 }
 
-// WithDigests tells the query-builder to eager-load the nodes that are connected to
-// the "digests" edge. The optional arguments are used to configure the query builder of the edge.
-func (sq *SubjectQuery) WithDigests(opts ...func(*DigestQuery)) *SubjectQuery {
-	query := &DigestQuery{config: sq.config}
+// WithSubjectDigests tells the query-builder to eager-load the nodes that are connected to
+// the "subject_digests" edge. The optional arguments are used to configure the query builder of the edge.
+func (sq *SubjectQuery) WithSubjectDigests(opts ...func(*SubjectDigestQuery)) *SubjectQuery {
+	query := &SubjectDigestQuery{config: sq.config}
 	for _, opt := range opts {
 		opt(query)
 	}
-	sq.withDigests = query
+	sq.withSubjectDigests = query
 	return sq
 }
 
@@ -390,7 +390,7 @@ func (sq *SubjectQuery) sqlAll(ctx context.Context) ([]*Subject, error) {
 		withFKs     = sq.withFKs
 		_spec       = sq.querySpec()
 		loadedTypes = [2]bool{
-			sq.withDigests != nil,
+			sq.withSubjectDigests != nil,
 			sq.withStatement != nil,
 		}
 	)
@@ -420,32 +420,32 @@ func (sq *SubjectQuery) sqlAll(ctx context.Context) ([]*Subject, error) {
 		return nodes, nil
 	}
 
-	if query := sq.withDigests; query != nil {
+	if query := sq.withSubjectDigests; query != nil {
 		fks := make([]driver.Value, 0, len(nodes))
 		nodeids := make(map[int]*Subject)
 		for i := range nodes {
 			fks = append(fks, nodes[i].ID)
 			nodeids[nodes[i].ID] = nodes[i]
-			nodes[i].Edges.Digests = []*Digest{}
+			nodes[i].Edges.SubjectDigests = []*SubjectDigest{}
 		}
 		query.withFKs = true
-		query.Where(predicate.Digest(func(s *sql.Selector) {
-			s.Where(sql.InValues(subject.DigestsColumn, fks...))
+		query.Where(predicate.SubjectDigest(func(s *sql.Selector) {
+			s.Where(sql.InValues(subject.SubjectDigestsColumn, fks...))
 		}))
 		neighbors, err := query.All(ctx)
 		if err != nil {
 			return nil, err
 		}
 		for _, n := range neighbors {
-			fk := n.subject_digests
+			fk := n.subject_subject_digests
 			if fk == nil {
-				return nil, fmt.Errorf(`foreign-key "subject_digests" is nil for node %v`, n.ID)
+				return nil, fmt.Errorf(`foreign-key "subject_subject_digests" is nil for node %v`, n.ID)
 			}
 			node, ok := nodeids[*fk]
 			if !ok {
-				return nil, fmt.Errorf(`unexpected foreign-key "subject_digests" returned %v for node %v`, *fk, n.ID)
+				return nil, fmt.Errorf(`unexpected foreign-key "subject_subject_digests" returned %v for node %v`, *fk, n.ID)
 			}
-			node.Edges.Digests = append(node.Edges.Digests, n)
+			node.Edges.SubjectDigests = append(node.Edges.SubjectDigests, n)
 		}
 	}
 

@@ -209,25 +209,25 @@ func NameContainsFold(v string) predicate.Subject {
 	})
 }
 
-// HasDigests applies the HasEdge predicate on the "digests" edge.
-func HasDigests() predicate.Subject {
+// HasSubjectDigests applies the HasEdge predicate on the "subject_digests" edge.
+func HasSubjectDigests() predicate.Subject {
 	return predicate.Subject(func(s *sql.Selector) {
 		step := sqlgraph.NewStep(
 			sqlgraph.From(Table, FieldID),
-			sqlgraph.To(DigestsTable, FieldID),
-			sqlgraph.Edge(sqlgraph.O2M, false, DigestsTable, DigestsColumn),
+			sqlgraph.To(SubjectDigestsTable, FieldID),
+			sqlgraph.Edge(sqlgraph.O2M, false, SubjectDigestsTable, SubjectDigestsColumn),
 		)
 		sqlgraph.HasNeighbors(s, step)
 	})
 }
 
-// HasDigestsWith applies the HasEdge predicate on the "digests" edge with a given conditions (other predicates).
-func HasDigestsWith(preds ...predicate.Digest) predicate.Subject {
+// HasSubjectDigestsWith applies the HasEdge predicate on the "subject_digests" edge with a given conditions (other predicates).
+func HasSubjectDigestsWith(preds ...predicate.SubjectDigest) predicate.Subject {
 	return predicate.Subject(func(s *sql.Selector) {
 		step := sqlgraph.NewStep(
 			sqlgraph.From(Table, FieldID),
-			sqlgraph.To(DigestsInverseTable, FieldID),
-			sqlgraph.Edge(sqlgraph.O2M, false, DigestsTable, DigestsColumn),
+			sqlgraph.To(SubjectDigestsInverseTable, FieldID),
+			sqlgraph.Edge(sqlgraph.O2M, false, SubjectDigestsTable, SubjectDigestsColumn),
 		)
 		sqlgraph.HasNeighborsWith(s, step, func(s *sql.Selector) {
 			for _, p := range preds {

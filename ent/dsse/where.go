@@ -383,6 +383,34 @@ func HasSignaturesWith(preds ...predicate.Signature) predicate.Dsse {
 	})
 }
 
+// HasPayloadDigests applies the HasEdge predicate on the "payload_digests" edge.
+func HasPayloadDigests() predicate.Dsse {
+	return predicate.Dsse(func(s *sql.Selector) {
+		step := sqlgraph.NewStep(
+			sqlgraph.From(Table, FieldID),
+			sqlgraph.To(PayloadDigestsTable, FieldID),
+			sqlgraph.Edge(sqlgraph.O2M, false, PayloadDigestsTable, PayloadDigestsColumn),
+		)
+		sqlgraph.HasNeighbors(s, step)
+	})
+}
+
+// HasPayloadDigestsWith applies the HasEdge predicate on the "payload_digests" edge with a given conditions (other predicates).
+func HasPayloadDigestsWith(preds ...predicate.PayloadDigest) predicate.Dsse {
+	return predicate.Dsse(func(s *sql.Selector) {
+		step := sqlgraph.NewStep(
+			sqlgraph.From(Table, FieldID),
+			sqlgraph.To(PayloadDigestsInverseTable, FieldID),
+			sqlgraph.Edge(sqlgraph.O2M, false, PayloadDigestsTable, PayloadDigestsColumn),
+		)
+		sqlgraph.HasNeighborsWith(s, step, func(s *sql.Selector) {
+			for _, p := range preds {
+				p(s)
+			}
+		})
+	})
+}
+
 // And groups predicates with the AND operator between them.
 func And(predicates ...predicate.Dsse) predicate.Dsse {
 	return predicate.Dsse(func(s *sql.Selector) {

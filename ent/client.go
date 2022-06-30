@@ -9,11 +9,14 @@ import (
 
 	"github.com/testifysec/archivist/ent/migrate"
 
-	"github.com/testifysec/archivist/ent/digest"
+	"github.com/testifysec/archivist/ent/attestation"
+	"github.com/testifysec/archivist/ent/attestationcollection"
 	"github.com/testifysec/archivist/ent/dsse"
+	"github.com/testifysec/archivist/ent/payloaddigest"
 	"github.com/testifysec/archivist/ent/signature"
 	"github.com/testifysec/archivist/ent/statement"
 	"github.com/testifysec/archivist/ent/subject"
+	"github.com/testifysec/archivist/ent/subjectdigest"
 
 	"entgo.io/ent/dialect"
 	"entgo.io/ent/dialect/sql"
@@ -25,16 +28,22 @@ type Client struct {
 	config
 	// Schema is the client for creating, migrating and dropping schema.
 	Schema *migrate.Schema
-	// Digest is the client for interacting with the Digest builders.
-	Digest *DigestClient
+	// Attestation is the client for interacting with the Attestation builders.
+	Attestation *AttestationClient
+	// AttestationCollection is the client for interacting with the AttestationCollection builders.
+	AttestationCollection *AttestationCollectionClient
 	// Dsse is the client for interacting with the Dsse builders.
 	Dsse *DsseClient
+	// PayloadDigest is the client for interacting with the PayloadDigest builders.
+	PayloadDigest *PayloadDigestClient
 	// Signature is the client for interacting with the Signature builders.
 	Signature *SignatureClient
 	// Statement is the client for interacting with the Statement builders.
 	Statement *StatementClient
 	// Subject is the client for interacting with the Subject builders.
 	Subject *SubjectClient
+	// SubjectDigest is the client for interacting with the SubjectDigest builders.
+	SubjectDigest *SubjectDigestClient
 }
 
 // NewClient creates a new client configured with the given options.
@@ -48,11 +57,14 @@ func NewClient(opts ...Option) *Client {
 
 func (c *Client) init() {
 	c.Schema = migrate.NewSchema(c.driver)
-	c.Digest = NewDigestClient(c.config)
+	c.Attestation = NewAttestationClient(c.config)
+	c.AttestationCollection = NewAttestationCollectionClient(c.config)
 	c.Dsse = NewDsseClient(c.config)
+	c.PayloadDigest = NewPayloadDigestClient(c.config)
 	c.Signature = NewSignatureClient(c.config)
 	c.Statement = NewStatementClient(c.config)
 	c.Subject = NewSubjectClient(c.config)
+	c.SubjectDigest = NewSubjectDigestClient(c.config)
 }
 
 // Open opens a database/sql.DB specified by the driver name and
@@ -84,13 +96,16 @@ func (c *Client) Tx(ctx context.Context) (*Tx, error) {
 	cfg := c.config
 	cfg.driver = tx
 	return &Tx{
-		ctx:       ctx,
-		config:    cfg,
-		Digest:    NewDigestClient(cfg),
-		Dsse:      NewDsseClient(cfg),
-		Signature: NewSignatureClient(cfg),
-		Statement: NewStatementClient(cfg),
-		Subject:   NewSubjectClient(cfg),
+		ctx:                   ctx,
+		config:                cfg,
+		Attestation:           NewAttestationClient(cfg),
+		AttestationCollection: NewAttestationCollectionClient(cfg),
+		Dsse:                  NewDsseClient(cfg),
+		PayloadDigest:         NewPayloadDigestClient(cfg),
+		Signature:             NewSignatureClient(cfg),
+		Statement:             NewStatementClient(cfg),
+		Subject:               NewSubjectClient(cfg),
+		SubjectDigest:         NewSubjectDigestClient(cfg),
 	}, nil
 }
 
@@ -108,20 +123,23 @@ func (c *Client) BeginTx(ctx context.Context, opts *sql.TxOptions) (*Tx, error) 
 	cfg := c.config
 	cfg.driver = &txDriver{tx: tx, drv: c.driver}
 	return &Tx{
-		ctx:       ctx,
-		config:    cfg,
-		Digest:    NewDigestClient(cfg),
-		Dsse:      NewDsseClient(cfg),
-		Signature: NewSignatureClient(cfg),
-		Statement: NewStatementClient(cfg),
-		Subject:   NewSubjectClient(cfg),
+		ctx:                   ctx,
+		config:                cfg,
+		Attestation:           NewAttestationClient(cfg),
+		AttestationCollection: NewAttestationCollectionClient(cfg),
+		Dsse:                  NewDsseClient(cfg),
+		PayloadDigest:         NewPayloadDigestClient(cfg),
+		Signature:             NewSignatureClient(cfg),
+		Statement:             NewStatementClient(cfg),
+		Subject:               NewSubjectClient(cfg),
+		SubjectDigest:         NewSubjectDigestClient(cfg),
 	}, nil
 }
 
 // Debug returns a new debug-client. It's used to get verbose logging on specific operations.
 //
 //	client.Debug().
-//		Digest.
+//		Attestation.
 //		Query().
 //		Count(ctx)
 //
@@ -144,91 +162,94 @@ func (c *Client) Close() error {
 // Use adds the mutation hooks to all the entity clients.
 // In order to add hooks to a specific client, call: `client.Node.Use(...)`.
 func (c *Client) Use(hooks ...Hook) {
-	c.Digest.Use(hooks...)
+	c.Attestation.Use(hooks...)
+	c.AttestationCollection.Use(hooks...)
 	c.Dsse.Use(hooks...)
+	c.PayloadDigest.Use(hooks...)
 	c.Signature.Use(hooks...)
 	c.Statement.Use(hooks...)
 	c.Subject.Use(hooks...)
+	c.SubjectDigest.Use(hooks...)
 }
 
-// DigestClient is a client for the Digest schema.
-type DigestClient struct {
+// AttestationClient is a client for the Attestation schema.
+type AttestationClient struct {
 	config
 }
 
-// NewDigestClient returns a client for the Digest from the given config.
-func NewDigestClient(c config) *DigestClient {
-	return &DigestClient{config: c}
+// NewAttestationClient returns a client for the Attestation from the given config.
+func NewAttestationClient(c config) *AttestationClient {
+	return &AttestationClient{config: c}
 }
 
 // Use adds a list of mutation hooks to the hooks stack.
-// A call to `Use(f, g, h)` equals to `digest.Hooks(f(g(h())))`.
-func (c *DigestClient) Use(hooks ...Hook) {
-	c.hooks.Digest = append(c.hooks.Digest, hooks...)
+// A call to `Use(f, g, h)` equals to `attestation.Hooks(f(g(h())))`.
+func (c *AttestationClient) Use(hooks ...Hook) {
+	c.hooks.Attestation = append(c.hooks.Attestation, hooks...)
 }
 
-// Create returns a create builder for Digest.
-func (c *DigestClient) Create() *DigestCreate {
-	mutation := newDigestMutation(c.config, OpCreate)
-	return &DigestCreate{config: c.config, hooks: c.Hooks(), mutation: mutation}
+// Create returns a create builder for Attestation.
+func (c *AttestationClient) Create() *AttestationCreate {
+	mutation := newAttestationMutation(c.config, OpCreate)
+	return &AttestationCreate{config: c.config, hooks: c.Hooks(), mutation: mutation}
 }
 
-// CreateBulk returns a builder for creating a bulk of Digest entities.
-func (c *DigestClient) CreateBulk(builders ...*DigestCreate) *DigestCreateBulk {
-	return &DigestCreateBulk{config: c.config, builders: builders}
+// CreateBulk returns a builder for creating a bulk of Attestation entities.
+func (c *AttestationClient) CreateBulk(builders ...*AttestationCreate) *AttestationCreateBulk {
+	return &AttestationCreateBulk{config: c.config, builders: builders}
 }
 
-// Update returns an update builder for Digest.
-func (c *DigestClient) Update() *DigestUpdate {
-	mutation := newDigestMutation(c.config, OpUpdate)
-	return &DigestUpdate{config: c.config, hooks: c.Hooks(), mutation: mutation}
+// Update returns an update builder for Attestation.
+func (c *AttestationClient) Update() *AttestationUpdate {
+	mutation := newAttestationMutation(c.config, OpUpdate)
+	return &AttestationUpdate{config: c.config, hooks: c.Hooks(), mutation: mutation}
 }
 
 // UpdateOne returns an update builder for the given entity.
-func (c *DigestClient) UpdateOne(d *Digest) *DigestUpdateOne {
-	mutation := newDigestMutation(c.config, OpUpdateOne, withDigest(d))
-	return &DigestUpdateOne{config: c.config, hooks: c.Hooks(), mutation: mutation}
+func (c *AttestationClient) UpdateOne(a *Attestation) *AttestationUpdateOne {
+	mutation := newAttestationMutation(c.config, OpUpdateOne, withAttestation(a))
+	return &AttestationUpdateOne{config: c.config, hooks: c.Hooks(), mutation: mutation}
 }
 
 // UpdateOneID returns an update builder for the given id.
-func (c *DigestClient) UpdateOneID(id int) *DigestUpdateOne {
-	mutation := newDigestMutation(c.config, OpUpdateOne, withDigestID(id))
-	return &DigestUpdateOne{config: c.config, hooks: c.Hooks(), mutation: mutation}
+func (c *AttestationClient) UpdateOneID(id int) *AttestationUpdateOne {
+	mutation := newAttestationMutation(c.config, OpUpdateOne, withAttestationID(id))
+	return &AttestationUpdateOne{config: c.config, hooks: c.Hooks(), mutation: mutation}
 }
 
-// Delete returns a delete builder for Digest.
-func (c *DigestClient) Delete() *DigestDelete {
-	mutation := newDigestMutation(c.config, OpDelete)
-	return &DigestDelete{config: c.config, hooks: c.Hooks(), mutation: mutation}
+// Delete returns a delete builder for Attestation.
+func (c *AttestationClient) Delete() *AttestationDelete {
+	mutation := newAttestationMutation(c.config, OpDelete)
+	return &AttestationDelete{config: c.config, hooks: c.Hooks(), mutation: mutation}
 }
 
 // DeleteOne returns a delete builder for the given entity.
-func (c *DigestClient) DeleteOne(d *Digest) *DigestDeleteOne {
-	return c.DeleteOneID(d.ID)
+func (c *AttestationClient) DeleteOne(a *Attestation) *AttestationDeleteOne {
+	return c.DeleteOneID(a.ID)
 }
 
 // DeleteOneID returns a delete builder for the given id.
-func (c *DigestClient) DeleteOneID(id int) *DigestDeleteOne {
-	builder := c.Delete().Where(digest.ID(id))
+func (c *AttestationClient) DeleteOneID(id int) *AttestationDeleteOne {
+	builder := c.Delete().Where(attestation.ID(id))
 	builder.mutation.id = &id
 	builder.mutation.op = OpDeleteOne
-	return &DigestDeleteOne{builder}
+	return &AttestationDeleteOne{builder}
 }
 
-// Query returns a query builder for Digest.
-func (c *DigestClient) Query() *DigestQuery {
-	return &DigestQuery{
+// Query returns a query builder for Attestation.
+func (c *AttestationClient) Query() *AttestationQuery {
+	return &AttestationQuery{
 		config: c.config,
 	}
 }
 
-// Get returns a Digest entity by its id.
-func (c *DigestClient) Get(ctx context.Context, id int) (*Digest, error) {
-	return c.Query().Where(digest.ID(id)).Only(ctx)
+// Get returns a Attestation entity by its id.
+func (c *AttestationClient) Get(ctx context.Context, id int) (*Attestation, error) {
+	return c.Query().Where(attestation.ID(id)).Only(ctx)
 }
 
 // GetX is like Get, but panics if an error occurs.
-func (c *DigestClient) GetX(ctx context.Context, id int) *Digest {
+func (c *AttestationClient) GetX(ctx context.Context, id int) *Attestation {
 	obj, err := c.Get(ctx, id)
 	if err != nil {
 		panic(err)
@@ -236,25 +257,147 @@ func (c *DigestClient) GetX(ctx context.Context, id int) *Digest {
 	return obj
 }
 
-// QuerySubject queries the subject edge of a Digest.
-func (c *DigestClient) QuerySubject(d *Digest) *SubjectQuery {
-	query := &SubjectQuery{config: c.config}
+// QueryAttestationCollection queries the attestation_collection edge of a Attestation.
+func (c *AttestationClient) QueryAttestationCollection(a *Attestation) *AttestationCollectionQuery {
+	query := &AttestationCollectionQuery{config: c.config}
 	query.path = func(ctx context.Context) (fromV *sql.Selector, _ error) {
-		id := d.ID
+		id := a.ID
 		step := sqlgraph.NewStep(
-			sqlgraph.From(digest.Table, digest.FieldID, id),
-			sqlgraph.To(subject.Table, subject.FieldID),
-			sqlgraph.Edge(sqlgraph.M2O, true, digest.SubjectTable, digest.SubjectColumn),
+			sqlgraph.From(attestation.Table, attestation.FieldID, id),
+			sqlgraph.To(attestationcollection.Table, attestationcollection.FieldID),
+			sqlgraph.Edge(sqlgraph.M2O, true, attestation.AttestationCollectionTable, attestation.AttestationCollectionColumn),
 		)
-		fromV = sqlgraph.Neighbors(d.driver.Dialect(), step)
+		fromV = sqlgraph.Neighbors(a.driver.Dialect(), step)
 		return fromV, nil
 	}
 	return query
 }
 
 // Hooks returns the client hooks.
-func (c *DigestClient) Hooks() []Hook {
-	return c.hooks.Digest
+func (c *AttestationClient) Hooks() []Hook {
+	return c.hooks.Attestation
+}
+
+// AttestationCollectionClient is a client for the AttestationCollection schema.
+type AttestationCollectionClient struct {
+	config
+}
+
+// NewAttestationCollectionClient returns a client for the AttestationCollection from the given config.
+func NewAttestationCollectionClient(c config) *AttestationCollectionClient {
+	return &AttestationCollectionClient{config: c}
+}
+
+// Use adds a list of mutation hooks to the hooks stack.
+// A call to `Use(f, g, h)` equals to `attestationcollection.Hooks(f(g(h())))`.
+func (c *AttestationCollectionClient) Use(hooks ...Hook) {
+	c.hooks.AttestationCollection = append(c.hooks.AttestationCollection, hooks...)
+}
+
+// Create returns a create builder for AttestationCollection.
+func (c *AttestationCollectionClient) Create() *AttestationCollectionCreate {
+	mutation := newAttestationCollectionMutation(c.config, OpCreate)
+	return &AttestationCollectionCreate{config: c.config, hooks: c.Hooks(), mutation: mutation}
+}
+
+// CreateBulk returns a builder for creating a bulk of AttestationCollection entities.
+func (c *AttestationCollectionClient) CreateBulk(builders ...*AttestationCollectionCreate) *AttestationCollectionCreateBulk {
+	return &AttestationCollectionCreateBulk{config: c.config, builders: builders}
+}
+
+// Update returns an update builder for AttestationCollection.
+func (c *AttestationCollectionClient) Update() *AttestationCollectionUpdate {
+	mutation := newAttestationCollectionMutation(c.config, OpUpdate)
+	return &AttestationCollectionUpdate{config: c.config, hooks: c.Hooks(), mutation: mutation}
+}
+
+// UpdateOne returns an update builder for the given entity.
+func (c *AttestationCollectionClient) UpdateOne(ac *AttestationCollection) *AttestationCollectionUpdateOne {
+	mutation := newAttestationCollectionMutation(c.config, OpUpdateOne, withAttestationCollection(ac))
+	return &AttestationCollectionUpdateOne{config: c.config, hooks: c.Hooks(), mutation: mutation}
+}
+
+// UpdateOneID returns an update builder for the given id.
+func (c *AttestationCollectionClient) UpdateOneID(id int) *AttestationCollectionUpdateOne {
+	mutation := newAttestationCollectionMutation(c.config, OpUpdateOne, withAttestationCollectionID(id))
+	return &AttestationCollectionUpdateOne{config: c.config, hooks: c.Hooks(), mutation: mutation}
+}
+
+// Delete returns a delete builder for AttestationCollection.
+func (c *AttestationCollectionClient) Delete() *AttestationCollectionDelete {
+	mutation := newAttestationCollectionMutation(c.config, OpDelete)
+	return &AttestationCollectionDelete{config: c.config, hooks: c.Hooks(), mutation: mutation}
+}
+
+// DeleteOne returns a delete builder for the given entity.
+func (c *AttestationCollectionClient) DeleteOne(ac *AttestationCollection) *AttestationCollectionDeleteOne {
+	return c.DeleteOneID(ac.ID)
+}
+
+// DeleteOneID returns a delete builder for the given id.
+func (c *AttestationCollectionClient) DeleteOneID(id int) *AttestationCollectionDeleteOne {
+	builder := c.Delete().Where(attestationcollection.ID(id))
+	builder.mutation.id = &id
+	builder.mutation.op = OpDeleteOne
+	return &AttestationCollectionDeleteOne{builder}
+}
+
+// Query returns a query builder for AttestationCollection.
+func (c *AttestationCollectionClient) Query() *AttestationCollectionQuery {
+	return &AttestationCollectionQuery{
+		config: c.config,
+	}
+}
+
+// Get returns a AttestationCollection entity by its id.
+func (c *AttestationCollectionClient) Get(ctx context.Context, id int) (*AttestationCollection, error) {
+	return c.Query().Where(attestationcollection.ID(id)).Only(ctx)
+}
+
+// GetX is like Get, but panics if an error occurs.
+func (c *AttestationCollectionClient) GetX(ctx context.Context, id int) *AttestationCollection {
+	obj, err := c.Get(ctx, id)
+	if err != nil {
+		panic(err)
+	}
+	return obj
+}
+
+// QueryAttestations queries the attestations edge of a AttestationCollection.
+func (c *AttestationCollectionClient) QueryAttestations(ac *AttestationCollection) *AttestationQuery {
+	query := &AttestationQuery{config: c.config}
+	query.path = func(ctx context.Context) (fromV *sql.Selector, _ error) {
+		id := ac.ID
+		step := sqlgraph.NewStep(
+			sqlgraph.From(attestationcollection.Table, attestationcollection.FieldID, id),
+			sqlgraph.To(attestation.Table, attestation.FieldID),
+			sqlgraph.Edge(sqlgraph.O2M, false, attestationcollection.AttestationsTable, attestationcollection.AttestationsColumn),
+		)
+		fromV = sqlgraph.Neighbors(ac.driver.Dialect(), step)
+		return fromV, nil
+	}
+	return query
+}
+
+// QueryStatement queries the statement edge of a AttestationCollection.
+func (c *AttestationCollectionClient) QueryStatement(ac *AttestationCollection) *StatementQuery {
+	query := &StatementQuery{config: c.config}
+	query.path = func(ctx context.Context) (fromV *sql.Selector, _ error) {
+		id := ac.ID
+		step := sqlgraph.NewStep(
+			sqlgraph.From(attestationcollection.Table, attestationcollection.FieldID, id),
+			sqlgraph.To(statement.Table, statement.FieldID),
+			sqlgraph.Edge(sqlgraph.O2O, true, attestationcollection.StatementTable, attestationcollection.StatementColumn),
+		)
+		fromV = sqlgraph.Neighbors(ac.driver.Dialect(), step)
+		return fromV, nil
+	}
+	return query
+}
+
+// Hooks returns the client hooks.
+func (c *AttestationCollectionClient) Hooks() []Hook {
+	return c.hooks.AttestationCollection
 }
 
 // DsseClient is a client for the Dsse schema.
@@ -374,9 +517,131 @@ func (c *DsseClient) QuerySignatures(d *Dsse) *SignatureQuery {
 	return query
 }
 
+// QueryPayloadDigests queries the payload_digests edge of a Dsse.
+func (c *DsseClient) QueryPayloadDigests(d *Dsse) *PayloadDigestQuery {
+	query := &PayloadDigestQuery{config: c.config}
+	query.path = func(ctx context.Context) (fromV *sql.Selector, _ error) {
+		id := d.ID
+		step := sqlgraph.NewStep(
+			sqlgraph.From(dsse.Table, dsse.FieldID, id),
+			sqlgraph.To(payloaddigest.Table, payloaddigest.FieldID),
+			sqlgraph.Edge(sqlgraph.O2M, false, dsse.PayloadDigestsTable, dsse.PayloadDigestsColumn),
+		)
+		fromV = sqlgraph.Neighbors(d.driver.Dialect(), step)
+		return fromV, nil
+	}
+	return query
+}
+
 // Hooks returns the client hooks.
 func (c *DsseClient) Hooks() []Hook {
 	return c.hooks.Dsse
+}
+
+// PayloadDigestClient is a client for the PayloadDigest schema.
+type PayloadDigestClient struct {
+	config
+}
+
+// NewPayloadDigestClient returns a client for the PayloadDigest from the given config.
+func NewPayloadDigestClient(c config) *PayloadDigestClient {
+	return &PayloadDigestClient{config: c}
+}
+
+// Use adds a list of mutation hooks to the hooks stack.
+// A call to `Use(f, g, h)` equals to `payloaddigest.Hooks(f(g(h())))`.
+func (c *PayloadDigestClient) Use(hooks ...Hook) {
+	c.hooks.PayloadDigest = append(c.hooks.PayloadDigest, hooks...)
+}
+
+// Create returns a create builder for PayloadDigest.
+func (c *PayloadDigestClient) Create() *PayloadDigestCreate {
+	mutation := newPayloadDigestMutation(c.config, OpCreate)
+	return &PayloadDigestCreate{config: c.config, hooks: c.Hooks(), mutation: mutation}
+}
+
+// CreateBulk returns a builder for creating a bulk of PayloadDigest entities.
+func (c *PayloadDigestClient) CreateBulk(builders ...*PayloadDigestCreate) *PayloadDigestCreateBulk {
+	return &PayloadDigestCreateBulk{config: c.config, builders: builders}
+}
+
+// Update returns an update builder for PayloadDigest.
+func (c *PayloadDigestClient) Update() *PayloadDigestUpdate {
+	mutation := newPayloadDigestMutation(c.config, OpUpdate)
+	return &PayloadDigestUpdate{config: c.config, hooks: c.Hooks(), mutation: mutation}
+}
+
+// UpdateOne returns an update builder for the given entity.
+func (c *PayloadDigestClient) UpdateOne(pd *PayloadDigest) *PayloadDigestUpdateOne {
+	mutation := newPayloadDigestMutation(c.config, OpUpdateOne, withPayloadDigest(pd))
+	return &PayloadDigestUpdateOne{config: c.config, hooks: c.Hooks(), mutation: mutation}
+}
+
+// UpdateOneID returns an update builder for the given id.
+func (c *PayloadDigestClient) UpdateOneID(id int) *PayloadDigestUpdateOne {
+	mutation := newPayloadDigestMutation(c.config, OpUpdateOne, withPayloadDigestID(id))
+	return &PayloadDigestUpdateOne{config: c.config, hooks: c.Hooks(), mutation: mutation}
+}
+
+// Delete returns a delete builder for PayloadDigest.
+func (c *PayloadDigestClient) Delete() *PayloadDigestDelete {
+	mutation := newPayloadDigestMutation(c.config, OpDelete)
+	return &PayloadDigestDelete{config: c.config, hooks: c.Hooks(), mutation: mutation}
+}
+
+// DeleteOne returns a delete builder for the given entity.
+func (c *PayloadDigestClient) DeleteOne(pd *PayloadDigest) *PayloadDigestDeleteOne {
+	return c.DeleteOneID(pd.ID)
+}
+
+// DeleteOneID returns a delete builder for the given id.
+func (c *PayloadDigestClient) DeleteOneID(id int) *PayloadDigestDeleteOne {
+	builder := c.Delete().Where(payloaddigest.ID(id))
+	builder.mutation.id = &id
+	builder.mutation.op = OpDeleteOne
+	return &PayloadDigestDeleteOne{builder}
+}
+
+// Query returns a query builder for PayloadDigest.
+func (c *PayloadDigestClient) Query() *PayloadDigestQuery {
+	return &PayloadDigestQuery{
+		config: c.config,
+	}
+}
+
+// Get returns a PayloadDigest entity by its id.
+func (c *PayloadDigestClient) Get(ctx context.Context, id int) (*PayloadDigest, error) {
+	return c.Query().Where(payloaddigest.ID(id)).Only(ctx)
+}
+
+// GetX is like Get, but panics if an error occurs.
+func (c *PayloadDigestClient) GetX(ctx context.Context, id int) *PayloadDigest {
+	obj, err := c.Get(ctx, id)
+	if err != nil {
+		panic(err)
+	}
+	return obj
+}
+
+// QueryDsse queries the dsse edge of a PayloadDigest.
+func (c *PayloadDigestClient) QueryDsse(pd *PayloadDigest) *DsseQuery {
+	query := &DsseQuery{config: c.config}
+	query.path = func(ctx context.Context) (fromV *sql.Selector, _ error) {
+		id := pd.ID
+		step := sqlgraph.NewStep(
+			sqlgraph.From(payloaddigest.Table, payloaddigest.FieldID, id),
+			sqlgraph.To(dsse.Table, dsse.FieldID),
+			sqlgraph.Edge(sqlgraph.M2O, true, payloaddigest.DsseTable, payloaddigest.DsseColumn),
+		)
+		fromV = sqlgraph.Neighbors(pd.driver.Dialect(), step)
+		return fromV, nil
+	}
+	return query
+}
+
+// Hooks returns the client hooks.
+func (c *PayloadDigestClient) Hooks() []Hook {
+	return c.hooks.PayloadDigest
 }
 
 // SignatureClient is a client for the Signature schema.
@@ -586,6 +851,22 @@ func (c *StatementClient) QuerySubjects(s *Statement) *SubjectQuery {
 	return query
 }
 
+// QueryAttestationCollections queries the attestation_collections edge of a Statement.
+func (c *StatementClient) QueryAttestationCollections(s *Statement) *AttestationCollectionQuery {
+	query := &AttestationCollectionQuery{config: c.config}
+	query.path = func(ctx context.Context) (fromV *sql.Selector, _ error) {
+		id := s.ID
+		step := sqlgraph.NewStep(
+			sqlgraph.From(statement.Table, statement.FieldID, id),
+			sqlgraph.To(attestationcollection.Table, attestationcollection.FieldID),
+			sqlgraph.Edge(sqlgraph.O2O, false, statement.AttestationCollectionsTable, statement.AttestationCollectionsColumn),
+		)
+		fromV = sqlgraph.Neighbors(s.driver.Dialect(), step)
+		return fromV, nil
+	}
+	return query
+}
+
 // QueryDsse queries the dsse edge of a Statement.
 func (c *StatementClient) QueryDsse(s *Statement) *DsseQuery {
 	query := &DsseQuery{config: c.config}
@@ -692,15 +973,15 @@ func (c *SubjectClient) GetX(ctx context.Context, id int) *Subject {
 	return obj
 }
 
-// QueryDigests queries the digests edge of a Subject.
-func (c *SubjectClient) QueryDigests(s *Subject) *DigestQuery {
-	query := &DigestQuery{config: c.config}
+// QuerySubjectDigests queries the subject_digests edge of a Subject.
+func (c *SubjectClient) QuerySubjectDigests(s *Subject) *SubjectDigestQuery {
+	query := &SubjectDigestQuery{config: c.config}
 	query.path = func(ctx context.Context) (fromV *sql.Selector, _ error) {
 		id := s.ID
 		step := sqlgraph.NewStep(
 			sqlgraph.From(subject.Table, subject.FieldID, id),
-			sqlgraph.To(digest.Table, digest.FieldID),
-			sqlgraph.Edge(sqlgraph.O2M, false, subject.DigestsTable, subject.DigestsColumn),
+			sqlgraph.To(subjectdigest.Table, subjectdigest.FieldID),
+			sqlgraph.Edge(sqlgraph.O2M, false, subject.SubjectDigestsTable, subject.SubjectDigestsColumn),
 		)
 		fromV = sqlgraph.Neighbors(s.driver.Dialect(), step)
 		return fromV, nil
@@ -727,4 +1008,110 @@ func (c *SubjectClient) QueryStatement(s *Subject) *StatementQuery {
 // Hooks returns the client hooks.
 func (c *SubjectClient) Hooks() []Hook {
 	return c.hooks.Subject
+}
+
+// SubjectDigestClient is a client for the SubjectDigest schema.
+type SubjectDigestClient struct {
+	config
+}
+
+// NewSubjectDigestClient returns a client for the SubjectDigest from the given config.
+func NewSubjectDigestClient(c config) *SubjectDigestClient {
+	return &SubjectDigestClient{config: c}
+}
+
+// Use adds a list of mutation hooks to the hooks stack.
+// A call to `Use(f, g, h)` equals to `subjectdigest.Hooks(f(g(h())))`.
+func (c *SubjectDigestClient) Use(hooks ...Hook) {
+	c.hooks.SubjectDigest = append(c.hooks.SubjectDigest, hooks...)
+}
+
+// Create returns a create builder for SubjectDigest.
+func (c *SubjectDigestClient) Create() *SubjectDigestCreate {
+	mutation := newSubjectDigestMutation(c.config, OpCreate)
+	return &SubjectDigestCreate{config: c.config, hooks: c.Hooks(), mutation: mutation}
+}
+
+// CreateBulk returns a builder for creating a bulk of SubjectDigest entities.
+func (c *SubjectDigestClient) CreateBulk(builders ...*SubjectDigestCreate) *SubjectDigestCreateBulk {
+	return &SubjectDigestCreateBulk{config: c.config, builders: builders}
+}
+
+// Update returns an update builder for SubjectDigest.
+func (c *SubjectDigestClient) Update() *SubjectDigestUpdate {
+	mutation := newSubjectDigestMutation(c.config, OpUpdate)
+	return &SubjectDigestUpdate{config: c.config, hooks: c.Hooks(), mutation: mutation}
+}
+
+// UpdateOne returns an update builder for the given entity.
+func (c *SubjectDigestClient) UpdateOne(sd *SubjectDigest) *SubjectDigestUpdateOne {
+	mutation := newSubjectDigestMutation(c.config, OpUpdateOne, withSubjectDigest(sd))
+	return &SubjectDigestUpdateOne{config: c.config, hooks: c.Hooks(), mutation: mutation}
+}
+
+// UpdateOneID returns an update builder for the given id.
+func (c *SubjectDigestClient) UpdateOneID(id int) *SubjectDigestUpdateOne {
+	mutation := newSubjectDigestMutation(c.config, OpUpdateOne, withSubjectDigestID(id))
+	return &SubjectDigestUpdateOne{config: c.config, hooks: c.Hooks(), mutation: mutation}
+}
+
+// Delete returns a delete builder for SubjectDigest.
+func (c *SubjectDigestClient) Delete() *SubjectDigestDelete {
+	mutation := newSubjectDigestMutation(c.config, OpDelete)
+	return &SubjectDigestDelete{config: c.config, hooks: c.Hooks(), mutation: mutation}
+}
+
+// DeleteOne returns a delete builder for the given entity.
+func (c *SubjectDigestClient) DeleteOne(sd *SubjectDigest) *SubjectDigestDeleteOne {
+	return c.DeleteOneID(sd.ID)
+}
+
+// DeleteOneID returns a delete builder for the given id.
+func (c *SubjectDigestClient) DeleteOneID(id int) *SubjectDigestDeleteOne {
+	builder := c.Delete().Where(subjectdigest.ID(id))
+	builder.mutation.id = &id
+	builder.mutation.op = OpDeleteOne
+	return &SubjectDigestDeleteOne{builder}
+}
+
+// Query returns a query builder for SubjectDigest.
+func (c *SubjectDigestClient) Query() *SubjectDigestQuery {
+	return &SubjectDigestQuery{
+		config: c.config,
+	}
+}
+
+// Get returns a SubjectDigest entity by its id.
+func (c *SubjectDigestClient) Get(ctx context.Context, id int) (*SubjectDigest, error) {
+	return c.Query().Where(subjectdigest.ID(id)).Only(ctx)
+}
+
+// GetX is like Get, but panics if an error occurs.
+func (c *SubjectDigestClient) GetX(ctx context.Context, id int) *SubjectDigest {
+	obj, err := c.Get(ctx, id)
+	if err != nil {
+		panic(err)
+	}
+	return obj
+}
+
+// QuerySubject queries the subject edge of a SubjectDigest.
+func (c *SubjectDigestClient) QuerySubject(sd *SubjectDigest) *SubjectQuery {
+	query := &SubjectQuery{config: c.config}
+	query.path = func(ctx context.Context) (fromV *sql.Selector, _ error) {
+		id := sd.ID
+		step := sqlgraph.NewStep(
+			sqlgraph.From(subjectdigest.Table, subjectdigest.FieldID, id),
+			sqlgraph.To(subject.Table, subject.FieldID),
+			sqlgraph.Edge(sqlgraph.M2O, true, subjectdigest.SubjectTable, subjectdigest.SubjectColumn),
+		)
+		fromV = sqlgraph.Neighbors(sd.driver.Dialect(), step)
+		return fromV, nil
+	}
+	return query
+}
+
+// Hooks returns the client hooks.
+func (c *SubjectDigestClient) Hooks() []Hook {
+	return c.hooks.SubjectDigest
 }

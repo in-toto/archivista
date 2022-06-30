@@ -32,9 +32,11 @@ type DsseEdges struct {
 	Statement *Statement `json:"statement,omitempty"`
 	// Signatures holds the value of the signatures edge.
 	Signatures []*Signature `json:"signatures,omitempty"`
+	// PayloadDigests holds the value of the payload_digests edge.
+	PayloadDigests []*PayloadDigest `json:"payload_digests,omitempty"`
 	// loadedTypes holds the information for reporting if a
 	// type was loaded (or requested) in eager-loading or not.
-	loadedTypes [2]bool
+	loadedTypes [3]bool
 }
 
 // StatementOrErr returns the Statement value or an error if the edge
@@ -58,6 +60,15 @@ func (e DsseEdges) SignaturesOrErr() ([]*Signature, error) {
 		return e.Signatures, nil
 	}
 	return nil, &NotLoadedError{edge: "signatures"}
+}
+
+// PayloadDigestsOrErr returns the PayloadDigests value or an error if the edge
+// was not loaded in eager-loading.
+func (e DsseEdges) PayloadDigestsOrErr() ([]*PayloadDigest, error) {
+	if e.loadedTypes[2] {
+		return e.PayloadDigests, nil
+	}
+	return nil, &NotLoadedError{edge: "payload_digests"}
 }
 
 // scanValues returns the types for scanning values from sql.Rows.
@@ -124,6 +135,11 @@ func (d *Dsse) QueryStatement() *StatementQuery {
 // QuerySignatures queries the "signatures" edge of the Dsse entity.
 func (d *Dsse) QuerySignatures() *SignatureQuery {
 	return (&DsseClient{config: d.config}).QuerySignatures(d)
+}
+
+// QueryPayloadDigests queries the "payload_digests" edge of the Dsse entity.
+func (d *Dsse) QueryPayloadDigests() *PayloadDigestQuery {
+	return (&DsseClient{config: d.config}).QueryPayloadDigests(d)
 }
 
 // Update returns a builder for updating this Dsse.

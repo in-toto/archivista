@@ -18,7 +18,7 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
-	"github.com/testifysec/witness/pkg/dsse"
+	"github.com/testifysec/go-witness/dsse"
 	"io/ioutil"
 	"os"
 

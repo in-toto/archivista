@@ -6,13 +6,13 @@ import (
 	"entgo.io/ent/schema/field"
 )
 
-// Digest holds the schema definition for the Digest entity.
-type Digest struct {
+// SubjectDigest represents the digests of a subject from an in-toto statement
+type SubjectDigest struct {
 	ent.Schema
 }
 
 // Fields of the Digest.
-func (Digest) Fields() []ent.Field {
+func (SubjectDigest) Fields() []ent.Field {
 	return []ent.Field{
 		field.String("algorithm").NotEmpty(),
 		field.String("value").NotEmpty(),
@@ -20,10 +20,10 @@ func (Digest) Fields() []ent.Field {
 }
 
 // Edges of the Digest.
-func (Digest) Edges() []ent.Edge {
+func (SubjectDigest) Edges() []ent.Edge {
 	return []ent.Edge{
 		edge.From("subject", Subject.Type).
-			Ref("digests").
+			Ref("subject_digests").
 			Unique(),
 	}
 }

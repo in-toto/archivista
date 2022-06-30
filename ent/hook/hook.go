@@ -9,15 +9,28 @@ import (
 	"github.com/testifysec/archivist/ent"
 )
 
-// The DigestFunc type is an adapter to allow the use of ordinary
-// function as Digest mutator.
-type DigestFunc func(context.Context, *ent.DigestMutation) (ent.Value, error)
+// The AttestationFunc type is an adapter to allow the use of ordinary
+// function as Attestation mutator.
+type AttestationFunc func(context.Context, *ent.AttestationMutation) (ent.Value, error)
 
 // Mutate calls f(ctx, m).
-func (f DigestFunc) Mutate(ctx context.Context, m ent.Mutation) (ent.Value, error) {
-	mv, ok := m.(*ent.DigestMutation)
+func (f AttestationFunc) Mutate(ctx context.Context, m ent.Mutation) (ent.Value, error) {
+	mv, ok := m.(*ent.AttestationMutation)
 	if !ok {
-		return nil, fmt.Errorf("unexpected mutation type %T. expect *ent.DigestMutation", m)
+		return nil, fmt.Errorf("unexpected mutation type %T. expect *ent.AttestationMutation", m)
+	}
+	return f(ctx, mv)
+}
+
+// The AttestationCollectionFunc type is an adapter to allow the use of ordinary
+// function as AttestationCollection mutator.
+type AttestationCollectionFunc func(context.Context, *ent.AttestationCollectionMutation) (ent.Value, error)
+
+// Mutate calls f(ctx, m).
+func (f AttestationCollectionFunc) Mutate(ctx context.Context, m ent.Mutation) (ent.Value, error) {
+	mv, ok := m.(*ent.AttestationCollectionMutation)
+	if !ok {
+		return nil, fmt.Errorf("unexpected mutation type %T. expect *ent.AttestationCollectionMutation", m)
 	}
 	return f(ctx, mv)
 }
@@ -31,6 +44,19 @@ func (f DsseFunc) Mutate(ctx context.Context, m ent.Mutation) (ent.Value, error)
 	mv, ok := m.(*ent.DsseMutation)
 	if !ok {
 		return nil, fmt.Errorf("unexpected mutation type %T. expect *ent.DsseMutation", m)
+	}
+	return f(ctx, mv)
+}
+
+// The PayloadDigestFunc type is an adapter to allow the use of ordinary
+// function as PayloadDigest mutator.
+type PayloadDigestFunc func(context.Context, *ent.PayloadDigestMutation) (ent.Value, error)
+
+// Mutate calls f(ctx, m).
+func (f PayloadDigestFunc) Mutate(ctx context.Context, m ent.Mutation) (ent.Value, error) {
+	mv, ok := m.(*ent.PayloadDigestMutation)
+	if !ok {
+		return nil, fmt.Errorf("unexpected mutation type %T. expect *ent.PayloadDigestMutation", m)
 	}
 	return f(ctx, mv)
 }
@@ -70,6 +96,19 @@ func (f SubjectFunc) Mutate(ctx context.Context, m ent.Mutation) (ent.Value, err
 	mv, ok := m.(*ent.SubjectMutation)
 	if !ok {
 		return nil, fmt.Errorf("unexpected mutation type %T. expect *ent.SubjectMutation", m)
+	}
+	return f(ctx, mv)
+}
+
+// The SubjectDigestFunc type is an adapter to allow the use of ordinary
+// function as SubjectDigest mutator.
+type SubjectDigestFunc func(context.Context, *ent.SubjectDigestMutation) (ent.Value, error)
+
+// Mutate calls f(ctx, m).
+func (f SubjectDigestFunc) Mutate(ctx context.Context, m ent.Mutation) (ent.Value, error) {
+	mv, ok := m.(*ent.SubjectDigestMutation)
+	if !ok {
+		return nil, fmt.Errorf("unexpected mutation type %T. expect *ent.SubjectDigestMutation", m)
 	}
 	return f(ctx, mv)
 }

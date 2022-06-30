@@ -15,24 +15,25 @@
 package mysqlstore
 
 import (
-	"ariga.io/sqlcomment"
 	"context"
+	"crypto"
 	"encoding/base64"
 	"encoding/json"
 	"fmt"
+	"time"
+
+	"ariga.io/sqlcomment"
+	"entgo.io/ent/dialect/sql"
 	"github.com/git-bom/gitbom-go"
 	"github.com/sirupsen/logrus"
 	"github.com/testifysec/archivist-api/pkg/api/archivist"
 	"github.com/testifysec/archivist/ent"
-	"github.com/testifysec/archivist/ent/digest"
-	"github.com/testifysec/witness/pkg/dsse"
-	"github.com/testifysec/witness/pkg/intoto"
+	"github.com/testifysec/archivist/ent/subjectdigest"
+	"github.com/testifysec/go-witness/attestation"
+	"github.com/testifysec/go-witness/cryptoutil"
+	"github.com/testifysec/go-witness/dsse"
+	"github.com/testifysec/go-witness/intoto"
 	"google.golang.org/protobuf/types/known/emptypb"
-	"time"
-
-	//"google.golang.org/protobuf/types/known/emptypb"
-
-	"entgo.io/ent/dialect/sql"
 
 	_ "github.com/go-sql-driver/mysql"
 )
@@ -93,10 +94,10 @@ func NewServer(ctx context.Context, connectionstring string, objectStorage archi
 }
 
 func (s *store) GetBySubjectDigest(ctx context.Context, request *archivist.GetBySubjectDigestRequest) (*archivist.GetBySubjectDigestResponse, error) {
-	res, err := s.client.Digest.Query().Where(
-		digest.And(
-			digest.Algorithm(request.Algorithm),
-			digest.Value(request.Value),
+	res, err := s.client.SubjectDigest.Query().Where(
+		subjectdigest.And(
+			subjectdigest.Algorithm(request.Algorithm),
+			subjectdigest.Value(request.Value),
 		),
 	).WithSubject(func(q *ent.SubjectQuery) {
 		q.WithStatement(func(q *ent.StatementQuery) {
@@ -114,20 +115,38 @@ func (s *store) GetBySubjectDigest(ctx context.Context, request *archivist.GetBy
 	return &archivist.GetBySubjectDigestResponse{Object: results}, err
 }
 
+// attestation.Collection from go-witness will try to parse each of the attestations by calling their factory functions,
+// which require the attestations to be registered in the go-witness library.  We don't really care about the actual attestation
+// data for the purposes here, so just leave it as a raw message.
+type parsedCollection struct {
+	attestation.Collection
+	Attestations []struct {
+		Type        string          `json:"type"`
+		Attestation json.RawMessage `json:"attestation"`
+	} `json:"attestations"`
+}
+
 func (s *store) Store(ctx context.Context, request *archivist.StoreRequest) (*emptypb.Empty, error) {
-	tx, err := s.client.Tx(ctx)
 	fmt.Println("STORING")
+
 	obj := request.GetObject()
-
 	envelope := &dsse.Envelope{}
-
 	if err := json.Unmarshal([]byte(obj), envelope); err != nil {
 		return nil, err
 	}
 
-	payload := &intoto.Statement{}
+	payloadDigestSet, err := cryptoutil.CalculateDigestSetFromBytes(envelope.Payload, []crypto.Hash{crypto.SHA256})
+	if err != nil {
+		return nil, err
+	}
 
+	payload := &intoto.Statement{}
 	if err := json.Unmarshal(envelope.Payload, payload); err != nil {
+		return nil, err
+	}
+
+	parsedCollection := &parsedCollection{}
+	if err := json.Unmarshal(payload.Predicate, parsedCollection); err != nil {
 		return nil, err
 	}
 
@@ -138,6 +157,7 @@ func (s *store) Store(ctx context.Context, request *archivist.StoreRequest) (*em
 		return nil, err
 	}
 
+	tx, err := s.client.Tx(ctx)
 	dsse, err := tx.Dsse.Create().
 		SetPayloadType(envelope.PayloadType).
 		SetGitbomSha256(gb.Identity()).
@@ -157,7 +177,23 @@ func (s *store) Store(ctx context.Context, request *archivist.StoreRequest) (*em
 		}
 	}
 
+	for hashFn, digest := range payloadDigestSet {
+		hashName, err := cryptoutil.HashToString(hashFn)
+		if err != nil {
+			return nil, err
+		}
+
+		if _, err := tx.PayloadDigest.Create().
+			SetDsse(dsse).
+			SetAlgorithm(hashName).
+			SetValue(digest).
+			Save(ctx); err != nil {
+			return nil, err
+		}
+	}
+
 	stmt, err := tx.Statement.Create().
+		SetPredicate(payload.PredicateType).
 		AddDsse(dsse).
 		Save(ctx)
 	if err != nil {
@@ -174,12 +210,29 @@ func (s *store) Store(ctx context.Context, request *archivist.StoreRequest) (*em
 		}
 
 		for algorithm, value := range subject.Digest {
-			if err := tx.Digest.Create().
+			if err := tx.SubjectDigest.Create().
 				SetAlgorithm(algorithm).
 				SetValue(value).SetSubject(storedSubject).
 				Exec(ctx); err != nil {
 				return nil, err
 			}
+		}
+	}
+
+	collection, err := tx.AttestationCollection.Create().
+		SetStatementID(stmt.ID).
+		SetName(parsedCollection.Name).
+		Save(ctx)
+	if err != nil {
+		return nil, err
+	}
+
+	for _, a := range parsedCollection.Attestations {
+		if err := tx.Attestation.Create().
+			SetAttestationCollectionID(collection.ID).
+			SetType(a.Type).
+			Exec(ctx); err != nil {
+			return nil, err
 		}
 	}
 

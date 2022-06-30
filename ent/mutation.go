@@ -8,12 +8,15 @@ import (
 	"fmt"
 	"sync"
 
-	"github.com/testifysec/archivist/ent/digest"
+	"github.com/testifysec/archivist/ent/attestation"
+	"github.com/testifysec/archivist/ent/attestationcollection"
 	"github.com/testifysec/archivist/ent/dsse"
+	"github.com/testifysec/archivist/ent/payloaddigest"
 	"github.com/testifysec/archivist/ent/predicate"
 	"github.com/testifysec/archivist/ent/signature"
 	"github.com/testifysec/archivist/ent/statement"
 	"github.com/testifysec/archivist/ent/subject"
+	"github.com/testifysec/archivist/ent/subjectdigest"
 
 	"entgo.io/ent"
 )
@@ -27,40 +30,42 @@ const (
 	OpUpdateOne = ent.OpUpdateOne
 
 	// Node types.
-	TypeDigest    = "Digest"
-	TypeDsse      = "Dsse"
-	TypeSignature = "Signature"
-	TypeStatement = "Statement"
-	TypeSubject   = "Subject"
+	TypeAttestation           = "Attestation"
+	TypeAttestationCollection = "AttestationCollection"
+	TypeDsse                  = "Dsse"
+	TypePayloadDigest         = "PayloadDigest"
+	TypeSignature             = "Signature"
+	TypeStatement             = "Statement"
+	TypeSubject               = "Subject"
+	TypeSubjectDigest         = "SubjectDigest"
 )
 
-// DigestMutation represents an operation that mutates the Digest nodes in the graph.
-type DigestMutation struct {
+// AttestationMutation represents an operation that mutates the Attestation nodes in the graph.
+type AttestationMutation struct {
 	config
-	op             Op
-	typ            string
-	id             *int
-	algorithm      *string
-	value          *string
-	clearedFields  map[string]struct{}
-	subject        *int
-	clearedsubject bool
-	done           bool
-	oldValue       func(context.Context) (*Digest, error)
-	predicates     []predicate.Digest
+	op                            Op
+	typ                           string
+	id                            *int
+	_type                         *string
+	clearedFields                 map[string]struct{}
+	attestation_collection        *int
+	clearedattestation_collection bool
+	done                          bool
+	oldValue                      func(context.Context) (*Attestation, error)
+	predicates                    []predicate.Attestation
 }
 
-var _ ent.Mutation = (*DigestMutation)(nil)
+var _ ent.Mutation = (*AttestationMutation)(nil)
 
-// digestOption allows management of the mutation configuration using functional options.
-type digestOption func(*DigestMutation)
+// attestationOption allows management of the mutation configuration using functional options.
+type attestationOption func(*AttestationMutation)
 
-// newDigestMutation creates new mutation for the Digest entity.
-func newDigestMutation(c config, op Op, opts ...digestOption) *DigestMutation {
-	m := &DigestMutation{
+// newAttestationMutation creates new mutation for the Attestation entity.
+func newAttestationMutation(c config, op Op, opts ...attestationOption) *AttestationMutation {
+	m := &AttestationMutation{
 		config:        c,
 		op:            op,
-		typ:           TypeDigest,
+		typ:           TypeAttestation,
 		clearedFields: make(map[string]struct{}),
 	}
 	for _, opt := range opts {
@@ -69,20 +74,20 @@ func newDigestMutation(c config, op Op, opts ...digestOption) *DigestMutation {
 	return m
 }
 
-// withDigestID sets the ID field of the mutation.
-func withDigestID(id int) digestOption {
-	return func(m *DigestMutation) {
+// withAttestationID sets the ID field of the mutation.
+func withAttestationID(id int) attestationOption {
+	return func(m *AttestationMutation) {
 		var (
 			err   error
 			once  sync.Once
-			value *Digest
+			value *Attestation
 		)
-		m.oldValue = func(ctx context.Context) (*Digest, error) {
+		m.oldValue = func(ctx context.Context) (*Attestation, error) {
 			once.Do(func() {
 				if m.done {
 					err = errors.New("querying old values post mutation is not allowed")
 				} else {
-					value, err = m.Client().Digest.Get(ctx, id)
+					value, err = m.Client().Attestation.Get(ctx, id)
 				}
 			})
 			return value, err
@@ -91,10 +96,10 @@ func withDigestID(id int) digestOption {
 	}
 }
 
-// withDigest sets the old Digest of the mutation.
-func withDigest(node *Digest) digestOption {
-	return func(m *DigestMutation) {
-		m.oldValue = func(context.Context) (*Digest, error) {
+// withAttestation sets the old Attestation of the mutation.
+func withAttestation(node *Attestation) attestationOption {
+	return func(m *AttestationMutation) {
+		m.oldValue = func(context.Context) (*Attestation, error) {
 			return node, nil
 		}
 		m.id = &node.ID
@@ -103,7 +108,7 @@ func withDigest(node *Digest) digestOption {
 
 // Client returns a new `ent.Client` from the mutation. If the mutation was
 // executed in a transaction (ent.Tx), a transactional client is returned.
-func (m DigestMutation) Client() *Client {
+func (m AttestationMutation) Client() *Client {
 	client := &Client{config: m.config}
 	client.init()
 	return client
@@ -111,7 +116,7 @@ func (m DigestMutation) Client() *Client {
 
 // Tx returns an `ent.Tx` for mutations that were executed in transactions;
 // it returns an error otherwise.
-func (m DigestMutation) Tx() (*Tx, error) {
+func (m AttestationMutation) Tx() (*Tx, error) {
 	if _, ok := m.driver.(*txDriver); !ok {
 		return nil, errors.New("ent: mutation is not running in a transaction")
 	}
@@ -122,7 +127,7 @@ func (m DigestMutation) Tx() (*Tx, error) {
 
 // ID returns the ID value in the mutation. Note that the ID is only available
 // if it was provided to the builder or after it was returned from the database.
-func (m *DigestMutation) ID() (id int, exists bool) {
+func (m *AttestationMutation) ID() (id int, exists bool) {
 	if m.id == nil {
 		return
 	}
@@ -133,7 +138,7 @@ func (m *DigestMutation) ID() (id int, exists bool) {
 // That means, if the mutation is applied within a transaction with an isolation level such
 // as sql.LevelSerializable, the returned ids match the ids of the rows that will be updated
 // or updated by the mutation.
-func (m *DigestMutation) IDs(ctx context.Context) ([]int, error) {
+func (m *AttestationMutation) IDs(ctx context.Context) ([]int, error) {
 	switch {
 	case m.op.Is(OpUpdateOne | OpDeleteOne):
 		id, exists := m.ID()
@@ -142,148 +147,109 @@ func (m *DigestMutation) IDs(ctx context.Context) ([]int, error) {
 		}
 		fallthrough
 	case m.op.Is(OpUpdate | OpDelete):
-		return m.Client().Digest.Query().Where(m.predicates...).IDs(ctx)
+		return m.Client().Attestation.Query().Where(m.predicates...).IDs(ctx)
 	default:
 		return nil, fmt.Errorf("IDs is not allowed on %s operations", m.op)
 	}
 }
 
-// SetAlgorithm sets the "algorithm" field.
-func (m *DigestMutation) SetAlgorithm(s string) {
-	m.algorithm = &s
+// SetType sets the "type" field.
+func (m *AttestationMutation) SetType(s string) {
+	m._type = &s
 }
 
-// Algorithm returns the value of the "algorithm" field in the mutation.
-func (m *DigestMutation) Algorithm() (r string, exists bool) {
-	v := m.algorithm
+// GetType returns the value of the "type" field in the mutation.
+func (m *AttestationMutation) GetType() (r string, exists bool) {
+	v := m._type
 	if v == nil {
 		return
 	}
 	return *v, true
 }
 
-// OldAlgorithm returns the old "algorithm" field's value of the Digest entity.
-// If the Digest object wasn't provided to the builder, the object is fetched from the database.
+// OldType returns the old "type" field's value of the Attestation entity.
+// If the Attestation object wasn't provided to the builder, the object is fetched from the database.
 // An error is returned if the mutation operation is not UpdateOne, or the database query fails.
-func (m *DigestMutation) OldAlgorithm(ctx context.Context) (v string, err error) {
+func (m *AttestationMutation) OldType(ctx context.Context) (v string, err error) {
 	if !m.op.Is(OpUpdateOne) {
-		return v, errors.New("OldAlgorithm is only allowed on UpdateOne operations")
+		return v, errors.New("OldType is only allowed on UpdateOne operations")
 	}
 	if m.id == nil || m.oldValue == nil {
-		return v, errors.New("OldAlgorithm requires an ID field in the mutation")
+		return v, errors.New("OldType requires an ID field in the mutation")
 	}
 	oldValue, err := m.oldValue(ctx)
 	if err != nil {
-		return v, fmt.Errorf("querying old value for OldAlgorithm: %w", err)
+		return v, fmt.Errorf("querying old value for OldType: %w", err)
 	}
-	return oldValue.Algorithm, nil
+	return oldValue.Type, nil
 }
 
-// ResetAlgorithm resets all changes to the "algorithm" field.
-func (m *DigestMutation) ResetAlgorithm() {
-	m.algorithm = nil
+// ResetType resets all changes to the "type" field.
+func (m *AttestationMutation) ResetType() {
+	m._type = nil
 }
 
-// SetValue sets the "value" field.
-func (m *DigestMutation) SetValue(s string) {
-	m.value = &s
+// SetAttestationCollectionID sets the "attestation_collection" edge to the AttestationCollection entity by id.
+func (m *AttestationMutation) SetAttestationCollectionID(id int) {
+	m.attestation_collection = &id
 }
 
-// Value returns the value of the "value" field in the mutation.
-func (m *DigestMutation) Value() (r string, exists bool) {
-	v := m.value
-	if v == nil {
-		return
-	}
-	return *v, true
+// ClearAttestationCollection clears the "attestation_collection" edge to the AttestationCollection entity.
+func (m *AttestationMutation) ClearAttestationCollection() {
+	m.clearedattestation_collection = true
 }
 
-// OldValue returns the old "value" field's value of the Digest entity.
-// If the Digest object wasn't provided to the builder, the object is fetched from the database.
-// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
-func (m *DigestMutation) OldValue(ctx context.Context) (v string, err error) {
-	if !m.op.Is(OpUpdateOne) {
-		return v, errors.New("OldValue is only allowed on UpdateOne operations")
-	}
-	if m.id == nil || m.oldValue == nil {
-		return v, errors.New("OldValue requires an ID field in the mutation")
-	}
-	oldValue, err := m.oldValue(ctx)
-	if err != nil {
-		return v, fmt.Errorf("querying old value for OldValue: %w", err)
-	}
-	return oldValue.Value, nil
+// AttestationCollectionCleared reports if the "attestation_collection" edge to the AttestationCollection entity was cleared.
+func (m *AttestationMutation) AttestationCollectionCleared() bool {
+	return m.clearedattestation_collection
 }
 
-// ResetValue resets all changes to the "value" field.
-func (m *DigestMutation) ResetValue() {
-	m.value = nil
-}
-
-// SetSubjectID sets the "subject" edge to the Subject entity by id.
-func (m *DigestMutation) SetSubjectID(id int) {
-	m.subject = &id
-}
-
-// ClearSubject clears the "subject" edge to the Subject entity.
-func (m *DigestMutation) ClearSubject() {
-	m.clearedsubject = true
-}
-
-// SubjectCleared reports if the "subject" edge to the Subject entity was cleared.
-func (m *DigestMutation) SubjectCleared() bool {
-	return m.clearedsubject
-}
-
-// SubjectID returns the "subject" edge ID in the mutation.
-func (m *DigestMutation) SubjectID() (id int, exists bool) {
-	if m.subject != nil {
-		return *m.subject, true
+// AttestationCollectionID returns the "attestation_collection" edge ID in the mutation.
+func (m *AttestationMutation) AttestationCollectionID() (id int, exists bool) {
+	if m.attestation_collection != nil {
+		return *m.attestation_collection, true
 	}
 	return
 }
 
-// SubjectIDs returns the "subject" edge IDs in the mutation.
+// AttestationCollectionIDs returns the "attestation_collection" edge IDs in the mutation.
 // Note that IDs always returns len(IDs) <= 1 for unique edges, and you should use
-// SubjectID instead. It exists only for internal usage by the builders.
-func (m *DigestMutation) SubjectIDs() (ids []int) {
-	if id := m.subject; id != nil {
+// AttestationCollectionID instead. It exists only for internal usage by the builders.
+func (m *AttestationMutation) AttestationCollectionIDs() (ids []int) {
+	if id := m.attestation_collection; id != nil {
 		ids = append(ids, *id)
 	}
 	return
 }
 
-// ResetSubject resets all changes to the "subject" edge.
-func (m *DigestMutation) ResetSubject() {
-	m.subject = nil
-	m.clearedsubject = false
+// ResetAttestationCollection resets all changes to the "attestation_collection" edge.
+func (m *AttestationMutation) ResetAttestationCollection() {
+	m.attestation_collection = nil
+	m.clearedattestation_collection = false
 }
 
-// Where appends a list predicates to the DigestMutation builder.
-func (m *DigestMutation) Where(ps ...predicate.Digest) {
+// Where appends a list predicates to the AttestationMutation builder.
+func (m *AttestationMutation) Where(ps ...predicate.Attestation) {
 	m.predicates = append(m.predicates, ps...)
 }
 
 // Op returns the operation name.
-func (m *DigestMutation) Op() Op {
+func (m *AttestationMutation) Op() Op {
 	return m.op
 }
 
-// Type returns the node type of this mutation (Digest).
-func (m *DigestMutation) Type() string {
+// Type returns the node type of this mutation (Attestation).
+func (m *AttestationMutation) Type() string {
 	return m.typ
 }
 
 // Fields returns all fields that were changed during this mutation. Note that in
 // order to get all numeric fields that were incremented/decremented, call
 // AddedFields().
-func (m *DigestMutation) Fields() []string {
-	fields := make([]string, 0, 2)
-	if m.algorithm != nil {
-		fields = append(fields, digest.FieldAlgorithm)
-	}
-	if m.value != nil {
-		fields = append(fields, digest.FieldValue)
+func (m *AttestationMutation) Fields() []string {
+	fields := make([]string, 0, 1)
+	if m._type != nil {
+		fields = append(fields, attestation.FieldType)
 	}
 	return fields
 }
@@ -291,12 +257,10 @@ func (m *DigestMutation) Fields() []string {
 // Field returns the value of a field with the given name. The second boolean
 // return value indicates that this field was not set, or was not defined in the
 // schema.
-func (m *DigestMutation) Field(name string) (ent.Value, bool) {
+func (m *AttestationMutation) Field(name string) (ent.Value, bool) {
 	switch name {
-	case digest.FieldAlgorithm:
-		return m.Algorithm()
-	case digest.FieldValue:
-		return m.Value()
+	case attestation.FieldType:
+		return m.GetType()
 	}
 	return nil, false
 }
@@ -304,109 +268,97 @@ func (m *DigestMutation) Field(name string) (ent.Value, bool) {
 // OldField returns the old value of the field from the database. An error is
 // returned if the mutation operation is not UpdateOne, or the query to the
 // database failed.
-func (m *DigestMutation) OldField(ctx context.Context, name string) (ent.Value, error) {
+func (m *AttestationMutation) OldField(ctx context.Context, name string) (ent.Value, error) {
 	switch name {
-	case digest.FieldAlgorithm:
-		return m.OldAlgorithm(ctx)
-	case digest.FieldValue:
-		return m.OldValue(ctx)
+	case attestation.FieldType:
+		return m.OldType(ctx)
 	}
-	return nil, fmt.Errorf("unknown Digest field %s", name)
+	return nil, fmt.Errorf("unknown Attestation field %s", name)
 }
 
 // SetField sets the value of a field with the given name. It returns an error if
 // the field is not defined in the schema, or if the type mismatched the field
 // type.
-func (m *DigestMutation) SetField(name string, value ent.Value) error {
+func (m *AttestationMutation) SetField(name string, value ent.Value) error {
 	switch name {
-	case digest.FieldAlgorithm:
+	case attestation.FieldType:
 		v, ok := value.(string)
 		if !ok {
 			return fmt.Errorf("unexpected type %T for field %s", value, name)
 		}
-		m.SetAlgorithm(v)
-		return nil
-	case digest.FieldValue:
-		v, ok := value.(string)
-		if !ok {
-			return fmt.Errorf("unexpected type %T for field %s", value, name)
-		}
-		m.SetValue(v)
+		m.SetType(v)
 		return nil
 	}
-	return fmt.Errorf("unknown Digest field %s", name)
+	return fmt.Errorf("unknown Attestation field %s", name)
 }
 
 // AddedFields returns all numeric fields that were incremented/decremented during
 // this mutation.
-func (m *DigestMutation) AddedFields() []string {
+func (m *AttestationMutation) AddedFields() []string {
 	return nil
 }
 
 // AddedField returns the numeric value that was incremented/decremented on a field
 // with the given name. The second boolean return value indicates that this field
 // was not set, or was not defined in the schema.
-func (m *DigestMutation) AddedField(name string) (ent.Value, bool) {
+func (m *AttestationMutation) AddedField(name string) (ent.Value, bool) {
 	return nil, false
 }
 
 // AddField adds the value to the field with the given name. It returns an error if
 // the field is not defined in the schema, or if the type mismatched the field
 // type.
-func (m *DigestMutation) AddField(name string, value ent.Value) error {
+func (m *AttestationMutation) AddField(name string, value ent.Value) error {
 	switch name {
 	}
-	return fmt.Errorf("unknown Digest numeric field %s", name)
+	return fmt.Errorf("unknown Attestation numeric field %s", name)
 }
 
 // ClearedFields returns all nullable fields that were cleared during this
 // mutation.
-func (m *DigestMutation) ClearedFields() []string {
+func (m *AttestationMutation) ClearedFields() []string {
 	return nil
 }
 
 // FieldCleared returns a boolean indicating if a field with the given name was
 // cleared in this mutation.
-func (m *DigestMutation) FieldCleared(name string) bool {
+func (m *AttestationMutation) FieldCleared(name string) bool {
 	_, ok := m.clearedFields[name]
 	return ok
 }
 
 // ClearField clears the value of the field with the given name. It returns an
 // error if the field is not defined in the schema.
-func (m *DigestMutation) ClearField(name string) error {
-	return fmt.Errorf("unknown Digest nullable field %s", name)
+func (m *AttestationMutation) ClearField(name string) error {
+	return fmt.Errorf("unknown Attestation nullable field %s", name)
 }
 
 // ResetField resets all changes in the mutation for the field with the given name.
 // It returns an error if the field is not defined in the schema.
-func (m *DigestMutation) ResetField(name string) error {
+func (m *AttestationMutation) ResetField(name string) error {
 	switch name {
-	case digest.FieldAlgorithm:
-		m.ResetAlgorithm()
-		return nil
-	case digest.FieldValue:
-		m.ResetValue()
+	case attestation.FieldType:
+		m.ResetType()
 		return nil
 	}
-	return fmt.Errorf("unknown Digest field %s", name)
+	return fmt.Errorf("unknown Attestation field %s", name)
 }
 
 // AddedEdges returns all edge names that were set/added in this mutation.
-func (m *DigestMutation) AddedEdges() []string {
+func (m *AttestationMutation) AddedEdges() []string {
 	edges := make([]string, 0, 1)
-	if m.subject != nil {
-		edges = append(edges, digest.EdgeSubject)
+	if m.attestation_collection != nil {
+		edges = append(edges, attestation.EdgeAttestationCollection)
 	}
 	return edges
 }
 
 // AddedIDs returns all IDs (to other nodes) that were added for the given edge
 // name in this mutation.
-func (m *DigestMutation) AddedIDs(name string) []ent.Value {
+func (m *AttestationMutation) AddedIDs(name string) []ent.Value {
 	switch name {
-	case digest.EdgeSubject:
-		if id := m.subject; id != nil {
+	case attestation.EdgeAttestationCollection:
+		if id := m.attestation_collection; id != nil {
 			return []ent.Value{*id}
 		}
 	}
@@ -414,77 +366,543 @@ func (m *DigestMutation) AddedIDs(name string) []ent.Value {
 }
 
 // RemovedEdges returns all edge names that were removed in this mutation.
-func (m *DigestMutation) RemovedEdges() []string {
+func (m *AttestationMutation) RemovedEdges() []string {
 	edges := make([]string, 0, 1)
 	return edges
 }
 
 // RemovedIDs returns all IDs (to other nodes) that were removed for the edge with
 // the given name in this mutation.
-func (m *DigestMutation) RemovedIDs(name string) []ent.Value {
+func (m *AttestationMutation) RemovedIDs(name string) []ent.Value {
 	switch name {
 	}
 	return nil
 }
 
 // ClearedEdges returns all edge names that were cleared in this mutation.
-func (m *DigestMutation) ClearedEdges() []string {
+func (m *AttestationMutation) ClearedEdges() []string {
 	edges := make([]string, 0, 1)
-	if m.clearedsubject {
-		edges = append(edges, digest.EdgeSubject)
+	if m.clearedattestation_collection {
+		edges = append(edges, attestation.EdgeAttestationCollection)
 	}
 	return edges
 }
 
 // EdgeCleared returns a boolean which indicates if the edge with the given name
 // was cleared in this mutation.
-func (m *DigestMutation) EdgeCleared(name string) bool {
+func (m *AttestationMutation) EdgeCleared(name string) bool {
 	switch name {
-	case digest.EdgeSubject:
-		return m.clearedsubject
+	case attestation.EdgeAttestationCollection:
+		return m.clearedattestation_collection
 	}
 	return false
 }
 
 // ClearEdge clears the value of the edge with the given name. It returns an error
 // if that edge is not defined in the schema.
-func (m *DigestMutation) ClearEdge(name string) error {
+func (m *AttestationMutation) ClearEdge(name string) error {
 	switch name {
-	case digest.EdgeSubject:
-		m.ClearSubject()
+	case attestation.EdgeAttestationCollection:
+		m.ClearAttestationCollection()
 		return nil
 	}
-	return fmt.Errorf("unknown Digest unique edge %s", name)
+	return fmt.Errorf("unknown Attestation unique edge %s", name)
 }
 
 // ResetEdge resets all changes to the edge with the given name in this mutation.
 // It returns an error if the edge is not defined in the schema.
-func (m *DigestMutation) ResetEdge(name string) error {
+func (m *AttestationMutation) ResetEdge(name string) error {
 	switch name {
-	case digest.EdgeSubject:
-		m.ResetSubject()
+	case attestation.EdgeAttestationCollection:
+		m.ResetAttestationCollection()
 		return nil
 	}
-	return fmt.Errorf("unknown Digest edge %s", name)
+	return fmt.Errorf("unknown Attestation edge %s", name)
+}
+
+// AttestationCollectionMutation represents an operation that mutates the AttestationCollection nodes in the graph.
+type AttestationCollectionMutation struct {
+	config
+	op                  Op
+	typ                 string
+	id                  *int
+	name                *string
+	clearedFields       map[string]struct{}
+	attestations        map[int]struct{}
+	removedattestations map[int]struct{}
+	clearedattestations bool
+	statement           *int
+	clearedstatement    bool
+	done                bool
+	oldValue            func(context.Context) (*AttestationCollection, error)
+	predicates          []predicate.AttestationCollection
+}
+
+var _ ent.Mutation = (*AttestationCollectionMutation)(nil)
+
+// attestationcollectionOption allows management of the mutation configuration using functional options.
+type attestationcollectionOption func(*AttestationCollectionMutation)
+
+// newAttestationCollectionMutation creates new mutation for the AttestationCollection entity.
+func newAttestationCollectionMutation(c config, op Op, opts ...attestationcollectionOption) *AttestationCollectionMutation {
+	m := &AttestationCollectionMutation{
+		config:        c,
+		op:            op,
+		typ:           TypeAttestationCollection,
+		clearedFields: make(map[string]struct{}),
+	}
+	for _, opt := range opts {
+		opt(m)
+	}
+	return m
+}
+
+// withAttestationCollectionID sets the ID field of the mutation.
+func withAttestationCollectionID(id int) attestationcollectionOption {
+	return func(m *AttestationCollectionMutation) {
+		var (
+			err   error
+			once  sync.Once
+			value *AttestationCollection
+		)
+		m.oldValue = func(ctx context.Context) (*AttestationCollection, error) {
+			once.Do(func() {
+				if m.done {
+					err = errors.New("querying old values post mutation is not allowed")
+				} else {
+					value, err = m.Client().AttestationCollection.Get(ctx, id)
+				}
+			})
+			return value, err
+		}
+		m.id = &id
+	}
+}
+
+// withAttestationCollection sets the old AttestationCollection of the mutation.
+func withAttestationCollection(node *AttestationCollection) attestationcollectionOption {
+	return func(m *AttestationCollectionMutation) {
+		m.oldValue = func(context.Context) (*AttestationCollection, error) {
+			return node, nil
+		}
+		m.id = &node.ID
+	}
+}
+
+// Client returns a new `ent.Client` from the mutation. If the mutation was
+// executed in a transaction (ent.Tx), a transactional client is returned.
+func (m AttestationCollectionMutation) Client() *Client {
+	client := &Client{config: m.config}
+	client.init()
+	return client
+}
+
+// Tx returns an `ent.Tx` for mutations that were executed in transactions;
+// it returns an error otherwise.
+func (m AttestationCollectionMutation) Tx() (*Tx, error) {
+	if _, ok := m.driver.(*txDriver); !ok {
+		return nil, errors.New("ent: mutation is not running in a transaction")
+	}
+	tx := &Tx{config: m.config}
+	tx.init()
+	return tx, nil
+}
+
+// ID returns the ID value in the mutation. Note that the ID is only available
+// if it was provided to the builder or after it was returned from the database.
+func (m *AttestationCollectionMutation) ID() (id int, exists bool) {
+	if m.id == nil {
+		return
+	}
+	return *m.id, true
+}
+
+// IDs queries the database and returns the entity ids that match the mutation's predicate.
+// That means, if the mutation is applied within a transaction with an isolation level such
+// as sql.LevelSerializable, the returned ids match the ids of the rows that will be updated
+// or updated by the mutation.
+func (m *AttestationCollectionMutation) IDs(ctx context.Context) ([]int, error) {
+	switch {
+	case m.op.Is(OpUpdateOne | OpDeleteOne):
+		id, exists := m.ID()
+		if exists {
+			return []int{id}, nil
+		}
+		fallthrough
+	case m.op.Is(OpUpdate | OpDelete):
+		return m.Client().AttestationCollection.Query().Where(m.predicates...).IDs(ctx)
+	default:
+		return nil, fmt.Errorf("IDs is not allowed on %s operations", m.op)
+	}
+}
+
+// SetName sets the "name" field.
+func (m *AttestationCollectionMutation) SetName(s string) {
+	m.name = &s
+}
+
+// Name returns the value of the "name" field in the mutation.
+func (m *AttestationCollectionMutation) Name() (r string, exists bool) {
+	v := m.name
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// OldName returns the old "name" field's value of the AttestationCollection entity.
+// If the AttestationCollection object wasn't provided to the builder, the object is fetched from the database.
+// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
+func (m *AttestationCollectionMutation) OldName(ctx context.Context) (v string, err error) {
+	if !m.op.Is(OpUpdateOne) {
+		return v, errors.New("OldName is only allowed on UpdateOne operations")
+	}
+	if m.id == nil || m.oldValue == nil {
+		return v, errors.New("OldName requires an ID field in the mutation")
+	}
+	oldValue, err := m.oldValue(ctx)
+	if err != nil {
+		return v, fmt.Errorf("querying old value for OldName: %w", err)
+	}
+	return oldValue.Name, nil
+}
+
+// ResetName resets all changes to the "name" field.
+func (m *AttestationCollectionMutation) ResetName() {
+	m.name = nil
+}
+
+// AddAttestationIDs adds the "attestations" edge to the Attestation entity by ids.
+func (m *AttestationCollectionMutation) AddAttestationIDs(ids ...int) {
+	if m.attestations == nil {
+		m.attestations = make(map[int]struct{})
+	}
+	for i := range ids {
+		m.attestations[ids[i]] = struct{}{}
+	}
+}
+
+// ClearAttestations clears the "attestations" edge to the Attestation entity.
+func (m *AttestationCollectionMutation) ClearAttestations() {
+	m.clearedattestations = true
+}
+
+// AttestationsCleared reports if the "attestations" edge to the Attestation entity was cleared.
+func (m *AttestationCollectionMutation) AttestationsCleared() bool {
+	return m.clearedattestations
+}
+
+// RemoveAttestationIDs removes the "attestations" edge to the Attestation entity by IDs.
+func (m *AttestationCollectionMutation) RemoveAttestationIDs(ids ...int) {
+	if m.removedattestations == nil {
+		m.removedattestations = make(map[int]struct{})
+	}
+	for i := range ids {
+		delete(m.attestations, ids[i])
+		m.removedattestations[ids[i]] = struct{}{}
+	}
+}
+
+// RemovedAttestations returns the removed IDs of the "attestations" edge to the Attestation entity.
+func (m *AttestationCollectionMutation) RemovedAttestationsIDs() (ids []int) {
+	for id := range m.removedattestations {
+		ids = append(ids, id)
+	}
+	return
+}
+
+// AttestationsIDs returns the "attestations" edge IDs in the mutation.
+func (m *AttestationCollectionMutation) AttestationsIDs() (ids []int) {
+	for id := range m.attestations {
+		ids = append(ids, id)
+	}
+	return
+}
+
+// ResetAttestations resets all changes to the "attestations" edge.
+func (m *AttestationCollectionMutation) ResetAttestations() {
+	m.attestations = nil
+	m.clearedattestations = false
+	m.removedattestations = nil
+}
+
+// SetStatementID sets the "statement" edge to the Statement entity by id.
+func (m *AttestationCollectionMutation) SetStatementID(id int) {
+	m.statement = &id
+}
+
+// ClearStatement clears the "statement" edge to the Statement entity.
+func (m *AttestationCollectionMutation) ClearStatement() {
+	m.clearedstatement = true
+}
+
+// StatementCleared reports if the "statement" edge to the Statement entity was cleared.
+func (m *AttestationCollectionMutation) StatementCleared() bool {
+	return m.clearedstatement
+}
+
+// StatementID returns the "statement" edge ID in the mutation.
+func (m *AttestationCollectionMutation) StatementID() (id int, exists bool) {
+	if m.statement != nil {
+		return *m.statement, true
+	}
+	return
+}
+
+// StatementIDs returns the "statement" edge IDs in the mutation.
+// Note that IDs always returns len(IDs) <= 1 for unique edges, and you should use
+// StatementID instead. It exists only for internal usage by the builders.
+func (m *AttestationCollectionMutation) StatementIDs() (ids []int) {
+	if id := m.statement; id != nil {
+		ids = append(ids, *id)
+	}
+	return
+}
+
+// ResetStatement resets all changes to the "statement" edge.
+func (m *AttestationCollectionMutation) ResetStatement() {
+	m.statement = nil
+	m.clearedstatement = false
+}
+
+// Where appends a list predicates to the AttestationCollectionMutation builder.
+func (m *AttestationCollectionMutation) Where(ps ...predicate.AttestationCollection) {
+	m.predicates = append(m.predicates, ps...)
+}
+
+// Op returns the operation name.
+func (m *AttestationCollectionMutation) Op() Op {
+	return m.op
+}
+
+// Type returns the node type of this mutation (AttestationCollection).
+func (m *AttestationCollectionMutation) Type() string {
+	return m.typ
+}
+
+// Fields returns all fields that were changed during this mutation. Note that in
+// order to get all numeric fields that were incremented/decremented, call
+// AddedFields().
+func (m *AttestationCollectionMutation) Fields() []string {
+	fields := make([]string, 0, 1)
+	if m.name != nil {
+		fields = append(fields, attestationcollection.FieldName)
+	}
+	return fields
+}
+
+// Field returns the value of a field with the given name. The second boolean
+// return value indicates that this field was not set, or was not defined in the
+// schema.
+func (m *AttestationCollectionMutation) Field(name string) (ent.Value, bool) {
+	switch name {
+	case attestationcollection.FieldName:
+		return m.Name()
+	}
+	return nil, false
+}
+
+// OldField returns the old value of the field from the database. An error is
+// returned if the mutation operation is not UpdateOne, or the query to the
+// database failed.
+func (m *AttestationCollectionMutation) OldField(ctx context.Context, name string) (ent.Value, error) {
+	switch name {
+	case attestationcollection.FieldName:
+		return m.OldName(ctx)
+	}
+	return nil, fmt.Errorf("unknown AttestationCollection field %s", name)
+}
+
+// SetField sets the value of a field with the given name. It returns an error if
+// the field is not defined in the schema, or if the type mismatched the field
+// type.
+func (m *AttestationCollectionMutation) SetField(name string, value ent.Value) error {
+	switch name {
+	case attestationcollection.FieldName:
+		v, ok := value.(string)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.SetName(v)
+		return nil
+	}
+	return fmt.Errorf("unknown AttestationCollection field %s", name)
+}
+
+// AddedFields returns all numeric fields that were incremented/decremented during
+// this mutation.
+func (m *AttestationCollectionMutation) AddedFields() []string {
+	return nil
+}
+
+// AddedField returns the numeric value that was incremented/decremented on a field
+// with the given name. The second boolean return value indicates that this field
+// was not set, or was not defined in the schema.
+func (m *AttestationCollectionMutation) AddedField(name string) (ent.Value, bool) {
+	return nil, false
+}
+
+// AddField adds the value to the field with the given name. It returns an error if
+// the field is not defined in the schema, or if the type mismatched the field
+// type.
+func (m *AttestationCollectionMutation) AddField(name string, value ent.Value) error {
+	switch name {
+	}
+	return fmt.Errorf("unknown AttestationCollection numeric field %s", name)
+}
+
+// ClearedFields returns all nullable fields that were cleared during this
+// mutation.
+func (m *AttestationCollectionMutation) ClearedFields() []string {
+	return nil
+}
+
+// FieldCleared returns a boolean indicating if a field with the given name was
+// cleared in this mutation.
+func (m *AttestationCollectionMutation) FieldCleared(name string) bool {
+	_, ok := m.clearedFields[name]
+	return ok
+}
+
+// ClearField clears the value of the field with the given name. It returns an
+// error if the field is not defined in the schema.
+func (m *AttestationCollectionMutation) ClearField(name string) error {
+	return fmt.Errorf("unknown AttestationCollection nullable field %s", name)
+}
+
+// ResetField resets all changes in the mutation for the field with the given name.
+// It returns an error if the field is not defined in the schema.
+func (m *AttestationCollectionMutation) ResetField(name string) error {
+	switch name {
+	case attestationcollection.FieldName:
+		m.ResetName()
+		return nil
+	}
+	return fmt.Errorf("unknown AttestationCollection field %s", name)
+}
+
+// AddedEdges returns all edge names that were set/added in this mutation.
+func (m *AttestationCollectionMutation) AddedEdges() []string {
+	edges := make([]string, 0, 2)
+	if m.attestations != nil {
+		edges = append(edges, attestationcollection.EdgeAttestations)
+	}
+	if m.statement != nil {
+		edges = append(edges, attestationcollection.EdgeStatement)
+	}
+	return edges
+}
+
+// AddedIDs returns all IDs (to other nodes) that were added for the given edge
+// name in this mutation.
+func (m *AttestationCollectionMutation) AddedIDs(name string) []ent.Value {
+	switch name {
+	case attestationcollection.EdgeAttestations:
+		ids := make([]ent.Value, 0, len(m.attestations))
+		for id := range m.attestations {
+			ids = append(ids, id)
+		}
+		return ids
+	case attestationcollection.EdgeStatement:
+		if id := m.statement; id != nil {
+			return []ent.Value{*id}
+		}
+	}
+	return nil
+}
+
+// RemovedEdges returns all edge names that were removed in this mutation.
+func (m *AttestationCollectionMutation) RemovedEdges() []string {
+	edges := make([]string, 0, 2)
+	if m.removedattestations != nil {
+		edges = append(edges, attestationcollection.EdgeAttestations)
+	}
+	return edges
+}
+
+// RemovedIDs returns all IDs (to other nodes) that were removed for the edge with
+// the given name in this mutation.
+func (m *AttestationCollectionMutation) RemovedIDs(name string) []ent.Value {
+	switch name {
+	case attestationcollection.EdgeAttestations:
+		ids := make([]ent.Value, 0, len(m.removedattestations))
+		for id := range m.removedattestations {
+			ids = append(ids, id)
+		}
+		return ids
+	}
+	return nil
+}
+
+// ClearedEdges returns all edge names that were cleared in this mutation.
+func (m *AttestationCollectionMutation) ClearedEdges() []string {
+	edges := make([]string, 0, 2)
+	if m.clearedattestations {
+		edges = append(edges, attestationcollection.EdgeAttestations)
+	}
+	if m.clearedstatement {
+		edges = append(edges, attestationcollection.EdgeStatement)
+	}
+	return edges
+}
+
+// EdgeCleared returns a boolean which indicates if the edge with the given name
+// was cleared in this mutation.
+func (m *AttestationCollectionMutation) EdgeCleared(name string) bool {
+	switch name {
+	case attestationcollection.EdgeAttestations:
+		return m.clearedattestations
+	case attestationcollection.EdgeStatement:
+		return m.clearedstatement
+	}
+	return false
+}
+
+// ClearEdge clears the value of the edge with the given name. It returns an error
+// if that edge is not defined in the schema.
+func (m *AttestationCollectionMutation) ClearEdge(name string) error {
+	switch name {
+	case attestationcollection.EdgeStatement:
+		m.ClearStatement()
+		return nil
+	}
+	return fmt.Errorf("unknown AttestationCollection unique edge %s", name)
+}
+
+// ResetEdge resets all changes to the edge with the given name in this mutation.
+// It returns an error if the edge is not defined in the schema.
+func (m *AttestationCollectionMutation) ResetEdge(name string) error {
+	switch name {
+	case attestationcollection.EdgeAttestations:
+		m.ResetAttestations()
+		return nil
+	case attestationcollection.EdgeStatement:
+		m.ResetStatement()
+		return nil
+	}
+	return fmt.Errorf("unknown AttestationCollection edge %s", name)
 }
 
 // DsseMutation represents an operation that mutates the Dsse nodes in the graph.
 type DsseMutation struct {
 	config
-	op                Op
-	typ               string
-	id                *int
-	gitbom_sha256     *string
-	payload_type      *string
-	clearedFields     map[string]struct{}
-	statement         *int
-	clearedstatement  bool
-	signatures        map[int]struct{}
-	removedsignatures map[int]struct{}
-	clearedsignatures bool
-	done              bool
-	oldValue          func(context.Context) (*Dsse, error)
-	predicates        []predicate.Dsse
+	op                     Op
+	typ                    string
+	id                     *int
+	gitbom_sha256          *string
+	payload_type           *string
+	clearedFields          map[string]struct{}
+	statement              *int
+	clearedstatement       bool
+	signatures             map[int]struct{}
+	removedsignatures      map[int]struct{}
+	clearedsignatures      bool
+	payload_digests        map[int]struct{}
+	removedpayload_digests map[int]struct{}
+	clearedpayload_digests bool
+	done                   bool
+	oldValue               func(context.Context) (*Dsse, error)
+	predicates             []predicate.Dsse
 }
 
 var _ ent.Mutation = (*DsseMutation)(nil)
@@ -750,6 +1168,60 @@ func (m *DsseMutation) ResetSignatures() {
 	m.removedsignatures = nil
 }
 
+// AddPayloadDigestIDs adds the "payload_digests" edge to the PayloadDigest entity by ids.
+func (m *DsseMutation) AddPayloadDigestIDs(ids ...int) {
+	if m.payload_digests == nil {
+		m.payload_digests = make(map[int]struct{})
+	}
+	for i := range ids {
+		m.payload_digests[ids[i]] = struct{}{}
+	}
+}
+
+// ClearPayloadDigests clears the "payload_digests" edge to the PayloadDigest entity.
+func (m *DsseMutation) ClearPayloadDigests() {
+	m.clearedpayload_digests = true
+}
+
+// PayloadDigestsCleared reports if the "payload_digests" edge to the PayloadDigest entity was cleared.
+func (m *DsseMutation) PayloadDigestsCleared() bool {
+	return m.clearedpayload_digests
+}
+
+// RemovePayloadDigestIDs removes the "payload_digests" edge to the PayloadDigest entity by IDs.
+func (m *DsseMutation) RemovePayloadDigestIDs(ids ...int) {
+	if m.removedpayload_digests == nil {
+		m.removedpayload_digests = make(map[int]struct{})
+	}
+	for i := range ids {
+		delete(m.payload_digests, ids[i])
+		m.removedpayload_digests[ids[i]] = struct{}{}
+	}
+}
+
+// RemovedPayloadDigests returns the removed IDs of the "payload_digests" edge to the PayloadDigest entity.
+func (m *DsseMutation) RemovedPayloadDigestsIDs() (ids []int) {
+	for id := range m.removedpayload_digests {
+		ids = append(ids, id)
+	}
+	return
+}
+
+// PayloadDigestsIDs returns the "payload_digests" edge IDs in the mutation.
+func (m *DsseMutation) PayloadDigestsIDs() (ids []int) {
+	for id := range m.payload_digests {
+		ids = append(ids, id)
+	}
+	return
+}
+
+// ResetPayloadDigests resets all changes to the "payload_digests" edge.
+func (m *DsseMutation) ResetPayloadDigests() {
+	m.payload_digests = nil
+	m.clearedpayload_digests = false
+	m.removedpayload_digests = nil
+}
+
 // Where appends a list predicates to the DsseMutation builder.
 func (m *DsseMutation) Where(ps ...predicate.Dsse) {
 	m.predicates = append(m.predicates, ps...)
@@ -885,12 +1357,15 @@ func (m *DsseMutation) ResetField(name string) error {
 
 // AddedEdges returns all edge names that were set/added in this mutation.
 func (m *DsseMutation) AddedEdges() []string {
-	edges := make([]string, 0, 2)
+	edges := make([]string, 0, 3)
 	if m.statement != nil {
 		edges = append(edges, dsse.EdgeStatement)
 	}
 	if m.signatures != nil {
 		edges = append(edges, dsse.EdgeSignatures)
+	}
+	if m.payload_digests != nil {
+		edges = append(edges, dsse.EdgePayloadDigests)
 	}
 	return edges
 }
@@ -909,15 +1384,24 @@ func (m *DsseMutation) AddedIDs(name string) []ent.Value {
 			ids = append(ids, id)
 		}
 		return ids
+	case dsse.EdgePayloadDigests:
+		ids := make([]ent.Value, 0, len(m.payload_digests))
+		for id := range m.payload_digests {
+			ids = append(ids, id)
+		}
+		return ids
 	}
 	return nil
 }
 
 // RemovedEdges returns all edge names that were removed in this mutation.
 func (m *DsseMutation) RemovedEdges() []string {
-	edges := make([]string, 0, 2)
+	edges := make([]string, 0, 3)
 	if m.removedsignatures != nil {
 		edges = append(edges, dsse.EdgeSignatures)
+	}
+	if m.removedpayload_digests != nil {
+		edges = append(edges, dsse.EdgePayloadDigests)
 	}
 	return edges
 }
@@ -932,18 +1416,27 @@ func (m *DsseMutation) RemovedIDs(name string) []ent.Value {
 			ids = append(ids, id)
 		}
 		return ids
+	case dsse.EdgePayloadDigests:
+		ids := make([]ent.Value, 0, len(m.removedpayload_digests))
+		for id := range m.removedpayload_digests {
+			ids = append(ids, id)
+		}
+		return ids
 	}
 	return nil
 }
 
 // ClearedEdges returns all edge names that were cleared in this mutation.
 func (m *DsseMutation) ClearedEdges() []string {
-	edges := make([]string, 0, 2)
+	edges := make([]string, 0, 3)
 	if m.clearedstatement {
 		edges = append(edges, dsse.EdgeStatement)
 	}
 	if m.clearedsignatures {
 		edges = append(edges, dsse.EdgeSignatures)
+	}
+	if m.clearedpayload_digests {
+		edges = append(edges, dsse.EdgePayloadDigests)
 	}
 	return edges
 }
@@ -956,6 +1449,8 @@ func (m *DsseMutation) EdgeCleared(name string) bool {
 		return m.clearedstatement
 	case dsse.EdgeSignatures:
 		return m.clearedsignatures
+	case dsse.EdgePayloadDigests:
+		return m.clearedpayload_digests
 	}
 	return false
 }
@@ -981,8 +1476,445 @@ func (m *DsseMutation) ResetEdge(name string) error {
 	case dsse.EdgeSignatures:
 		m.ResetSignatures()
 		return nil
+	case dsse.EdgePayloadDigests:
+		m.ResetPayloadDigests()
+		return nil
 	}
 	return fmt.Errorf("unknown Dsse edge %s", name)
+}
+
+// PayloadDigestMutation represents an operation that mutates the PayloadDigest nodes in the graph.
+type PayloadDigestMutation struct {
+	config
+	op            Op
+	typ           string
+	id            *int
+	algorithm     *string
+	value         *string
+	clearedFields map[string]struct{}
+	dsse          *int
+	cleareddsse   bool
+	done          bool
+	oldValue      func(context.Context) (*PayloadDigest, error)
+	predicates    []predicate.PayloadDigest
+}
+
+var _ ent.Mutation = (*PayloadDigestMutation)(nil)
+
+// payloaddigestOption allows management of the mutation configuration using functional options.
+type payloaddigestOption func(*PayloadDigestMutation)
+
+// newPayloadDigestMutation creates new mutation for the PayloadDigest entity.
+func newPayloadDigestMutation(c config, op Op, opts ...payloaddigestOption) *PayloadDigestMutation {
+	m := &PayloadDigestMutation{
+		config:        c,
+		op:            op,
+		typ:           TypePayloadDigest,
+		clearedFields: make(map[string]struct{}),
+	}
+	for _, opt := range opts {
+		opt(m)
+	}
+	return m
+}
+
+// withPayloadDigestID sets the ID field of the mutation.
+func withPayloadDigestID(id int) payloaddigestOption {
+	return func(m *PayloadDigestMutation) {
+		var (
+			err   error
+			once  sync.Once
+			value *PayloadDigest
+		)
+		m.oldValue = func(ctx context.Context) (*PayloadDigest, error) {
+			once.Do(func() {
+				if m.done {
+					err = errors.New("querying old values post mutation is not allowed")
+				} else {
+					value, err = m.Client().PayloadDigest.Get(ctx, id)
+				}
+			})
+			return value, err
+		}
+		m.id = &id
+	}
+}
+
+// withPayloadDigest sets the old PayloadDigest of the mutation.
+func withPayloadDigest(node *PayloadDigest) payloaddigestOption {
+	return func(m *PayloadDigestMutation) {
+		m.oldValue = func(context.Context) (*PayloadDigest, error) {
+			return node, nil
+		}
+		m.id = &node.ID
+	}
+}
+
+// Client returns a new `ent.Client` from the mutation. If the mutation was
+// executed in a transaction (ent.Tx), a transactional client is returned.
+func (m PayloadDigestMutation) Client() *Client {
+	client := &Client{config: m.config}
+	client.init()
+	return client
+}
+
+// Tx returns an `ent.Tx` for mutations that were executed in transactions;
+// it returns an error otherwise.
+func (m PayloadDigestMutation) Tx() (*Tx, error) {
+	if _, ok := m.driver.(*txDriver); !ok {
+		return nil, errors.New("ent: mutation is not running in a transaction")
+	}
+	tx := &Tx{config: m.config}
+	tx.init()
+	return tx, nil
+}
+
+// ID returns the ID value in the mutation. Note that the ID is only available
+// if it was provided to the builder or after it was returned from the database.
+func (m *PayloadDigestMutation) ID() (id int, exists bool) {
+	if m.id == nil {
+		return
+	}
+	return *m.id, true
+}
+
+// IDs queries the database and returns the entity ids that match the mutation's predicate.
+// That means, if the mutation is applied within a transaction with an isolation level such
+// as sql.LevelSerializable, the returned ids match the ids of the rows that will be updated
+// or updated by the mutation.
+func (m *PayloadDigestMutation) IDs(ctx context.Context) ([]int, error) {
+	switch {
+	case m.op.Is(OpUpdateOne | OpDeleteOne):
+		id, exists := m.ID()
+		if exists {
+			return []int{id}, nil
+		}
+		fallthrough
+	case m.op.Is(OpUpdate | OpDelete):
+		return m.Client().PayloadDigest.Query().Where(m.predicates...).IDs(ctx)
+	default:
+		return nil, fmt.Errorf("IDs is not allowed on %s operations", m.op)
+	}
+}
+
+// SetAlgorithm sets the "algorithm" field.
+func (m *PayloadDigestMutation) SetAlgorithm(s string) {
+	m.algorithm = &s
+}
+
+// Algorithm returns the value of the "algorithm" field in the mutation.
+func (m *PayloadDigestMutation) Algorithm() (r string, exists bool) {
+	v := m.algorithm
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// OldAlgorithm returns the old "algorithm" field's value of the PayloadDigest entity.
+// If the PayloadDigest object wasn't provided to the builder, the object is fetched from the database.
+// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
+func (m *PayloadDigestMutation) OldAlgorithm(ctx context.Context) (v string, err error) {
+	if !m.op.Is(OpUpdateOne) {
+		return v, errors.New("OldAlgorithm is only allowed on UpdateOne operations")
+	}
+	if m.id == nil || m.oldValue == nil {
+		return v, errors.New("OldAlgorithm requires an ID field in the mutation")
+	}
+	oldValue, err := m.oldValue(ctx)
+	if err != nil {
+		return v, fmt.Errorf("querying old value for OldAlgorithm: %w", err)
+	}
+	return oldValue.Algorithm, nil
+}
+
+// ResetAlgorithm resets all changes to the "algorithm" field.
+func (m *PayloadDigestMutation) ResetAlgorithm() {
+	m.algorithm = nil
+}
+
+// SetValue sets the "value" field.
+func (m *PayloadDigestMutation) SetValue(s string) {
+	m.value = &s
+}
+
+// Value returns the value of the "value" field in the mutation.
+func (m *PayloadDigestMutation) Value() (r string, exists bool) {
+	v := m.value
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// OldValue returns the old "value" field's value of the PayloadDigest entity.
+// If the PayloadDigest object wasn't provided to the builder, the object is fetched from the database.
+// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
+func (m *PayloadDigestMutation) OldValue(ctx context.Context) (v string, err error) {
+	if !m.op.Is(OpUpdateOne) {
+		return v, errors.New("OldValue is only allowed on UpdateOne operations")
+	}
+	if m.id == nil || m.oldValue == nil {
+		return v, errors.New("OldValue requires an ID field in the mutation")
+	}
+	oldValue, err := m.oldValue(ctx)
+	if err != nil {
+		return v, fmt.Errorf("querying old value for OldValue: %w", err)
+	}
+	return oldValue.Value, nil
+}
+
+// ResetValue resets all changes to the "value" field.
+func (m *PayloadDigestMutation) ResetValue() {
+	m.value = nil
+}
+
+// SetDsseID sets the "dsse" edge to the Dsse entity by id.
+func (m *PayloadDigestMutation) SetDsseID(id int) {
+	m.dsse = &id
+}
+
+// ClearDsse clears the "dsse" edge to the Dsse entity.
+func (m *PayloadDigestMutation) ClearDsse() {
+	m.cleareddsse = true
+}
+
+// DsseCleared reports if the "dsse" edge to the Dsse entity was cleared.
+func (m *PayloadDigestMutation) DsseCleared() bool {
+	return m.cleareddsse
+}
+
+// DsseID returns the "dsse" edge ID in the mutation.
+func (m *PayloadDigestMutation) DsseID() (id int, exists bool) {
+	if m.dsse != nil {
+		return *m.dsse, true
+	}
+	return
+}
+
+// DsseIDs returns the "dsse" edge IDs in the mutation.
+// Note that IDs always returns len(IDs) <= 1 for unique edges, and you should use
+// DsseID instead. It exists only for internal usage by the builders.
+func (m *PayloadDigestMutation) DsseIDs() (ids []int) {
+	if id := m.dsse; id != nil {
+		ids = append(ids, *id)
+	}
+	return
+}
+
+// ResetDsse resets all changes to the "dsse" edge.
+func (m *PayloadDigestMutation) ResetDsse() {
+	m.dsse = nil
+	m.cleareddsse = false
+}
+
+// Where appends a list predicates to the PayloadDigestMutation builder.
+func (m *PayloadDigestMutation) Where(ps ...predicate.PayloadDigest) {
+	m.predicates = append(m.predicates, ps...)
+}
+
+// Op returns the operation name.
+func (m *PayloadDigestMutation) Op() Op {
+	return m.op
+}
+
+// Type returns the node type of this mutation (PayloadDigest).
+func (m *PayloadDigestMutation) Type() string {
+	return m.typ
+}
+
+// Fields returns all fields that were changed during this mutation. Note that in
+// order to get all numeric fields that were incremented/decremented, call
+// AddedFields().
+func (m *PayloadDigestMutation) Fields() []string {
+	fields := make([]string, 0, 2)
+	if m.algorithm != nil {
+		fields = append(fields, payloaddigest.FieldAlgorithm)
+	}
+	if m.value != nil {
+		fields = append(fields, payloaddigest.FieldValue)
+	}
+	return fields
+}
+
+// Field returns the value of a field with the given name. The second boolean
+// return value indicates that this field was not set, or was not defined in the
+// schema.
+func (m *PayloadDigestMutation) Field(name string) (ent.Value, bool) {
+	switch name {
+	case payloaddigest.FieldAlgorithm:
+		return m.Algorithm()
+	case payloaddigest.FieldValue:
+		return m.Value()
+	}
+	return nil, false
+}
+
+// OldField returns the old value of the field from the database. An error is
+// returned if the mutation operation is not UpdateOne, or the query to the
+// database failed.
+func (m *PayloadDigestMutation) OldField(ctx context.Context, name string) (ent.Value, error) {
+	switch name {
+	case payloaddigest.FieldAlgorithm:
+		return m.OldAlgorithm(ctx)
+	case payloaddigest.FieldValue:
+		return m.OldValue(ctx)
+	}
+	return nil, fmt.Errorf("unknown PayloadDigest field %s", name)
+}
+
+// SetField sets the value of a field with the given name. It returns an error if
+// the field is not defined in the schema, or if the type mismatched the field
+// type.
+func (m *PayloadDigestMutation) SetField(name string, value ent.Value) error {
+	switch name {
+	case payloaddigest.FieldAlgorithm:
+		v, ok := value.(string)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.SetAlgorithm(v)
+		return nil
+	case payloaddigest.FieldValue:
+		v, ok := value.(string)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.SetValue(v)
+		return nil
+	}
+	return fmt.Errorf("unknown PayloadDigest field %s", name)
+}
+
+// AddedFields returns all numeric fields that were incremented/decremented during
+// this mutation.
+func (m *PayloadDigestMutation) AddedFields() []string {
+	return nil
+}
+
+// AddedField returns the numeric value that was incremented/decremented on a field
+// with the given name. The second boolean return value indicates that this field
+// was not set, or was not defined in the schema.
+func (m *PayloadDigestMutation) AddedField(name string) (ent.Value, bool) {
+	return nil, false
+}
+
+// AddField adds the value to the field with the given name. It returns an error if
+// the field is not defined in the schema, or if the type mismatched the field
+// type.
+func (m *PayloadDigestMutation) AddField(name string, value ent.Value) error {
+	switch name {
+	}
+	return fmt.Errorf("unknown PayloadDigest numeric field %s", name)
+}
+
+// ClearedFields returns all nullable fields that were cleared during this
+// mutation.
+func (m *PayloadDigestMutation) ClearedFields() []string {
+	return nil
+}
+
+// FieldCleared returns a boolean indicating if a field with the given name was
+// cleared in this mutation.
+func (m *PayloadDigestMutation) FieldCleared(name string) bool {
+	_, ok := m.clearedFields[name]
+	return ok
+}
+
+// ClearField clears the value of the field with the given name. It returns an
+// error if the field is not defined in the schema.
+func (m *PayloadDigestMutation) ClearField(name string) error {
+	return fmt.Errorf("unknown PayloadDigest nullable field %s", name)
+}
+
+// ResetField resets all changes in the mutation for the field with the given name.
+// It returns an error if the field is not defined in the schema.
+func (m *PayloadDigestMutation) ResetField(name string) error {
+	switch name {
+	case payloaddigest.FieldAlgorithm:
+		m.ResetAlgorithm()
+		return nil
+	case payloaddigest.FieldValue:
+		m.ResetValue()
+		return nil
+	}
+	return fmt.Errorf("unknown PayloadDigest field %s", name)
+}
+
+// AddedEdges returns all edge names that were set/added in this mutation.
+func (m *PayloadDigestMutation) AddedEdges() []string {
+	edges := make([]string, 0, 1)
+	if m.dsse != nil {
+		edges = append(edges, payloaddigest.EdgeDsse)
+	}
+	return edges
+}
+
+// AddedIDs returns all IDs (to other nodes) that were added for the given edge
+// name in this mutation.
+func (m *PayloadDigestMutation) AddedIDs(name string) []ent.Value {
+	switch name {
+	case payloaddigest.EdgeDsse:
+		if id := m.dsse; id != nil {
+			return []ent.Value{*id}
+		}
+	}
+	return nil
+}
+
+// RemovedEdges returns all edge names that were removed in this mutation.
+func (m *PayloadDigestMutation) RemovedEdges() []string {
+	edges := make([]string, 0, 1)
+	return edges
+}
+
+// RemovedIDs returns all IDs (to other nodes) that were removed for the edge with
+// the given name in this mutation.
+func (m *PayloadDigestMutation) RemovedIDs(name string) []ent.Value {
+	switch name {
+	}
+	return nil
+}
+
+// ClearedEdges returns all edge names that were cleared in this mutation.
+func (m *PayloadDigestMutation) ClearedEdges() []string {
+	edges := make([]string, 0, 1)
+	if m.cleareddsse {
+		edges = append(edges, payloaddigest.EdgeDsse)
+	}
+	return edges
+}
+
+// EdgeCleared returns a boolean which indicates if the edge with the given name
+// was cleared in this mutation.
+func (m *PayloadDigestMutation) EdgeCleared(name string) bool {
+	switch name {
+	case payloaddigest.EdgeDsse:
+		return m.cleareddsse
+	}
+	return false
+}
+
+// ClearEdge clears the value of the edge with the given name. It returns an error
+// if that edge is not defined in the schema.
+func (m *PayloadDigestMutation) ClearEdge(name string) error {
+	switch name {
+	case payloaddigest.EdgeDsse:
+		m.ClearDsse()
+		return nil
+	}
+	return fmt.Errorf("unknown PayloadDigest unique edge %s", name)
+}
+
+// ResetEdge resets all changes to the edge with the given name in this mutation.
+// It returns an error if the edge is not defined in the schema.
+func (m *PayloadDigestMutation) ResetEdge(name string) error {
+	switch name {
+	case payloaddigest.EdgeDsse:
+		m.ResetDsse()
+		return nil
+	}
+	return fmt.Errorf("unknown PayloadDigest edge %s", name)
 }
 
 // SignatureMutation represents an operation that mutates the Signature nodes in the graph.
@@ -1422,19 +2354,22 @@ func (m *SignatureMutation) ResetEdge(name string) error {
 // StatementMutation represents an operation that mutates the Statement nodes in the graph.
 type StatementMutation struct {
 	config
-	op              Op
-	typ             string
-	id              *int
-	clearedFields   map[string]struct{}
-	subjects        map[int]struct{}
-	removedsubjects map[int]struct{}
-	clearedsubjects bool
-	dsse            map[int]struct{}
-	removeddsse     map[int]struct{}
-	cleareddsse     bool
-	done            bool
-	oldValue        func(context.Context) (*Statement, error)
-	predicates      []predicate.Statement
+	op                             Op
+	typ                            string
+	id                             *int
+	predicate                      *string
+	clearedFields                  map[string]struct{}
+	subjects                       map[int]struct{}
+	removedsubjects                map[int]struct{}
+	clearedsubjects                bool
+	attestation_collections        *int
+	clearedattestation_collections bool
+	dsse                           map[int]struct{}
+	removeddsse                    map[int]struct{}
+	cleareddsse                    bool
+	done                           bool
+	oldValue                       func(context.Context) (*Statement, error)
+	predicates                     []predicate.Statement
 }
 
 var _ ent.Mutation = (*StatementMutation)(nil)
@@ -1535,6 +2470,42 @@ func (m *StatementMutation) IDs(ctx context.Context) ([]int, error) {
 	}
 }
 
+// SetPredicate sets the "predicate" field.
+func (m *StatementMutation) SetPredicate(s string) {
+	m.predicate = &s
+}
+
+// Predicate returns the value of the "predicate" field in the mutation.
+func (m *StatementMutation) Predicate() (r string, exists bool) {
+	v := m.predicate
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// OldPredicate returns the old "predicate" field's value of the Statement entity.
+// If the Statement object wasn't provided to the builder, the object is fetched from the database.
+// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
+func (m *StatementMutation) OldPredicate(ctx context.Context) (v string, err error) {
+	if !m.op.Is(OpUpdateOne) {
+		return v, errors.New("OldPredicate is only allowed on UpdateOne operations")
+	}
+	if m.id == nil || m.oldValue == nil {
+		return v, errors.New("OldPredicate requires an ID field in the mutation")
+	}
+	oldValue, err := m.oldValue(ctx)
+	if err != nil {
+		return v, fmt.Errorf("querying old value for OldPredicate: %w", err)
+	}
+	return oldValue.Predicate, nil
+}
+
+// ResetPredicate resets all changes to the "predicate" field.
+func (m *StatementMutation) ResetPredicate() {
+	m.predicate = nil
+}
+
 // AddSubjectIDs adds the "subjects" edge to the Subject entity by ids.
 func (m *StatementMutation) AddSubjectIDs(ids ...int) {
 	if m.subjects == nil {
@@ -1587,6 +2558,45 @@ func (m *StatementMutation) ResetSubjects() {
 	m.subjects = nil
 	m.clearedsubjects = false
 	m.removedsubjects = nil
+}
+
+// SetAttestationCollectionsID sets the "attestation_collections" edge to the AttestationCollection entity by id.
+func (m *StatementMutation) SetAttestationCollectionsID(id int) {
+	m.attestation_collections = &id
+}
+
+// ClearAttestationCollections clears the "attestation_collections" edge to the AttestationCollection entity.
+func (m *StatementMutation) ClearAttestationCollections() {
+	m.clearedattestation_collections = true
+}
+
+// AttestationCollectionsCleared reports if the "attestation_collections" edge to the AttestationCollection entity was cleared.
+func (m *StatementMutation) AttestationCollectionsCleared() bool {
+	return m.clearedattestation_collections
+}
+
+// AttestationCollectionsID returns the "attestation_collections" edge ID in the mutation.
+func (m *StatementMutation) AttestationCollectionsID() (id int, exists bool) {
+	if m.attestation_collections != nil {
+		return *m.attestation_collections, true
+	}
+	return
+}
+
+// AttestationCollectionsIDs returns the "attestation_collections" edge IDs in the mutation.
+// Note that IDs always returns len(IDs) <= 1 for unique edges, and you should use
+// AttestationCollectionsID instead. It exists only for internal usage by the builders.
+func (m *StatementMutation) AttestationCollectionsIDs() (ids []int) {
+	if id := m.attestation_collections; id != nil {
+		ids = append(ids, *id)
+	}
+	return
+}
+
+// ResetAttestationCollections resets all changes to the "attestation_collections" edge.
+func (m *StatementMutation) ResetAttestationCollections() {
+	m.attestation_collections = nil
+	m.clearedattestation_collections = false
 }
 
 // AddDsseIDs adds the "dsse" edge to the Dsse entity by ids.
@@ -1662,7 +2672,10 @@ func (m *StatementMutation) Type() string {
 // order to get all numeric fields that were incremented/decremented, call
 // AddedFields().
 func (m *StatementMutation) Fields() []string {
-	fields := make([]string, 0, 0)
+	fields := make([]string, 0, 1)
+	if m.predicate != nil {
+		fields = append(fields, statement.FieldPredicate)
+	}
 	return fields
 }
 
@@ -1670,6 +2683,10 @@ func (m *StatementMutation) Fields() []string {
 // return value indicates that this field was not set, or was not defined in the
 // schema.
 func (m *StatementMutation) Field(name string) (ent.Value, bool) {
+	switch name {
+	case statement.FieldPredicate:
+		return m.Predicate()
+	}
 	return nil, false
 }
 
@@ -1677,6 +2694,10 @@ func (m *StatementMutation) Field(name string) (ent.Value, bool) {
 // returned if the mutation operation is not UpdateOne, or the query to the
 // database failed.
 func (m *StatementMutation) OldField(ctx context.Context, name string) (ent.Value, error) {
+	switch name {
+	case statement.FieldPredicate:
+		return m.OldPredicate(ctx)
+	}
 	return nil, fmt.Errorf("unknown Statement field %s", name)
 }
 
@@ -1685,6 +2706,13 @@ func (m *StatementMutation) OldField(ctx context.Context, name string) (ent.Valu
 // type.
 func (m *StatementMutation) SetField(name string, value ent.Value) error {
 	switch name {
+	case statement.FieldPredicate:
+		v, ok := value.(string)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.SetPredicate(v)
+		return nil
 	}
 	return fmt.Errorf("unknown Statement field %s", name)
 }
@@ -1706,6 +2734,8 @@ func (m *StatementMutation) AddedField(name string) (ent.Value, bool) {
 // the field is not defined in the schema, or if the type mismatched the field
 // type.
 func (m *StatementMutation) AddField(name string, value ent.Value) error {
+	switch name {
+	}
 	return fmt.Errorf("unknown Statement numeric field %s", name)
 }
 
@@ -1731,14 +2761,22 @@ func (m *StatementMutation) ClearField(name string) error {
 // ResetField resets all changes in the mutation for the field with the given name.
 // It returns an error if the field is not defined in the schema.
 func (m *StatementMutation) ResetField(name string) error {
+	switch name {
+	case statement.FieldPredicate:
+		m.ResetPredicate()
+		return nil
+	}
 	return fmt.Errorf("unknown Statement field %s", name)
 }
 
 // AddedEdges returns all edge names that were set/added in this mutation.
 func (m *StatementMutation) AddedEdges() []string {
-	edges := make([]string, 0, 2)
+	edges := make([]string, 0, 3)
 	if m.subjects != nil {
 		edges = append(edges, statement.EdgeSubjects)
+	}
+	if m.attestation_collections != nil {
+		edges = append(edges, statement.EdgeAttestationCollections)
 	}
 	if m.dsse != nil {
 		edges = append(edges, statement.EdgeDsse)
@@ -1756,6 +2794,10 @@ func (m *StatementMutation) AddedIDs(name string) []ent.Value {
 			ids = append(ids, id)
 		}
 		return ids
+	case statement.EdgeAttestationCollections:
+		if id := m.attestation_collections; id != nil {
+			return []ent.Value{*id}
+		}
 	case statement.EdgeDsse:
 		ids := make([]ent.Value, 0, len(m.dsse))
 		for id := range m.dsse {
@@ -1768,7 +2810,7 @@ func (m *StatementMutation) AddedIDs(name string) []ent.Value {
 
 // RemovedEdges returns all edge names that were removed in this mutation.
 func (m *StatementMutation) RemovedEdges() []string {
-	edges := make([]string, 0, 2)
+	edges := make([]string, 0, 3)
 	if m.removedsubjects != nil {
 		edges = append(edges, statement.EdgeSubjects)
 	}
@@ -1800,9 +2842,12 @@ func (m *StatementMutation) RemovedIDs(name string) []ent.Value {
 
 // ClearedEdges returns all edge names that were cleared in this mutation.
 func (m *StatementMutation) ClearedEdges() []string {
-	edges := make([]string, 0, 2)
+	edges := make([]string, 0, 3)
 	if m.clearedsubjects {
 		edges = append(edges, statement.EdgeSubjects)
+	}
+	if m.clearedattestation_collections {
+		edges = append(edges, statement.EdgeAttestationCollections)
 	}
 	if m.cleareddsse {
 		edges = append(edges, statement.EdgeDsse)
@@ -1816,6 +2861,8 @@ func (m *StatementMutation) EdgeCleared(name string) bool {
 	switch name {
 	case statement.EdgeSubjects:
 		return m.clearedsubjects
+	case statement.EdgeAttestationCollections:
+		return m.clearedattestation_collections
 	case statement.EdgeDsse:
 		return m.cleareddsse
 	}
@@ -1826,6 +2873,9 @@ func (m *StatementMutation) EdgeCleared(name string) bool {
 // if that edge is not defined in the schema.
 func (m *StatementMutation) ClearEdge(name string) error {
 	switch name {
+	case statement.EdgeAttestationCollections:
+		m.ClearAttestationCollections()
+		return nil
 	}
 	return fmt.Errorf("unknown Statement unique edge %s", name)
 }
@@ -1837,6 +2887,9 @@ func (m *StatementMutation) ResetEdge(name string) error {
 	case statement.EdgeSubjects:
 		m.ResetSubjects()
 		return nil
+	case statement.EdgeAttestationCollections:
+		m.ResetAttestationCollections()
+		return nil
 	case statement.EdgeDsse:
 		m.ResetDsse()
 		return nil
@@ -1847,19 +2900,19 @@ func (m *StatementMutation) ResetEdge(name string) error {
 // SubjectMutation represents an operation that mutates the Subject nodes in the graph.
 type SubjectMutation struct {
 	config
-	op               Op
-	typ              string
-	id               *int
-	name             *string
-	clearedFields    map[string]struct{}
-	digests          map[int]struct{}
-	removeddigests   map[int]struct{}
-	cleareddigests   bool
-	statement        *int
-	clearedstatement bool
-	done             bool
-	oldValue         func(context.Context) (*Subject, error)
-	predicates       []predicate.Subject
+	op                     Op
+	typ                    string
+	id                     *int
+	name                   *string
+	clearedFields          map[string]struct{}
+	subject_digests        map[int]struct{}
+	removedsubject_digests map[int]struct{}
+	clearedsubject_digests bool
+	statement              *int
+	clearedstatement       bool
+	done                   bool
+	oldValue               func(context.Context) (*Subject, error)
+	predicates             []predicate.Subject
 }
 
 var _ ent.Mutation = (*SubjectMutation)(nil)
@@ -1996,58 +3049,58 @@ func (m *SubjectMutation) ResetName() {
 	m.name = nil
 }
 
-// AddDigestIDs adds the "digests" edge to the Digest entity by ids.
-func (m *SubjectMutation) AddDigestIDs(ids ...int) {
-	if m.digests == nil {
-		m.digests = make(map[int]struct{})
+// AddSubjectDigestIDs adds the "subject_digests" edge to the SubjectDigest entity by ids.
+func (m *SubjectMutation) AddSubjectDigestIDs(ids ...int) {
+	if m.subject_digests == nil {
+		m.subject_digests = make(map[int]struct{})
 	}
 	for i := range ids {
-		m.digests[ids[i]] = struct{}{}
+		m.subject_digests[ids[i]] = struct{}{}
 	}
 }
 
-// ClearDigests clears the "digests" edge to the Digest entity.
-func (m *SubjectMutation) ClearDigests() {
-	m.cleareddigests = true
+// ClearSubjectDigests clears the "subject_digests" edge to the SubjectDigest entity.
+func (m *SubjectMutation) ClearSubjectDigests() {
+	m.clearedsubject_digests = true
 }
 
-// DigestsCleared reports if the "digests" edge to the Digest entity was cleared.
-func (m *SubjectMutation) DigestsCleared() bool {
-	return m.cleareddigests
+// SubjectDigestsCleared reports if the "subject_digests" edge to the SubjectDigest entity was cleared.
+func (m *SubjectMutation) SubjectDigestsCleared() bool {
+	return m.clearedsubject_digests
 }
 
-// RemoveDigestIDs removes the "digests" edge to the Digest entity by IDs.
-func (m *SubjectMutation) RemoveDigestIDs(ids ...int) {
-	if m.removeddigests == nil {
-		m.removeddigests = make(map[int]struct{})
+// RemoveSubjectDigestIDs removes the "subject_digests" edge to the SubjectDigest entity by IDs.
+func (m *SubjectMutation) RemoveSubjectDigestIDs(ids ...int) {
+	if m.removedsubject_digests == nil {
+		m.removedsubject_digests = make(map[int]struct{})
 	}
 	for i := range ids {
-		delete(m.digests, ids[i])
-		m.removeddigests[ids[i]] = struct{}{}
+		delete(m.subject_digests, ids[i])
+		m.removedsubject_digests[ids[i]] = struct{}{}
 	}
 }
 
-// RemovedDigests returns the removed IDs of the "digests" edge to the Digest entity.
-func (m *SubjectMutation) RemovedDigestsIDs() (ids []int) {
-	for id := range m.removeddigests {
+// RemovedSubjectDigests returns the removed IDs of the "subject_digests" edge to the SubjectDigest entity.
+func (m *SubjectMutation) RemovedSubjectDigestsIDs() (ids []int) {
+	for id := range m.removedsubject_digests {
 		ids = append(ids, id)
 	}
 	return
 }
 
-// DigestsIDs returns the "digests" edge IDs in the mutation.
-func (m *SubjectMutation) DigestsIDs() (ids []int) {
-	for id := range m.digests {
+// SubjectDigestsIDs returns the "subject_digests" edge IDs in the mutation.
+func (m *SubjectMutation) SubjectDigestsIDs() (ids []int) {
+	for id := range m.subject_digests {
 		ids = append(ids, id)
 	}
 	return
 }
 
-// ResetDigests resets all changes to the "digests" edge.
-func (m *SubjectMutation) ResetDigests() {
-	m.digests = nil
-	m.cleareddigests = false
-	m.removeddigests = nil
+// ResetSubjectDigests resets all changes to the "subject_digests" edge.
+func (m *SubjectMutation) ResetSubjectDigests() {
+	m.subject_digests = nil
+	m.clearedsubject_digests = false
+	m.removedsubject_digests = nil
 }
 
 // SetStatementID sets the "statement" edge to the Statement entity by id.
@@ -2208,8 +3261,8 @@ func (m *SubjectMutation) ResetField(name string) error {
 // AddedEdges returns all edge names that were set/added in this mutation.
 func (m *SubjectMutation) AddedEdges() []string {
 	edges := make([]string, 0, 2)
-	if m.digests != nil {
-		edges = append(edges, subject.EdgeDigests)
+	if m.subject_digests != nil {
+		edges = append(edges, subject.EdgeSubjectDigests)
 	}
 	if m.statement != nil {
 		edges = append(edges, subject.EdgeStatement)
@@ -2221,9 +3274,9 @@ func (m *SubjectMutation) AddedEdges() []string {
 // name in this mutation.
 func (m *SubjectMutation) AddedIDs(name string) []ent.Value {
 	switch name {
-	case subject.EdgeDigests:
-		ids := make([]ent.Value, 0, len(m.digests))
-		for id := range m.digests {
+	case subject.EdgeSubjectDigests:
+		ids := make([]ent.Value, 0, len(m.subject_digests))
+		for id := range m.subject_digests {
 			ids = append(ids, id)
 		}
 		return ids
@@ -2238,8 +3291,8 @@ func (m *SubjectMutation) AddedIDs(name string) []ent.Value {
 // RemovedEdges returns all edge names that were removed in this mutation.
 func (m *SubjectMutation) RemovedEdges() []string {
 	edges := make([]string, 0, 2)
-	if m.removeddigests != nil {
-		edges = append(edges, subject.EdgeDigests)
+	if m.removedsubject_digests != nil {
+		edges = append(edges, subject.EdgeSubjectDigests)
 	}
 	return edges
 }
@@ -2248,9 +3301,9 @@ func (m *SubjectMutation) RemovedEdges() []string {
 // the given name in this mutation.
 func (m *SubjectMutation) RemovedIDs(name string) []ent.Value {
 	switch name {
-	case subject.EdgeDigests:
-		ids := make([]ent.Value, 0, len(m.removeddigests))
-		for id := range m.removeddigests {
+	case subject.EdgeSubjectDigests:
+		ids := make([]ent.Value, 0, len(m.removedsubject_digests))
+		for id := range m.removedsubject_digests {
 			ids = append(ids, id)
 		}
 		return ids
@@ -2261,8 +3314,8 @@ func (m *SubjectMutation) RemovedIDs(name string) []ent.Value {
 // ClearedEdges returns all edge names that were cleared in this mutation.
 func (m *SubjectMutation) ClearedEdges() []string {
 	edges := make([]string, 0, 2)
-	if m.cleareddigests {
-		edges = append(edges, subject.EdgeDigests)
+	if m.clearedsubject_digests {
+		edges = append(edges, subject.EdgeSubjectDigests)
 	}
 	if m.clearedstatement {
 		edges = append(edges, subject.EdgeStatement)
@@ -2274,8 +3327,8 @@ func (m *SubjectMutation) ClearedEdges() []string {
 // was cleared in this mutation.
 func (m *SubjectMutation) EdgeCleared(name string) bool {
 	switch name {
-	case subject.EdgeDigests:
-		return m.cleareddigests
+	case subject.EdgeSubjectDigests:
+		return m.clearedsubject_digests
 	case subject.EdgeStatement:
 		return m.clearedstatement
 	}
@@ -2297,12 +3350,446 @@ func (m *SubjectMutation) ClearEdge(name string) error {
 // It returns an error if the edge is not defined in the schema.
 func (m *SubjectMutation) ResetEdge(name string) error {
 	switch name {
-	case subject.EdgeDigests:
-		m.ResetDigests()
+	case subject.EdgeSubjectDigests:
+		m.ResetSubjectDigests()
 		return nil
 	case subject.EdgeStatement:
 		m.ResetStatement()
 		return nil
 	}
 	return fmt.Errorf("unknown Subject edge %s", name)
+}
+
+// SubjectDigestMutation represents an operation that mutates the SubjectDigest nodes in the graph.
+type SubjectDigestMutation struct {
+	config
+	op             Op
+	typ            string
+	id             *int
+	algorithm      *string
+	value          *string
+	clearedFields  map[string]struct{}
+	subject        *int
+	clearedsubject bool
+	done           bool
+	oldValue       func(context.Context) (*SubjectDigest, error)
+	predicates     []predicate.SubjectDigest
+}
+
+var _ ent.Mutation = (*SubjectDigestMutation)(nil)
+
+// subjectdigestOption allows management of the mutation configuration using functional options.
+type subjectdigestOption func(*SubjectDigestMutation)
+
+// newSubjectDigestMutation creates new mutation for the SubjectDigest entity.
+func newSubjectDigestMutation(c config, op Op, opts ...subjectdigestOption) *SubjectDigestMutation {
+	m := &SubjectDigestMutation{
+		config:        c,
+		op:            op,
+		typ:           TypeSubjectDigest,
+		clearedFields: make(map[string]struct{}),
+	}
+	for _, opt := range opts {
+		opt(m)
+	}
+	return m
+}
+
+// withSubjectDigestID sets the ID field of the mutation.
+func withSubjectDigestID(id int) subjectdigestOption {
+	return func(m *SubjectDigestMutation) {
+		var (
+			err   error
+			once  sync.Once
+			value *SubjectDigest
+		)
+		m.oldValue = func(ctx context.Context) (*SubjectDigest, error) {
+			once.Do(func() {
+				if m.done {
+					err = errors.New("querying old values post mutation is not allowed")
+				} else {
+					value, err = m.Client().SubjectDigest.Get(ctx, id)
+				}
+			})
+			return value, err
+		}
+		m.id = &id
+	}
+}
+
+// withSubjectDigest sets the old SubjectDigest of the mutation.
+func withSubjectDigest(node *SubjectDigest) subjectdigestOption {
+	return func(m *SubjectDigestMutation) {
+		m.oldValue = func(context.Context) (*SubjectDigest, error) {
+			return node, nil
+		}
+		m.id = &node.ID
+	}
+}
+
+// Client returns a new `ent.Client` from the mutation. If the mutation was
+// executed in a transaction (ent.Tx), a transactional client is returned.
+func (m SubjectDigestMutation) Client() *Client {
+	client := &Client{config: m.config}
+	client.init()
+	return client
+}
+
+// Tx returns an `ent.Tx` for mutations that were executed in transactions;
+// it returns an error otherwise.
+func (m SubjectDigestMutation) Tx() (*Tx, error) {
+	if _, ok := m.driver.(*txDriver); !ok {
+		return nil, errors.New("ent: mutation is not running in a transaction")
+	}
+	tx := &Tx{config: m.config}
+	tx.init()
+	return tx, nil
+}
+
+// ID returns the ID value in the mutation. Note that the ID is only available
+// if it was provided to the builder or after it was returned from the database.
+func (m *SubjectDigestMutation) ID() (id int, exists bool) {
+	if m.id == nil {
+		return
+	}
+	return *m.id, true
+}
+
+// IDs queries the database and returns the entity ids that match the mutation's predicate.
+// That means, if the mutation is applied within a transaction with an isolation level such
+// as sql.LevelSerializable, the returned ids match the ids of the rows that will be updated
+// or updated by the mutation.
+func (m *SubjectDigestMutation) IDs(ctx context.Context) ([]int, error) {
+	switch {
+	case m.op.Is(OpUpdateOne | OpDeleteOne):
+		id, exists := m.ID()
+		if exists {
+			return []int{id}, nil
+		}
+		fallthrough
+	case m.op.Is(OpUpdate | OpDelete):
+		return m.Client().SubjectDigest.Query().Where(m.predicates...).IDs(ctx)
+	default:
+		return nil, fmt.Errorf("IDs is not allowed on %s operations", m.op)
+	}
+}
+
+// SetAlgorithm sets the "algorithm" field.
+func (m *SubjectDigestMutation) SetAlgorithm(s string) {
+	m.algorithm = &s
+}
+
+// Algorithm returns the value of the "algorithm" field in the mutation.
+func (m *SubjectDigestMutation) Algorithm() (r string, exists bool) {
+	v := m.algorithm
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// OldAlgorithm returns the old "algorithm" field's value of the SubjectDigest entity.
+// If the SubjectDigest object wasn't provided to the builder, the object is fetched from the database.
+// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
+func (m *SubjectDigestMutation) OldAlgorithm(ctx context.Context) (v string, err error) {
+	if !m.op.Is(OpUpdateOne) {
+		return v, errors.New("OldAlgorithm is only allowed on UpdateOne operations")
+	}
+	if m.id == nil || m.oldValue == nil {
+		return v, errors.New("OldAlgorithm requires an ID field in the mutation")
+	}
+	oldValue, err := m.oldValue(ctx)
+	if err != nil {
+		return v, fmt.Errorf("querying old value for OldAlgorithm: %w", err)
+	}
+	return oldValue.Algorithm, nil
+}
+
+// ResetAlgorithm resets all changes to the "algorithm" field.
+func (m *SubjectDigestMutation) ResetAlgorithm() {
+	m.algorithm = nil
+}
+
+// SetValue sets the "value" field.
+func (m *SubjectDigestMutation) SetValue(s string) {
+	m.value = &s
+}
+
+// Value returns the value of the "value" field in the mutation.
+func (m *SubjectDigestMutation) Value() (r string, exists bool) {
+	v := m.value
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// OldValue returns the old "value" field's value of the SubjectDigest entity.
+// If the SubjectDigest object wasn't provided to the builder, the object is fetched from the database.
+// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
+func (m *SubjectDigestMutation) OldValue(ctx context.Context) (v string, err error) {
+	if !m.op.Is(OpUpdateOne) {
+		return v, errors.New("OldValue is only allowed on UpdateOne operations")
+	}
+	if m.id == nil || m.oldValue == nil {
+		return v, errors.New("OldValue requires an ID field in the mutation")
+	}
+	oldValue, err := m.oldValue(ctx)
+	if err != nil {
+		return v, fmt.Errorf("querying old value for OldValue: %w", err)
+	}
+	return oldValue.Value, nil
+}
+
+// ResetValue resets all changes to the "value" field.
+func (m *SubjectDigestMutation) ResetValue() {
+	m.value = nil
+}
+
+// SetSubjectID sets the "subject" edge to the Subject entity by id.
+func (m *SubjectDigestMutation) SetSubjectID(id int) {
+	m.subject = &id
+}
+
+// ClearSubject clears the "subject" edge to the Subject entity.
+func (m *SubjectDigestMutation) ClearSubject() {
+	m.clearedsubject = true
+}
+
+// SubjectCleared reports if the "subject" edge to the Subject entity was cleared.
+func (m *SubjectDigestMutation) SubjectCleared() bool {
+	return m.clearedsubject
+}
+
+// SubjectID returns the "subject" edge ID in the mutation.
+func (m *SubjectDigestMutation) SubjectID() (id int, exists bool) {
+	if m.subject != nil {
+		return *m.subject, true
+	}
+	return
+}
+
+// SubjectIDs returns the "subject" edge IDs in the mutation.
+// Note that IDs always returns len(IDs) <= 1 for unique edges, and you should use
+// SubjectID instead. It exists only for internal usage by the builders.
+func (m *SubjectDigestMutation) SubjectIDs() (ids []int) {
+	if id := m.subject; id != nil {
+		ids = append(ids, *id)
+	}
+	return
+}
+
+// ResetSubject resets all changes to the "subject" edge.
+func (m *SubjectDigestMutation) ResetSubject() {
+	m.subject = nil
+	m.clearedsubject = false
+}
+
+// Where appends a list predicates to the SubjectDigestMutation builder.
+func (m *SubjectDigestMutation) Where(ps ...predicate.SubjectDigest) {
+	m.predicates = append(m.predicates, ps...)
+}
+
+// Op returns the operation name.
+func (m *SubjectDigestMutation) Op() Op {
+	return m.op
+}
+
+// Type returns the node type of this mutation (SubjectDigest).
+func (m *SubjectDigestMutation) Type() string {
+	return m.typ
+}
+
+// Fields returns all fields that were changed during this mutation. Note that in
+// order to get all numeric fields that were incremented/decremented, call
+// AddedFields().
+func (m *SubjectDigestMutation) Fields() []string {
+	fields := make([]string, 0, 2)
+	if m.algorithm != nil {
+		fields = append(fields, subjectdigest.FieldAlgorithm)
+	}
+	if m.value != nil {
+		fields = append(fields, subjectdigest.FieldValue)
+	}
+	return fields
+}
+
+// Field returns the value of a field with the given name. The second boolean
+// return value indicates that this field was not set, or was not defined in the
+// schema.
+func (m *SubjectDigestMutation) Field(name string) (ent.Value, bool) {
+	switch name {
+	case subjectdigest.FieldAlgorithm:
+		return m.Algorithm()
+	case subjectdigest.FieldValue:
+		return m.Value()
+	}
+	return nil, false
+}
+
+// OldField returns the old value of the field from the database. An error is
+// returned if the mutation operation is not UpdateOne, or the query to the
+// database failed.
+func (m *SubjectDigestMutation) OldField(ctx context.Context, name string) (ent.Value, error) {
+	switch name {
+	case subjectdigest.FieldAlgorithm:
+		return m.OldAlgorithm(ctx)
+	case subjectdigest.FieldValue:
+		return m.OldValue(ctx)
+	}
+	return nil, fmt.Errorf("unknown SubjectDigest field %s", name)
+}
+
+// SetField sets the value of a field with the given name. It returns an error if
+// the field is not defined in the schema, or if the type mismatched the field
+// type.
+func (m *SubjectDigestMutation) SetField(name string, value ent.Value) error {
+	switch name {
+	case subjectdigest.FieldAlgorithm:
+		v, ok := value.(string)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.SetAlgorithm(v)
+		return nil
+	case subjectdigest.FieldValue:
+		v, ok := value.(string)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.SetValue(v)
+		return nil
+	}
+	return fmt.Errorf("unknown SubjectDigest field %s", name)
+}
+
+// AddedFields returns all numeric fields that were incremented/decremented during
+// this mutation.
+func (m *SubjectDigestMutation) AddedFields() []string {
+	return nil
+}
+
+// AddedField returns the numeric value that was incremented/decremented on a field
+// with the given name. The second boolean return value indicates that this field
+// was not set, or was not defined in the schema.
+func (m *SubjectDigestMutation) AddedField(name string) (ent.Value, bool) {
+	return nil, false
+}
+
+// AddField adds the value to the field with the given name. It returns an error if
+// the field is not defined in the schema, or if the type mismatched the field
+// type.
+func (m *SubjectDigestMutation) AddField(name string, value ent.Value) error {
+	switch name {
+	}
+	return fmt.Errorf("unknown SubjectDigest numeric field %s", name)
+}
+
+// ClearedFields returns all nullable fields that were cleared during this
+// mutation.
+func (m *SubjectDigestMutation) ClearedFields() []string {
+	return nil
+}
+
+// FieldCleared returns a boolean indicating if a field with the given name was
+// cleared in this mutation.
+func (m *SubjectDigestMutation) FieldCleared(name string) bool {
+	_, ok := m.clearedFields[name]
+	return ok
+}
+
+// ClearField clears the value of the field with the given name. It returns an
+// error if the field is not defined in the schema.
+func (m *SubjectDigestMutation) ClearField(name string) error {
+	return fmt.Errorf("unknown SubjectDigest nullable field %s", name)
+}
+
+// ResetField resets all changes in the mutation for the field with the given name.
+// It returns an error if the field is not defined in the schema.
+func (m *SubjectDigestMutation) ResetField(name string) error {
+	switch name {
+	case subjectdigest.FieldAlgorithm:
+		m.ResetAlgorithm()
+		return nil
+	case subjectdigest.FieldValue:
+		m.ResetValue()
+		return nil
+	}
+	return fmt.Errorf("unknown SubjectDigest field %s", name)
+}
+
+// AddedEdges returns all edge names that were set/added in this mutation.
+func (m *SubjectDigestMutation) AddedEdges() []string {
+	edges := make([]string, 0, 1)
+	if m.subject != nil {
+		edges = append(edges, subjectdigest.EdgeSubject)
+	}
+	return edges
+}
+
+// AddedIDs returns all IDs (to other nodes) that were added for the given edge
+// name in this mutation.
+func (m *SubjectDigestMutation) AddedIDs(name string) []ent.Value {
+	switch name {
+	case subjectdigest.EdgeSubject:
+		if id := m.subject; id != nil {
+			return []ent.Value{*id}
+		}
+	}
+	return nil
+}
+
+// RemovedEdges returns all edge names that were removed in this mutation.
+func (m *SubjectDigestMutation) RemovedEdges() []string {
+	edges := make([]string, 0, 1)
+	return edges
+}
+
+// RemovedIDs returns all IDs (to other nodes) that were removed for the edge with
+// the given name in this mutation.
+func (m *SubjectDigestMutation) RemovedIDs(name string) []ent.Value {
+	switch name {
+	}
+	return nil
+}
+
+// ClearedEdges returns all edge names that were cleared in this mutation.
+func (m *SubjectDigestMutation) ClearedEdges() []string {
+	edges := make([]string, 0, 1)
+	if m.clearedsubject {
+		edges = append(edges, subjectdigest.EdgeSubject)
+	}
+	return edges
+}
+
+// EdgeCleared returns a boolean which indicates if the edge with the given name
+// was cleared in this mutation.
+func (m *SubjectDigestMutation) EdgeCleared(name string) bool {
+	switch name {
+	case subjectdigest.EdgeSubject:
+		return m.clearedsubject
+	}
+	return false
+}
+
+// ClearEdge clears the value of the edge with the given name. It returns an error
+// if that edge is not defined in the schema.
+func (m *SubjectDigestMutation) ClearEdge(name string) error {
+	switch name {
+	case subjectdigest.EdgeSubject:
+		m.ClearSubject()
+		return nil
+	}
+	return fmt.Errorf("unknown SubjectDigest unique edge %s", name)
+}
+
+// ResetEdge resets all changes to the edge with the given name in this mutation.
+// It returns an error if the edge is not defined in the schema.
+func (m *SubjectDigestMutation) ResetEdge(name string) error {
+	switch name {
+	case subjectdigest.EdgeSubject:
+		m.ResetSubject()
+		return nil
+	}
+	return fmt.Errorf("unknown SubjectDigest edge %s", name)
 }

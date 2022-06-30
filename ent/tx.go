@@ -12,16 +12,22 @@ import (
 // Tx is a transactional client that is created by calling Client.Tx().
 type Tx struct {
 	config
-	// Digest is the client for interacting with the Digest builders.
-	Digest *DigestClient
+	// Attestation is the client for interacting with the Attestation builders.
+	Attestation *AttestationClient
+	// AttestationCollection is the client for interacting with the AttestationCollection builders.
+	AttestationCollection *AttestationCollectionClient
 	// Dsse is the client for interacting with the Dsse builders.
 	Dsse *DsseClient
+	// PayloadDigest is the client for interacting with the PayloadDigest builders.
+	PayloadDigest *PayloadDigestClient
 	// Signature is the client for interacting with the Signature builders.
 	Signature *SignatureClient
 	// Statement is the client for interacting with the Statement builders.
 	Statement *StatementClient
 	// Subject is the client for interacting with the Subject builders.
 	Subject *SubjectClient
+	// SubjectDigest is the client for interacting with the SubjectDigest builders.
+	SubjectDigest *SubjectDigestClient
 
 	// lazily loaded.
 	client     *Client
@@ -157,11 +163,14 @@ func (tx *Tx) Client() *Client {
 }
 
 func (tx *Tx) init() {
-	tx.Digest = NewDigestClient(tx.config)
+	tx.Attestation = NewAttestationClient(tx.config)
+	tx.AttestationCollection = NewAttestationCollectionClient(tx.config)
 	tx.Dsse = NewDsseClient(tx.config)
+	tx.PayloadDigest = NewPayloadDigestClient(tx.config)
 	tx.Signature = NewSignatureClient(tx.config)
 	tx.Statement = NewStatementClient(tx.config)
 	tx.Subject = NewSubjectClient(tx.config)
+	tx.SubjectDigest = NewSubjectDigestClient(tx.config)
 }
 
 // txDriver wraps the given dialect.Tx with a nop dialect.Driver implementation.
@@ -171,7 +180,7 @@ func (tx *Tx) init() {
 // of them in order to commit or rollback the transaction.
 //
 // If a closed transaction is embedded in one of the generated entities, and the entity
-// applies a query, for example: Digest.QueryXXX(), the query will be executed
+// applies a query, for example: Attestation.QueryXXX(), the query will be executed
 // through the driver which created this transaction.
 //
 // Note that txDriver is not goroutine safe.

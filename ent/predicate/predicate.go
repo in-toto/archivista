@@ -6,11 +6,17 @@ import (
 	"entgo.io/ent/dialect/sql"
 )
 
-// Digest is the predicate function for digest builders.
-type Digest func(*sql.Selector)
+// Attestation is the predicate function for attestation builders.
+type Attestation func(*sql.Selector)
+
+// AttestationCollection is the predicate function for attestationcollection builders.
+type AttestationCollection func(*sql.Selector)
 
 // Dsse is the predicate function for dsse builders.
 type Dsse func(*sql.Selector)
+
+// PayloadDigest is the predicate function for payloaddigest builders.
+type PayloadDigest func(*sql.Selector)
 
 // Signature is the predicate function for signature builders.
 type Signature func(*sql.Selector)
@@ -20,3 +26,6 @@ type Statement func(*sql.Selector)
 
 // Subject is the predicate function for subject builders.
 type Subject func(*sql.Selector)
+
+// SubjectDigest is the predicate function for subjectdigest builders.
+type SubjectDigest func(*sql.Selector)

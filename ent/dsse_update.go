@@ -11,6 +11,7 @@ import (
 	"entgo.io/ent/dialect/sql/sqlgraph"
 	"entgo.io/ent/schema/field"
 	"github.com/testifysec/archivist/ent/dsse"
+	"github.com/testifysec/archivist/ent/payloaddigest"
 	"github.com/testifysec/archivist/ent/predicate"
 	"github.com/testifysec/archivist/ent/signature"
 	"github.com/testifysec/archivist/ent/statement"
@@ -75,6 +76,21 @@ func (du *DsseUpdate) AddSignatures(s ...*Signature) *DsseUpdate {
 	return du.AddSignatureIDs(ids...)
 }
 
+// AddPayloadDigestIDs adds the "payload_digests" edge to the PayloadDigest entity by IDs.
+func (du *DsseUpdate) AddPayloadDigestIDs(ids ...int) *DsseUpdate {
+	du.mutation.AddPayloadDigestIDs(ids...)
+	return du
+}
+
+// AddPayloadDigests adds the "payload_digests" edges to the PayloadDigest entity.
+func (du *DsseUpdate) AddPayloadDigests(p ...*PayloadDigest) *DsseUpdate {
+	ids := make([]int, len(p))
+	for i := range p {
+		ids[i] = p[i].ID
+	}
+	return du.AddPayloadDigestIDs(ids...)
+}
+
 // Mutation returns the DsseMutation object of the builder.
 func (du *DsseUpdate) Mutation() *DsseMutation {
 	return du.mutation
@@ -105,6 +121,27 @@ func (du *DsseUpdate) RemoveSignatures(s ...*Signature) *DsseUpdate {
 		ids[i] = s[i].ID
 	}
 	return du.RemoveSignatureIDs(ids...)
+}
+
+// ClearPayloadDigests clears all "payload_digests" edges to the PayloadDigest entity.
+func (du *DsseUpdate) ClearPayloadDigests() *DsseUpdate {
+	du.mutation.ClearPayloadDigests()
+	return du
+}
+
+// RemovePayloadDigestIDs removes the "payload_digests" edge to PayloadDigest entities by IDs.
+func (du *DsseUpdate) RemovePayloadDigestIDs(ids ...int) *DsseUpdate {
+	du.mutation.RemovePayloadDigestIDs(ids...)
+	return du
+}
+
+// RemovePayloadDigests removes "payload_digests" edges to PayloadDigest entities.
+func (du *DsseUpdate) RemovePayloadDigests(p ...*PayloadDigest) *DsseUpdate {
+	ids := make([]int, len(p))
+	for i := range p {
+		ids[i] = p[i].ID
+	}
+	return du.RemovePayloadDigestIDs(ids...)
 }
 
 // Save executes the query and returns the number of nodes affected by the update operation.
@@ -303,6 +340,60 @@ func (du *DsseUpdate) sqlSave(ctx context.Context) (n int, err error) {
 		}
 		_spec.Edges.Add = append(_spec.Edges.Add, edge)
 	}
+	if du.mutation.PayloadDigestsCleared() {
+		edge := &sqlgraph.EdgeSpec{
+			Rel:     sqlgraph.O2M,
+			Inverse: false,
+			Table:   dsse.PayloadDigestsTable,
+			Columns: []string{dsse.PayloadDigestsColumn},
+			Bidi:    false,
+			Target: &sqlgraph.EdgeTarget{
+				IDSpec: &sqlgraph.FieldSpec{
+					Type:   field.TypeInt,
+					Column: payloaddigest.FieldID,
+				},
+			},
+		}
+		_spec.Edges.Clear = append(_spec.Edges.Clear, edge)
+	}
+	if nodes := du.mutation.RemovedPayloadDigestsIDs(); len(nodes) > 0 && !du.mutation.PayloadDigestsCleared() {
+		edge := &sqlgraph.EdgeSpec{
+			Rel:     sqlgraph.O2M,
+			Inverse: false,
+			Table:   dsse.PayloadDigestsTable,
+			Columns: []string{dsse.PayloadDigestsColumn},
+			Bidi:    false,
+			Target: &sqlgraph.EdgeTarget{
+				IDSpec: &sqlgraph.FieldSpec{
+					Type:   field.TypeInt,
+					Column: payloaddigest.FieldID,
+				},
+			},
+		}
+		for _, k := range nodes {
+			edge.Target.Nodes = append(edge.Target.Nodes, k)
+		}
+		_spec.Edges.Clear = append(_spec.Edges.Clear, edge)
+	}
+	if nodes := du.mutation.PayloadDigestsIDs(); len(nodes) > 0 {
+		edge := &sqlgraph.EdgeSpec{
+			Rel:     sqlgraph.O2M,
+			Inverse: false,
+			Table:   dsse.PayloadDigestsTable,
+			Columns: []string{dsse.PayloadDigestsColumn},
+			Bidi:    false,
+			Target: &sqlgraph.EdgeTarget{
+				IDSpec: &sqlgraph.FieldSpec{
+					Type:   field.TypeInt,
+					Column: payloaddigest.FieldID,
+				},
+			},
+		}
+		for _, k := range nodes {
+			edge.Target.Nodes = append(edge.Target.Nodes, k)
+		}
+		_spec.Edges.Add = append(_spec.Edges.Add, edge)
+	}
 	if n, err = sqlgraph.UpdateNodes(ctx, du.driver, _spec); err != nil {
 		if _, ok := err.(*sqlgraph.NotFoundError); ok {
 			err = &NotFoundError{dsse.Label}
@@ -368,6 +459,21 @@ func (duo *DsseUpdateOne) AddSignatures(s ...*Signature) *DsseUpdateOne {
 	return duo.AddSignatureIDs(ids...)
 }
 
+// AddPayloadDigestIDs adds the "payload_digests" edge to the PayloadDigest entity by IDs.
+func (duo *DsseUpdateOne) AddPayloadDigestIDs(ids ...int) *DsseUpdateOne {
+	duo.mutation.AddPayloadDigestIDs(ids...)
+	return duo
+}
+
+// AddPayloadDigests adds the "payload_digests" edges to the PayloadDigest entity.
+func (duo *DsseUpdateOne) AddPayloadDigests(p ...*PayloadDigest) *DsseUpdateOne {
+	ids := make([]int, len(p))
+	for i := range p {
+		ids[i] = p[i].ID
+	}
+	return duo.AddPayloadDigestIDs(ids...)
+}
+
 // Mutation returns the DsseMutation object of the builder.
 func (duo *DsseUpdateOne) Mutation() *DsseMutation {
 	return duo.mutation
@@ -398,6 +504,27 @@ func (duo *DsseUpdateOne) RemoveSignatures(s ...*Signature) *DsseUpdateOne {
 		ids[i] = s[i].ID
 	}
 	return duo.RemoveSignatureIDs(ids...)
+}
+
+// ClearPayloadDigests clears all "payload_digests" edges to the PayloadDigest entity.
+func (duo *DsseUpdateOne) ClearPayloadDigests() *DsseUpdateOne {
+	duo.mutation.ClearPayloadDigests()
+	return duo
+}
+
+// RemovePayloadDigestIDs removes the "payload_digests" edge to PayloadDigest entities by IDs.
+func (duo *DsseUpdateOne) RemovePayloadDigestIDs(ids ...int) *DsseUpdateOne {
+	duo.mutation.RemovePayloadDigestIDs(ids...)
+	return duo
+}
+
+// RemovePayloadDigests removes "payload_digests" edges to PayloadDigest entities.
+func (duo *DsseUpdateOne) RemovePayloadDigests(p ...*PayloadDigest) *DsseUpdateOne {
+	ids := make([]int, len(p))
+	for i := range p {
+		ids[i] = p[i].ID
+	}
+	return duo.RemovePayloadDigestIDs(ids...)
 }
 
 // Select allows selecting one or more fields (columns) of the returned entity.
@@ -612,6 +739,60 @@ func (duo *DsseUpdateOne) sqlSave(ctx context.Context) (_node *Dsse, err error) 
 				IDSpec: &sqlgraph.FieldSpec{
 					Type:   field.TypeInt,
 					Column: signature.FieldID,
+				},
+			},
+		}
+		for _, k := range nodes {
+			edge.Target.Nodes = append(edge.Target.Nodes, k)
+		}
+		_spec.Edges.Add = append(_spec.Edges.Add, edge)
+	}
+	if duo.mutation.PayloadDigestsCleared() {
+		edge := &sqlgraph.EdgeSpec{
+			Rel:     sqlgraph.O2M,
+			Inverse: false,
+			Table:   dsse.PayloadDigestsTable,
+			Columns: []string{dsse.PayloadDigestsColumn},
+			Bidi:    false,
+			Target: &sqlgraph.EdgeTarget{
+				IDSpec: &sqlgraph.FieldSpec{
+					Type:   field.TypeInt,
+					Column: payloaddigest.FieldID,
+				},
+			},
+		}
+		_spec.Edges.Clear = append(_spec.Edges.Clear, edge)
+	}
+	if nodes := duo.mutation.RemovedPayloadDigestsIDs(); len(nodes) > 0 && !duo.mutation.PayloadDigestsCleared() {
+		edge := &sqlgraph.EdgeSpec{
+			Rel:     sqlgraph.O2M,
+			Inverse: false,
+			Table:   dsse.PayloadDigestsTable,
+			Columns: []string{dsse.PayloadDigestsColumn},
+			Bidi:    false,
+			Target: &sqlgraph.EdgeTarget{
+				IDSpec: &sqlgraph.FieldSpec{
+					Type:   field.TypeInt,
+					Column: payloaddigest.FieldID,
+				},
+			},
+		}
+		for _, k := range nodes {
+			edge.Target.Nodes = append(edge.Target.Nodes, k)
+		}
+		_spec.Edges.Clear = append(_spec.Edges.Clear, edge)
+	}
+	if nodes := duo.mutation.PayloadDigestsIDs(); len(nodes) > 0 {
+		edge := &sqlgraph.EdgeSpec{
+			Rel:     sqlgraph.O2M,
+			Inverse: false,
+			Table:   dsse.PayloadDigestsTable,
+			Columns: []string{dsse.PayloadDigestsColumn},
+			Bidi:    false,
+			Target: &sqlgraph.EdgeTarget{
+				IDSpec: &sqlgraph.FieldSpec{
+					Type:   field.TypeInt,
+					Column: payloaddigest.FieldID,
 				},
 			},
 		}
