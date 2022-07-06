@@ -30,10 +30,10 @@ import (
 
 	"github.com/testifysec/archivist-api/pkg/api/archivist"
 	"github.com/testifysec/archivist/internal/config"
+	"github.com/testifysec/archivist/internal/metadatastorage/mysqlstore"
+	"github.com/testifysec/archivist/internal/objectstorage/blobstore"
+	"github.com/testifysec/archivist/internal/objectstorage/filestore"
 	"github.com/testifysec/archivist/internal/server"
-	"github.com/testifysec/archivist/internal/storage/blob"
-	"github.com/testifysec/archivist/internal/storage/filestore"
-	"github.com/testifysec/archivist/internal/storage/mysqlstore"
 
 	nested "github.com/antonfisher/nested-logrus-formatter"
 	"github.com/networkservicemesh/sdk/pkg/tools/debug"
@@ -105,7 +105,7 @@ func main() {
 		logrus.Fatalf("error initializing storage clients: %+v", err)
 	}
 
-	mysqlStore, mysqlStoreCh, err := mysqlstore.NewServer(ctx, cfg.SQLStoreConnectionString, fileStore)
+	mysqlStore, mysqlStoreCh, err := mysqlstore.NewServer(ctx, cfg.SQLStoreConnectionString)
 
 	log.FromContext(ctx).WithField("duration", time.Since(now)).Infof("completed phase 3: initializing storage clients")
 	// ********************************************************************************
@@ -117,7 +117,7 @@ func main() {
 	archivistService := server.NewArchivistServer(mysqlStore)
 	archivist.RegisterArchivistServer(grpcServer, archivistService)
 
-	collectorService := server.NewCollectorServer(mysqlStore)
+	collectorService := server.NewCollectorServer(mysqlStore, fileStore)
 	archivist.RegisterCollectorServer(grpcServer, collectorService)
 
 	srvErrCh := grpcutils.ListenAndServe(ctx, &cfg.ListenOn, grpcServer)

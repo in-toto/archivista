@@ -13,8 +13,9 @@ require (
 	github.com/minio/minio-go v6.0.14+incompatible
 	github.com/networkservicemesh/sdk v1.3.0
 	github.com/sirupsen/logrus v1.8.1
+	github.com/spf13/cobra v1.4.0
 	github.com/spiffe/go-spiffe/v2 v2.0.0
-	github.com/testifysec/archivist-api v0.0.0-20220603060816-12e25ceccbf1
+	github.com/testifysec/archivist-api v0.0.0-20220707182002-b803369e93a4
 	github.com/testifysec/go-witness v0.1.11
 	google.golang.org/grpc v1.46.0
 	google.golang.org/protobuf v1.28.0
@@ -36,10 +37,12 @@ require (
 	github.com/google/uuid v1.3.0 // indirect
 	github.com/grpc-ecosystem/grpc-gateway v1.16.0 // indirect
 	github.com/hashicorp/hcl/v2 v2.10.0 // indirect
+	github.com/inconshreveable/mousetrap v1.0.0 // indirect
 	github.com/mitchellh/go-homedir v1.1.0 // indirect
 	github.com/mitchellh/go-wordwrap v0.0.0-20150314170334-ad45545899c7 // indirect
 	github.com/networkservicemesh/api v1.3.0 // indirect
 	github.com/pkg/errors v0.9.1 // indirect
+	github.com/spf13/pflag v1.0.5 // indirect
 	github.com/zclconf/go-cty v1.10.0 // indirect
 	github.com/zeebo/errs v1.2.2 // indirect
 	go.opencensus.io v0.23.0 // indirect
