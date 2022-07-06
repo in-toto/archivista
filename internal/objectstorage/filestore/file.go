@@ -15,19 +15,13 @@ import (
 	"google.golang.org/protobuf/types/known/emptypb"
 )
 
-type UnifiedStorage interface {
-	archivist.CollectorServer
-	archivist.StorageServer
-}
-
 type store struct {
 	archivist.UnimplementedCollectorServer
-	archivist.UnimplementedStorageServer
 
 	prefix string
 }
 
-func NewServer(ctx context.Context, directory string, address string) (UnifiedStorage, <-chan error, error) {
+func NewServer(ctx context.Context, directory string, address string) (archivist.CollectorServer, <-chan error, error) {
 	errCh := make(chan error)
 	go func() {
 

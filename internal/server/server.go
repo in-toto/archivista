@@ -33,29 +33,42 @@ func NewArchivistServer(store archivist.ArchivistServer) archivist.ArchivistServ
 		store: store,
 	}
 }
-func (s *archivistServer) GetBySubjectDigest(ctx context.Context, request *archivist.GetBySubjectDigestRequest) (*archivist.GetBySubjectDigestResponse, error) {
+
+func (s *archivistServer) GetBySubjectDigest(request *archivist.GetBySubjectDigestRequest, server archivist.Archivist_GetBySubjectDigestServer) error {
+	ctx := server.Context()
 	logrus.WithContext(ctx).Printf("retrieving by subject... ")
-	return s.store.GetBySubjectDigest(ctx, request)
+	return s.store.GetBySubjectDigest(request, server)
 }
 
 type collectorServer struct {
 	archivist.UnimplementedCollectorServer
 
-	store archivist.CollectorServer
+	metadataStore archivist.CollectorServer
+	objectStore   archivist.CollectorServer
 }
 
-func NewCollectorServer(store archivist.CollectorServer) archivist.CollectorServer {
+func NewCollectorServer(metadataStore, objectStore archivist.CollectorServer) archivist.CollectorServer {
 	return &collectorServer{
-		store: store,
+		objectStore:   objectStore,
+		metadataStore: metadataStore,
 	}
 }
 
 func (s *collectorServer) Store(ctx context.Context, request *archivist.StoreRequest) (*emptypb.Empty, error) {
 	fmt.Println("middleware: store")
-	res, err := s.store.Store(ctx, request)
-	if err != nil {
-		logrus.WithContext(ctx).Printf("received error from database: %+v", err)
+	if _, err := s.metadataStore.Store(ctx, request); err != nil {
+		logrus.WithContext(ctx).Printf("received error from metadata store: %+v", err)
 		return nil, err
 	}
-	return res, nil
+
+	if _, err := s.objectStore.Store(ctx, request); err != nil {
+		logrus.WithContext(ctx).Printf("received error from object store: %+v", err)
+		return nil, err
+	}
+
+	return &emptypb.Empty{}, nil
+}
+
+func (s *collectorServer) Get(ctx context.Context, request *archivist.GetRequest) (*archivist.GetResponse, error) {
+	return s.objectStore.Get(ctx, request)
 }

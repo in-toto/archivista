@@ -28,6 +28,11 @@ import (
 	"github.com/sirupsen/logrus"
 	"github.com/testifysec/archivist-api/pkg/api/archivist"
 	"github.com/testifysec/archivist/ent"
+	"github.com/testifysec/archivist/ent/attestationcollection"
+	entdsse "github.com/testifysec/archivist/ent/dsse"
+	"github.com/testifysec/archivist/ent/predicate"
+	"github.com/testifysec/archivist/ent/statement"
+	"github.com/testifysec/archivist/ent/subject"
 	"github.com/testifysec/archivist/ent/subjectdigest"
 	"github.com/testifysec/go-witness/attestation"
 	"github.com/testifysec/go-witness/cryptoutil"
@@ -51,7 +56,7 @@ type store struct {
 	objectStorage archivist.CollectorServer
 }
 
-func NewServer(ctx context.Context, connectionstring string, objectStorage archivist.CollectorServer) (UnifiedStorage, <-chan error, error) {
+func NewServer(ctx context.Context, connectionstring string) (UnifiedStorage, <-chan error, error) {
 	drv, err := sql.Open("mysql", connectionstring)
 	if err != nil {
 		return nil, nil, err
@@ -88,31 +93,52 @@ func NewServer(ctx context.Context, connectionstring string, objectStorage archi
 	}
 
 	return &store{
-		client:        client,
-		objectStorage: objectStorage,
+		client: client,
 	}, errCh, nil
 }
 
-func (s *store) GetBySubjectDigest(ctx context.Context, request *archivist.GetBySubjectDigestRequest) (*archivist.GetBySubjectDigestResponse, error) {
-	res, err := s.client.SubjectDigest.Query().Where(
-		subjectdigest.And(
-			subjectdigest.Algorithm(request.Algorithm),
-			subjectdigest.Value(request.Value),
+func (s *store) GetBySubjectDigest(request *archivist.GetBySubjectDigestRequest, server archivist.Archivist_GetBySubjectDigestServer) error {
+	ctx := server.Context()
+	statementPredicates := []predicate.Statement{statement.HasSubjectsWith(
+		subject.HasSubjectDigestsWith(
+			subjectdigest.And(
+				subjectdigest.Algorithm(request.Algorithm),
+				subjectdigest.Value(request.Value),
+			),
 		),
-	).WithSubject(func(q *ent.SubjectQuery) {
-		q.WithStatement(func(q *ent.StatementQuery) {
-			q.WithDsse()
+	),
+	}
+
+	if len(request.CollectionName) > 0 {
+		statementPredicates = append(statementPredicates, statement.HasAttestationCollectionsWith(attestationcollection.Name(request.GetCollectionName())))
+	}
+
+	res, err := s.client.Dsse.Query().Where(
+		entdsse.HasStatementWith(statementPredicates...),
+	).WithStatement(func(q *ent.StatementQuery) {
+		q.WithAttestationCollections(func(q *ent.AttestationCollectionQuery) {
+			q.WithAttestations()
 		})
 	}).All(ctx)
 
-	results := make([]string, 0)
-	for _, curDigest := range res {
-		for _, curDsse := range curDigest.Edges.Subject.Edges.Statement.Edges.Dsse {
-			results = append(results, curDsse.GitbomSha256)
+	if err != nil {
+		return err
+	}
+
+	for _, curDsse := range res {
+		response := &archivist.GetBySubjectDigestResponse{}
+		response.Gitoid = curDsse.GitbomSha256
+		response.CollectionName = curDsse.Edges.Statement.Edges.AttestationCollections.Name
+		for _, curAttestation := range curDsse.Edges.Statement.Edges.AttestationCollections.Edges.Attestations {
+			response.Attestations = append(response.Attestations, curAttestation.Type)
+		}
+
+		if err := server.Send(response); err != nil {
+			return err
 		}
 	}
 
-	return &archivist.GetBySubjectDigestResponse{Object: results}, err
+	return nil
 }
 
 func (s *store) withTx(ctx context.Context, fn func(tx *ent.Tx) error) error {
@@ -266,15 +292,5 @@ func (s *store) Store(ctx context.Context, request *archivist.StoreRequest) (*em
 	}
 
 	fmt.Println("metadata stored")
-
-	if s.objectStorage != nil {
-		_, err = s.objectStorage.Store(ctx, request)
-		if err != nil {
-			return nil, err
-		}
-
-		fmt.Println("object stored")
-	}
-
 	return &emptypb.Empty{}, nil
 }

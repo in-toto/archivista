@@ -37,14 +37,8 @@ type Indexer interface {
 	PutBlob(idx string, obj []byte) error
 }
 
-type UnifiedStorage interface {
-	archivist.CollectorServer
-	archivist.StorageServer
-}
-
 type attestationBlobStore struct {
 	archivist.UnimplementedCollectorServer
-	archivist.UnimplementedStorageServer
 
 	client   *minio.Client
 	bucket   string
@@ -109,7 +103,7 @@ func (store *attestationBlobStore) PutBlob(idx string, obj []byte) error {
 }
 
 // NewMinioClient returns a reader/writer for storing/retrieving attestations
-func NewMinioClient(ctx context.Context, endpoint, accessKeyId, secretAccessKeyId, bucketName string, useSSL bool) (UnifiedStorage, <-chan error, error) {
+func NewMinioClient(ctx context.Context, endpoint, accessKeyId, secretAccessKeyId, bucketName string, useSSL bool) (archivist.CollectorServer, <-chan error, error) {
 	errCh := make(chan error)
 	go func() {
 		<-ctx.Done()
