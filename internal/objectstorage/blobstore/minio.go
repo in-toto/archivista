@@ -58,7 +58,7 @@ func (store *attestationBlobStore) GetRef(obj []byte) (string, error) {
 func (store *attestationBlobStore) GetBlob(idx string) ([]byte, error) {
 	opt := minio.GetObjectOptions{}
 	chunkSize := 8 * 1024
-	buf := make([]byte, chunkSize)
+	buf := make([]byte, 0, chunkSize)
 	outBuf := bytes.NewBuffer(buf)
 
 	obj, err := store.client.GetObject(store.bucket, idx, opt)
