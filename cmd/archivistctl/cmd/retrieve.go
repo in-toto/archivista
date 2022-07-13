@@ -1,10 +1,10 @@
 package cmd
 
 import (
+	"bytes"
 	"context"
 	"io"
 	"os"
-	"strings"
 
 	"github.com/spf13/cobra"
 	"github.com/testifysec/archivist-api/pkg/api/archivist"
@@ -46,13 +46,24 @@ func init() {
 }
 
 func retrieveEnvelope(ctx context.Context, client archivist.CollectorClient, gitoid string, out io.Writer) error {
-	resp, err := client.Get(ctx, &archivist.GetRequest{Gitoid: gitoid})
+	stream, err := client.Get(ctx, &archivist.GetRequest{Gitoid: gitoid})
 	if err != nil {
 		return err
 	}
 
-	if _, err := io.Copy(out, strings.NewReader(resp.Object)); err != nil {
-		return err
+	for {
+		chunk, err := stream.Recv()
+		if err == io.EOF {
+			break
+		}
+
+		if err != nil {
+			return err
+		}
+
+		if _, err := io.Copy(out, bytes.NewReader(chunk.GetChunk())); err != nil {
+			return err
+		}
 	}
 
 	return nil

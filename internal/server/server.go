@@ -15,60 +15,141 @@
 package server
 
 import (
+	"bufio"
 	"context"
-	"fmt"
+	"io"
+
+	"github.com/git-bom/gitbom-go"
 	"github.com/sirupsen/logrus"
 	"github.com/testifysec/archivist-api/pkg/api/archivist"
-	"google.golang.org/protobuf/types/known/emptypb"
 )
+
+const ChunkSize = 64 * 1024 //64kb seems to be somewhat of an agreed upon message size when streaming: https://github.com/grpc/grpc.github.io/issues/371
 
 type archivistServer struct {
 	archivist.UnimplementedArchivistServer
 
-	store archivist.ArchivistServer
+	store MetadataStorer
 }
 
-func NewArchivistServer(store archivist.ArchivistServer) archivist.ArchivistServer {
+func NewArchivistServer(store MetadataStorer) archivist.ArchivistServer {
 	return &archivistServer{
 		store: store,
 	}
 }
 
 func (s *archivistServer) GetBySubjectDigest(request *archivist.GetBySubjectDigestRequest, server archivist.Archivist_GetBySubjectDigestServer) error {
-	ctx := server.Context()
+	ctx, cancel := context.WithCancel(server.Context())
+	defer cancel()
 	logrus.WithContext(ctx).Printf("retrieving by subject... ")
-	return s.store.GetBySubjectDigest(request, server)
+	responses, err := s.store.GetBySubjectDigest(ctx, request)
+	if err != nil {
+		return err
+	}
+
+	for response := range responses {
+		if err := server.Send(response); err != nil {
+			return err
+		}
+	}
+
+	return nil
 }
 
 type collectorServer struct {
 	archivist.UnimplementedCollectorServer
 
-	metadataStore archivist.CollectorServer
-	objectStore   archivist.CollectorServer
+	metadataStore MetadataStorer
+	objectStore   ObjectStorer
 }
 
-func NewCollectorServer(metadataStore, objectStore archivist.CollectorServer) archivist.CollectorServer {
+type Storer interface {
+	Store(context.Context, string, []byte) error
+}
+
+type MetadataStorer interface {
+	Storer
+	GetBySubjectDigest(context.Context, *archivist.GetBySubjectDigestRequest) (<-chan *archivist.GetBySubjectDigestResponse, error)
+}
+
+type ObjectStorer interface {
+	Storer
+	Get(context.Context, *archivist.GetRequest) (io.ReadCloser, error)
+}
+
+func NewCollectorServer(metadataStore MetadataStorer, objectStore ObjectStorer) archivist.CollectorServer {
 	return &collectorServer{
 		objectStore:   objectStore,
 		metadataStore: metadataStore,
 	}
 }
 
-func (s *collectorServer) Store(ctx context.Context, request *archivist.StoreRequest) (*emptypb.Empty, error) {
-	fmt.Println("middleware: store")
-	if _, err := s.metadataStore.Store(ctx, request); err != nil {
+func (s *collectorServer) Store(server archivist.Collector_StoreServer) error {
+	ctx := server.Context()
+	payload := make([]byte, 0)
+	for {
+		c, err := server.Recv()
+		if err == io.EOF {
+			break
+		}
+
+		if err != nil {
+			return err
+		}
+
+		payload = append(payload, c.GetChunk()...)
+	}
+
+	// generate gitbom
+	gb := gitbom.NewSha256GitBom()
+	if err := gb.AddReference(payload, nil); err != nil {
+		logrus.WithContext(ctx).Errorf("gitbom tag generation failed: %+v", err)
+		return err
+	}
+
+	gitoid := gb.Identity()
+	if err := s.metadataStore.Store(ctx, gitoid, payload); err != nil {
 		logrus.WithContext(ctx).Printf("received error from metadata store: %+v", err)
-		return nil, err
+		return err
 	}
 
-	if _, err := s.objectStore.Store(ctx, request); err != nil {
-		logrus.WithContext(ctx).Printf("received error from object store: %+v", err)
-		return nil, err
+	if s.objectStore != nil {
+		if err := s.objectStore.Store(ctx, gitoid, payload); err != nil {
+			logrus.WithContext(ctx).Printf("received error from object store: %+v", err)
+			return err
+		}
 	}
 
-	return &emptypb.Empty{}, nil
+	return server.SendAndClose(&archivist.StoreResponse{Gitoid: gitoid})
 }
 
-func (s *collectorServer) Get(ctx context.Context, request *archivist.GetRequest) (*archivist.GetResponse, error) {
-	return s.objectStore.Get(ctx, request)
+func (s *collectorServer) Get(request *archivist.GetRequest, server archivist.Collector_GetServer) error {
+	if s.objectStore == nil {
+		return s.UnimplementedCollectorServer.Get(request, server)
+	}
+
+	objReader, err := s.objectStore.Get(server.Context(), request)
+	defer objReader.Close()
+	if err != nil {
+		return err
+	}
+
+	chunk := &archivist.Chunk{}
+	buf := make([]byte, ChunkSize)
+	r := bufio.NewReaderSize(objReader, ChunkSize)
+	for {
+		n, err := io.ReadFull(r, buf)
+		if err == io.EOF {
+			break
+		} else if err != nil && err != io.ErrUnexpectedEOF {
+			return err
+		}
+
+		chunk.Chunk = buf[:n]
+		if err := server.Send(chunk); err != nil {
+			return err
+		}
+	}
+
+	return nil
 }

@@ -15,10 +15,9 @@ require (
 	github.com/sirupsen/logrus v1.8.1
 	github.com/spf13/cobra v1.4.0
 	github.com/spiffe/go-spiffe/v2 v2.0.0
-	github.com/testifysec/archivist-api v0.0.0-20220707182002-b803369e93a4
+	github.com/testifysec/archivist-api v0.0.0-20220719182705-980989009502
 	github.com/testifysec/go-witness v0.1.11
 	google.golang.org/grpc v1.46.0
-	google.golang.org/protobuf v1.28.0
 )
 
 require (
@@ -65,5 +64,6 @@ require (
 	golang.org/x/sys v0.0.0-20220412211240-33da011f77ad // indirect
 	golang.org/x/text v0.3.7 // indirect
 	google.golang.org/genproto v0.0.0-20220222213610-43724f9ea8cf // indirect
+	google.golang.org/protobuf v1.28.0 // indirect
 	gopkg.in/square/go-jose.v2 v2.6.0 // indirect
 )

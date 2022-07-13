@@ -31,7 +31,7 @@ import (
 	"github.com/testifysec/archivist-api/pkg/api/archivist"
 	"github.com/testifysec/archivist/internal/config"
 	"github.com/testifysec/archivist/internal/metadatastorage/mysqlstore"
-	"github.com/testifysec/archivist/internal/objectstorage/blobstore"
+	blob "github.com/testifysec/archivist/internal/objectstorage/blobstore"
 	"github.com/testifysec/archivist/internal/objectstorage/filestore"
 	"github.com/testifysec/archivist/internal/server"
 
@@ -105,7 +105,7 @@ func main() {
 		logrus.Fatalf("error initializing storage clients: %+v", err)
 	}
 
-	mysqlStore, mysqlStoreCh, err := mysqlstore.NewServer(ctx, cfg.SQLStoreConnectionString)
+	mysqlStore, mysqlStoreCh, err := mysqlstore.New(ctx, cfg.SQLStoreConnectionString)
 
 	log.FromContext(ctx).WithField("duration", time.Since(now)).Infof("completed phase 3: initializing storage clients")
 	// ********************************************************************************
@@ -166,13 +166,13 @@ func initSpiffeConnection(ctx context.Context, cfg *config.Config) []grpc.Server
 	return opts
 }
 
-func initObjectStore(ctx context.Context, cfg *config.Config) (archivist.CollectorServer, <-chan error, error) {
+func initObjectStore(ctx context.Context, cfg *config.Config) (server.ObjectStorer, <-chan error, error) {
 	switch strings.ToUpper(cfg.StorageBackend) {
 	case "FILE":
-		return filestore.NewServer(ctx, cfg.FileDir, cfg.FileServeOn)
+		return filestore.New(ctx, cfg.FileDir, cfg.FileServeOn)
 
 	case "BLOB":
-		return blob.NewMinioClient(
+		return blob.New(
 			ctx,
 			cfg.BlobStoreEndpoint,
 			cfg.BlobStoreAccessKeyId,
