@@ -24,7 +24,6 @@ import (
 
 	"ariga.io/sqlcomment"
 	"entgo.io/ent/dialect/sql"
-	"github.com/git-bom/gitbom-go"
 	"github.com/sirupsen/logrus"
 	"github.com/testifysec/archivist-api/pkg/api/archivist"
 	"github.com/testifysec/archivist/ent"
@@ -38,25 +37,15 @@ import (
 	"github.com/testifysec/go-witness/cryptoutil"
 	"github.com/testifysec/go-witness/dsse"
 	"github.com/testifysec/go-witness/intoto"
-	"google.golang.org/protobuf/types/known/emptypb"
 
 	_ "github.com/go-sql-driver/mysql"
 )
 
-type UnifiedStorage interface {
-	archivist.ArchivistServer
-	archivist.CollectorServer
+type Store struct {
+	client *ent.Client
 }
 
-type store struct {
-	archivist.UnimplementedArchivistServer
-	archivist.UnimplementedCollectorServer
-
-	client        *ent.Client
-	objectStorage archivist.CollectorServer
-}
-
-func NewServer(ctx context.Context, connectionstring string) (UnifiedStorage, <-chan error, error) {
+func New(ctx context.Context, connectionstring string) (*Store, <-chan error, error) {
 	drv, err := sql.Open("mysql", connectionstring)
 	if err != nil {
 		return nil, nil, err
@@ -92,13 +81,12 @@ func NewServer(ctx context.Context, connectionstring string) (UnifiedStorage, <-
 		logrus.WithContext(ctx).Fatalf("failed creating schema resources: %v", err)
 	}
 
-	return &store{
+	return &Store{
 		client: client,
 	}, errCh, nil
 }
 
-func (s *store) GetBySubjectDigest(request *archivist.GetBySubjectDigestRequest, server archivist.Archivist_GetBySubjectDigestServer) error {
-	ctx := server.Context()
+func (s *Store) GetBySubjectDigest(ctx context.Context, request *archivist.GetBySubjectDigestRequest) (<-chan *archivist.GetBySubjectDigestResponse, error) {
 	statementPredicates := []predicate.Statement{statement.HasSubjectsWith(
 		subject.HasSubjectDigestsWith(
 			subjectdigest.And(
@@ -122,26 +110,32 @@ func (s *store) GetBySubjectDigest(request *archivist.GetBySubjectDigestRequest,
 	}).All(ctx)
 
 	if err != nil {
-		return err
+		return nil, err
 	}
 
-	for _, curDsse := range res {
-		response := &archivist.GetBySubjectDigestResponse{}
-		response.Gitoid = curDsse.GitbomSha256
-		response.CollectionName = curDsse.Edges.Statement.Edges.AttestationCollections.Name
-		for _, curAttestation := range curDsse.Edges.Statement.Edges.AttestationCollections.Edges.Attestations {
-			response.Attestations = append(response.Attestations, curAttestation.Type)
-		}
+	out := make(chan *archivist.GetBySubjectDigestResponse, 1)
+	go func() {
+		defer close(out)
+		for _, curDsse := range res {
+			response := &archivist.GetBySubjectDigestResponse{}
+			response.Gitoid = curDsse.GitbomSha256
+			response.CollectionName = curDsse.Edges.Statement.Edges.AttestationCollections.Name
+			for _, curAttestation := range curDsse.Edges.Statement.Edges.AttestationCollections.Edges.Attestations {
+				response.Attestations = append(response.Attestations, curAttestation.Type)
+			}
 
-		if err := server.Send(response); err != nil {
-			return err
+			select {
+			case <-ctx.Done():
+				return
+			case out <- response:
+			}
 		}
-	}
+	}()
 
-	return nil
+	return out, nil
 }
 
-func (s *store) withTx(ctx context.Context, fn func(tx *ent.Tx) error) error {
+func (s *Store) withTx(ctx context.Context, fn func(tx *ent.Tx) error) error {
 	tx, err := s.client.Tx(ctx)
 	if err != nil {
 		return err
@@ -173,41 +167,31 @@ type parsedCollection struct {
 	} `json:"attestations"`
 }
 
-func (s *store) Store(ctx context.Context, request *archivist.StoreRequest) (*emptypb.Empty, error) {
-	fmt.Println("STORING")
-
-	obj := request.GetObject()
+func (s *Store) Store(ctx context.Context, gitoid string, obj []byte) error {
 	envelope := &dsse.Envelope{}
-	if err := json.Unmarshal([]byte(obj), envelope); err != nil {
-		return nil, err
+	if err := json.Unmarshal(obj, envelope); err != nil {
+		return err
 	}
 
 	payloadDigestSet, err := cryptoutil.CalculateDigestSetFromBytes(envelope.Payload, []crypto.Hash{crypto.SHA256})
 	if err != nil {
-		return nil, err
+		return err
 	}
 
 	payload := &intoto.Statement{}
 	if err := json.Unmarshal(envelope.Payload, payload); err != nil {
-		return nil, err
+		return err
 	}
 
 	parsedCollection := &parsedCollection{}
 	if err := json.Unmarshal(payload.Predicate, parsedCollection); err != nil {
-		return nil, err
-	}
-
-	// generate gitbom
-	gb := gitbom.NewSha256GitBom()
-	if err := gb.AddReference([]byte(obj), nil); err != nil {
-		logrus.WithContext(ctx).Errorf("gitbom tag generation failed: %+v", err)
-		return nil, err
+		return err
 	}
 
 	err = s.withTx(ctx, func(tx *ent.Tx) error {
 		dsse, err := tx.Dsse.Create().
 			SetPayloadType(envelope.PayloadType).
-			SetGitbomSha256(gb.Identity()).
+			SetGitbomSha256(gitoid).
 			Save(ctx)
 		if err != nil {
 			return err
@@ -288,9 +272,8 @@ func (s *store) Store(ctx context.Context, request *archivist.StoreRequest) (*em
 
 	if err != nil {
 		logrus.Errorf("unable to store metadata: %+v", err)
-		return nil, err
+		return err
 	}
 
-	fmt.Println("metadata stored")
-	return &emptypb.Empty{}, nil
+	return nil
 }
