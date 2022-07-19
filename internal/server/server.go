@@ -56,6 +56,23 @@ func (s *archivistServer) GetBySubjectDigest(request *archivist.GetBySubjectDige
 	return nil
 }
 
+func (s *archivistServer) GetSubjects(req *archivist.GetSubjectsRequest, server archivist.Archivist_GetSubjectsServer) error {
+	ctx, cancel := context.WithCancel(server.Context())
+	defer cancel()
+	subjects, err := s.store.GetSubjects(ctx, req)
+	if err != nil {
+		return err
+	}
+
+	for subject := range subjects {
+		if err := server.Send(subject); err != nil {
+			return err
+		}
+	}
+
+	return nil
+}
+
 type collectorServer struct {
 	archivist.UnimplementedCollectorServer
 
@@ -70,6 +87,7 @@ type Storer interface {
 type MetadataStorer interface {
 	Storer
 	GetBySubjectDigest(context.Context, *archivist.GetBySubjectDigestRequest) (<-chan *archivist.GetBySubjectDigestResponse, error)
+	GetSubjects(context.Context, *archivist.GetSubjectsRequest) (<-chan *archivist.GetSubjectsResponse, error)
 }
 
 type ObjectStorer interface {

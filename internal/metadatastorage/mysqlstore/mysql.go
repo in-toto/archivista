@@ -135,6 +135,44 @@ func (s *Store) GetBySubjectDigest(ctx context.Context, request *archivist.GetBy
 	return out, nil
 }
 
+func (s *Store) GetSubjects(ctx context.Context, req *archivist.GetSubjectsRequest) (<-chan *archivist.GetSubjectsResponse, error) {
+	subjects, err := s.client.Subject.Query().Where(
+		subject.HasStatementWith(
+			statement.HasDsseWith(
+				entdsse.GitbomSha256(req.GetEnvelopeGitoid()),
+			),
+		),
+	).WithSubjectDigests().All(ctx)
+
+	if err != nil {
+		return nil, err
+	}
+
+	out := make(chan *archivist.GetSubjectsResponse, 1)
+	go func() {
+		defer close(out)
+
+		for _, subject := range subjects {
+			response := &archivist.GetSubjectsResponse{
+				Name:   subject.Name,
+				Digest: make(map[string]string),
+			}
+
+			for _, digest := range subject.Edges.SubjectDigests {
+				response.Digest[digest.Algorithm] = digest.Value
+			}
+
+			select {
+			case <-ctx.Done():
+				return
+			case out <- response:
+			}
+		}
+	}()
+
+	return out, nil
+}
+
 func (s *Store) withTx(ctx context.Context, fn func(tx *ent.Tx) error) error {
 	tx, err := s.client.Tx(ctx)
 	if err != nil {

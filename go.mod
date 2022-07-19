@@ -15,7 +15,7 @@ require (
 	github.com/sirupsen/logrus v1.8.1
 	github.com/spf13/cobra v1.4.0
 	github.com/spiffe/go-spiffe/v2 v2.0.0
-	github.com/testifysec/archivist-api v0.0.0-20220719182705-980989009502
+	github.com/testifysec/archivist-api v0.0.0-20220719182744-ef1778aa0dba
 	github.com/testifysec/go-witness v0.1.11
 	google.golang.org/grpc v1.46.0
 )
