@@ -3,8 +3,10 @@ package cmd
 import (
 	"bytes"
 	"context"
+	"fmt"
 	"io"
 	"os"
+	"strings"
 
 	"github.com/spf13/cobra"
 	"github.com/testifysec/archivist-api/pkg/api/archivist"
@@ -15,6 +17,12 @@ var (
 
 	retrieveCmd = &cobra.Command{
 		Use:          "retrieve",
+		Short:        "Retrieve information from an archivist server",
+		SilenceUsage: true,
+	}
+
+	envelopeCmd = &cobra.Command{
+		Use:          "envelope",
 		Short:        "Retrieves a dsse envelope by it's gitoid from archivist",
 		SilenceUsage: true,
 		Args:         cobra.ExactArgs(1),
@@ -38,11 +46,59 @@ var (
 			return retrieveEnvelope(cmd.Context(), archivist.NewCollectorClient(conn), args[0], out)
 		},
 	}
+
+	subjectCmd = &cobra.Command{
+		Use:          "subjects",
+		Short:        "Retrieves all subjects on an in-toto statement by the envelope gitoid",
+		SilenceUsage: true,
+		Args:         cobra.ExactArgs(1),
+		RunE: func(cmd *cobra.Command, args []string) error {
+			conn, err := newConn(archivistUrl)
+			if err != nil {
+				return err
+			}
+
+			return retrieveSubjects(cmd.Context(), archivist.NewArchivistClient(conn), args[0])
+		},
+	}
 )
 
 func init() {
 	rootCmd.AddCommand(retrieveCmd)
-	retrieveCmd.Flags().StringVarP(&outFile, "out", "o", "", "File to write the envelope out to. Defaults to stdout")
+	retrieveCmd.AddCommand(envelopeCmd)
+	retrieveCmd.AddCommand(subjectCmd)
+	envelopeCmd.Flags().StringVarP(&outFile, "out", "o", "", "File to write the envelope out to. Defaults to stdout")
+}
+
+func retrieveSubjects(ctx context.Context, client archivist.ArchivistClient, gitoid string) error {
+	stream, err := client.GetSubjects(ctx, &archivist.GetSubjectsRequest{EnvelopeGitoid: gitoid})
+	if err != nil {
+		return err
+	}
+
+	for {
+		subject, err := stream.Recv()
+		if err == io.EOF {
+			break
+		}
+
+		if err != nil {
+			return err
+		}
+
+		fmt.Printf("Name: %s\nDigests:\n%s\n", subject.GetName(), digestString(subject.GetDigest()))
+	}
+
+	return nil
+}
+
+func digestString(digest map[string]string) string {
+	sb := strings.Builder{}
+	for algo, value := range digest {
+		sb.WriteString(fmt.Sprintf("Algo: %s\nValue: %s\n", algo, value))
+	}
+
+	return sb.String()
 }
 
 func retrieveEnvelope(ctx context.Context, client archivist.CollectorClient, gitoid string, out io.Writer) error {

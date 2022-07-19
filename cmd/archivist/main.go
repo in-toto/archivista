@@ -31,7 +31,7 @@ import (
 	"github.com/testifysec/archivist-api/pkg/api/archivist"
 	"github.com/testifysec/archivist/internal/config"
 	"github.com/testifysec/archivist/internal/metadatastorage/mysqlstore"
-	blob "github.com/testifysec/archivist/internal/objectstorage/blobstore"
+	"github.com/testifysec/archivist/internal/objectstorage/blobstore"
 	"github.com/testifysec/archivist/internal/objectstorage/filestore"
 	"github.com/testifysec/archivist/internal/server"
 
@@ -172,7 +172,7 @@ func initObjectStore(ctx context.Context, cfg *config.Config) (server.ObjectStor
 		return filestore.New(ctx, cfg.FileDir, cfg.FileServeOn)
 
 	case "BLOB":
-		return blob.New(
+		return blobstore.New(
 			ctx,
 			cfg.BlobStoreEndpoint,
 			cfg.BlobStoreAccessKeyId,

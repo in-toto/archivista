@@ -15,7 +15,7 @@ services:
 
   archivist:
     build: .
-    restart: always
+    restart: unless-stopped
     environment:
       ARCHIVIST_ENABLE_SPIFFE: "false"
       ARCHIVIST_LISTEN_ON: tcp://0.0.0.0:8080
