@@ -44,6 +44,8 @@ type Client struct {
 	Subject *SubjectClient
 	// SubjectDigest is the client for interacting with the SubjectDigest builders.
 	SubjectDigest *SubjectDigestClient
+	// additional fields for node api
+	tables tables
 }
 
 // NewClient creates a new client configured with the given options.
@@ -188,7 +190,7 @@ func (c *AttestationClient) Use(hooks ...Hook) {
 	c.hooks.Attestation = append(c.hooks.Attestation, hooks...)
 }
 
-// Create returns a create builder for Attestation.
+// Create returns a builder for creating a Attestation entity.
 func (c *AttestationClient) Create() *AttestationCreate {
 	mutation := newAttestationMutation(c.config, OpCreate)
 	return &AttestationCreate{config: c.config, hooks: c.Hooks(), mutation: mutation}
@@ -223,12 +225,12 @@ func (c *AttestationClient) Delete() *AttestationDelete {
 	return &AttestationDelete{config: c.config, hooks: c.Hooks(), mutation: mutation}
 }
 
-// DeleteOne returns a delete builder for the given entity.
+// DeleteOne returns a builder for deleting the given entity.
 func (c *AttestationClient) DeleteOne(a *Attestation) *AttestationDeleteOne {
 	return c.DeleteOneID(a.ID)
 }
 
-// DeleteOneID returns a delete builder for the given id.
+// DeleteOne returns a builder for deleting the given entity by its id.
 func (c *AttestationClient) DeleteOneID(id int) *AttestationDeleteOne {
 	builder := c.Delete().Where(attestation.ID(id))
 	builder.mutation.id = &id
@@ -294,7 +296,7 @@ func (c *AttestationCollectionClient) Use(hooks ...Hook) {
 	c.hooks.AttestationCollection = append(c.hooks.AttestationCollection, hooks...)
 }
 
-// Create returns a create builder for AttestationCollection.
+// Create returns a builder for creating a AttestationCollection entity.
 func (c *AttestationCollectionClient) Create() *AttestationCollectionCreate {
 	mutation := newAttestationCollectionMutation(c.config, OpCreate)
 	return &AttestationCollectionCreate{config: c.config, hooks: c.Hooks(), mutation: mutation}
@@ -329,12 +331,12 @@ func (c *AttestationCollectionClient) Delete() *AttestationCollectionDelete {
 	return &AttestationCollectionDelete{config: c.config, hooks: c.Hooks(), mutation: mutation}
 }
 
-// DeleteOne returns a delete builder for the given entity.
+// DeleteOne returns a builder for deleting the given entity.
 func (c *AttestationCollectionClient) DeleteOne(ac *AttestationCollection) *AttestationCollectionDeleteOne {
 	return c.DeleteOneID(ac.ID)
 }
 
-// DeleteOneID returns a delete builder for the given id.
+// DeleteOne returns a builder for deleting the given entity by its id.
 func (c *AttestationCollectionClient) DeleteOneID(id int) *AttestationCollectionDeleteOne {
 	builder := c.Delete().Where(attestationcollection.ID(id))
 	builder.mutation.id = &id
@@ -416,7 +418,7 @@ func (c *DsseClient) Use(hooks ...Hook) {
 	c.hooks.Dsse = append(c.hooks.Dsse, hooks...)
 }
 
-// Create returns a create builder for Dsse.
+// Create returns a builder for creating a Dsse entity.
 func (c *DsseClient) Create() *DsseCreate {
 	mutation := newDsseMutation(c.config, OpCreate)
 	return &DsseCreate{config: c.config, hooks: c.Hooks(), mutation: mutation}
@@ -451,12 +453,12 @@ func (c *DsseClient) Delete() *DsseDelete {
 	return &DsseDelete{config: c.config, hooks: c.Hooks(), mutation: mutation}
 }
 
-// DeleteOne returns a delete builder for the given entity.
+// DeleteOne returns a builder for deleting the given entity.
 func (c *DsseClient) DeleteOne(d *Dsse) *DsseDeleteOne {
 	return c.DeleteOneID(d.ID)
 }
 
-// DeleteOneID returns a delete builder for the given id.
+// DeleteOne returns a builder for deleting the given entity by its id.
 func (c *DsseClient) DeleteOneID(id int) *DsseDeleteOne {
 	builder := c.Delete().Where(dsse.ID(id))
 	builder.mutation.id = &id
@@ -554,7 +556,7 @@ func (c *PayloadDigestClient) Use(hooks ...Hook) {
 	c.hooks.PayloadDigest = append(c.hooks.PayloadDigest, hooks...)
 }
 
-// Create returns a create builder for PayloadDigest.
+// Create returns a builder for creating a PayloadDigest entity.
 func (c *PayloadDigestClient) Create() *PayloadDigestCreate {
 	mutation := newPayloadDigestMutation(c.config, OpCreate)
 	return &PayloadDigestCreate{config: c.config, hooks: c.Hooks(), mutation: mutation}
@@ -589,12 +591,12 @@ func (c *PayloadDigestClient) Delete() *PayloadDigestDelete {
 	return &PayloadDigestDelete{config: c.config, hooks: c.Hooks(), mutation: mutation}
 }
 
-// DeleteOne returns a delete builder for the given entity.
+// DeleteOne returns a builder for deleting the given entity.
 func (c *PayloadDigestClient) DeleteOne(pd *PayloadDigest) *PayloadDigestDeleteOne {
 	return c.DeleteOneID(pd.ID)
 }
 
-// DeleteOneID returns a delete builder for the given id.
+// DeleteOne returns a builder for deleting the given entity by its id.
 func (c *PayloadDigestClient) DeleteOneID(id int) *PayloadDigestDeleteOne {
 	builder := c.Delete().Where(payloaddigest.ID(id))
 	builder.mutation.id = &id
@@ -660,7 +662,7 @@ func (c *SignatureClient) Use(hooks ...Hook) {
 	c.hooks.Signature = append(c.hooks.Signature, hooks...)
 }
 
-// Create returns a create builder for Signature.
+// Create returns a builder for creating a Signature entity.
 func (c *SignatureClient) Create() *SignatureCreate {
 	mutation := newSignatureMutation(c.config, OpCreate)
 	return &SignatureCreate{config: c.config, hooks: c.Hooks(), mutation: mutation}
@@ -695,12 +697,12 @@ func (c *SignatureClient) Delete() *SignatureDelete {
 	return &SignatureDelete{config: c.config, hooks: c.Hooks(), mutation: mutation}
 }
 
-// DeleteOne returns a delete builder for the given entity.
+// DeleteOne returns a builder for deleting the given entity.
 func (c *SignatureClient) DeleteOne(s *Signature) *SignatureDeleteOne {
 	return c.DeleteOneID(s.ID)
 }
 
-// DeleteOneID returns a delete builder for the given id.
+// DeleteOne returns a builder for deleting the given entity by its id.
 func (c *SignatureClient) DeleteOneID(id int) *SignatureDeleteOne {
 	builder := c.Delete().Where(signature.ID(id))
 	builder.mutation.id = &id
@@ -766,7 +768,7 @@ func (c *StatementClient) Use(hooks ...Hook) {
 	c.hooks.Statement = append(c.hooks.Statement, hooks...)
 }
 
-// Create returns a create builder for Statement.
+// Create returns a builder for creating a Statement entity.
 func (c *StatementClient) Create() *StatementCreate {
 	mutation := newStatementMutation(c.config, OpCreate)
 	return &StatementCreate{config: c.config, hooks: c.Hooks(), mutation: mutation}
@@ -801,12 +803,12 @@ func (c *StatementClient) Delete() *StatementDelete {
 	return &StatementDelete{config: c.config, hooks: c.Hooks(), mutation: mutation}
 }
 
-// DeleteOne returns a delete builder for the given entity.
+// DeleteOne returns a builder for deleting the given entity.
 func (c *StatementClient) DeleteOne(s *Statement) *StatementDeleteOne {
 	return c.DeleteOneID(s.ID)
 }
 
-// DeleteOneID returns a delete builder for the given id.
+// DeleteOne returns a builder for deleting the given entity by its id.
 func (c *StatementClient) DeleteOneID(id int) *StatementDeleteOne {
 	builder := c.Delete().Where(statement.ID(id))
 	builder.mutation.id = &id
@@ -904,7 +906,7 @@ func (c *SubjectClient) Use(hooks ...Hook) {
 	c.hooks.Subject = append(c.hooks.Subject, hooks...)
 }
 
-// Create returns a create builder for Subject.
+// Create returns a builder for creating a Subject entity.
 func (c *SubjectClient) Create() *SubjectCreate {
 	mutation := newSubjectMutation(c.config, OpCreate)
 	return &SubjectCreate{config: c.config, hooks: c.Hooks(), mutation: mutation}
@@ -939,12 +941,12 @@ func (c *SubjectClient) Delete() *SubjectDelete {
 	return &SubjectDelete{config: c.config, hooks: c.Hooks(), mutation: mutation}
 }
 
-// DeleteOne returns a delete builder for the given entity.
+// DeleteOne returns a builder for deleting the given entity.
 func (c *SubjectClient) DeleteOne(s *Subject) *SubjectDeleteOne {
 	return c.DeleteOneID(s.ID)
 }
 
-// DeleteOneID returns a delete builder for the given id.
+// DeleteOne returns a builder for deleting the given entity by its id.
 func (c *SubjectClient) DeleteOneID(id int) *SubjectDeleteOne {
 	builder := c.Delete().Where(subject.ID(id))
 	builder.mutation.id = &id
@@ -1026,7 +1028,7 @@ func (c *SubjectDigestClient) Use(hooks ...Hook) {
 	c.hooks.SubjectDigest = append(c.hooks.SubjectDigest, hooks...)
 }
 
-// Create returns a create builder for SubjectDigest.
+// Create returns a builder for creating a SubjectDigest entity.
 func (c *SubjectDigestClient) Create() *SubjectDigestCreate {
 	mutation := newSubjectDigestMutation(c.config, OpCreate)
 	return &SubjectDigestCreate{config: c.config, hooks: c.Hooks(), mutation: mutation}
@@ -1061,12 +1063,12 @@ func (c *SubjectDigestClient) Delete() *SubjectDigestDelete {
 	return &SubjectDigestDelete{config: c.config, hooks: c.Hooks(), mutation: mutation}
 }
 
-// DeleteOne returns a delete builder for the given entity.
+// DeleteOne returns a builder for deleting the given entity.
 func (c *SubjectDigestClient) DeleteOne(sd *SubjectDigest) *SubjectDigestDeleteOne {
 	return c.DeleteOneID(sd.ID)
 }
 
-// DeleteOneID returns a delete builder for the given id.
+// DeleteOne returns a builder for deleting the given entity by its id.
 func (c *SubjectDigestClient) DeleteOneID(id int) *SubjectDigestDeleteOne {
 	builder := c.Delete().Where(subjectdigest.ID(id))
 	builder.mutation.id = &id

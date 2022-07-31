@@ -122,9 +122,15 @@ func (dc *DsseCreate) Save(ctx context.Context) (*Dsse, error) {
 			}
 			mut = dc.hooks[i](mut)
 		}
-		if _, err := mut.Mutate(ctx, dc.mutation); err != nil {
+		v, err := mut.Mutate(ctx, dc.mutation)
+		if err != nil {
 			return nil, err
 		}
+		nv, ok := v.(*Dsse)
+		if !ok {
+			return nil, fmt.Errorf("unexpected node type %T returned from DsseMutation", v)
+		}
+		node = nv
 	}
 	return node, err
 }
@@ -313,11 +319,11 @@ func (dcb *DsseCreateBulk) Save(ctx context.Context) ([]*Dsse, error) {
 					return nil, err
 				}
 				mutation.id = &nodes[i].ID
-				mutation.done = true
 				if specs[i].ID.Value != nil {
 					id := specs[i].ID.Value.(int64)
 					nodes[i].ID = int(id)
 				}
+				mutation.done = true
 				return nodes[i], nil
 			})
 			for i := len(builder.hooks) - 1; i >= 0; i-- {

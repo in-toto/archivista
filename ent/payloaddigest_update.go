@@ -311,9 +311,15 @@ func (pduo *PayloadDigestUpdateOne) Save(ctx context.Context) (*PayloadDigest, e
 			}
 			mut = pduo.hooks[i](mut)
 		}
-		if _, err := mut.Mutate(ctx, pduo.mutation); err != nil {
+		v, err := mut.Mutate(ctx, pduo.mutation)
+		if err != nil {
 			return nil, err
 		}
+		nv, ok := v.(*PayloadDigest)
+		if !ok {
+			return nil, fmt.Errorf("unexpected node type %T returned from PayloadDigestMutation", v)
+		}
+		node = nv
 	}
 	return node, err
 }

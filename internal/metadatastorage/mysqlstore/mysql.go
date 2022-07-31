@@ -315,3 +315,7 @@ func (s *Store) Store(ctx context.Context, gitoid string, obj []byte) error {
 
 	return nil
 }
+
+func (s *Store) GetClient() *ent.Client {
+	return s.client
+}

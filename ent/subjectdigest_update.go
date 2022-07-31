@@ -311,9 +311,15 @@ func (sduo *SubjectDigestUpdateOne) Save(ctx context.Context) (*SubjectDigest, e
 			}
 			mut = sduo.hooks[i](mut)
 		}
-		if _, err := mut.Mutate(ctx, sduo.mutation); err != nil {
+		v, err := mut.Mutate(ctx, sduo.mutation)
+		if err != nil {
 			return nil, err
 		}
+		nv, ok := v.(*SubjectDigest)
+		if !ok {
+			return nil, fmt.Errorf("unexpected node type %T returned from SubjectDigestMutation", v)
+		}
+		node = nv
 	}
 	return node, err
 }

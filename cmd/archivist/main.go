@@ -22,12 +22,18 @@ package main
 import (
 	"context"
 	"fmt"
+	"net/http"
 	"os"
 	"os/signal"
 	"strings"
 	"syscall"
 	"time"
 
+	"entgo.io/contrib/entgql"
+	root "github.com/testifysec/archivist"
+
+	"github.com/99designs/gqlgen/graphql/handler"
+	"github.com/99designs/gqlgen/graphql/playground"
 	"github.com/testifysec/archivist-api/pkg/api/archivist"
 	"github.com/testifysec/archivist/internal/config"
 	"github.com/testifysec/archivist/internal/metadatastorage/mysqlstore"
@@ -124,6 +130,34 @@ func main() {
 	exitOnErrCh(ctx, cancel, srvErrCh)
 
 	log.FromContext(ctx).WithField("duration", time.Since(now)).Infof("completed phase 4: create and register grpc server")
+	// ********************************************************************************
+	log.FromContext(ctx).Infof("executing phase 4: create and register grpc service (time since start: %s)", time.Since(startTime))
+	// ********************************************************************************
+	now = time.Now()
+
+	client := mysqlStore.GetClient()
+	srv := handler.NewDefaultServer(root.NewSchema(client))
+	srv.Use(entgql.Transactioner{TxOpener: client})
+
+	http.Handle("/",
+		playground.Handler("Archivist", "/query"),
+	)
+
+	http.Handle("/query", srv)
+
+	eh := root.NewSchema(client)
+
+	fmt.Println(eh)
+
+	fmt.Println(eh.Schema())
+
+	go func() {
+		if err := http.ListenAndServe("0.0.0.0:8082", nil); err != nil {
+			log.FromContext(ctx).Error("http server terminated", err)
+		}
+	}()
+
+	log.FromContext(ctx).WithField("duration", time.Since(now)).Infof("completed phase 5: create and register graphql server")
 
 	log.FromContext(ctx).Infof("startup complete (time since start: %s)", time.Since(startTime))
 

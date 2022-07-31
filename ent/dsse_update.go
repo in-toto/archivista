@@ -565,9 +565,15 @@ func (duo *DsseUpdateOne) Save(ctx context.Context) (*Dsse, error) {
 			}
 			mut = duo.hooks[i](mut)
 		}
-		if _, err := mut.Mutate(ctx, duo.mutation); err != nil {
+		v, err := mut.Mutate(ctx, duo.mutation)
+		if err != nil {
 			return nil, err
 		}
+		nv, ok := v.(*Dsse)
+		if !ok {
+			return nil, fmt.Errorf("unexpected node type %T returned from DsseMutation", v)
+		}
+		node = nv
 	}
 	return node, err
 }

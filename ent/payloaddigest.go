@@ -33,6 +33,8 @@ type PayloadDigestEdges struct {
 	// loadedTypes holds the information for reporting if a
 	// type was loaded (or requested) in eager-loading or not.
 	loadedTypes [1]bool
+	// totalCount holds the count of the edges above.
+	totalCount [1]*int
 }
 
 // DsseOrErr returns the Dsse value or an error if the edge
@@ -132,10 +134,11 @@ func (pd *PayloadDigest) Unwrap() *PayloadDigest {
 func (pd *PayloadDigest) String() string {
 	var builder strings.Builder
 	builder.WriteString("PayloadDigest(")
-	builder.WriteString(fmt.Sprintf("id=%v", pd.ID))
-	builder.WriteString(", algorithm=")
+	builder.WriteString(fmt.Sprintf("id=%v, ", pd.ID))
+	builder.WriteString("algorithm=")
 	builder.WriteString(pd.Algorithm)
-	builder.WriteString(", value=")
+	builder.WriteString(", ")
+	builder.WriteString("value=")
 	builder.WriteString(pd.Value)
 	builder.WriteByte(')')
 	return builder.String()

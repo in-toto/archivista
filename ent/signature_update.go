@@ -311,9 +311,15 @@ func (suo *SignatureUpdateOne) Save(ctx context.Context) (*Signature, error) {
 			}
 			mut = suo.hooks[i](mut)
 		}
-		if _, err := mut.Mutate(ctx, suo.mutation); err != nil {
+		v, err := mut.Mutate(ctx, suo.mutation)
+		if err != nil {
 			return nil, err
 		}
+		nv, ok := v.(*Signature)
+		if !ok {
+			return nil, fmt.Errorf("unexpected node type %T returned from SignatureMutation", v)
+		}
+		node = nv
 	}
 	return node, err
 }

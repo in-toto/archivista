@@ -5,7 +5,6 @@ package ent
 import (
 	"context"
 	"database/sql/driver"
-	"errors"
 	"fmt"
 	"math"
 
@@ -33,6 +32,8 @@ type DsseQuery struct {
 	withSignatures     *SignatureQuery
 	withPayloadDigests *PayloadDigestQuery
 	withFKs            bool
+	modifiers          []func(*sql.Selector)
+	loadTotal          []func(context.Context, []*Dsse) error
 	// intermediate query (i.e. traversal path).
 	sql  *sql.Selector
 	path func(context.Context) (*sql.Selector, error)
@@ -375,15 +376,17 @@ func (dq *DsseQuery) WithPayloadDigests(opts ...func(*PayloadDigestQuery)) *Dsse
 //		Scan(ctx, &v)
 //
 func (dq *DsseQuery) GroupBy(field string, fields ...string) *DsseGroupBy {
-	group := &DsseGroupBy{config: dq.config}
-	group.fields = append([]string{field}, fields...)
-	group.path = func(ctx context.Context) (prev *sql.Selector, err error) {
+	grbuild := &DsseGroupBy{config: dq.config}
+	grbuild.fields = append([]string{field}, fields...)
+	grbuild.path = func(ctx context.Context) (prev *sql.Selector, err error) {
 		if err := dq.prepareQuery(ctx); err != nil {
 			return nil, err
 		}
 		return dq.sqlQuery(ctx), nil
 	}
-	return group
+	grbuild.label = dsse.Label
+	grbuild.flds, grbuild.scan = &grbuild.fields, grbuild.Scan
+	return grbuild
 }
 
 // Select allows the selection one or more fields/columns for the given query,
@@ -401,7 +404,10 @@ func (dq *DsseQuery) GroupBy(field string, fields ...string) *DsseGroupBy {
 //
 func (dq *DsseQuery) Select(fields ...string) *DsseSelect {
 	dq.fields = append(dq.fields, fields...)
-	return &DsseSelect{DsseQuery: dq}
+	selbuild := &DsseSelect{DsseQuery: dq}
+	selbuild.label = dsse.Label
+	selbuild.flds, selbuild.scan = &dq.fields, selbuild.Scan
+	return selbuild
 }
 
 func (dq *DsseQuery) prepareQuery(ctx context.Context) error {
@@ -420,7 +426,7 @@ func (dq *DsseQuery) prepareQuery(ctx context.Context) error {
 	return nil
 }
 
-func (dq *DsseQuery) sqlAll(ctx context.Context) ([]*Dsse, error) {
+func (dq *DsseQuery) sqlAll(ctx context.Context, hooks ...queryHook) ([]*Dsse, error) {
 	var (
 		nodes       = []*Dsse{}
 		withFKs     = dq.withFKs
@@ -438,17 +444,19 @@ func (dq *DsseQuery) sqlAll(ctx context.Context) ([]*Dsse, error) {
 		_spec.Node.Columns = append(_spec.Node.Columns, dsse.ForeignKeys...)
 	}
 	_spec.ScanValues = func(columns []string) ([]interface{}, error) {
-		node := &Dsse{config: dq.config}
-		nodes = append(nodes, node)
-		return node.scanValues(columns)
+		return (*Dsse).scanValues(nil, columns)
 	}
 	_spec.Assign = func(columns []string, values []interface{}) error {
-		if len(nodes) == 0 {
-			return fmt.Errorf("ent: Assign called without calling ScanValues")
-		}
-		node := nodes[len(nodes)-1]
+		node := &Dsse{config: dq.config}
+		nodes = append(nodes, node)
 		node.Edges.loadedTypes = loadedTypes
 		return node.assignValues(columns, values)
+	}
+	if len(dq.modifiers) > 0 {
+		_spec.Modifiers = dq.modifiers
+	}
+	for i := range hooks {
+		hooks[i](ctx, _spec)
 	}
 	if err := sqlgraph.QueryNodes(ctx, dq.driver, _spec); err != nil {
 		return nil, err
@@ -544,11 +552,19 @@ func (dq *DsseQuery) sqlAll(ctx context.Context) ([]*Dsse, error) {
 		}
 	}
 
+	for i := range dq.loadTotal {
+		if err := dq.loadTotal[i](ctx, nodes); err != nil {
+			return nil, err
+		}
+	}
 	return nodes, nil
 }
 
 func (dq *DsseQuery) sqlCount(ctx context.Context) (int, error) {
 	_spec := dq.querySpec()
+	if len(dq.modifiers) > 0 {
+		_spec.Modifiers = dq.modifiers
+	}
 	_spec.Node.Columns = dq.fields
 	if len(dq.fields) > 0 {
 		_spec.Unique = dq.unique != nil && *dq.unique
@@ -647,6 +663,7 @@ func (dq *DsseQuery) sqlQuery(ctx context.Context) *sql.Selector {
 // DsseGroupBy is the group-by builder for Dsse entities.
 type DsseGroupBy struct {
 	config
+	selector
 	fields []string
 	fns    []AggregateFunc
 	// intermediate query (i.e. traversal path).
@@ -668,209 +685,6 @@ func (dgb *DsseGroupBy) Scan(ctx context.Context, v interface{}) error {
 	}
 	dgb.sql = query
 	return dgb.sqlScan(ctx, v)
-}
-
-// ScanX is like Scan, but panics if an error occurs.
-func (dgb *DsseGroupBy) ScanX(ctx context.Context, v interface{}) {
-	if err := dgb.Scan(ctx, v); err != nil {
-		panic(err)
-	}
-}
-
-// Strings returns list of strings from group-by.
-// It is only allowed when executing a group-by query with one field.
-func (dgb *DsseGroupBy) Strings(ctx context.Context) ([]string, error) {
-	if len(dgb.fields) > 1 {
-		return nil, errors.New("ent: DsseGroupBy.Strings is not achievable when grouping more than 1 field")
-	}
-	var v []string
-	if err := dgb.Scan(ctx, &v); err != nil {
-		return nil, err
-	}
-	return v, nil
-}
-
-// StringsX is like Strings, but panics if an error occurs.
-func (dgb *DsseGroupBy) StringsX(ctx context.Context) []string {
-	v, err := dgb.Strings(ctx)
-	if err != nil {
-		panic(err)
-	}
-	return v
-}
-
-// String returns a single string from a group-by query.
-// It is only allowed when executing a group-by query with one field.
-func (dgb *DsseGroupBy) String(ctx context.Context) (_ string, err error) {
-	var v []string
-	if v, err = dgb.Strings(ctx); err != nil {
-		return
-	}
-	switch len(v) {
-	case 1:
-		return v[0], nil
-	case 0:
-		err = &NotFoundError{dsse.Label}
-	default:
-		err = fmt.Errorf("ent: DsseGroupBy.Strings returned %d results when one was expected", len(v))
-	}
-	return
-}
-
-// StringX is like String, but panics if an error occurs.
-func (dgb *DsseGroupBy) StringX(ctx context.Context) string {
-	v, err := dgb.String(ctx)
-	if err != nil {
-		panic(err)
-	}
-	return v
-}
-
-// Ints returns list of ints from group-by.
-// It is only allowed when executing a group-by query with one field.
-func (dgb *DsseGroupBy) Ints(ctx context.Context) ([]int, error) {
-	if len(dgb.fields) > 1 {
-		return nil, errors.New("ent: DsseGroupBy.Ints is not achievable when grouping more than 1 field")
-	}
-	var v []int
-	if err := dgb.Scan(ctx, &v); err != nil {
-		return nil, err
-	}
-	return v, nil
-}
-
-// IntsX is like Ints, but panics if an error occurs.
-func (dgb *DsseGroupBy) IntsX(ctx context.Context) []int {
-	v, err := dgb.Ints(ctx)
-	if err != nil {
-		panic(err)
-	}
-	return v
-}
-
-// Int returns a single int from a group-by query.
-// It is only allowed when executing a group-by query with one field.
-func (dgb *DsseGroupBy) Int(ctx context.Context) (_ int, err error) {
-	var v []int
-	if v, err = dgb.Ints(ctx); err != nil {
-		return
-	}
-	switch len(v) {
-	case 1:
-		return v[0], nil
-	case 0:
-		err = &NotFoundError{dsse.Label}
-	default:
-		err = fmt.Errorf("ent: DsseGroupBy.Ints returned %d results when one was expected", len(v))
-	}
-	return
-}
-
-// IntX is like Int, but panics if an error occurs.
-func (dgb *DsseGroupBy) IntX(ctx context.Context) int {
-	v, err := dgb.Int(ctx)
-	if err != nil {
-		panic(err)
-	}
-	return v
-}
-
-// Float64s returns list of float64s from group-by.
-// It is only allowed when executing a group-by query with one field.
-func (dgb *DsseGroupBy) Float64s(ctx context.Context) ([]float64, error) {
-	if len(dgb.fields) > 1 {
-		return nil, errors.New("ent: DsseGroupBy.Float64s is not achievable when grouping more than 1 field")
-	}
-	var v []float64
-	if err := dgb.Scan(ctx, &v); err != nil {
-		return nil, err
-	}
-	return v, nil
-}
-
-// Float64sX is like Float64s, but panics if an error occurs.
-func (dgb *DsseGroupBy) Float64sX(ctx context.Context) []float64 {
-	v, err := dgb.Float64s(ctx)
-	if err != nil {
-		panic(err)
-	}
-	return v
-}
-
-// Float64 returns a single float64 from a group-by query.
-// It is only allowed when executing a group-by query with one field.
-func (dgb *DsseGroupBy) Float64(ctx context.Context) (_ float64, err error) {
-	var v []float64
-	if v, err = dgb.Float64s(ctx); err != nil {
-		return
-	}
-	switch len(v) {
-	case 1:
-		return v[0], nil
-	case 0:
-		err = &NotFoundError{dsse.Label}
-	default:
-		err = fmt.Errorf("ent: DsseGroupBy.Float64s returned %d results when one was expected", len(v))
-	}
-	return
-}
-
-// Float64X is like Float64, but panics if an error occurs.
-func (dgb *DsseGroupBy) Float64X(ctx context.Context) float64 {
-	v, err := dgb.Float64(ctx)
-	if err != nil {
-		panic(err)
-	}
-	return v
-}
-
-// Bools returns list of bools from group-by.
-// It is only allowed when executing a group-by query with one field.
-func (dgb *DsseGroupBy) Bools(ctx context.Context) ([]bool, error) {
-	if len(dgb.fields) > 1 {
-		return nil, errors.New("ent: DsseGroupBy.Bools is not achievable when grouping more than 1 field")
-	}
-	var v []bool
-	if err := dgb.Scan(ctx, &v); err != nil {
-		return nil, err
-	}
-	return v, nil
-}
-
-// BoolsX is like Bools, but panics if an error occurs.
-func (dgb *DsseGroupBy) BoolsX(ctx context.Context) []bool {
-	v, err := dgb.Bools(ctx)
-	if err != nil {
-		panic(err)
-	}
-	return v
-}
-
-// Bool returns a single bool from a group-by query.
-// It is only allowed when executing a group-by query with one field.
-func (dgb *DsseGroupBy) Bool(ctx context.Context) (_ bool, err error) {
-	var v []bool
-	if v, err = dgb.Bools(ctx); err != nil {
-		return
-	}
-	switch len(v) {
-	case 1:
-		return v[0], nil
-	case 0:
-		err = &NotFoundError{dsse.Label}
-	default:
-		err = fmt.Errorf("ent: DsseGroupBy.Bools returned %d results when one was expected", len(v))
-	}
-	return
-}
-
-// BoolX is like Bool, but panics if an error occurs.
-func (dgb *DsseGroupBy) BoolX(ctx context.Context) bool {
-	v, err := dgb.Bool(ctx)
-	if err != nil {
-		panic(err)
-	}
-	return v
 }
 
 func (dgb *DsseGroupBy) sqlScan(ctx context.Context, v interface{}) error {
@@ -914,6 +728,7 @@ func (dgb *DsseGroupBy) sqlQuery() *sql.Selector {
 // DsseSelect is the builder for selecting fields of Dsse entities.
 type DsseSelect struct {
 	*DsseQuery
+	selector
 	// intermediate query (i.e. traversal path).
 	sql *sql.Selector
 }
@@ -925,201 +740,6 @@ func (ds *DsseSelect) Scan(ctx context.Context, v interface{}) error {
 	}
 	ds.sql = ds.DsseQuery.sqlQuery(ctx)
 	return ds.sqlScan(ctx, v)
-}
-
-// ScanX is like Scan, but panics if an error occurs.
-func (ds *DsseSelect) ScanX(ctx context.Context, v interface{}) {
-	if err := ds.Scan(ctx, v); err != nil {
-		panic(err)
-	}
-}
-
-// Strings returns list of strings from a selector. It is only allowed when selecting one field.
-func (ds *DsseSelect) Strings(ctx context.Context) ([]string, error) {
-	if len(ds.fields) > 1 {
-		return nil, errors.New("ent: DsseSelect.Strings is not achievable when selecting more than 1 field")
-	}
-	var v []string
-	if err := ds.Scan(ctx, &v); err != nil {
-		return nil, err
-	}
-	return v, nil
-}
-
-// StringsX is like Strings, but panics if an error occurs.
-func (ds *DsseSelect) StringsX(ctx context.Context) []string {
-	v, err := ds.Strings(ctx)
-	if err != nil {
-		panic(err)
-	}
-	return v
-}
-
-// String returns a single string from a selector. It is only allowed when selecting one field.
-func (ds *DsseSelect) String(ctx context.Context) (_ string, err error) {
-	var v []string
-	if v, err = ds.Strings(ctx); err != nil {
-		return
-	}
-	switch len(v) {
-	case 1:
-		return v[0], nil
-	case 0:
-		err = &NotFoundError{dsse.Label}
-	default:
-		err = fmt.Errorf("ent: DsseSelect.Strings returned %d results when one was expected", len(v))
-	}
-	return
-}
-
-// StringX is like String, but panics if an error occurs.
-func (ds *DsseSelect) StringX(ctx context.Context) string {
-	v, err := ds.String(ctx)
-	if err != nil {
-		panic(err)
-	}
-	return v
-}
-
-// Ints returns list of ints from a selector. It is only allowed when selecting one field.
-func (ds *DsseSelect) Ints(ctx context.Context) ([]int, error) {
-	if len(ds.fields) > 1 {
-		return nil, errors.New("ent: DsseSelect.Ints is not achievable when selecting more than 1 field")
-	}
-	var v []int
-	if err := ds.Scan(ctx, &v); err != nil {
-		return nil, err
-	}
-	return v, nil
-}
-
-// IntsX is like Ints, but panics if an error occurs.
-func (ds *DsseSelect) IntsX(ctx context.Context) []int {
-	v, err := ds.Ints(ctx)
-	if err != nil {
-		panic(err)
-	}
-	return v
-}
-
-// Int returns a single int from a selector. It is only allowed when selecting one field.
-func (ds *DsseSelect) Int(ctx context.Context) (_ int, err error) {
-	var v []int
-	if v, err = ds.Ints(ctx); err != nil {
-		return
-	}
-	switch len(v) {
-	case 1:
-		return v[0], nil
-	case 0:
-		err = &NotFoundError{dsse.Label}
-	default:
-		err = fmt.Errorf("ent: DsseSelect.Ints returned %d results when one was expected", len(v))
-	}
-	return
-}
-
-// IntX is like Int, but panics if an error occurs.
-func (ds *DsseSelect) IntX(ctx context.Context) int {
-	v, err := ds.Int(ctx)
-	if err != nil {
-		panic(err)
-	}
-	return v
-}
-
-// Float64s returns list of float64s from a selector. It is only allowed when selecting one field.
-func (ds *DsseSelect) Float64s(ctx context.Context) ([]float64, error) {
-	if len(ds.fields) > 1 {
-		return nil, errors.New("ent: DsseSelect.Float64s is not achievable when selecting more than 1 field")
-	}
-	var v []float64
-	if err := ds.Scan(ctx, &v); err != nil {
-		return nil, err
-	}
-	return v, nil
-}
-
-// Float64sX is like Float64s, but panics if an error occurs.
-func (ds *DsseSelect) Float64sX(ctx context.Context) []float64 {
-	v, err := ds.Float64s(ctx)
-	if err != nil {
-		panic(err)
-	}
-	return v
-}
-
-// Float64 returns a single float64 from a selector. It is only allowed when selecting one field.
-func (ds *DsseSelect) Float64(ctx context.Context) (_ float64, err error) {
-	var v []float64
-	if v, err = ds.Float64s(ctx); err != nil {
-		return
-	}
-	switch len(v) {
-	case 1:
-		return v[0], nil
-	case 0:
-		err = &NotFoundError{dsse.Label}
-	default:
-		err = fmt.Errorf("ent: DsseSelect.Float64s returned %d results when one was expected", len(v))
-	}
-	return
-}
-
-// Float64X is like Float64, but panics if an error occurs.
-func (ds *DsseSelect) Float64X(ctx context.Context) float64 {
-	v, err := ds.Float64(ctx)
-	if err != nil {
-		panic(err)
-	}
-	return v
-}
-
-// Bools returns list of bools from a selector. It is only allowed when selecting one field.
-func (ds *DsseSelect) Bools(ctx context.Context) ([]bool, error) {
-	if len(ds.fields) > 1 {
-		return nil, errors.New("ent: DsseSelect.Bools is not achievable when selecting more than 1 field")
-	}
-	var v []bool
-	if err := ds.Scan(ctx, &v); err != nil {
-		return nil, err
-	}
-	return v, nil
-}
-
-// BoolsX is like Bools, but panics if an error occurs.
-func (ds *DsseSelect) BoolsX(ctx context.Context) []bool {
-	v, err := ds.Bools(ctx)
-	if err != nil {
-		panic(err)
-	}
-	return v
-}
-
-// Bool returns a single bool from a selector. It is only allowed when selecting one field.
-func (ds *DsseSelect) Bool(ctx context.Context) (_ bool, err error) {
-	var v []bool
-	if v, err = ds.Bools(ctx); err != nil {
-		return
-	}
-	switch len(v) {
-	case 1:
-		return v[0], nil
-	case 0:
-		err = &NotFoundError{dsse.Label}
-	default:
-		err = fmt.Errorf("ent: DsseSelect.Bools returned %d results when one was expected", len(v))
-	}
-	return
-}
-
-// BoolX is like Bool, but panics if an error occurs.
-func (ds *DsseSelect) BoolX(ctx context.Context) bool {
-	v, err := ds.Bool(ctx)
-	if err != nil {
-		panic(err)
-	}
-	return v
 }
 
 func (ds *DsseSelect) sqlScan(ctx context.Context, v interface{}) error {

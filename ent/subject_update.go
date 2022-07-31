@@ -414,9 +414,15 @@ func (suo *SubjectUpdateOne) Save(ctx context.Context) (*Subject, error) {
 			}
 			mut = suo.hooks[i](mut)
 		}
-		if _, err := mut.Mutate(ctx, suo.mutation); err != nil {
+		v, err := mut.Mutate(ctx, suo.mutation)
+		if err != nil {
 			return nil, err
 		}
+		nv, ok := v.(*Subject)
+		if !ok {
+			return nil, fmt.Errorf("unexpected node type %T returned from SubjectMutation", v)
+		}
+		node = nv
 	}
 	return node, err
 }
