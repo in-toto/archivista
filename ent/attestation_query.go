@@ -4,7 +4,6 @@ package ent
 
 import (
 	"context"
-	"errors"
 	"fmt"
 	"math"
 
@@ -28,6 +27,8 @@ type AttestationQuery struct {
 	// eager-loading edges.
 	withAttestationCollection *AttestationCollectionQuery
 	withFKs                   bool
+	modifiers                 []func(*sql.Selector)
+	loadTotal                 []func(context.Context, []*Attestation) error
 	// intermediate query (i.e. traversal path).
 	sql  *sql.Selector
 	path func(context.Context) (*sql.Selector, error)
@@ -302,15 +303,17 @@ func (aq *AttestationQuery) WithAttestationCollection(opts ...func(*AttestationC
 //		Scan(ctx, &v)
 //
 func (aq *AttestationQuery) GroupBy(field string, fields ...string) *AttestationGroupBy {
-	group := &AttestationGroupBy{config: aq.config}
-	group.fields = append([]string{field}, fields...)
-	group.path = func(ctx context.Context) (prev *sql.Selector, err error) {
+	grbuild := &AttestationGroupBy{config: aq.config}
+	grbuild.fields = append([]string{field}, fields...)
+	grbuild.path = func(ctx context.Context) (prev *sql.Selector, err error) {
 		if err := aq.prepareQuery(ctx); err != nil {
 			return nil, err
 		}
 		return aq.sqlQuery(ctx), nil
 	}
-	return group
+	grbuild.label = attestation.Label
+	grbuild.flds, grbuild.scan = &grbuild.fields, grbuild.Scan
+	return grbuild
 }
 
 // Select allows the selection one or more fields/columns for the given query,
@@ -328,7 +331,10 @@ func (aq *AttestationQuery) GroupBy(field string, fields ...string) *Attestation
 //
 func (aq *AttestationQuery) Select(fields ...string) *AttestationSelect {
 	aq.fields = append(aq.fields, fields...)
-	return &AttestationSelect{AttestationQuery: aq}
+	selbuild := &AttestationSelect{AttestationQuery: aq}
+	selbuild.label = attestation.Label
+	selbuild.flds, selbuild.scan = &aq.fields, selbuild.Scan
+	return selbuild
 }
 
 func (aq *AttestationQuery) prepareQuery(ctx context.Context) error {
@@ -347,7 +353,7 @@ func (aq *AttestationQuery) prepareQuery(ctx context.Context) error {
 	return nil
 }
 
-func (aq *AttestationQuery) sqlAll(ctx context.Context) ([]*Attestation, error) {
+func (aq *AttestationQuery) sqlAll(ctx context.Context, hooks ...queryHook) ([]*Attestation, error) {
 	var (
 		nodes       = []*Attestation{}
 		withFKs     = aq.withFKs
@@ -363,17 +369,19 @@ func (aq *AttestationQuery) sqlAll(ctx context.Context) ([]*Attestation, error) 
 		_spec.Node.Columns = append(_spec.Node.Columns, attestation.ForeignKeys...)
 	}
 	_spec.ScanValues = func(columns []string) ([]interface{}, error) {
-		node := &Attestation{config: aq.config}
-		nodes = append(nodes, node)
-		return node.scanValues(columns)
+		return (*Attestation).scanValues(nil, columns)
 	}
 	_spec.Assign = func(columns []string, values []interface{}) error {
-		if len(nodes) == 0 {
-			return fmt.Errorf("ent: Assign called without calling ScanValues")
-		}
-		node := nodes[len(nodes)-1]
+		node := &Attestation{config: aq.config}
+		nodes = append(nodes, node)
 		node.Edges.loadedTypes = loadedTypes
 		return node.assignValues(columns, values)
+	}
+	if len(aq.modifiers) > 0 {
+		_spec.Modifiers = aq.modifiers
+	}
+	for i := range hooks {
+		hooks[i](ctx, _spec)
 	}
 	if err := sqlgraph.QueryNodes(ctx, aq.driver, _spec); err != nil {
 		return nil, err
@@ -411,11 +419,19 @@ func (aq *AttestationQuery) sqlAll(ctx context.Context) ([]*Attestation, error) 
 		}
 	}
 
+	for i := range aq.loadTotal {
+		if err := aq.loadTotal[i](ctx, nodes); err != nil {
+			return nil, err
+		}
+	}
 	return nodes, nil
 }
 
 func (aq *AttestationQuery) sqlCount(ctx context.Context) (int, error) {
 	_spec := aq.querySpec()
+	if len(aq.modifiers) > 0 {
+		_spec.Modifiers = aq.modifiers
+	}
 	_spec.Node.Columns = aq.fields
 	if len(aq.fields) > 0 {
 		_spec.Unique = aq.unique != nil && *aq.unique
@@ -514,6 +530,7 @@ func (aq *AttestationQuery) sqlQuery(ctx context.Context) *sql.Selector {
 // AttestationGroupBy is the group-by builder for Attestation entities.
 type AttestationGroupBy struct {
 	config
+	selector
 	fields []string
 	fns    []AggregateFunc
 	// intermediate query (i.e. traversal path).
@@ -535,209 +552,6 @@ func (agb *AttestationGroupBy) Scan(ctx context.Context, v interface{}) error {
 	}
 	agb.sql = query
 	return agb.sqlScan(ctx, v)
-}
-
-// ScanX is like Scan, but panics if an error occurs.
-func (agb *AttestationGroupBy) ScanX(ctx context.Context, v interface{}) {
-	if err := agb.Scan(ctx, v); err != nil {
-		panic(err)
-	}
-}
-
-// Strings returns list of strings from group-by.
-// It is only allowed when executing a group-by query with one field.
-func (agb *AttestationGroupBy) Strings(ctx context.Context) ([]string, error) {
-	if len(agb.fields) > 1 {
-		return nil, errors.New("ent: AttestationGroupBy.Strings is not achievable when grouping more than 1 field")
-	}
-	var v []string
-	if err := agb.Scan(ctx, &v); err != nil {
-		return nil, err
-	}
-	return v, nil
-}
-
-// StringsX is like Strings, but panics if an error occurs.
-func (agb *AttestationGroupBy) StringsX(ctx context.Context) []string {
-	v, err := agb.Strings(ctx)
-	if err != nil {
-		panic(err)
-	}
-	return v
-}
-
-// String returns a single string from a group-by query.
-// It is only allowed when executing a group-by query with one field.
-func (agb *AttestationGroupBy) String(ctx context.Context) (_ string, err error) {
-	var v []string
-	if v, err = agb.Strings(ctx); err != nil {
-		return
-	}
-	switch len(v) {
-	case 1:
-		return v[0], nil
-	case 0:
-		err = &NotFoundError{attestation.Label}
-	default:
-		err = fmt.Errorf("ent: AttestationGroupBy.Strings returned %d results when one was expected", len(v))
-	}
-	return
-}
-
-// StringX is like String, but panics if an error occurs.
-func (agb *AttestationGroupBy) StringX(ctx context.Context) string {
-	v, err := agb.String(ctx)
-	if err != nil {
-		panic(err)
-	}
-	return v
-}
-
-// Ints returns list of ints from group-by.
-// It is only allowed when executing a group-by query with one field.
-func (agb *AttestationGroupBy) Ints(ctx context.Context) ([]int, error) {
-	if len(agb.fields) > 1 {
-		return nil, errors.New("ent: AttestationGroupBy.Ints is not achievable when grouping more than 1 field")
-	}
-	var v []int
-	if err := agb.Scan(ctx, &v); err != nil {
-		return nil, err
-	}
-	return v, nil
-}
-
-// IntsX is like Ints, but panics if an error occurs.
-func (agb *AttestationGroupBy) IntsX(ctx context.Context) []int {
-	v, err := agb.Ints(ctx)
-	if err != nil {
-		panic(err)
-	}
-	return v
-}
-
-// Int returns a single int from a group-by query.
-// It is only allowed when executing a group-by query with one field.
-func (agb *AttestationGroupBy) Int(ctx context.Context) (_ int, err error) {
-	var v []int
-	if v, err = agb.Ints(ctx); err != nil {
-		return
-	}
-	switch len(v) {
-	case 1:
-		return v[0], nil
-	case 0:
-		err = &NotFoundError{attestation.Label}
-	default:
-		err = fmt.Errorf("ent: AttestationGroupBy.Ints returned %d results when one was expected", len(v))
-	}
-	return
-}
-
-// IntX is like Int, but panics if an error occurs.
-func (agb *AttestationGroupBy) IntX(ctx context.Context) int {
-	v, err := agb.Int(ctx)
-	if err != nil {
-		panic(err)
-	}
-	return v
-}
-
-// Float64s returns list of float64s from group-by.
-// It is only allowed when executing a group-by query with one field.
-func (agb *AttestationGroupBy) Float64s(ctx context.Context) ([]float64, error) {
-	if len(agb.fields) > 1 {
-		return nil, errors.New("ent: AttestationGroupBy.Float64s is not achievable when grouping more than 1 field")
-	}
-	var v []float64
-	if err := agb.Scan(ctx, &v); err != nil {
-		return nil, err
-	}
-	return v, nil
-}
-
-// Float64sX is like Float64s, but panics if an error occurs.
-func (agb *AttestationGroupBy) Float64sX(ctx context.Context) []float64 {
-	v, err := agb.Float64s(ctx)
-	if err != nil {
-		panic(err)
-	}
-	return v
-}
-
-// Float64 returns a single float64 from a group-by query.
-// It is only allowed when executing a group-by query with one field.
-func (agb *AttestationGroupBy) Float64(ctx context.Context) (_ float64, err error) {
-	var v []float64
-	if v, err = agb.Float64s(ctx); err != nil {
-		return
-	}
-	switch len(v) {
-	case 1:
-		return v[0], nil
-	case 0:
-		err = &NotFoundError{attestation.Label}
-	default:
-		err = fmt.Errorf("ent: AttestationGroupBy.Float64s returned %d results when one was expected", len(v))
-	}
-	return
-}
-
-// Float64X is like Float64, but panics if an error occurs.
-func (agb *AttestationGroupBy) Float64X(ctx context.Context) float64 {
-	v, err := agb.Float64(ctx)
-	if err != nil {
-		panic(err)
-	}
-	return v
-}
-
-// Bools returns list of bools from group-by.
-// It is only allowed when executing a group-by query with one field.
-func (agb *AttestationGroupBy) Bools(ctx context.Context) ([]bool, error) {
-	if len(agb.fields) > 1 {
-		return nil, errors.New("ent: AttestationGroupBy.Bools is not achievable when grouping more than 1 field")
-	}
-	var v []bool
-	if err := agb.Scan(ctx, &v); err != nil {
-		return nil, err
-	}
-	return v, nil
-}
-
-// BoolsX is like Bools, but panics if an error occurs.
-func (agb *AttestationGroupBy) BoolsX(ctx context.Context) []bool {
-	v, err := agb.Bools(ctx)
-	if err != nil {
-		panic(err)
-	}
-	return v
-}
-
-// Bool returns a single bool from a group-by query.
-// It is only allowed when executing a group-by query with one field.
-func (agb *AttestationGroupBy) Bool(ctx context.Context) (_ bool, err error) {
-	var v []bool
-	if v, err = agb.Bools(ctx); err != nil {
-		return
-	}
-	switch len(v) {
-	case 1:
-		return v[0], nil
-	case 0:
-		err = &NotFoundError{attestation.Label}
-	default:
-		err = fmt.Errorf("ent: AttestationGroupBy.Bools returned %d results when one was expected", len(v))
-	}
-	return
-}
-
-// BoolX is like Bool, but panics if an error occurs.
-func (agb *AttestationGroupBy) BoolX(ctx context.Context) bool {
-	v, err := agb.Bool(ctx)
-	if err != nil {
-		panic(err)
-	}
-	return v
 }
 
 func (agb *AttestationGroupBy) sqlScan(ctx context.Context, v interface{}) error {
@@ -781,6 +595,7 @@ func (agb *AttestationGroupBy) sqlQuery() *sql.Selector {
 // AttestationSelect is the builder for selecting fields of Attestation entities.
 type AttestationSelect struct {
 	*AttestationQuery
+	selector
 	// intermediate query (i.e. traversal path).
 	sql *sql.Selector
 }
@@ -792,201 +607,6 @@ func (as *AttestationSelect) Scan(ctx context.Context, v interface{}) error {
 	}
 	as.sql = as.AttestationQuery.sqlQuery(ctx)
 	return as.sqlScan(ctx, v)
-}
-
-// ScanX is like Scan, but panics if an error occurs.
-func (as *AttestationSelect) ScanX(ctx context.Context, v interface{}) {
-	if err := as.Scan(ctx, v); err != nil {
-		panic(err)
-	}
-}
-
-// Strings returns list of strings from a selector. It is only allowed when selecting one field.
-func (as *AttestationSelect) Strings(ctx context.Context) ([]string, error) {
-	if len(as.fields) > 1 {
-		return nil, errors.New("ent: AttestationSelect.Strings is not achievable when selecting more than 1 field")
-	}
-	var v []string
-	if err := as.Scan(ctx, &v); err != nil {
-		return nil, err
-	}
-	return v, nil
-}
-
-// StringsX is like Strings, but panics if an error occurs.
-func (as *AttestationSelect) StringsX(ctx context.Context) []string {
-	v, err := as.Strings(ctx)
-	if err != nil {
-		panic(err)
-	}
-	return v
-}
-
-// String returns a single string from a selector. It is only allowed when selecting one field.
-func (as *AttestationSelect) String(ctx context.Context) (_ string, err error) {
-	var v []string
-	if v, err = as.Strings(ctx); err != nil {
-		return
-	}
-	switch len(v) {
-	case 1:
-		return v[0], nil
-	case 0:
-		err = &NotFoundError{attestation.Label}
-	default:
-		err = fmt.Errorf("ent: AttestationSelect.Strings returned %d results when one was expected", len(v))
-	}
-	return
-}
-
-// StringX is like String, but panics if an error occurs.
-func (as *AttestationSelect) StringX(ctx context.Context) string {
-	v, err := as.String(ctx)
-	if err != nil {
-		panic(err)
-	}
-	return v
-}
-
-// Ints returns list of ints from a selector. It is only allowed when selecting one field.
-func (as *AttestationSelect) Ints(ctx context.Context) ([]int, error) {
-	if len(as.fields) > 1 {
-		return nil, errors.New("ent: AttestationSelect.Ints is not achievable when selecting more than 1 field")
-	}
-	var v []int
-	if err := as.Scan(ctx, &v); err != nil {
-		return nil, err
-	}
-	return v, nil
-}
-
-// IntsX is like Ints, but panics if an error occurs.
-func (as *AttestationSelect) IntsX(ctx context.Context) []int {
-	v, err := as.Ints(ctx)
-	if err != nil {
-		panic(err)
-	}
-	return v
-}
-
-// Int returns a single int from a selector. It is only allowed when selecting one field.
-func (as *AttestationSelect) Int(ctx context.Context) (_ int, err error) {
-	var v []int
-	if v, err = as.Ints(ctx); err != nil {
-		return
-	}
-	switch len(v) {
-	case 1:
-		return v[0], nil
-	case 0:
-		err = &NotFoundError{attestation.Label}
-	default:
-		err = fmt.Errorf("ent: AttestationSelect.Ints returned %d results when one was expected", len(v))
-	}
-	return
-}
-
-// IntX is like Int, but panics if an error occurs.
-func (as *AttestationSelect) IntX(ctx context.Context) int {
-	v, err := as.Int(ctx)
-	if err != nil {
-		panic(err)
-	}
-	return v
-}
-
-// Float64s returns list of float64s from a selector. It is only allowed when selecting one field.
-func (as *AttestationSelect) Float64s(ctx context.Context) ([]float64, error) {
-	if len(as.fields) > 1 {
-		return nil, errors.New("ent: AttestationSelect.Float64s is not achievable when selecting more than 1 field")
-	}
-	var v []float64
-	if err := as.Scan(ctx, &v); err != nil {
-		return nil, err
-	}
-	return v, nil
-}
-
-// Float64sX is like Float64s, but panics if an error occurs.
-func (as *AttestationSelect) Float64sX(ctx context.Context) []float64 {
-	v, err := as.Float64s(ctx)
-	if err != nil {
-		panic(err)
-	}
-	return v
-}
-
-// Float64 returns a single float64 from a selector. It is only allowed when selecting one field.
-func (as *AttestationSelect) Float64(ctx context.Context) (_ float64, err error) {
-	var v []float64
-	if v, err = as.Float64s(ctx); err != nil {
-		return
-	}
-	switch len(v) {
-	case 1:
-		return v[0], nil
-	case 0:
-		err = &NotFoundError{attestation.Label}
-	default:
-		err = fmt.Errorf("ent: AttestationSelect.Float64s returned %d results when one was expected", len(v))
-	}
-	return
-}
-
-// Float64X is like Float64, but panics if an error occurs.
-func (as *AttestationSelect) Float64X(ctx context.Context) float64 {
-	v, err := as.Float64(ctx)
-	if err != nil {
-		panic(err)
-	}
-	return v
-}
-
-// Bools returns list of bools from a selector. It is only allowed when selecting one field.
-func (as *AttestationSelect) Bools(ctx context.Context) ([]bool, error) {
-	if len(as.fields) > 1 {
-		return nil, errors.New("ent: AttestationSelect.Bools is not achievable when selecting more than 1 field")
-	}
-	var v []bool
-	if err := as.Scan(ctx, &v); err != nil {
-		return nil, err
-	}
-	return v, nil
-}
-
-// BoolsX is like Bools, but panics if an error occurs.
-func (as *AttestationSelect) BoolsX(ctx context.Context) []bool {
-	v, err := as.Bools(ctx)
-	if err != nil {
-		panic(err)
-	}
-	return v
-}
-
-// Bool returns a single bool from a selector. It is only allowed when selecting one field.
-func (as *AttestationSelect) Bool(ctx context.Context) (_ bool, err error) {
-	var v []bool
-	if v, err = as.Bools(ctx); err != nil {
-		return
-	}
-	switch len(v) {
-	case 1:
-		return v[0], nil
-	case 0:
-		err = &NotFoundError{attestation.Label}
-	default:
-		err = fmt.Errorf("ent: AttestationSelect.Bools returned %d results when one was expected", len(v))
-	}
-	return
-}
-
-// BoolX is like Bool, but panics if an error occurs.
-func (as *AttestationSelect) BoolX(ctx context.Context) bool {
-	v, err := as.Bool(ctx)
-	if err != nil {
-		panic(err)
-	}
-	return v
 }
 
 func (as *AttestationSelect) sqlScan(ctx context.Context, v interface{}) error {

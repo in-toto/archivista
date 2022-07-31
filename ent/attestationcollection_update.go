@@ -401,9 +401,15 @@ func (acuo *AttestationCollectionUpdateOne) Save(ctx context.Context) (*Attestat
 			}
 			mut = acuo.hooks[i](mut)
 		}
-		if _, err := mut.Mutate(ctx, acuo.mutation); err != nil {
+		v, err := mut.Mutate(ctx, acuo.mutation)
+		if err != nil {
 			return nil, err
 		}
+		nv, ok := v.(*AttestationCollection)
+		if !ok {
+			return nil, fmt.Errorf("unexpected node type %T returned from AttestationCollectionMutation", v)
+		}
+		node = nv
 	}
 	return node, err
 }

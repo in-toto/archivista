@@ -33,6 +33,8 @@ type SubjectEdges struct {
 	// loadedTypes holds the information for reporting if a
 	// type was loaded (or requested) in eager-loading or not.
 	loadedTypes [2]bool
+	// totalCount holds the count of the edges above.
+	totalCount [2]*int
 }
 
 // SubjectDigestsOrErr returns the SubjectDigests value or an error if the edge
@@ -140,8 +142,8 @@ func (s *Subject) Unwrap() *Subject {
 func (s *Subject) String() string {
 	var builder strings.Builder
 	builder.WriteString("Subject(")
-	builder.WriteString(fmt.Sprintf("id=%v", s.ID))
-	builder.WriteString(", name=")
+	builder.WriteString(fmt.Sprintf("id=%v, ", s.ID))
+	builder.WriteString("name=")
 	builder.WriteString(s.Name)
 	builder.WriteByte(')')
 	return builder.String()

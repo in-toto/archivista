@@ -46,6 +46,8 @@ import (
 type UnifiedStorage interface {
 	archivist.ArchivistServer
 	archivist.CollectorServer
+
+	GetClient() *ent.Client
 }
 
 type store struct {
@@ -95,6 +97,10 @@ func NewServer(ctx context.Context, connectionstring string) (UnifiedStorage, <-
 	return &store{
 		client: client,
 	}, errCh, nil
+}
+
+func (s *store) GetClient() *ent.Client {
+	return s.client
 }
 
 func (s *store) GetBySubjectDigest(request *archivist.GetBySubjectDigestRequest, server archivist.Archivist_GetBySubjectDigestServer) error {

@@ -34,6 +34,8 @@ type StatementEdges struct {
 	// loadedTypes holds the information for reporting if a
 	// type was loaded (or requested) in eager-loading or not.
 	loadedTypes [3]bool
+	// totalCount holds the count of the edges above.
+	totalCount [3]*int
 }
 
 // SubjectsOrErr returns the Subjects value or an error if the edge
@@ -146,8 +148,8 @@ func (s *Statement) Unwrap() *Statement {
 func (s *Statement) String() string {
 	var builder strings.Builder
 	builder.WriteString("Statement(")
-	builder.WriteString(fmt.Sprintf("id=%v", s.ID))
-	builder.WriteString(", predicate=")
+	builder.WriteString(fmt.Sprintf("id=%v, ", s.ID))
+	builder.WriteString("predicate=")
 	builder.WriteString(s.Predicate)
 	builder.WriteByte(')')
 	return builder.String()
