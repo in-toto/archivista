@@ -4,7 +4,6 @@ package ent
 
 import (
 	"context"
-	"errors"
 	"fmt"
 	"math"
 
@@ -28,6 +27,8 @@ type SubjectDigestQuery struct {
 	// eager-loading edges.
 	withSubject *SubjectQuery
 	withFKs     bool
+	modifiers   []func(*sql.Selector)
+	loadTotal   []func(context.Context, []*SubjectDigest) error
 	// intermediate query (i.e. traversal path).
 	sql  *sql.Selector
 	path func(context.Context) (*sql.Selector, error)
@@ -302,15 +303,17 @@ func (sdq *SubjectDigestQuery) WithSubject(opts ...func(*SubjectQuery)) *Subject
 //		Scan(ctx, &v)
 //
 func (sdq *SubjectDigestQuery) GroupBy(field string, fields ...string) *SubjectDigestGroupBy {
-	group := &SubjectDigestGroupBy{config: sdq.config}
-	group.fields = append([]string{field}, fields...)
-	group.path = func(ctx context.Context) (prev *sql.Selector, err error) {
+	grbuild := &SubjectDigestGroupBy{config: sdq.config}
+	grbuild.fields = append([]string{field}, fields...)
+	grbuild.path = func(ctx context.Context) (prev *sql.Selector, err error) {
 		if err := sdq.prepareQuery(ctx); err != nil {
 			return nil, err
 		}
 		return sdq.sqlQuery(ctx), nil
 	}
-	return group
+	grbuild.label = subjectdigest.Label
+	grbuild.flds, grbuild.scan = &grbuild.fields, grbuild.Scan
+	return grbuild
 }
 
 // Select allows the selection one or more fields/columns for the given query,
@@ -328,7 +331,10 @@ func (sdq *SubjectDigestQuery) GroupBy(field string, fields ...string) *SubjectD
 //
 func (sdq *SubjectDigestQuery) Select(fields ...string) *SubjectDigestSelect {
 	sdq.fields = append(sdq.fields, fields...)
-	return &SubjectDigestSelect{SubjectDigestQuery: sdq}
+	selbuild := &SubjectDigestSelect{SubjectDigestQuery: sdq}
+	selbuild.label = subjectdigest.Label
+	selbuild.flds, selbuild.scan = &sdq.fields, selbuild.Scan
+	return selbuild
 }
 
 func (sdq *SubjectDigestQuery) prepareQuery(ctx context.Context) error {
@@ -347,7 +353,7 @@ func (sdq *SubjectDigestQuery) prepareQuery(ctx context.Context) error {
 	return nil
 }
 
-func (sdq *SubjectDigestQuery) sqlAll(ctx context.Context) ([]*SubjectDigest, error) {
+func (sdq *SubjectDigestQuery) sqlAll(ctx context.Context, hooks ...queryHook) ([]*SubjectDigest, error) {
 	var (
 		nodes       = []*SubjectDigest{}
 		withFKs     = sdq.withFKs
@@ -363,17 +369,19 @@ func (sdq *SubjectDigestQuery) sqlAll(ctx context.Context) ([]*SubjectDigest, er
 		_spec.Node.Columns = append(_spec.Node.Columns, subjectdigest.ForeignKeys...)
 	}
 	_spec.ScanValues = func(columns []string) ([]interface{}, error) {
-		node := &SubjectDigest{config: sdq.config}
-		nodes = append(nodes, node)
-		return node.scanValues(columns)
+		return (*SubjectDigest).scanValues(nil, columns)
 	}
 	_spec.Assign = func(columns []string, values []interface{}) error {
-		if len(nodes) == 0 {
-			return fmt.Errorf("ent: Assign called without calling ScanValues")
-		}
-		node := nodes[len(nodes)-1]
+		node := &SubjectDigest{config: sdq.config}
+		nodes = append(nodes, node)
 		node.Edges.loadedTypes = loadedTypes
 		return node.assignValues(columns, values)
+	}
+	if len(sdq.modifiers) > 0 {
+		_spec.Modifiers = sdq.modifiers
+	}
+	for i := range hooks {
+		hooks[i](ctx, _spec)
 	}
 	if err := sqlgraph.QueryNodes(ctx, sdq.driver, _spec); err != nil {
 		return nil, err
@@ -411,11 +419,19 @@ func (sdq *SubjectDigestQuery) sqlAll(ctx context.Context) ([]*SubjectDigest, er
 		}
 	}
 
+	for i := range sdq.loadTotal {
+		if err := sdq.loadTotal[i](ctx, nodes); err != nil {
+			return nil, err
+		}
+	}
 	return nodes, nil
 }
 
 func (sdq *SubjectDigestQuery) sqlCount(ctx context.Context) (int, error) {
 	_spec := sdq.querySpec()
+	if len(sdq.modifiers) > 0 {
+		_spec.Modifiers = sdq.modifiers
+	}
 	_spec.Node.Columns = sdq.fields
 	if len(sdq.fields) > 0 {
 		_spec.Unique = sdq.unique != nil && *sdq.unique
@@ -514,6 +530,7 @@ func (sdq *SubjectDigestQuery) sqlQuery(ctx context.Context) *sql.Selector {
 // SubjectDigestGroupBy is the group-by builder for SubjectDigest entities.
 type SubjectDigestGroupBy struct {
 	config
+	selector
 	fields []string
 	fns    []AggregateFunc
 	// intermediate query (i.e. traversal path).
@@ -535,209 +552,6 @@ func (sdgb *SubjectDigestGroupBy) Scan(ctx context.Context, v interface{}) error
 	}
 	sdgb.sql = query
 	return sdgb.sqlScan(ctx, v)
-}
-
-// ScanX is like Scan, but panics if an error occurs.
-func (sdgb *SubjectDigestGroupBy) ScanX(ctx context.Context, v interface{}) {
-	if err := sdgb.Scan(ctx, v); err != nil {
-		panic(err)
-	}
-}
-
-// Strings returns list of strings from group-by.
-// It is only allowed when executing a group-by query with one field.
-func (sdgb *SubjectDigestGroupBy) Strings(ctx context.Context) ([]string, error) {
-	if len(sdgb.fields) > 1 {
-		return nil, errors.New("ent: SubjectDigestGroupBy.Strings is not achievable when grouping more than 1 field")
-	}
-	var v []string
-	if err := sdgb.Scan(ctx, &v); err != nil {
-		return nil, err
-	}
-	return v, nil
-}
-
-// StringsX is like Strings, but panics if an error occurs.
-func (sdgb *SubjectDigestGroupBy) StringsX(ctx context.Context) []string {
-	v, err := sdgb.Strings(ctx)
-	if err != nil {
-		panic(err)
-	}
-	return v
-}
-
-// String returns a single string from a group-by query.
-// It is only allowed when executing a group-by query with one field.
-func (sdgb *SubjectDigestGroupBy) String(ctx context.Context) (_ string, err error) {
-	var v []string
-	if v, err = sdgb.Strings(ctx); err != nil {
-		return
-	}
-	switch len(v) {
-	case 1:
-		return v[0], nil
-	case 0:
-		err = &NotFoundError{subjectdigest.Label}
-	default:
-		err = fmt.Errorf("ent: SubjectDigestGroupBy.Strings returned %d results when one was expected", len(v))
-	}
-	return
-}
-
-// StringX is like String, but panics if an error occurs.
-func (sdgb *SubjectDigestGroupBy) StringX(ctx context.Context) string {
-	v, err := sdgb.String(ctx)
-	if err != nil {
-		panic(err)
-	}
-	return v
-}
-
-// Ints returns list of ints from group-by.
-// It is only allowed when executing a group-by query with one field.
-func (sdgb *SubjectDigestGroupBy) Ints(ctx context.Context) ([]int, error) {
-	if len(sdgb.fields) > 1 {
-		return nil, errors.New("ent: SubjectDigestGroupBy.Ints is not achievable when grouping more than 1 field")
-	}
-	var v []int
-	if err := sdgb.Scan(ctx, &v); err != nil {
-		return nil, err
-	}
-	return v, nil
-}
-
-// IntsX is like Ints, but panics if an error occurs.
-func (sdgb *SubjectDigestGroupBy) IntsX(ctx context.Context) []int {
-	v, err := sdgb.Ints(ctx)
-	if err != nil {
-		panic(err)
-	}
-	return v
-}
-
-// Int returns a single int from a group-by query.
-// It is only allowed when executing a group-by query with one field.
-func (sdgb *SubjectDigestGroupBy) Int(ctx context.Context) (_ int, err error) {
-	var v []int
-	if v, err = sdgb.Ints(ctx); err != nil {
-		return
-	}
-	switch len(v) {
-	case 1:
-		return v[0], nil
-	case 0:
-		err = &NotFoundError{subjectdigest.Label}
-	default:
-		err = fmt.Errorf("ent: SubjectDigestGroupBy.Ints returned %d results when one was expected", len(v))
-	}
-	return
-}
-
-// IntX is like Int, but panics if an error occurs.
-func (sdgb *SubjectDigestGroupBy) IntX(ctx context.Context) int {
-	v, err := sdgb.Int(ctx)
-	if err != nil {
-		panic(err)
-	}
-	return v
-}
-
-// Float64s returns list of float64s from group-by.
-// It is only allowed when executing a group-by query with one field.
-func (sdgb *SubjectDigestGroupBy) Float64s(ctx context.Context) ([]float64, error) {
-	if len(sdgb.fields) > 1 {
-		return nil, errors.New("ent: SubjectDigestGroupBy.Float64s is not achievable when grouping more than 1 field")
-	}
-	var v []float64
-	if err := sdgb.Scan(ctx, &v); err != nil {
-		return nil, err
-	}
-	return v, nil
-}
-
-// Float64sX is like Float64s, but panics if an error occurs.
-func (sdgb *SubjectDigestGroupBy) Float64sX(ctx context.Context) []float64 {
-	v, err := sdgb.Float64s(ctx)
-	if err != nil {
-		panic(err)
-	}
-	return v
-}
-
-// Float64 returns a single float64 from a group-by query.
-// It is only allowed when executing a group-by query with one field.
-func (sdgb *SubjectDigestGroupBy) Float64(ctx context.Context) (_ float64, err error) {
-	var v []float64
-	if v, err = sdgb.Float64s(ctx); err != nil {
-		return
-	}
-	switch len(v) {
-	case 1:
-		return v[0], nil
-	case 0:
-		err = &NotFoundError{subjectdigest.Label}
-	default:
-		err = fmt.Errorf("ent: SubjectDigestGroupBy.Float64s returned %d results when one was expected", len(v))
-	}
-	return
-}
-
-// Float64X is like Float64, but panics if an error occurs.
-func (sdgb *SubjectDigestGroupBy) Float64X(ctx context.Context) float64 {
-	v, err := sdgb.Float64(ctx)
-	if err != nil {
-		panic(err)
-	}
-	return v
-}
-
-// Bools returns list of bools from group-by.
-// It is only allowed when executing a group-by query with one field.
-func (sdgb *SubjectDigestGroupBy) Bools(ctx context.Context) ([]bool, error) {
-	if len(sdgb.fields) > 1 {
-		return nil, errors.New("ent: SubjectDigestGroupBy.Bools is not achievable when grouping more than 1 field")
-	}
-	var v []bool
-	if err := sdgb.Scan(ctx, &v); err != nil {
-		return nil, err
-	}
-	return v, nil
-}
-
-// BoolsX is like Bools, but panics if an error occurs.
-func (sdgb *SubjectDigestGroupBy) BoolsX(ctx context.Context) []bool {
-	v, err := sdgb.Bools(ctx)
-	if err != nil {
-		panic(err)
-	}
-	return v
-}
-
-// Bool returns a single bool from a group-by query.
-// It is only allowed when executing a group-by query with one field.
-func (sdgb *SubjectDigestGroupBy) Bool(ctx context.Context) (_ bool, err error) {
-	var v []bool
-	if v, err = sdgb.Bools(ctx); err != nil {
-		return
-	}
-	switch len(v) {
-	case 1:
-		return v[0], nil
-	case 0:
-		err = &NotFoundError{subjectdigest.Label}
-	default:
-		err = fmt.Errorf("ent: SubjectDigestGroupBy.Bools returned %d results when one was expected", len(v))
-	}
-	return
-}
-
-// BoolX is like Bool, but panics if an error occurs.
-func (sdgb *SubjectDigestGroupBy) BoolX(ctx context.Context) bool {
-	v, err := sdgb.Bool(ctx)
-	if err != nil {
-		panic(err)
-	}
-	return v
 }
 
 func (sdgb *SubjectDigestGroupBy) sqlScan(ctx context.Context, v interface{}) error {
@@ -781,6 +595,7 @@ func (sdgb *SubjectDigestGroupBy) sqlQuery() *sql.Selector {
 // SubjectDigestSelect is the builder for selecting fields of SubjectDigest entities.
 type SubjectDigestSelect struct {
 	*SubjectDigestQuery
+	selector
 	// intermediate query (i.e. traversal path).
 	sql *sql.Selector
 }
@@ -792,201 +607,6 @@ func (sds *SubjectDigestSelect) Scan(ctx context.Context, v interface{}) error {
 	}
 	sds.sql = sds.SubjectDigestQuery.sqlQuery(ctx)
 	return sds.sqlScan(ctx, v)
-}
-
-// ScanX is like Scan, but panics if an error occurs.
-func (sds *SubjectDigestSelect) ScanX(ctx context.Context, v interface{}) {
-	if err := sds.Scan(ctx, v); err != nil {
-		panic(err)
-	}
-}
-
-// Strings returns list of strings from a selector. It is only allowed when selecting one field.
-func (sds *SubjectDigestSelect) Strings(ctx context.Context) ([]string, error) {
-	if len(sds.fields) > 1 {
-		return nil, errors.New("ent: SubjectDigestSelect.Strings is not achievable when selecting more than 1 field")
-	}
-	var v []string
-	if err := sds.Scan(ctx, &v); err != nil {
-		return nil, err
-	}
-	return v, nil
-}
-
-// StringsX is like Strings, but panics if an error occurs.
-func (sds *SubjectDigestSelect) StringsX(ctx context.Context) []string {
-	v, err := sds.Strings(ctx)
-	if err != nil {
-		panic(err)
-	}
-	return v
-}
-
-// String returns a single string from a selector. It is only allowed when selecting one field.
-func (sds *SubjectDigestSelect) String(ctx context.Context) (_ string, err error) {
-	var v []string
-	if v, err = sds.Strings(ctx); err != nil {
-		return
-	}
-	switch len(v) {
-	case 1:
-		return v[0], nil
-	case 0:
-		err = &NotFoundError{subjectdigest.Label}
-	default:
-		err = fmt.Errorf("ent: SubjectDigestSelect.Strings returned %d results when one was expected", len(v))
-	}
-	return
-}
-
-// StringX is like String, but panics if an error occurs.
-func (sds *SubjectDigestSelect) StringX(ctx context.Context) string {
-	v, err := sds.String(ctx)
-	if err != nil {
-		panic(err)
-	}
-	return v
-}
-
-// Ints returns list of ints from a selector. It is only allowed when selecting one field.
-func (sds *SubjectDigestSelect) Ints(ctx context.Context) ([]int, error) {
-	if len(sds.fields) > 1 {
-		return nil, errors.New("ent: SubjectDigestSelect.Ints is not achievable when selecting more than 1 field")
-	}
-	var v []int
-	if err := sds.Scan(ctx, &v); err != nil {
-		return nil, err
-	}
-	return v, nil
-}
-
-// IntsX is like Ints, but panics if an error occurs.
-func (sds *SubjectDigestSelect) IntsX(ctx context.Context) []int {
-	v, err := sds.Ints(ctx)
-	if err != nil {
-		panic(err)
-	}
-	return v
-}
-
-// Int returns a single int from a selector. It is only allowed when selecting one field.
-func (sds *SubjectDigestSelect) Int(ctx context.Context) (_ int, err error) {
-	var v []int
-	if v, err = sds.Ints(ctx); err != nil {
-		return
-	}
-	switch len(v) {
-	case 1:
-		return v[0], nil
-	case 0:
-		err = &NotFoundError{subjectdigest.Label}
-	default:
-		err = fmt.Errorf("ent: SubjectDigestSelect.Ints returned %d results when one was expected", len(v))
-	}
-	return
-}
-
-// IntX is like Int, but panics if an error occurs.
-func (sds *SubjectDigestSelect) IntX(ctx context.Context) int {
-	v, err := sds.Int(ctx)
-	if err != nil {
-		panic(err)
-	}
-	return v
-}
-
-// Float64s returns list of float64s from a selector. It is only allowed when selecting one field.
-func (sds *SubjectDigestSelect) Float64s(ctx context.Context) ([]float64, error) {
-	if len(sds.fields) > 1 {
-		return nil, errors.New("ent: SubjectDigestSelect.Float64s is not achievable when selecting more than 1 field")
-	}
-	var v []float64
-	if err := sds.Scan(ctx, &v); err != nil {
-		return nil, err
-	}
-	return v, nil
-}
-
-// Float64sX is like Float64s, but panics if an error occurs.
-func (sds *SubjectDigestSelect) Float64sX(ctx context.Context) []float64 {
-	v, err := sds.Float64s(ctx)
-	if err != nil {
-		panic(err)
-	}
-	return v
-}
-
-// Float64 returns a single float64 from a selector. It is only allowed when selecting one field.
-func (sds *SubjectDigestSelect) Float64(ctx context.Context) (_ float64, err error) {
-	var v []float64
-	if v, err = sds.Float64s(ctx); err != nil {
-		return
-	}
-	switch len(v) {
-	case 1:
-		return v[0], nil
-	case 0:
-		err = &NotFoundError{subjectdigest.Label}
-	default:
-		err = fmt.Errorf("ent: SubjectDigestSelect.Float64s returned %d results when one was expected", len(v))
-	}
-	return
-}
-
-// Float64X is like Float64, but panics if an error occurs.
-func (sds *SubjectDigestSelect) Float64X(ctx context.Context) float64 {
-	v, err := sds.Float64(ctx)
-	if err != nil {
-		panic(err)
-	}
-	return v
-}
-
-// Bools returns list of bools from a selector. It is only allowed when selecting one field.
-func (sds *SubjectDigestSelect) Bools(ctx context.Context) ([]bool, error) {
-	if len(sds.fields) > 1 {
-		return nil, errors.New("ent: SubjectDigestSelect.Bools is not achievable when selecting more than 1 field")
-	}
-	var v []bool
-	if err := sds.Scan(ctx, &v); err != nil {
-		return nil, err
-	}
-	return v, nil
-}
-
-// BoolsX is like Bools, but panics if an error occurs.
-func (sds *SubjectDigestSelect) BoolsX(ctx context.Context) []bool {
-	v, err := sds.Bools(ctx)
-	if err != nil {
-		panic(err)
-	}
-	return v
-}
-
-// Bool returns a single bool from a selector. It is only allowed when selecting one field.
-func (sds *SubjectDigestSelect) Bool(ctx context.Context) (_ bool, err error) {
-	var v []bool
-	if v, err = sds.Bools(ctx); err != nil {
-		return
-	}
-	switch len(v) {
-	case 1:
-		return v[0], nil
-	case 0:
-		err = &NotFoundError{subjectdigest.Label}
-	default:
-		err = fmt.Errorf("ent: SubjectDigestSelect.Bools returned %d results when one was expected", len(v))
-	}
-	return
-}
-
-// BoolX is like Bool, but panics if an error occurs.
-func (sds *SubjectDigestSelect) BoolX(ctx context.Context) bool {
-	v, err := sds.Bool(ctx)
-	if err != nil {
-		panic(err)
-	}
-	return v
 }
 
 func (sds *SubjectDigestSelect) sqlScan(ctx context.Context, v interface{}) error {

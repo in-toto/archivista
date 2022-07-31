@@ -37,6 +37,8 @@ type DsseEdges struct {
 	// loadedTypes holds the information for reporting if a
 	// type was loaded (or requested) in eager-loading or not.
 	loadedTypes [3]bool
+	// totalCount holds the count of the edges above.
+	totalCount [3]*int
 }
 
 // StatementOrErr returns the Statement value or an error if the edge
@@ -164,10 +166,11 @@ func (d *Dsse) Unwrap() *Dsse {
 func (d *Dsse) String() string {
 	var builder strings.Builder
 	builder.WriteString("Dsse(")
-	builder.WriteString(fmt.Sprintf("id=%v", d.ID))
-	builder.WriteString(", gitbom_sha256=")
+	builder.WriteString(fmt.Sprintf("id=%v, ", d.ID))
+	builder.WriteString("gitbom_sha256=")
 	builder.WriteString(d.GitbomSha256)
-	builder.WriteString(", payload_type=")
+	builder.WriteString(", ")
+	builder.WriteString("payload_type=")
 	builder.WriteString(d.PayloadType)
 	builder.WriteByte(')')
 	return builder.String()

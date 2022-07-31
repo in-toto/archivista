@@ -33,6 +33,8 @@ type SignatureEdges struct {
 	// loadedTypes holds the information for reporting if a
 	// type was loaded (or requested) in eager-loading or not.
 	loadedTypes [1]bool
+	// totalCount holds the count of the edges above.
+	totalCount [1]*int
 }
 
 // DsseOrErr returns the Dsse value or an error if the edge
@@ -132,10 +134,11 @@ func (s *Signature) Unwrap() *Signature {
 func (s *Signature) String() string {
 	var builder strings.Builder
 	builder.WriteString("Signature(")
-	builder.WriteString(fmt.Sprintf("id=%v", s.ID))
-	builder.WriteString(", key_id=")
+	builder.WriteString(fmt.Sprintf("id=%v, ", s.ID))
+	builder.WriteString("key_id=")
 	builder.WriteString(s.KeyID)
-	builder.WriteString(", signature=")
+	builder.WriteString(", ")
+	builder.WriteString("signature=")
 	builder.WriteString(s.Signature)
 	builder.WriteByte(')')
 	return builder.String()

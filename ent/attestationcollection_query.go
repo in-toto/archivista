@@ -5,7 +5,6 @@ package ent
 import (
 	"context"
 	"database/sql/driver"
-	"errors"
 	"fmt"
 	"math"
 
@@ -31,6 +30,8 @@ type AttestationCollectionQuery struct {
 	withAttestations *AttestationQuery
 	withStatement    *StatementQuery
 	withFKs          bool
+	modifiers        []func(*sql.Selector)
+	loadTotal        []func(context.Context, []*AttestationCollection) error
 	// intermediate query (i.e. traversal path).
 	sql  *sql.Selector
 	path func(context.Context) (*sql.Selector, error)
@@ -339,15 +340,17 @@ func (acq *AttestationCollectionQuery) WithStatement(opts ...func(*StatementQuer
 //		Scan(ctx, &v)
 //
 func (acq *AttestationCollectionQuery) GroupBy(field string, fields ...string) *AttestationCollectionGroupBy {
-	group := &AttestationCollectionGroupBy{config: acq.config}
-	group.fields = append([]string{field}, fields...)
-	group.path = func(ctx context.Context) (prev *sql.Selector, err error) {
+	grbuild := &AttestationCollectionGroupBy{config: acq.config}
+	grbuild.fields = append([]string{field}, fields...)
+	grbuild.path = func(ctx context.Context) (prev *sql.Selector, err error) {
 		if err := acq.prepareQuery(ctx); err != nil {
 			return nil, err
 		}
 		return acq.sqlQuery(ctx), nil
 	}
-	return group
+	grbuild.label = attestationcollection.Label
+	grbuild.flds, grbuild.scan = &grbuild.fields, grbuild.Scan
+	return grbuild
 }
 
 // Select allows the selection one or more fields/columns for the given query,
@@ -365,7 +368,10 @@ func (acq *AttestationCollectionQuery) GroupBy(field string, fields ...string) *
 //
 func (acq *AttestationCollectionQuery) Select(fields ...string) *AttestationCollectionSelect {
 	acq.fields = append(acq.fields, fields...)
-	return &AttestationCollectionSelect{AttestationCollectionQuery: acq}
+	selbuild := &AttestationCollectionSelect{AttestationCollectionQuery: acq}
+	selbuild.label = attestationcollection.Label
+	selbuild.flds, selbuild.scan = &acq.fields, selbuild.Scan
+	return selbuild
 }
 
 func (acq *AttestationCollectionQuery) prepareQuery(ctx context.Context) error {
@@ -384,7 +390,7 @@ func (acq *AttestationCollectionQuery) prepareQuery(ctx context.Context) error {
 	return nil
 }
 
-func (acq *AttestationCollectionQuery) sqlAll(ctx context.Context) ([]*AttestationCollection, error) {
+func (acq *AttestationCollectionQuery) sqlAll(ctx context.Context, hooks ...queryHook) ([]*AttestationCollection, error) {
 	var (
 		nodes       = []*AttestationCollection{}
 		withFKs     = acq.withFKs
@@ -401,17 +407,19 @@ func (acq *AttestationCollectionQuery) sqlAll(ctx context.Context) ([]*Attestati
 		_spec.Node.Columns = append(_spec.Node.Columns, attestationcollection.ForeignKeys...)
 	}
 	_spec.ScanValues = func(columns []string) ([]interface{}, error) {
-		node := &AttestationCollection{config: acq.config}
-		nodes = append(nodes, node)
-		return node.scanValues(columns)
+		return (*AttestationCollection).scanValues(nil, columns)
 	}
 	_spec.Assign = func(columns []string, values []interface{}) error {
-		if len(nodes) == 0 {
-			return fmt.Errorf("ent: Assign called without calling ScanValues")
-		}
-		node := nodes[len(nodes)-1]
+		node := &AttestationCollection{config: acq.config}
+		nodes = append(nodes, node)
 		node.Edges.loadedTypes = loadedTypes
 		return node.assignValues(columns, values)
+	}
+	if len(acq.modifiers) > 0 {
+		_spec.Modifiers = acq.modifiers
+	}
+	for i := range hooks {
+		hooks[i](ctx, _spec)
 	}
 	if err := sqlgraph.QueryNodes(ctx, acq.driver, _spec); err != nil {
 		return nil, err
@@ -478,11 +486,19 @@ func (acq *AttestationCollectionQuery) sqlAll(ctx context.Context) ([]*Attestati
 		}
 	}
 
+	for i := range acq.loadTotal {
+		if err := acq.loadTotal[i](ctx, nodes); err != nil {
+			return nil, err
+		}
+	}
 	return nodes, nil
 }
 
 func (acq *AttestationCollectionQuery) sqlCount(ctx context.Context) (int, error) {
 	_spec := acq.querySpec()
+	if len(acq.modifiers) > 0 {
+		_spec.Modifiers = acq.modifiers
+	}
 	_spec.Node.Columns = acq.fields
 	if len(acq.fields) > 0 {
 		_spec.Unique = acq.unique != nil && *acq.unique
@@ -581,6 +597,7 @@ func (acq *AttestationCollectionQuery) sqlQuery(ctx context.Context) *sql.Select
 // AttestationCollectionGroupBy is the group-by builder for AttestationCollection entities.
 type AttestationCollectionGroupBy struct {
 	config
+	selector
 	fields []string
 	fns    []AggregateFunc
 	// intermediate query (i.e. traversal path).
@@ -602,209 +619,6 @@ func (acgb *AttestationCollectionGroupBy) Scan(ctx context.Context, v interface{
 	}
 	acgb.sql = query
 	return acgb.sqlScan(ctx, v)
-}
-
-// ScanX is like Scan, but panics if an error occurs.
-func (acgb *AttestationCollectionGroupBy) ScanX(ctx context.Context, v interface{}) {
-	if err := acgb.Scan(ctx, v); err != nil {
-		panic(err)
-	}
-}
-
-// Strings returns list of strings from group-by.
-// It is only allowed when executing a group-by query with one field.
-func (acgb *AttestationCollectionGroupBy) Strings(ctx context.Context) ([]string, error) {
-	if len(acgb.fields) > 1 {
-		return nil, errors.New("ent: AttestationCollectionGroupBy.Strings is not achievable when grouping more than 1 field")
-	}
-	var v []string
-	if err := acgb.Scan(ctx, &v); err != nil {
-		return nil, err
-	}
-	return v, nil
-}
-
-// StringsX is like Strings, but panics if an error occurs.
-func (acgb *AttestationCollectionGroupBy) StringsX(ctx context.Context) []string {
-	v, err := acgb.Strings(ctx)
-	if err != nil {
-		panic(err)
-	}
-	return v
-}
-
-// String returns a single string from a group-by query.
-// It is only allowed when executing a group-by query with one field.
-func (acgb *AttestationCollectionGroupBy) String(ctx context.Context) (_ string, err error) {
-	var v []string
-	if v, err = acgb.Strings(ctx); err != nil {
-		return
-	}
-	switch len(v) {
-	case 1:
-		return v[0], nil
-	case 0:
-		err = &NotFoundError{attestationcollection.Label}
-	default:
-		err = fmt.Errorf("ent: AttestationCollectionGroupBy.Strings returned %d results when one was expected", len(v))
-	}
-	return
-}
-
-// StringX is like String, but panics if an error occurs.
-func (acgb *AttestationCollectionGroupBy) StringX(ctx context.Context) string {
-	v, err := acgb.String(ctx)
-	if err != nil {
-		panic(err)
-	}
-	return v
-}
-
-// Ints returns list of ints from group-by.
-// It is only allowed when executing a group-by query with one field.
-func (acgb *AttestationCollectionGroupBy) Ints(ctx context.Context) ([]int, error) {
-	if len(acgb.fields) > 1 {
-		return nil, errors.New("ent: AttestationCollectionGroupBy.Ints is not achievable when grouping more than 1 field")
-	}
-	var v []int
-	if err := acgb.Scan(ctx, &v); err != nil {
-		return nil, err
-	}
-	return v, nil
-}
-
-// IntsX is like Ints, but panics if an error occurs.
-func (acgb *AttestationCollectionGroupBy) IntsX(ctx context.Context) []int {
-	v, err := acgb.Ints(ctx)
-	if err != nil {
-		panic(err)
-	}
-	return v
-}
-
-// Int returns a single int from a group-by query.
-// It is only allowed when executing a group-by query with one field.
-func (acgb *AttestationCollectionGroupBy) Int(ctx context.Context) (_ int, err error) {
-	var v []int
-	if v, err = acgb.Ints(ctx); err != nil {
-		return
-	}
-	switch len(v) {
-	case 1:
-		return v[0], nil
-	case 0:
-		err = &NotFoundError{attestationcollection.Label}
-	default:
-		err = fmt.Errorf("ent: AttestationCollectionGroupBy.Ints returned %d results when one was expected", len(v))
-	}
-	return
-}
-
-// IntX is like Int, but panics if an error occurs.
-func (acgb *AttestationCollectionGroupBy) IntX(ctx context.Context) int {
-	v, err := acgb.Int(ctx)
-	if err != nil {
-		panic(err)
-	}
-	return v
-}
-
-// Float64s returns list of float64s from group-by.
-// It is only allowed when executing a group-by query with one field.
-func (acgb *AttestationCollectionGroupBy) Float64s(ctx context.Context) ([]float64, error) {
-	if len(acgb.fields) > 1 {
-		return nil, errors.New("ent: AttestationCollectionGroupBy.Float64s is not achievable when grouping more than 1 field")
-	}
-	var v []float64
-	if err := acgb.Scan(ctx, &v); err != nil {
-		return nil, err
-	}
-	return v, nil
-}
-
-// Float64sX is like Float64s, but panics if an error occurs.
-func (acgb *AttestationCollectionGroupBy) Float64sX(ctx context.Context) []float64 {
-	v, err := acgb.Float64s(ctx)
-	if err != nil {
-		panic(err)
-	}
-	return v
-}
-
-// Float64 returns a single float64 from a group-by query.
-// It is only allowed when executing a group-by query with one field.
-func (acgb *AttestationCollectionGroupBy) Float64(ctx context.Context) (_ float64, err error) {
-	var v []float64
-	if v, err = acgb.Float64s(ctx); err != nil {
-		return
-	}
-	switch len(v) {
-	case 1:
-		return v[0], nil
-	case 0:
-		err = &NotFoundError{attestationcollection.Label}
-	default:
-		err = fmt.Errorf("ent: AttestationCollectionGroupBy.Float64s returned %d results when one was expected", len(v))
-	}
-	return
-}
-
-// Float64X is like Float64, but panics if an error occurs.
-func (acgb *AttestationCollectionGroupBy) Float64X(ctx context.Context) float64 {
-	v, err := acgb.Float64(ctx)
-	if err != nil {
-		panic(err)
-	}
-	return v
-}
-
-// Bools returns list of bools from group-by.
-// It is only allowed when executing a group-by query with one field.
-func (acgb *AttestationCollectionGroupBy) Bools(ctx context.Context) ([]bool, error) {
-	if len(acgb.fields) > 1 {
-		return nil, errors.New("ent: AttestationCollectionGroupBy.Bools is not achievable when grouping more than 1 field")
-	}
-	var v []bool
-	if err := acgb.Scan(ctx, &v); err != nil {
-		return nil, err
-	}
-	return v, nil
-}
-
-// BoolsX is like Bools, but panics if an error occurs.
-func (acgb *AttestationCollectionGroupBy) BoolsX(ctx context.Context) []bool {
-	v, err := acgb.Bools(ctx)
-	if err != nil {
-		panic(err)
-	}
-	return v
-}
-
-// Bool returns a single bool from a group-by query.
-// It is only allowed when executing a group-by query with one field.
-func (acgb *AttestationCollectionGroupBy) Bool(ctx context.Context) (_ bool, err error) {
-	var v []bool
-	if v, err = acgb.Bools(ctx); err != nil {
-		return
-	}
-	switch len(v) {
-	case 1:
-		return v[0], nil
-	case 0:
-		err = &NotFoundError{attestationcollection.Label}
-	default:
-		err = fmt.Errorf("ent: AttestationCollectionGroupBy.Bools returned %d results when one was expected", len(v))
-	}
-	return
-}
-
-// BoolX is like Bool, but panics if an error occurs.
-func (acgb *AttestationCollectionGroupBy) BoolX(ctx context.Context) bool {
-	v, err := acgb.Bool(ctx)
-	if err != nil {
-		panic(err)
-	}
-	return v
 }
 
 func (acgb *AttestationCollectionGroupBy) sqlScan(ctx context.Context, v interface{}) error {
@@ -848,6 +662,7 @@ func (acgb *AttestationCollectionGroupBy) sqlQuery() *sql.Selector {
 // AttestationCollectionSelect is the builder for selecting fields of AttestationCollection entities.
 type AttestationCollectionSelect struct {
 	*AttestationCollectionQuery
+	selector
 	// intermediate query (i.e. traversal path).
 	sql *sql.Selector
 }
@@ -859,201 +674,6 @@ func (acs *AttestationCollectionSelect) Scan(ctx context.Context, v interface{})
 	}
 	acs.sql = acs.AttestationCollectionQuery.sqlQuery(ctx)
 	return acs.sqlScan(ctx, v)
-}
-
-// ScanX is like Scan, but panics if an error occurs.
-func (acs *AttestationCollectionSelect) ScanX(ctx context.Context, v interface{}) {
-	if err := acs.Scan(ctx, v); err != nil {
-		panic(err)
-	}
-}
-
-// Strings returns list of strings from a selector. It is only allowed when selecting one field.
-func (acs *AttestationCollectionSelect) Strings(ctx context.Context) ([]string, error) {
-	if len(acs.fields) > 1 {
-		return nil, errors.New("ent: AttestationCollectionSelect.Strings is not achievable when selecting more than 1 field")
-	}
-	var v []string
-	if err := acs.Scan(ctx, &v); err != nil {
-		return nil, err
-	}
-	return v, nil
-}
-
-// StringsX is like Strings, but panics if an error occurs.
-func (acs *AttestationCollectionSelect) StringsX(ctx context.Context) []string {
-	v, err := acs.Strings(ctx)
-	if err != nil {
-		panic(err)
-	}
-	return v
-}
-
-// String returns a single string from a selector. It is only allowed when selecting one field.
-func (acs *AttestationCollectionSelect) String(ctx context.Context) (_ string, err error) {
-	var v []string
-	if v, err = acs.Strings(ctx); err != nil {
-		return
-	}
-	switch len(v) {
-	case 1:
-		return v[0], nil
-	case 0:
-		err = &NotFoundError{attestationcollection.Label}
-	default:
-		err = fmt.Errorf("ent: AttestationCollectionSelect.Strings returned %d results when one was expected", len(v))
-	}
-	return
-}
-
-// StringX is like String, but panics if an error occurs.
-func (acs *AttestationCollectionSelect) StringX(ctx context.Context) string {
-	v, err := acs.String(ctx)
-	if err != nil {
-		panic(err)
-	}
-	return v
-}
-
-// Ints returns list of ints from a selector. It is only allowed when selecting one field.
-func (acs *AttestationCollectionSelect) Ints(ctx context.Context) ([]int, error) {
-	if len(acs.fields) > 1 {
-		return nil, errors.New("ent: AttestationCollectionSelect.Ints is not achievable when selecting more than 1 field")
-	}
-	var v []int
-	if err := acs.Scan(ctx, &v); err != nil {
-		return nil, err
-	}
-	return v, nil
-}
-
-// IntsX is like Ints, but panics if an error occurs.
-func (acs *AttestationCollectionSelect) IntsX(ctx context.Context) []int {
-	v, err := acs.Ints(ctx)
-	if err != nil {
-		panic(err)
-	}
-	return v
-}
-
-// Int returns a single int from a selector. It is only allowed when selecting one field.
-func (acs *AttestationCollectionSelect) Int(ctx context.Context) (_ int, err error) {
-	var v []int
-	if v, err = acs.Ints(ctx); err != nil {
-		return
-	}
-	switch len(v) {
-	case 1:
-		return v[0], nil
-	case 0:
-		err = &NotFoundError{attestationcollection.Label}
-	default:
-		err = fmt.Errorf("ent: AttestationCollectionSelect.Ints returned %d results when one was expected", len(v))
-	}
-	return
-}
-
-// IntX is like Int, but panics if an error occurs.
-func (acs *AttestationCollectionSelect) IntX(ctx context.Context) int {
-	v, err := acs.Int(ctx)
-	if err != nil {
-		panic(err)
-	}
-	return v
-}
-
-// Float64s returns list of float64s from a selector. It is only allowed when selecting one field.
-func (acs *AttestationCollectionSelect) Float64s(ctx context.Context) ([]float64, error) {
-	if len(acs.fields) > 1 {
-		return nil, errors.New("ent: AttestationCollectionSelect.Float64s is not achievable when selecting more than 1 field")
-	}
-	var v []float64
-	if err := acs.Scan(ctx, &v); err != nil {
-		return nil, err
-	}
-	return v, nil
-}
-
-// Float64sX is like Float64s, but panics if an error occurs.
-func (acs *AttestationCollectionSelect) Float64sX(ctx context.Context) []float64 {
-	v, err := acs.Float64s(ctx)
-	if err != nil {
-		panic(err)
-	}
-	return v
-}
-
-// Float64 returns a single float64 from a selector. It is only allowed when selecting one field.
-func (acs *AttestationCollectionSelect) Float64(ctx context.Context) (_ float64, err error) {
-	var v []float64
-	if v, err = acs.Float64s(ctx); err != nil {
-		return
-	}
-	switch len(v) {
-	case 1:
-		return v[0], nil
-	case 0:
-		err = &NotFoundError{attestationcollection.Label}
-	default:
-		err = fmt.Errorf("ent: AttestationCollectionSelect.Float64s returned %d results when one was expected", len(v))
-	}
-	return
-}
-
-// Float64X is like Float64, but panics if an error occurs.
-func (acs *AttestationCollectionSelect) Float64X(ctx context.Context) float64 {
-	v, err := acs.Float64(ctx)
-	if err != nil {
-		panic(err)
-	}
-	return v
-}
-
-// Bools returns list of bools from a selector. It is only allowed when selecting one field.
-func (acs *AttestationCollectionSelect) Bools(ctx context.Context) ([]bool, error) {
-	if len(acs.fields) > 1 {
-		return nil, errors.New("ent: AttestationCollectionSelect.Bools is not achievable when selecting more than 1 field")
-	}
-	var v []bool
-	if err := acs.Scan(ctx, &v); err != nil {
-		return nil, err
-	}
-	return v, nil
-}
-
-// BoolsX is like Bools, but panics if an error occurs.
-func (acs *AttestationCollectionSelect) BoolsX(ctx context.Context) []bool {
-	v, err := acs.Bools(ctx)
-	if err != nil {
-		panic(err)
-	}
-	return v
-}
-
-// Bool returns a single bool from a selector. It is only allowed when selecting one field.
-func (acs *AttestationCollectionSelect) Bool(ctx context.Context) (_ bool, err error) {
-	var v []bool
-	if v, err = acs.Bools(ctx); err != nil {
-		return
-	}
-	switch len(v) {
-	case 1:
-		return v[0], nil
-	case 0:
-		err = &NotFoundError{attestationcollection.Label}
-	default:
-		err = fmt.Errorf("ent: AttestationCollectionSelect.Bools returned %d results when one was expected", len(v))
-	}
-	return
-}
-
-// BoolX is like Bool, but panics if an error occurs.
-func (acs *AttestationCollectionSelect) BoolX(ctx context.Context) bool {
-	v, err := acs.Bool(ctx)
-	if err != nil {
-		panic(err)
-	}
-	return v
 }
 
 func (acs *AttestationCollectionSelect) sqlScan(ctx context.Context, v interface{}) error {

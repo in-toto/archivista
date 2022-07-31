@@ -5,7 +5,6 @@ package ent
 import (
 	"context"
 	"database/sql/driver"
-	"errors"
 	"fmt"
 	"math"
 
@@ -31,6 +30,8 @@ type SubjectQuery struct {
 	withSubjectDigests *SubjectDigestQuery
 	withStatement      *StatementQuery
 	withFKs            bool
+	modifiers          []func(*sql.Selector)
+	loadTotal          []func(context.Context, []*Subject) error
 	// intermediate query (i.e. traversal path).
 	sql  *sql.Selector
 	path func(context.Context) (*sql.Selector, error)
@@ -339,15 +340,17 @@ func (sq *SubjectQuery) WithStatement(opts ...func(*StatementQuery)) *SubjectQue
 //		Scan(ctx, &v)
 //
 func (sq *SubjectQuery) GroupBy(field string, fields ...string) *SubjectGroupBy {
-	group := &SubjectGroupBy{config: sq.config}
-	group.fields = append([]string{field}, fields...)
-	group.path = func(ctx context.Context) (prev *sql.Selector, err error) {
+	grbuild := &SubjectGroupBy{config: sq.config}
+	grbuild.fields = append([]string{field}, fields...)
+	grbuild.path = func(ctx context.Context) (prev *sql.Selector, err error) {
 		if err := sq.prepareQuery(ctx); err != nil {
 			return nil, err
 		}
 		return sq.sqlQuery(ctx), nil
 	}
-	return group
+	grbuild.label = subject.Label
+	grbuild.flds, grbuild.scan = &grbuild.fields, grbuild.Scan
+	return grbuild
 }
 
 // Select allows the selection one or more fields/columns for the given query,
@@ -365,7 +368,10 @@ func (sq *SubjectQuery) GroupBy(field string, fields ...string) *SubjectGroupBy 
 //
 func (sq *SubjectQuery) Select(fields ...string) *SubjectSelect {
 	sq.fields = append(sq.fields, fields...)
-	return &SubjectSelect{SubjectQuery: sq}
+	selbuild := &SubjectSelect{SubjectQuery: sq}
+	selbuild.label = subject.Label
+	selbuild.flds, selbuild.scan = &sq.fields, selbuild.Scan
+	return selbuild
 }
 
 func (sq *SubjectQuery) prepareQuery(ctx context.Context) error {
@@ -384,7 +390,7 @@ func (sq *SubjectQuery) prepareQuery(ctx context.Context) error {
 	return nil
 }
 
-func (sq *SubjectQuery) sqlAll(ctx context.Context) ([]*Subject, error) {
+func (sq *SubjectQuery) sqlAll(ctx context.Context, hooks ...queryHook) ([]*Subject, error) {
 	var (
 		nodes       = []*Subject{}
 		withFKs     = sq.withFKs
@@ -401,17 +407,19 @@ func (sq *SubjectQuery) sqlAll(ctx context.Context) ([]*Subject, error) {
 		_spec.Node.Columns = append(_spec.Node.Columns, subject.ForeignKeys...)
 	}
 	_spec.ScanValues = func(columns []string) ([]interface{}, error) {
-		node := &Subject{config: sq.config}
-		nodes = append(nodes, node)
-		return node.scanValues(columns)
+		return (*Subject).scanValues(nil, columns)
 	}
 	_spec.Assign = func(columns []string, values []interface{}) error {
-		if len(nodes) == 0 {
-			return fmt.Errorf("ent: Assign called without calling ScanValues")
-		}
-		node := nodes[len(nodes)-1]
+		node := &Subject{config: sq.config}
+		nodes = append(nodes, node)
 		node.Edges.loadedTypes = loadedTypes
 		return node.assignValues(columns, values)
+	}
+	if len(sq.modifiers) > 0 {
+		_spec.Modifiers = sq.modifiers
+	}
+	for i := range hooks {
+		hooks[i](ctx, _spec)
 	}
 	if err := sqlgraph.QueryNodes(ctx, sq.driver, _spec); err != nil {
 		return nil, err
@@ -478,11 +486,19 @@ func (sq *SubjectQuery) sqlAll(ctx context.Context) ([]*Subject, error) {
 		}
 	}
 
+	for i := range sq.loadTotal {
+		if err := sq.loadTotal[i](ctx, nodes); err != nil {
+			return nil, err
+		}
+	}
 	return nodes, nil
 }
 
 func (sq *SubjectQuery) sqlCount(ctx context.Context) (int, error) {
 	_spec := sq.querySpec()
+	if len(sq.modifiers) > 0 {
+		_spec.Modifiers = sq.modifiers
+	}
 	_spec.Node.Columns = sq.fields
 	if len(sq.fields) > 0 {
 		_spec.Unique = sq.unique != nil && *sq.unique
@@ -581,6 +597,7 @@ func (sq *SubjectQuery) sqlQuery(ctx context.Context) *sql.Selector {
 // SubjectGroupBy is the group-by builder for Subject entities.
 type SubjectGroupBy struct {
 	config
+	selector
 	fields []string
 	fns    []AggregateFunc
 	// intermediate query (i.e. traversal path).
@@ -602,209 +619,6 @@ func (sgb *SubjectGroupBy) Scan(ctx context.Context, v interface{}) error {
 	}
 	sgb.sql = query
 	return sgb.sqlScan(ctx, v)
-}
-
-// ScanX is like Scan, but panics if an error occurs.
-func (sgb *SubjectGroupBy) ScanX(ctx context.Context, v interface{}) {
-	if err := sgb.Scan(ctx, v); err != nil {
-		panic(err)
-	}
-}
-
-// Strings returns list of strings from group-by.
-// It is only allowed when executing a group-by query with one field.
-func (sgb *SubjectGroupBy) Strings(ctx context.Context) ([]string, error) {
-	if len(sgb.fields) > 1 {
-		return nil, errors.New("ent: SubjectGroupBy.Strings is not achievable when grouping more than 1 field")
-	}
-	var v []string
-	if err := sgb.Scan(ctx, &v); err != nil {
-		return nil, err
-	}
-	return v, nil
-}
-
-// StringsX is like Strings, but panics if an error occurs.
-func (sgb *SubjectGroupBy) StringsX(ctx context.Context) []string {
-	v, err := sgb.Strings(ctx)
-	if err != nil {
-		panic(err)
-	}
-	return v
-}
-
-// String returns a single string from a group-by query.
-// It is only allowed when executing a group-by query with one field.
-func (sgb *SubjectGroupBy) String(ctx context.Context) (_ string, err error) {
-	var v []string
-	if v, err = sgb.Strings(ctx); err != nil {
-		return
-	}
-	switch len(v) {
-	case 1:
-		return v[0], nil
-	case 0:
-		err = &NotFoundError{subject.Label}
-	default:
-		err = fmt.Errorf("ent: SubjectGroupBy.Strings returned %d results when one was expected", len(v))
-	}
-	return
-}
-
-// StringX is like String, but panics if an error occurs.
-func (sgb *SubjectGroupBy) StringX(ctx context.Context) string {
-	v, err := sgb.String(ctx)
-	if err != nil {
-		panic(err)
-	}
-	return v
-}
-
-// Ints returns list of ints from group-by.
-// It is only allowed when executing a group-by query with one field.
-func (sgb *SubjectGroupBy) Ints(ctx context.Context) ([]int, error) {
-	if len(sgb.fields) > 1 {
-		return nil, errors.New("ent: SubjectGroupBy.Ints is not achievable when grouping more than 1 field")
-	}
-	var v []int
-	if err := sgb.Scan(ctx, &v); err != nil {
-		return nil, err
-	}
-	return v, nil
-}
-
-// IntsX is like Ints, but panics if an error occurs.
-func (sgb *SubjectGroupBy) IntsX(ctx context.Context) []int {
-	v, err := sgb.Ints(ctx)
-	if err != nil {
-		panic(err)
-	}
-	return v
-}
-
-// Int returns a single int from a group-by query.
-// It is only allowed when executing a group-by query with one field.
-func (sgb *SubjectGroupBy) Int(ctx context.Context) (_ int, err error) {
-	var v []int
-	if v, err = sgb.Ints(ctx); err != nil {
-		return
-	}
-	switch len(v) {
-	case 1:
-		return v[0], nil
-	case 0:
-		err = &NotFoundError{subject.Label}
-	default:
-		err = fmt.Errorf("ent: SubjectGroupBy.Ints returned %d results when one was expected", len(v))
-	}
-	return
-}
-
-// IntX is like Int, but panics if an error occurs.
-func (sgb *SubjectGroupBy) IntX(ctx context.Context) int {
-	v, err := sgb.Int(ctx)
-	if err != nil {
-		panic(err)
-	}
-	return v
-}
-
-// Float64s returns list of float64s from group-by.
-// It is only allowed when executing a group-by query with one field.
-func (sgb *SubjectGroupBy) Float64s(ctx context.Context) ([]float64, error) {
-	if len(sgb.fields) > 1 {
-		return nil, errors.New("ent: SubjectGroupBy.Float64s is not achievable when grouping more than 1 field")
-	}
-	var v []float64
-	if err := sgb.Scan(ctx, &v); err != nil {
-		return nil, err
-	}
-	return v, nil
-}
-
-// Float64sX is like Float64s, but panics if an error occurs.
-func (sgb *SubjectGroupBy) Float64sX(ctx context.Context) []float64 {
-	v, err := sgb.Float64s(ctx)
-	if err != nil {
-		panic(err)
-	}
-	return v
-}
-
-// Float64 returns a single float64 from a group-by query.
-// It is only allowed when executing a group-by query with one field.
-func (sgb *SubjectGroupBy) Float64(ctx context.Context) (_ float64, err error) {
-	var v []float64
-	if v, err = sgb.Float64s(ctx); err != nil {
-		return
-	}
-	switch len(v) {
-	case 1:
-		return v[0], nil
-	case 0:
-		err = &NotFoundError{subject.Label}
-	default:
-		err = fmt.Errorf("ent: SubjectGroupBy.Float64s returned %d results when one was expected", len(v))
-	}
-	return
-}
-
-// Float64X is like Float64, but panics if an error occurs.
-func (sgb *SubjectGroupBy) Float64X(ctx context.Context) float64 {
-	v, err := sgb.Float64(ctx)
-	if err != nil {
-		panic(err)
-	}
-	return v
-}
-
-// Bools returns list of bools from group-by.
-// It is only allowed when executing a group-by query with one field.
-func (sgb *SubjectGroupBy) Bools(ctx context.Context) ([]bool, error) {
-	if len(sgb.fields) > 1 {
-		return nil, errors.New("ent: SubjectGroupBy.Bools is not achievable when grouping more than 1 field")
-	}
-	var v []bool
-	if err := sgb.Scan(ctx, &v); err != nil {
-		return nil, err
-	}
-	return v, nil
-}
-
-// BoolsX is like Bools, but panics if an error occurs.
-func (sgb *SubjectGroupBy) BoolsX(ctx context.Context) []bool {
-	v, err := sgb.Bools(ctx)
-	if err != nil {
-		panic(err)
-	}
-	return v
-}
-
-// Bool returns a single bool from a group-by query.
-// It is only allowed when executing a group-by query with one field.
-func (sgb *SubjectGroupBy) Bool(ctx context.Context) (_ bool, err error) {
-	var v []bool
-	if v, err = sgb.Bools(ctx); err != nil {
-		return
-	}
-	switch len(v) {
-	case 1:
-		return v[0], nil
-	case 0:
-		err = &NotFoundError{subject.Label}
-	default:
-		err = fmt.Errorf("ent: SubjectGroupBy.Bools returned %d results when one was expected", len(v))
-	}
-	return
-}
-
-// BoolX is like Bool, but panics if an error occurs.
-func (sgb *SubjectGroupBy) BoolX(ctx context.Context) bool {
-	v, err := sgb.Bool(ctx)
-	if err != nil {
-		panic(err)
-	}
-	return v
 }
 
 func (sgb *SubjectGroupBy) sqlScan(ctx context.Context, v interface{}) error {
@@ -848,6 +662,7 @@ func (sgb *SubjectGroupBy) sqlQuery() *sql.Selector {
 // SubjectSelect is the builder for selecting fields of Subject entities.
 type SubjectSelect struct {
 	*SubjectQuery
+	selector
 	// intermediate query (i.e. traversal path).
 	sql *sql.Selector
 }
@@ -859,201 +674,6 @@ func (ss *SubjectSelect) Scan(ctx context.Context, v interface{}) error {
 	}
 	ss.sql = ss.SubjectQuery.sqlQuery(ctx)
 	return ss.sqlScan(ctx, v)
-}
-
-// ScanX is like Scan, but panics if an error occurs.
-func (ss *SubjectSelect) ScanX(ctx context.Context, v interface{}) {
-	if err := ss.Scan(ctx, v); err != nil {
-		panic(err)
-	}
-}
-
-// Strings returns list of strings from a selector. It is only allowed when selecting one field.
-func (ss *SubjectSelect) Strings(ctx context.Context) ([]string, error) {
-	if len(ss.fields) > 1 {
-		return nil, errors.New("ent: SubjectSelect.Strings is not achievable when selecting more than 1 field")
-	}
-	var v []string
-	if err := ss.Scan(ctx, &v); err != nil {
-		return nil, err
-	}
-	return v, nil
-}
-
-// StringsX is like Strings, but panics if an error occurs.
-func (ss *SubjectSelect) StringsX(ctx context.Context) []string {
-	v, err := ss.Strings(ctx)
-	if err != nil {
-		panic(err)
-	}
-	return v
-}
-
-// String returns a single string from a selector. It is only allowed when selecting one field.
-func (ss *SubjectSelect) String(ctx context.Context) (_ string, err error) {
-	var v []string
-	if v, err = ss.Strings(ctx); err != nil {
-		return
-	}
-	switch len(v) {
-	case 1:
-		return v[0], nil
-	case 0:
-		err = &NotFoundError{subject.Label}
-	default:
-		err = fmt.Errorf("ent: SubjectSelect.Strings returned %d results when one was expected", len(v))
-	}
-	return
-}
-
-// StringX is like String, but panics if an error occurs.
-func (ss *SubjectSelect) StringX(ctx context.Context) string {
-	v, err := ss.String(ctx)
-	if err != nil {
-		panic(err)
-	}
-	return v
-}
-
-// Ints returns list of ints from a selector. It is only allowed when selecting one field.
-func (ss *SubjectSelect) Ints(ctx context.Context) ([]int, error) {
-	if len(ss.fields) > 1 {
-		return nil, errors.New("ent: SubjectSelect.Ints is not achievable when selecting more than 1 field")
-	}
-	var v []int
-	if err := ss.Scan(ctx, &v); err != nil {
-		return nil, err
-	}
-	return v, nil
-}
-
-// IntsX is like Ints, but panics if an error occurs.
-func (ss *SubjectSelect) IntsX(ctx context.Context) []int {
-	v, err := ss.Ints(ctx)
-	if err != nil {
-		panic(err)
-	}
-	return v
-}
-
-// Int returns a single int from a selector. It is only allowed when selecting one field.
-func (ss *SubjectSelect) Int(ctx context.Context) (_ int, err error) {
-	var v []int
-	if v, err = ss.Ints(ctx); err != nil {
-		return
-	}
-	switch len(v) {
-	case 1:
-		return v[0], nil
-	case 0:
-		err = &NotFoundError{subject.Label}
-	default:
-		err = fmt.Errorf("ent: SubjectSelect.Ints returned %d results when one was expected", len(v))
-	}
-	return
-}
-
-// IntX is like Int, but panics if an error occurs.
-func (ss *SubjectSelect) IntX(ctx context.Context) int {
-	v, err := ss.Int(ctx)
-	if err != nil {
-		panic(err)
-	}
-	return v
-}
-
-// Float64s returns list of float64s from a selector. It is only allowed when selecting one field.
-func (ss *SubjectSelect) Float64s(ctx context.Context) ([]float64, error) {
-	if len(ss.fields) > 1 {
-		return nil, errors.New("ent: SubjectSelect.Float64s is not achievable when selecting more than 1 field")
-	}
-	var v []float64
-	if err := ss.Scan(ctx, &v); err != nil {
-		return nil, err
-	}
-	return v, nil
-}
-
-// Float64sX is like Float64s, but panics if an error occurs.
-func (ss *SubjectSelect) Float64sX(ctx context.Context) []float64 {
-	v, err := ss.Float64s(ctx)
-	if err != nil {
-		panic(err)
-	}
-	return v
-}
-
-// Float64 returns a single float64 from a selector. It is only allowed when selecting one field.
-func (ss *SubjectSelect) Float64(ctx context.Context) (_ float64, err error) {
-	var v []float64
-	if v, err = ss.Float64s(ctx); err != nil {
-		return
-	}
-	switch len(v) {
-	case 1:
-		return v[0], nil
-	case 0:
-		err = &NotFoundError{subject.Label}
-	default:
-		err = fmt.Errorf("ent: SubjectSelect.Float64s returned %d results when one was expected", len(v))
-	}
-	return
-}
-
-// Float64X is like Float64, but panics if an error occurs.
-func (ss *SubjectSelect) Float64X(ctx context.Context) float64 {
-	v, err := ss.Float64(ctx)
-	if err != nil {
-		panic(err)
-	}
-	return v
-}
-
-// Bools returns list of bools from a selector. It is only allowed when selecting one field.
-func (ss *SubjectSelect) Bools(ctx context.Context) ([]bool, error) {
-	if len(ss.fields) > 1 {
-		return nil, errors.New("ent: SubjectSelect.Bools is not achievable when selecting more than 1 field")
-	}
-	var v []bool
-	if err := ss.Scan(ctx, &v); err != nil {
-		return nil, err
-	}
-	return v, nil
-}
-
-// BoolsX is like Bools, but panics if an error occurs.
-func (ss *SubjectSelect) BoolsX(ctx context.Context) []bool {
-	v, err := ss.Bools(ctx)
-	if err != nil {
-		panic(err)
-	}
-	return v
-}
-
-// Bool returns a single bool from a selector. It is only allowed when selecting one field.
-func (ss *SubjectSelect) Bool(ctx context.Context) (_ bool, err error) {
-	var v []bool
-	if v, err = ss.Bools(ctx); err != nil {
-		return
-	}
-	switch len(v) {
-	case 1:
-		return v[0], nil
-	case 0:
-		err = &NotFoundError{subject.Label}
-	default:
-		err = fmt.Errorf("ent: SubjectSelect.Bools returned %d results when one was expected", len(v))
-	}
-	return
-}
-
-// BoolX is like Bool, but panics if an error occurs.
-func (ss *SubjectSelect) BoolX(ctx context.Context) bool {
-	v, err := ss.Bool(ctx)
-	if err != nil {
-		panic(err)
-	}
-	return v
 }
 
 func (ss *SubjectSelect) sqlScan(ctx context.Context, v interface{}) error {
