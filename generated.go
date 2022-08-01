@@ -517,7 +517,7 @@ type Dsse {
 }
 
 type Statement {
-   id: ID! 
+   id: ID!
    predicate: String!
    subjects: [Subject!]
    attestation_collection: AttestationCollection!
@@ -584,12 +584,16 @@ type Status {
 
 type Query {
     """
-    docs
+    ` + "`" + `status` + "`" + ` returns the status of the GraphQL server and database.
+
+    Including ` + "`" + `database` + "`" + ` will test database connectivity.
     """
     status: Status!
 
     """
-    docs
+    Retrieves all DSSE entries that match the query specified in ` + "`" + `where` + "`" + `.
+
+    This interface conforms to the Relay Pagination Spec (https://relay.dev/graphql/connections.htm)
     """
     dsses(
         after: Cursor,
