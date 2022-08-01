@@ -39,7 +39,7 @@ type Config struct {
 	BlobStoreBucketName        string `default:"" desc:"Bucket to use for storage.  Only valid when using BLOB storage backend." split_words:"true"`
 
 	EnableGraphql          bool   `default:"TRUE" desc:"*** Enable GraphQL Endpoint" split_words:"true"`
-	GraphqlListenOn        string `default:"127.0.0.1:8082" desc:"" split_words:"true"`
+	GraphqlListenOn        string `default:"tcp://127.0.0.1:8082" desc:"URL endpoint for GraphQL to listen on, must not conflig with gRPC" split_words:"true"`
 	GraphqlWebClientEnable bool   `default:"TRUE" desc:"Enable GraphiQL, the GraphQL web client" split_words:"true"`
 }
 
