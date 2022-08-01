@@ -27,6 +27,10 @@ services:
       ARCHIVIST_BLOB_STORE_SECRET_ACCESS_KEY_ID: exampleexampleexample
       ARCHIVIST_BLOB_STORE_BUCKET_NAME: attestations
       ARCHIVIST_BLOB_STORE_ENDPOINT: minio:9000
+      ARCHIVIST_ENABLE_GRAPHQL: "true"
+      ARCHIVIST_GRAPHQL_LISTEN_ON: tcp://0.0.0.0:8082
+      ARCHIVIST_GRAPHQL_WEB_CLIENT_ENABLE: "true"
+
     ports:
       - 8080:8080
       - 8081:8081

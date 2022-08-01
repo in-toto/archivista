@@ -22,6 +22,7 @@ package main
 import (
 	"context"
 	"fmt"
+	"net"
 	"net/http"
 	"os"
 	"os/signal"
@@ -135,27 +136,42 @@ func main() {
 	// ********************************************************************************
 	now = time.Now()
 
-	client := mysqlStore.GetClient()
-	srv := handler.NewDefaultServer(root.NewSchema(client))
-	srv.Use(entgql.Transactioner{TxOpener: client})
+	if cfg.EnableGraphql {
+		client := mysqlStore.GetClient()
+		srv := handler.NewDefaultServer(root.NewSchema(client))
+		srv.Use(entgql.Transactioner{TxOpener: client})
 
-	http.Handle("/",
-		playground.Handler("Archivist", "/query"),
-	)
-
-	http.Handle("/query", srv)
-
-	eh := root.NewSchema(client)
-
-	fmt.Println(eh)
-
-	fmt.Println(eh.Schema())
-
-	go func() {
-		if err := http.ListenAndServe("0.0.0.0:8082", nil); err != nil {
-			log.FromContext(ctx).Error("http server terminated", err)
+		if cfg.GraphqlWebClientEnable {
+			http.Handle("/",
+				playground.Handler("Archivist", "/query"),
+			)
 		}
-	}()
+		http.Handle("/query", srv)
+
+		gqlAddress := cfg.GraphqlListenOn
+		gqlAddress = strings.ToLower(strings.TrimSpace(gqlAddress))
+		gqlProto := ""
+		if strings.HasPrefix(gqlAddress, "tcp://") {
+			gqlProto = "tcp"
+			gqlAddress = gqlAddress[len("tcp://"):]
+		} else if strings.HasPrefix(gqlAddress, "unix://") {
+			gqlProto = "unix"
+			gqlAddress = gqlAddress[len("unix://"):]
+		}
+
+		gqlListener, err := net.Listen(gqlProto, gqlAddress)
+		if err != nil {
+			log.FromContext(ctx).Fatalf("unable to start graphql listener: ", err)
+		}
+
+		go func() {
+			if err := http.Serve(gqlListener, nil); err != nil {
+				log.FromContext(ctx).Error("http server terminated", err)
+			}
+		}()
+	} else {
+		log.FromContext(ctx).Info("graphql disabled, skipping")
+	}
 
 	log.FromContext(ctx).WithField("duration", time.Since(now)).Infof("completed phase 5: create and register graphql server")
 
