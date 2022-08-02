@@ -178,7 +178,7 @@ func initObjectStore(ctx context.Context, cfg *config.Config) (server.ObjectStor
 			cfg.BlobStoreAccessKeyId,
 			cfg.BlobStoreSecretAccessKeyId,
 			cfg.BlobStoreBucketName,
-			cfg.BlobStoreUseSSL,
+			cfg.BlobStoreUseTLS,
 		)
 
 	case "":

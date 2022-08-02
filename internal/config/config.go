@@ -35,7 +35,7 @@ type Config struct {
 	BlobStoreEndpoint          string `default:"127.0.0.1:9000" desc:"URL endpoint for blob storage. Only valid when using BLOB storage backend." split_words:"true"`
 	BlobStoreAccessKeyId       string `default:"" desc:"Blob store access key id. Only valid when using BLOB storage backend." split_words:"true"`
 	BlobStoreSecretAccessKeyId string `default:"" desc:"Blob store secret access key id. Only valid when using BLOB storage backend." split_words:"true"`
-	BlobStoreUseSSL            bool   `default:"TRUE" desc:"Use SSL for BLOB storage backend. Only valid when using BLOB storage backend." split_words:"true"`
+	BlobStoreUseTLS            bool   `default:"TRUE" desc:"Use TLS for BLOB storage backend. Only valid when using BLOB storage backend." split_words:"true"`
 	BlobStoreBucketName        string `default:"" desc:"Bucket to use for storage.  Only valid when using BLOB storage backend." split_words:"true"`
 }
 
