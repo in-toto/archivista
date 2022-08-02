@@ -45,7 +45,7 @@ func (store *Store) PutBlob(idx string, obj []byte) error {
 }
 
 // New returns a reader/writer for storing/retrieving attestations
-func New(ctx context.Context, endpoint, accessKeyId, secretAccessKeyId, bucketName string, useSSL bool) (*Store, <-chan error, error) {
+func New(ctx context.Context, endpoint, accessKeyId, secretAccessKeyId, bucketName string, useTLS bool) (*Store, <-chan error, error) {
 	errCh := make(chan error)
 	go func() {
 		<-ctx.Done()
@@ -54,7 +54,7 @@ func New(ctx context.Context, endpoint, accessKeyId, secretAccessKeyId, bucketNa
 
 	c, err := minio.NewWithOptions(endpoint, &minio.Options{
 		Creds:  credentials.NewStaticV4(accessKeyId, secretAccessKeyId, ""),
-		Secure: useSSL,
+		Secure: useTLS,
 	})
 	if err != nil {
 		return nil, errCh, err

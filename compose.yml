@@ -22,7 +22,7 @@ services:
       ARCHIVIST_STORAGE_BACKEND: BLOB
       ARCHIVIST_FILE_DIR: /tmp/archivist/
       ARCHIVIST_FILE_SERVE_ON: :8081
-      ARCHIVIST_BLOB_STORE_USE_SSL: "false"
+      ARCHIVIST_BLOB_STORE_USE_TLS: "false"
       ARCHIVIST_BLOB_STORE_ACCESS_KEY_ID: testifytestifytestify
       ARCHIVIST_BLOB_STORE_SECRET_ACCESS_KEY_ID: exampleexampleexample
       ARCHIVIST_BLOB_STORE_BUCKET_NAME: attestations
