@@ -20,7 +20,7 @@ import (
 	"io"
 
 	"github.com/git-bom/gitbom-go"
-	"github.com/sirupsen/logrus"
+	"github.com/networkservicemesh/sdk/pkg/tools/log"
 	"github.com/testifysec/archivist-api/pkg/api/archivist"
 )
 
@@ -41,7 +41,7 @@ func NewArchivistServer(store MetadataStorer) archivist.ArchivistServer {
 func (s *archivistServer) GetBySubjectDigest(request *archivist.GetBySubjectDigestRequest, server archivist.Archivist_GetBySubjectDigestServer) error {
 	ctx, cancel := context.WithCancel(server.Context())
 	defer cancel()
-	logrus.WithContext(ctx).Printf("retrieving by subject... ")
+	log.FromContext(ctx).Info("retrieving by subject... ")
 	responses, err := s.store.GetBySubjectDigest(ctx, request)
 	if err != nil {
 		return err
@@ -121,19 +121,19 @@ func (s *collectorServer) Store(server archivist.Collector_StoreServer) error {
 	// generate gitbom
 	gb := gitbom.NewSha256GitBom()
 	if err := gb.AddReference(payload, nil); err != nil {
-		logrus.WithContext(ctx).Errorf("gitbom tag generation failed: %+v", err)
+		log.FromContext(ctx).Errorf("gitbom tag generation failed: %+v", err)
 		return err
 	}
 
 	gitoid := gb.Identity()
 	if err := s.metadataStore.Store(ctx, gitoid, payload); err != nil {
-		logrus.WithContext(ctx).Printf("received error from metadata store: %+v", err)
+		log.FromContext(ctx).Errorf("received error from metadata store: %+v", err)
 		return err
 	}
 
 	if s.objectStore != nil {
 		if err := s.objectStore.Store(ctx, gitoid, payload); err != nil {
-			logrus.WithContext(ctx).Printf("received error from object store: %+v", err)
+			log.FromContext(ctx).Errorf("received error from object store: %+v", err)
 			return err
 		}
 	}

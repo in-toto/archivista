@@ -24,7 +24,7 @@ import (
 
 	"ariga.io/sqlcomment"
 	"entgo.io/ent/dialect/sql"
-	"github.com/sirupsen/logrus"
+	"github.com/networkservicemesh/sdk/pkg/tools/log"
 	"github.com/testifysec/archivist-api/pkg/api/archivist"
 	"github.com/testifysec/archivist/ent"
 	"github.com/testifysec/archivist/ent/attestationcollection"
@@ -72,13 +72,13 @@ func New(ctx context.Context, connectionstring string) (*Store, <-chan error, er
 		<-ctx.Done()
 		err := client.Close()
 		if err != nil {
-			logrus.WithContext(ctx).Errorf("error closing database: %+v", err)
+			log.FromContext(ctx).Errorf("error closing database: %+v", err)
 		}
 		close(errCh)
 	}()
 
 	if err := client.Schema.Create(ctx); err != nil {
-		logrus.WithContext(ctx).Fatalf("failed creating schema resources: %v", err)
+		log.FromContext(ctx).Fatalf("failed creating schema resources: %v", err)
 	}
 
 	return &Store{
@@ -309,7 +309,7 @@ func (s *Store) Store(ctx context.Context, gitoid string, obj []byte) error {
 	})
 
 	if err != nil {
-		logrus.Errorf("unable to store metadata: %+v", err)
+		log.FromContext(ctx).Errorf("unable to store metadata: %+v", err)
 		return err
 	}
 
