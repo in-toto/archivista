@@ -80,12 +80,12 @@ func main() {
 
 	cfg := new(config.Config)
 	if err := cfg.Process(); err != nil {
-		logrus.Fatal(err)
+		log.FromContext(ctx).Fatal(err)
 	}
 
 	level, err := logrus.ParseLevel(cfg.LogLevel)
 	if err != nil {
-		logrus.Fatalf("invalid log level %s", cfg.LogLevel)
+		log.FromContext(ctx).Fatalf("invalid log level %s", cfg.LogLevel)
 	}
 	logrus.SetLevel(level)
 
@@ -109,10 +109,13 @@ func main() {
 	now = time.Now()
 	fileStore, fileStoreCh, err := initObjectStore(ctx, cfg)
 	if err != nil {
-		logrus.Fatalf("error initializing storage clients: %+v", err)
+		log.FromContext(ctx).Fatalf("error initializing storage clients: %+v", err)
 	}
 
 	mysqlStore, mysqlStoreCh, err := mysqlstore.New(ctx, cfg.SQLStoreConnectionString)
+	if err != nil {
+		log.FromContext(ctx).Fatalf("error initializing mysql client: %+v", err)
+	}
 
 	log.FromContext(ctx).WithField("duration", time.Since(now)).Infof("completed phase 3: initializing storage clients")
 	// ********************************************************************************
@@ -161,7 +164,7 @@ func main() {
 
 		gqlListener, err := net.Listen(gqlProto, gqlAddress)
 		if err != nil {
-			log.FromContext(ctx).Fatalf("unable to start graphql listener: ", err)
+			log.FromContext(ctx).Fatalf("unable to start graphql listener: %+v", err)
 		}
 
 		go func() {
@@ -202,7 +205,7 @@ func initSpiffeConnection(ctx context.Context, cfg *config.Config) []grpc.Server
 	}
 	source, err := workloadapi.NewX509Source(ctx, workloadOpts...)
 	if err != nil {
-		logrus.Fatalf("error getting x509 source: %+v", err)
+		log.FromContext(ctx).Fatalf("error getting x509 source: %+v", err)
 	}
 	opts := []grpc.ServerOption{
 		grpc.Creds(credentials.NewTLS(tlsconfig.MTLSServerConfig(source, source, authorizer))),
@@ -210,9 +213,10 @@ func initSpiffeConnection(ctx context.Context, cfg *config.Config) []grpc.Server
 
 	svid, err = source.GetX509SVID()
 	if err != nil {
-		logrus.Fatalf("error getting x509 svid: %+v", err)
+		log.FromContext(ctx).Fatalf("error getting x509 svid: %+v", err)
 	}
-	logrus.Infof("SVID: %q", svid.ID)
+
+	log.FromContext(ctx).Infof("SVID: %q", svid.ID)
 	return opts
 }
 
