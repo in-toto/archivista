@@ -11,6 +11,7 @@ require (
 	github.com/git-bom/gitbom-go v0.0.0-20220502033008-4a48bb2317f7
 	github.com/go-sql-driver/mysql v1.6.0
 	github.com/gorilla/handlers v1.5.1
+	github.com/gorilla/mux v1.8.0
 	github.com/hashicorp/go-multierror v1.1.1
 	github.com/kelseyhightower/envconfig v1.4.0
 	github.com/minio/minio-go v6.0.14+incompatible
