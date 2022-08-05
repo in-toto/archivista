@@ -129,12 +129,12 @@ func (d *Dsse) Node(ctx context.Context) (node *Node, err error) {
 		Edges:  make([]*Edge, 3),
 	}
 	var buf []byte
-	if buf, err = json.Marshal(d.GitbomSha256); err != nil {
+	if buf, err = json.Marshal(d.GitoidSha256); err != nil {
 		return nil, err
 	}
 	node.Fields[0] = &Field{
 		Type:  "string",
-		Name:  "gitbom_sha256",
+		Name:  "gitoid_sha256",
 		Value: string(buf),
 	}
 	if buf, err = json.Marshal(d.PayloadType); err != nil {

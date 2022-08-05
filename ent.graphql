@@ -88,20 +88,20 @@ input DsseWhereInput {
   idGTE: ID
   idLT: ID
   idLTE: ID
-  """gitbom_sha256 field predicates"""
-  gitbomSha256: String
-  gitbomSha256NEQ: String
-  gitbomSha256In: [String!]
-  gitbomSha256NotIn: [String!]
-  gitbomSha256GT: String
-  gitbomSha256GTE: String
-  gitbomSha256LT: String
-  gitbomSha256LTE: String
-  gitbomSha256Contains: String
-  gitbomSha256HasPrefix: String
-  gitbomSha256HasSuffix: String
-  gitbomSha256EqualFold: String
-  gitbomSha256ContainsFold: String
+  """gitoid_sha256 field predicates"""
+  gitoidSha256: String
+  gitoidSha256NEQ: String
+  gitoidSha256In: [String!]
+  gitoidSha256NotIn: [String!]
+  gitoidSha256GT: String
+  gitoidSha256GTE: String
+  gitoidSha256LT: String
+  gitoidSha256LTE: String
+  gitoidSha256Contains: String
+  gitoidSha256HasPrefix: String
+  gitoidSha256HasSuffix: String
+  gitoidSha256EqualFold: String
+  gitoidSha256ContainsFold: String
   """payload_type field predicates"""
   payloadType: String
   payloadTypeNEQ: String

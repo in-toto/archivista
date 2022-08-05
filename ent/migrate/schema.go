@@ -51,7 +51,7 @@ var (
 	// DssesColumns holds the columns for the "dsses" table.
 	DssesColumns = []*schema.Column{
 		{Name: "id", Type: field.TypeInt, Increment: true},
-		{Name: "gitbom_sha256", Type: field.TypeString, Unique: true},
+		{Name: "gitoid_sha256", Type: field.TypeString, Unique: true},
 		{Name: "payload_type", Type: field.TypeString},
 		{Name: "dsse_statement", Type: field.TypeInt, Nullable: true},
 	}

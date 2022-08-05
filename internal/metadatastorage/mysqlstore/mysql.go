@@ -126,7 +126,7 @@ func (s *Store) GetBySubjectDigest(ctx context.Context, request *archivist.GetBy
 		defer close(out)
 		for _, curDsse := range res {
 			response := &archivist.GetBySubjectDigestResponse{}
-			response.Gitoid = curDsse.GitbomSha256
+			response.Gitoid = curDsse.GitoidSha256
 			response.CollectionName = curDsse.Edges.Statement.Edges.AttestationCollections.Name
 			for _, curAttestation := range curDsse.Edges.Statement.Edges.AttestationCollections.Edges.Attestations {
 				response.Attestations = append(response.Attestations, curAttestation.Type)
@@ -147,7 +147,7 @@ func (s *Store) GetSubjects(ctx context.Context, req *archivist.GetSubjectsReque
 	subjects, err := s.client.Subject.Query().Where(
 		subject.HasStatementWith(
 			statement.HasDsseWith(
-				entdsse.GitbomSha256(req.GetEnvelopeGitoid()),
+				entdsse.GitoidSha256(req.GetEnvelopeGitoid()),
 			),
 		),
 	).WithSubjectDigests().All(ctx)
@@ -237,7 +237,7 @@ func (s *Store) Store(ctx context.Context, gitoid string, obj []byte) error {
 	err = s.withTx(ctx, func(tx *ent.Tx) error {
 		dsse, err := tx.Dsse.Create().
 			SetPayloadType(envelope.PayloadType).
-			SetGitbomSha256(gitoid).
+			SetGitoidSha256(gitoid).
 			Save(ctx)
 		if err != nil {
 			return err

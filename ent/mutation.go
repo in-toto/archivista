@@ -889,7 +889,7 @@ type DsseMutation struct {
 	op                     Op
 	typ                    string
 	id                     *int
-	gitbom_sha256          *string
+	gitoid_sha256          *string
 	payload_type           *string
 	clearedFields          map[string]struct{}
 	statement              *int
@@ -1003,40 +1003,40 @@ func (m *DsseMutation) IDs(ctx context.Context) ([]int, error) {
 	}
 }
 
-// SetGitbomSha256 sets the "gitbom_sha256" field.
-func (m *DsseMutation) SetGitbomSha256(s string) {
-	m.gitbom_sha256 = &s
+// SetGitoidSha256 sets the "gitoid_sha256" field.
+func (m *DsseMutation) SetGitoidSha256(s string) {
+	m.gitoid_sha256 = &s
 }
 
-// GitbomSha256 returns the value of the "gitbom_sha256" field in the mutation.
-func (m *DsseMutation) GitbomSha256() (r string, exists bool) {
-	v := m.gitbom_sha256
+// GitoidSha256 returns the value of the "gitoid_sha256" field in the mutation.
+func (m *DsseMutation) GitoidSha256() (r string, exists bool) {
+	v := m.gitoid_sha256
 	if v == nil {
 		return
 	}
 	return *v, true
 }
 
-// OldGitbomSha256 returns the old "gitbom_sha256" field's value of the Dsse entity.
+// OldGitoidSha256 returns the old "gitoid_sha256" field's value of the Dsse entity.
 // If the Dsse object wasn't provided to the builder, the object is fetched from the database.
 // An error is returned if the mutation operation is not UpdateOne, or the database query fails.
-func (m *DsseMutation) OldGitbomSha256(ctx context.Context) (v string, err error) {
+func (m *DsseMutation) OldGitoidSha256(ctx context.Context) (v string, err error) {
 	if !m.op.Is(OpUpdateOne) {
-		return v, errors.New("OldGitbomSha256 is only allowed on UpdateOne operations")
+		return v, errors.New("OldGitoidSha256 is only allowed on UpdateOne operations")
 	}
 	if m.id == nil || m.oldValue == nil {
-		return v, errors.New("OldGitbomSha256 requires an ID field in the mutation")
+		return v, errors.New("OldGitoidSha256 requires an ID field in the mutation")
 	}
 	oldValue, err := m.oldValue(ctx)
 	if err != nil {
-		return v, fmt.Errorf("querying old value for OldGitbomSha256: %w", err)
+		return v, fmt.Errorf("querying old value for OldGitoidSha256: %w", err)
 	}
-	return oldValue.GitbomSha256, nil
+	return oldValue.GitoidSha256, nil
 }
 
-// ResetGitbomSha256 resets all changes to the "gitbom_sha256" field.
-func (m *DsseMutation) ResetGitbomSha256() {
-	m.gitbom_sha256 = nil
+// ResetGitoidSha256 resets all changes to the "gitoid_sha256" field.
+func (m *DsseMutation) ResetGitoidSha256() {
+	m.gitoid_sha256 = nil
 }
 
 // SetPayloadType sets the "payload_type" field.
@@ -1242,8 +1242,8 @@ func (m *DsseMutation) Type() string {
 // AddedFields().
 func (m *DsseMutation) Fields() []string {
 	fields := make([]string, 0, 2)
-	if m.gitbom_sha256 != nil {
-		fields = append(fields, dsse.FieldGitbomSha256)
+	if m.gitoid_sha256 != nil {
+		fields = append(fields, dsse.FieldGitoidSha256)
 	}
 	if m.payload_type != nil {
 		fields = append(fields, dsse.FieldPayloadType)
@@ -1256,8 +1256,8 @@ func (m *DsseMutation) Fields() []string {
 // schema.
 func (m *DsseMutation) Field(name string) (ent.Value, bool) {
 	switch name {
-	case dsse.FieldGitbomSha256:
-		return m.GitbomSha256()
+	case dsse.FieldGitoidSha256:
+		return m.GitoidSha256()
 	case dsse.FieldPayloadType:
 		return m.PayloadType()
 	}
@@ -1269,8 +1269,8 @@ func (m *DsseMutation) Field(name string) (ent.Value, bool) {
 // database failed.
 func (m *DsseMutation) OldField(ctx context.Context, name string) (ent.Value, error) {
 	switch name {
-	case dsse.FieldGitbomSha256:
-		return m.OldGitbomSha256(ctx)
+	case dsse.FieldGitoidSha256:
+		return m.OldGitoidSha256(ctx)
 	case dsse.FieldPayloadType:
 		return m.OldPayloadType(ctx)
 	}
@@ -1282,12 +1282,12 @@ func (m *DsseMutation) OldField(ctx context.Context, name string) (ent.Value, er
 // type.
 func (m *DsseMutation) SetField(name string, value ent.Value) error {
 	switch name {
-	case dsse.FieldGitbomSha256:
+	case dsse.FieldGitoidSha256:
 		v, ok := value.(string)
 		if !ok {
 			return fmt.Errorf("unexpected type %T for field %s", value, name)
 		}
-		m.SetGitbomSha256(v)
+		m.SetGitoidSha256(v)
 		return nil
 	case dsse.FieldPayloadType:
 		v, ok := value.(string)
@@ -1345,8 +1345,8 @@ func (m *DsseMutation) ClearField(name string) error {
 // It returns an error if the field is not defined in the schema.
 func (m *DsseMutation) ResetField(name string) error {
 	switch name {
-	case dsse.FieldGitbomSha256:
-		m.ResetGitbomSha256()
+	case dsse.FieldGitoidSha256:
+		m.ResetGitoidSha256()
 		return nil
 	case dsse.FieldPayloadType:
 		m.ResetPayloadType()
