@@ -22,6 +22,7 @@ package main
 import (
 	"context"
 	"fmt"
+	"io"
 	"net"
 	"net/http"
 	"os"
@@ -30,11 +31,7 @@ import (
 	"syscall"
 	"time"
 
-	"entgo.io/contrib/entgql"
 	root "github.com/testifysec/archivist"
-
-	"github.com/99designs/gqlgen/graphql/handler"
-	"github.com/99designs/gqlgen/graphql/playground"
 	"github.com/testifysec/archivist-api/pkg/api/archivist"
 	"github.com/testifysec/archivist/internal/config"
 	"github.com/testifysec/archivist/internal/metadatastorage/mysqlstore"
@@ -42,7 +39,11 @@ import (
 	"github.com/testifysec/archivist/internal/objectstorage/filestore"
 	"github.com/testifysec/archivist/internal/server"
 
+	"entgo.io/contrib/entgql"
+	"github.com/99designs/gqlgen/graphql/handler"
+	"github.com/99designs/gqlgen/graphql/playground"
 	nested "github.com/antonfisher/nested-logrus-formatter"
+	"github.com/gorilla/mux"
 	"github.com/networkservicemesh/sdk/pkg/tools/debug"
 	"github.com/networkservicemesh/sdk/pkg/tools/grpcutils"
 	"github.com/networkservicemesh/sdk/pkg/tools/log"
@@ -135,7 +136,7 @@ func main() {
 
 	log.FromContext(ctx).WithField("duration", time.Since(now)).Infof("completed phase 4: create and register grpc server")
 	// ********************************************************************************
-	log.FromContext(ctx).Infof("executing phase 4: create and register grpc service (time since start: %s)", time.Since(startTime))
+	log.FromContext(ctx).Infof("executing phase 5: create and register http service (time since start: %s)", time.Since(startTime))
 	// ********************************************************************************
 	now = time.Now()
 
@@ -144,12 +145,19 @@ func main() {
 		srv := handler.NewDefaultServer(root.NewSchema(client))
 		srv.Use(entgql.Transactioner{TxOpener: client})
 
+		router := mux.NewRouter()
+
 		if cfg.GraphqlWebClientEnable {
-			http.Handle("/",
+			router.Handle("/",
 				playground.Handler("Archivist", "/query"),
 			)
 		}
-		http.Handle("/query", srv)
+		router.Handle("/query", srv)
+
+		p := &proxy{
+			client: fileStore,
+		}
+		router.Handle("/download/{gitoid}", p)
 
 		gqlAddress := cfg.GraphqlListenOn
 		gqlAddress = strings.ToLower(strings.TrimSpace(gqlAddress))
@@ -168,7 +176,7 @@ func main() {
 		}
 
 		go func() {
-			if err := http.Serve(gqlListener, nil); err != nil {
+			if err := http.Serve(gqlListener, router); err != nil {
 				log.FromContext(ctx).Error("http server terminated", err)
 			}
 		}()
@@ -176,7 +184,7 @@ func main() {
 		log.FromContext(ctx).Info("graphql disabled, skipping")
 	}
 
-	log.FromContext(ctx).WithField("duration", time.Since(now)).Infof("completed phase 5: create and register graphql server")
+	log.FromContext(ctx).WithField("duration", time.Since(now)).Infof("completed phase 5: create and register http service")
 
 	log.FromContext(ctx).Infof("startup complete (time since start: %s)", time.Since(startTime))
 
@@ -263,4 +271,29 @@ func exitOnErrCh(ctx context.Context, cancel context.CancelFunc, errCh <-chan er
 		}
 		cancel()
 	}(ctx, errCh)
+}
+
+type proxy struct {
+	client server.ObjectStorer
+}
+
+func (p *proxy) ServeHTTP(w http.ResponseWriter, req *http.Request) {
+	vars := mux.Vars(req)
+	ctx := context.Background()
+	attestation, err := p.client.Get(ctx, &archivist.GetRequest{
+		Gitoid: vars["gitoid"],
+	})
+	if err != nil {
+		log.Default().Error(err)
+		// TODO handle error codes more effectively
+		w.WriteHeader(400)
+		return
+	}
+	_, err = io.Copy(w, attestation)
+	if err != nil {
+		log.Default().Error(err)
+		// TODO handle error codes more effectively
+		w.WriteHeader(500)
+		return
+	}
 }
