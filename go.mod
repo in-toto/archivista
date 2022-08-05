@@ -8,7 +8,7 @@ require (
 	entgo.io/ent v0.10.2-0.20220528091257-0917701f9114
 	github.com/99designs/gqlgen v0.17.5-0.20220428154617-9250f9ac1f90
 	github.com/antonfisher/nested-logrus-formatter v1.3.1
-	github.com/git-bom/gitbom-go v0.0.0-20220502033008-4a48bb2317f7
+	github.com/edwarnicke/gitoid v0.0.0-20220710194850-1be5bfda1f9d
 	github.com/go-sql-driver/mysql v1.6.0
 	github.com/gorilla/handlers v1.5.1
 	github.com/hashicorp/go-multierror v1.1.1

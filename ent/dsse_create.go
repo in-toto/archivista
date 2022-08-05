@@ -22,9 +22,9 @@ type DsseCreate struct {
 	hooks    []Hook
 }
 
-// SetGitbomSha256 sets the "gitbom_sha256" field.
-func (dc *DsseCreate) SetGitbomSha256(s string) *DsseCreate {
-	dc.mutation.SetGitbomSha256(s)
+// SetGitoidSha256 sets the "gitoid_sha256" field.
+func (dc *DsseCreate) SetGitoidSha256(s string) *DsseCreate {
+	dc.mutation.SetGitoidSha256(s)
 	return dc
 }
 
@@ -159,12 +159,12 @@ func (dc *DsseCreate) ExecX(ctx context.Context) {
 
 // check runs all checks and user-defined validators on the builder.
 func (dc *DsseCreate) check() error {
-	if _, ok := dc.mutation.GitbomSha256(); !ok {
-		return &ValidationError{Name: "gitbom_sha256", err: errors.New(`ent: missing required field "Dsse.gitbom_sha256"`)}
+	if _, ok := dc.mutation.GitoidSha256(); !ok {
+		return &ValidationError{Name: "gitoid_sha256", err: errors.New(`ent: missing required field "Dsse.gitoid_sha256"`)}
 	}
-	if v, ok := dc.mutation.GitbomSha256(); ok {
-		if err := dsse.GitbomSha256Validator(v); err != nil {
-			return &ValidationError{Name: "gitbom_sha256", err: fmt.Errorf(`ent: validator failed for field "Dsse.gitbom_sha256": %w`, err)}
+	if v, ok := dc.mutation.GitoidSha256(); ok {
+		if err := dsse.GitoidSha256Validator(v); err != nil {
+			return &ValidationError{Name: "gitoid_sha256", err: fmt.Errorf(`ent: validator failed for field "Dsse.gitoid_sha256": %w`, err)}
 		}
 	}
 	if _, ok := dc.mutation.PayloadType(); !ok {
@@ -202,13 +202,13 @@ func (dc *DsseCreate) createSpec() (*Dsse, *sqlgraph.CreateSpec) {
 			},
 		}
 	)
-	if value, ok := dc.mutation.GitbomSha256(); ok {
+	if value, ok := dc.mutation.GitoidSha256(); ok {
 		_spec.Fields = append(_spec.Fields, &sqlgraph.FieldSpec{
 			Type:   field.TypeString,
 			Value:  value,
-			Column: dsse.FieldGitbomSha256,
+			Column: dsse.FieldGitoidSha256,
 		})
-		_node.GitbomSha256 = value
+		_node.GitoidSha256 = value
 	}
 	if value, ok := dc.mutation.PayloadType(); ok {
 		_spec.Fields = append(_spec.Fields, &sqlgraph.FieldSpec{

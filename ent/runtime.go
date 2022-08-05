@@ -32,10 +32,10 @@ func init() {
 	attestationcollection.NameValidator = attestationcollectionDescName.Validators[0].(func(string) error)
 	dsseFields := schema.Dsse{}.Fields()
 	_ = dsseFields
-	// dsseDescGitbomSha256 is the schema descriptor for gitbom_sha256 field.
-	dsseDescGitbomSha256 := dsseFields[0].Descriptor()
-	// dsse.GitbomSha256Validator is a validator for the "gitbom_sha256" field. It is called by the builders before save.
-	dsse.GitbomSha256Validator = dsseDescGitbomSha256.Validators[0].(func(string) error)
+	// dsseDescGitoidSha256 is the schema descriptor for gitoid_sha256 field.
+	dsseDescGitoidSha256 := dsseFields[0].Descriptor()
+	// dsse.GitoidSha256Validator is a validator for the "gitoid_sha256" field. It is called by the builders before save.
+	dsse.GitoidSha256Validator = dsseDescGitoidSha256.Validators[0].(func(string) error)
 	// dsseDescPayloadType is the schema descriptor for payload_type field.
 	dsseDescPayloadType := dsseFields[1].Descriptor()
 	// dsse.PayloadTypeValidator is a validator for the "payload_type" field. It is called by the builders before save.

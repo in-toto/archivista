@@ -366,12 +366,12 @@ func (dq *DsseQuery) WithPayloadDigests(opts ...func(*PayloadDigestQuery)) *Dsse
 // Example:
 //
 //	var v []struct {
-//		GitbomSha256 string `json:"gitbom_sha256,omitempty"`
+//		GitoidSha256 string `json:"gitoid_sha256,omitempty"`
 //		Count int `json:"count,omitempty"`
 //	}
 //
 //	client.Dsse.Query().
-//		GroupBy(dsse.FieldGitbomSha256).
+//		GroupBy(dsse.FieldGitoidSha256).
 //		Aggregate(ent.Count()).
 //		Scan(ctx, &v)
 //
@@ -395,11 +395,11 @@ func (dq *DsseQuery) GroupBy(field string, fields ...string) *DsseGroupBy {
 // Example:
 //
 //	var v []struct {
-//		GitbomSha256 string `json:"gitbom_sha256,omitempty"`
+//		GitoidSha256 string `json:"gitoid_sha256,omitempty"`
 //	}
 //
 //	client.Dsse.Query().
-//		Select(dsse.FieldGitbomSha256).
+//		Select(dsse.FieldGitoidSha256).
 //		Scan(ctx, &v)
 //
 func (dq *DsseQuery) Select(fields ...string) *DsseSelect {

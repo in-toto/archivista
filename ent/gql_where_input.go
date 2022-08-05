@@ -456,20 +456,20 @@ type DsseWhereInput struct {
 	IDLT    *int  `json:"idLT,omitempty"`
 	IDLTE   *int  `json:"idLTE,omitempty"`
 
-	// "gitbom_sha256" field predicates.
-	GitbomSha256             *string  `json:"gitbomSha256,omitempty"`
-	GitbomSha256NEQ          *string  `json:"gitbomSha256NEQ,omitempty"`
-	GitbomSha256In           []string `json:"gitbomSha256In,omitempty"`
-	GitbomSha256NotIn        []string `json:"gitbomSha256NotIn,omitempty"`
-	GitbomSha256GT           *string  `json:"gitbomSha256GT,omitempty"`
-	GitbomSha256GTE          *string  `json:"gitbomSha256GTE,omitempty"`
-	GitbomSha256LT           *string  `json:"gitbomSha256LT,omitempty"`
-	GitbomSha256LTE          *string  `json:"gitbomSha256LTE,omitempty"`
-	GitbomSha256Contains     *string  `json:"gitbomSha256Contains,omitempty"`
-	GitbomSha256HasPrefix    *string  `json:"gitbomSha256HasPrefix,omitempty"`
-	GitbomSha256HasSuffix    *string  `json:"gitbomSha256HasSuffix,omitempty"`
-	GitbomSha256EqualFold    *string  `json:"gitbomSha256EqualFold,omitempty"`
-	GitbomSha256ContainsFold *string  `json:"gitbomSha256ContainsFold,omitempty"`
+	// "gitoid_sha256" field predicates.
+	GitoidSha256             *string  `json:"gitoidSha256,omitempty"`
+	GitoidSha256NEQ          *string  `json:"gitoidSha256NEQ,omitempty"`
+	GitoidSha256In           []string `json:"gitoidSha256In,omitempty"`
+	GitoidSha256NotIn        []string `json:"gitoidSha256NotIn,omitempty"`
+	GitoidSha256GT           *string  `json:"gitoidSha256GT,omitempty"`
+	GitoidSha256GTE          *string  `json:"gitoidSha256GTE,omitempty"`
+	GitoidSha256LT           *string  `json:"gitoidSha256LT,omitempty"`
+	GitoidSha256LTE          *string  `json:"gitoidSha256LTE,omitempty"`
+	GitoidSha256Contains     *string  `json:"gitoidSha256Contains,omitempty"`
+	GitoidSha256HasPrefix    *string  `json:"gitoidSha256HasPrefix,omitempty"`
+	GitoidSha256HasSuffix    *string  `json:"gitoidSha256HasSuffix,omitempty"`
+	GitoidSha256EqualFold    *string  `json:"gitoidSha256EqualFold,omitempty"`
+	GitoidSha256ContainsFold *string  `json:"gitoidSha256ContainsFold,omitempty"`
 
 	// "payload_type" field predicates.
 	PayloadType             *string  `json:"payloadType,omitempty"`
@@ -594,44 +594,44 @@ func (i *DsseWhereInput) P() (predicate.Dsse, error) {
 	if i.IDLTE != nil {
 		predicates = append(predicates, dsse.IDLTE(*i.IDLTE))
 	}
-	if i.GitbomSha256 != nil {
-		predicates = append(predicates, dsse.GitbomSha256EQ(*i.GitbomSha256))
+	if i.GitoidSha256 != nil {
+		predicates = append(predicates, dsse.GitoidSha256EQ(*i.GitoidSha256))
 	}
-	if i.GitbomSha256NEQ != nil {
-		predicates = append(predicates, dsse.GitbomSha256NEQ(*i.GitbomSha256NEQ))
+	if i.GitoidSha256NEQ != nil {
+		predicates = append(predicates, dsse.GitoidSha256NEQ(*i.GitoidSha256NEQ))
 	}
-	if len(i.GitbomSha256In) > 0 {
-		predicates = append(predicates, dsse.GitbomSha256In(i.GitbomSha256In...))
+	if len(i.GitoidSha256In) > 0 {
+		predicates = append(predicates, dsse.GitoidSha256In(i.GitoidSha256In...))
 	}
-	if len(i.GitbomSha256NotIn) > 0 {
-		predicates = append(predicates, dsse.GitbomSha256NotIn(i.GitbomSha256NotIn...))
+	if len(i.GitoidSha256NotIn) > 0 {
+		predicates = append(predicates, dsse.GitoidSha256NotIn(i.GitoidSha256NotIn...))
 	}
-	if i.GitbomSha256GT != nil {
-		predicates = append(predicates, dsse.GitbomSha256GT(*i.GitbomSha256GT))
+	if i.GitoidSha256GT != nil {
+		predicates = append(predicates, dsse.GitoidSha256GT(*i.GitoidSha256GT))
 	}
-	if i.GitbomSha256GTE != nil {
-		predicates = append(predicates, dsse.GitbomSha256GTE(*i.GitbomSha256GTE))
+	if i.GitoidSha256GTE != nil {
+		predicates = append(predicates, dsse.GitoidSha256GTE(*i.GitoidSha256GTE))
 	}
-	if i.GitbomSha256LT != nil {
-		predicates = append(predicates, dsse.GitbomSha256LT(*i.GitbomSha256LT))
+	if i.GitoidSha256LT != nil {
+		predicates = append(predicates, dsse.GitoidSha256LT(*i.GitoidSha256LT))
 	}
-	if i.GitbomSha256LTE != nil {
-		predicates = append(predicates, dsse.GitbomSha256LTE(*i.GitbomSha256LTE))
+	if i.GitoidSha256LTE != nil {
+		predicates = append(predicates, dsse.GitoidSha256LTE(*i.GitoidSha256LTE))
 	}
-	if i.GitbomSha256Contains != nil {
-		predicates = append(predicates, dsse.GitbomSha256Contains(*i.GitbomSha256Contains))
+	if i.GitoidSha256Contains != nil {
+		predicates = append(predicates, dsse.GitoidSha256Contains(*i.GitoidSha256Contains))
 	}
-	if i.GitbomSha256HasPrefix != nil {
-		predicates = append(predicates, dsse.GitbomSha256HasPrefix(*i.GitbomSha256HasPrefix))
+	if i.GitoidSha256HasPrefix != nil {
+		predicates = append(predicates, dsse.GitoidSha256HasPrefix(*i.GitoidSha256HasPrefix))
 	}
-	if i.GitbomSha256HasSuffix != nil {
-		predicates = append(predicates, dsse.GitbomSha256HasSuffix(*i.GitbomSha256HasSuffix))
+	if i.GitoidSha256HasSuffix != nil {
+		predicates = append(predicates, dsse.GitoidSha256HasSuffix(*i.GitoidSha256HasSuffix))
 	}
-	if i.GitbomSha256EqualFold != nil {
-		predicates = append(predicates, dsse.GitbomSha256EqualFold(*i.GitbomSha256EqualFold))
+	if i.GitoidSha256EqualFold != nil {
+		predicates = append(predicates, dsse.GitoidSha256EqualFold(*i.GitoidSha256EqualFold))
 	}
-	if i.GitbomSha256ContainsFold != nil {
-		predicates = append(predicates, dsse.GitbomSha256ContainsFold(*i.GitbomSha256ContainsFold))
+	if i.GitoidSha256ContainsFold != nil {
+		predicates = append(predicates, dsse.GitoidSha256ContainsFold(*i.GitoidSha256ContainsFold))
 	}
 	if i.PayloadType != nil {
 		predicates = append(predicates, dsse.PayloadTypeEQ(*i.PayloadType))

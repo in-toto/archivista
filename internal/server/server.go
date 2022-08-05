@@ -16,10 +16,11 @@ package server
 
 import (
 	"bufio"
+	"bytes"
 	"context"
 	"io"
 
-	"github.com/git-bom/gitbom-go"
+	"github.com/edwarnicke/gitoid"
 	"github.com/networkservicemesh/sdk/pkg/tools/log"
 	"github.com/testifysec/archivist-api/pkg/api/archivist"
 )
@@ -118,27 +119,26 @@ func (s *collectorServer) Store(server archivist.Collector_StoreServer) error {
 		payload = append(payload, c.GetChunk()...)
 	}
 
-	// generate gitbom
-	gb := gitbom.NewSha256GitBom()
-	if err := gb.AddReference(payload, nil); err != nil {
-		log.FromContext(ctx).Errorf("gitbom tag generation failed: %+v", err)
+	// generate gitoid
+	gid, err := gitoid.New(bytes.NewBuffer(payload), gitoid.WithContentLength(int64(len(payload))), gitoid.WithSha256())
+	if err != nil {
+		log.FromContext(ctx).Errorf("failed to generate gitoid: %v", err)
 		return err
 	}
 
-	gitoid := gb.Identity()
-	if err := s.metadataStore.Store(ctx, gitoid, payload); err != nil {
+	if err := s.metadataStore.Store(ctx, gid.String(), payload); err != nil {
 		log.FromContext(ctx).Errorf("received error from metadata store: %+v", err)
 		return err
 	}
 
 	if s.objectStore != nil {
-		if err := s.objectStore.Store(ctx, gitoid, payload); err != nil {
+		if err := s.objectStore.Store(ctx, gid.String(), payload); err != nil {
 			log.FromContext(ctx).Errorf("received error from object store: %+v", err)
 			return err
 		}
 	}
 
-	return server.SendAndClose(&archivist.StoreResponse{Gitoid: gitoid})
+	return server.SendAndClose(&archivist.StoreResponse{Gitoid: gid.String()})
 }
 
 func (s *collectorServer) Get(request *archivist.GetRequest, server archivist.Collector_GetServer) error {

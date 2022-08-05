@@ -57,7 +57,7 @@ type ComplexityRoot struct {
 	}
 
 	Dsse struct {
-		GitbomSha256   func(childComplexity int) int
+		GitoidSha256   func(childComplexity int) int
 		ID             func(childComplexity int) int
 		PayloadDigests func(childComplexity int) int
 		PayloadType    func(childComplexity int) int
@@ -187,12 +187,12 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 
 		return e.complexity.AttestationCollection.Name(childComplexity), true
 
-	case "Dsse.gitbom_sha256":
-		if e.complexity.Dsse.GitbomSha256 == nil {
+	case "Dsse.gitoid_sha256":
+		if e.complexity.Dsse.GitoidSha256 == nil {
 			break
 		}
 
-		return e.complexity.Dsse.GitbomSha256(childComplexity), true
+		return e.complexity.Dsse.GitoidSha256(childComplexity), true
 
 	case "Dsse.id":
 		if e.complexity.Dsse.ID == nil {
@@ -509,7 +509,7 @@ var sources = []*ast.Source{
 
 type Dsse {
     id: ID!
-    gitbom_sha256: String!
+    gitoid_sha256: String!
     payload_type: String!
     statement: Statement!
     signatures: [Signature!]
@@ -694,20 +694,20 @@ input DsseWhereInput {
   idGTE: ID
   idLT: ID
   idLTE: ID
-  """gitbom_sha256 field predicates"""
-  gitbomSha256: String
-  gitbomSha256NEQ: String
-  gitbomSha256In: [String!]
-  gitbomSha256NotIn: [String!]
-  gitbomSha256GT: String
-  gitbomSha256GTE: String
-  gitbomSha256LT: String
-  gitbomSha256LTE: String
-  gitbomSha256Contains: String
-  gitbomSha256HasPrefix: String
-  gitbomSha256HasSuffix: String
-  gitbomSha256EqualFold: String
-  gitbomSha256ContainsFold: String
+  """gitoid_sha256 field predicates"""
+  gitoidSha256: String
+  gitoidSha256NEQ: String
+  gitoidSha256In: [String!]
+  gitoidSha256NotIn: [String!]
+  gitoidSha256GT: String
+  gitoidSha256GTE: String
+  gitoidSha256LT: String
+  gitoidSha256LTE: String
+  gitoidSha256Contains: String
+  gitoidSha256HasPrefix: String
+  gitoidSha256HasSuffix: String
+  gitoidSha256EqualFold: String
+  gitoidSha256ContainsFold: String
   """payload_type field predicates"""
   payloadType: String
   payloadTypeNEQ: String
@@ -1337,8 +1337,8 @@ func (ec *executionContext) fieldContext_Dsse_id(ctx context.Context, field grap
 	return fc, nil
 }
 
-func (ec *executionContext) _Dsse_gitbom_sha256(ctx context.Context, field graphql.CollectedField, obj *ent.Dsse) (ret graphql.Marshaler) {
-	fc, err := ec.fieldContext_Dsse_gitbom_sha256(ctx, field)
+func (ec *executionContext) _Dsse_gitoid_sha256(ctx context.Context, field graphql.CollectedField, obj *ent.Dsse) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_Dsse_gitoid_sha256(ctx, field)
 	if err != nil {
 		return graphql.Null
 	}
@@ -1351,7 +1351,7 @@ func (ec *executionContext) _Dsse_gitbom_sha256(ctx context.Context, field graph
 	}()
 	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
 		ctx = rctx // use context from middleware stack in children
-		return obj.GitbomSha256, nil
+		return obj.GitoidSha256, nil
 	})
 	if err != nil {
 		ec.Error(ctx, err)
@@ -1368,7 +1368,7 @@ func (ec *executionContext) _Dsse_gitbom_sha256(ctx context.Context, field graph
 	return ec.marshalNString2string(ctx, field.Selections, res)
 }
 
-func (ec *executionContext) fieldContext_Dsse_gitbom_sha256(ctx context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+func (ec *executionContext) fieldContext_Dsse_gitoid_sha256(ctx context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
 	fc = &graphql.FieldContext{
 		Object:     "Dsse",
 		Field:      field,
@@ -1760,8 +1760,8 @@ func (ec *executionContext) fieldContext_DsseEdge_node(ctx context.Context, fiel
 			switch field.Name {
 			case "id":
 				return ec.fieldContext_Dsse_id(ctx, field)
-			case "gitbom_sha256":
-				return ec.fieldContext_Dsse_gitbom_sha256(ctx, field)
+			case "gitoid_sha256":
+				return ec.fieldContext_Dsse_gitoid_sha256(ctx, field)
 			case "payload_type":
 				return ec.fieldContext_Dsse_payload_type(ctx, field)
 			case "statement":
@@ -5421,107 +5421,107 @@ func (ec *executionContext) unmarshalInputDsseWhereInput(ctx context.Context, ob
 			if err != nil {
 				return it, err
 			}
-		case "gitbomSha256":
+		case "gitoidSha256":
 			var err error
 
-			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("gitbomSha256"))
-			it.GitbomSha256, err = ec.unmarshalOString2ᚖstring(ctx, v)
+			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("gitoidSha256"))
+			it.GitoidSha256, err = ec.unmarshalOString2ᚖstring(ctx, v)
 			if err != nil {
 				return it, err
 			}
-		case "gitbomSha256NEQ":
+		case "gitoidSha256NEQ":
 			var err error
 
-			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("gitbomSha256NEQ"))
-			it.GitbomSha256NEQ, err = ec.unmarshalOString2ᚖstring(ctx, v)
+			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("gitoidSha256NEQ"))
+			it.GitoidSha256NEQ, err = ec.unmarshalOString2ᚖstring(ctx, v)
 			if err != nil {
 				return it, err
 			}
-		case "gitbomSha256In":
+		case "gitoidSha256In":
 			var err error
 
-			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("gitbomSha256In"))
-			it.GitbomSha256In, err = ec.unmarshalOString2ᚕstringᚄ(ctx, v)
+			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("gitoidSha256In"))
+			it.GitoidSha256In, err = ec.unmarshalOString2ᚕstringᚄ(ctx, v)
 			if err != nil {
 				return it, err
 			}
-		case "gitbomSha256NotIn":
+		case "gitoidSha256NotIn":
 			var err error
 
-			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("gitbomSha256NotIn"))
-			it.GitbomSha256NotIn, err = ec.unmarshalOString2ᚕstringᚄ(ctx, v)
+			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("gitoidSha256NotIn"))
+			it.GitoidSha256NotIn, err = ec.unmarshalOString2ᚕstringᚄ(ctx, v)
 			if err != nil {
 				return it, err
 			}
-		case "gitbomSha256GT":
+		case "gitoidSha256GT":
 			var err error
 
-			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("gitbomSha256GT"))
-			it.GitbomSha256GT, err = ec.unmarshalOString2ᚖstring(ctx, v)
+			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("gitoidSha256GT"))
+			it.GitoidSha256GT, err = ec.unmarshalOString2ᚖstring(ctx, v)
 			if err != nil {
 				return it, err
 			}
-		case "gitbomSha256GTE":
+		case "gitoidSha256GTE":
 			var err error
 
-			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("gitbomSha256GTE"))
-			it.GitbomSha256GTE, err = ec.unmarshalOString2ᚖstring(ctx, v)
+			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("gitoidSha256GTE"))
+			it.GitoidSha256GTE, err = ec.unmarshalOString2ᚖstring(ctx, v)
 			if err != nil {
 				return it, err
 			}
-		case "gitbomSha256LT":
+		case "gitoidSha256LT":
 			var err error
 
-			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("gitbomSha256LT"))
-			it.GitbomSha256LT, err = ec.unmarshalOString2ᚖstring(ctx, v)
+			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("gitoidSha256LT"))
+			it.GitoidSha256LT, err = ec.unmarshalOString2ᚖstring(ctx, v)
 			if err != nil {
 				return it, err
 			}
-		case "gitbomSha256LTE":
+		case "gitoidSha256LTE":
 			var err error
 
-			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("gitbomSha256LTE"))
-			it.GitbomSha256LTE, err = ec.unmarshalOString2ᚖstring(ctx, v)
+			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("gitoidSha256LTE"))
+			it.GitoidSha256LTE, err = ec.unmarshalOString2ᚖstring(ctx, v)
 			if err != nil {
 				return it, err
 			}
-		case "gitbomSha256Contains":
+		case "gitoidSha256Contains":
 			var err error
 
-			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("gitbomSha256Contains"))
-			it.GitbomSha256Contains, err = ec.unmarshalOString2ᚖstring(ctx, v)
+			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("gitoidSha256Contains"))
+			it.GitoidSha256Contains, err = ec.unmarshalOString2ᚖstring(ctx, v)
 			if err != nil {
 				return it, err
 			}
-		case "gitbomSha256HasPrefix":
+		case "gitoidSha256HasPrefix":
 			var err error
 
-			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("gitbomSha256HasPrefix"))
-			it.GitbomSha256HasPrefix, err = ec.unmarshalOString2ᚖstring(ctx, v)
+			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("gitoidSha256HasPrefix"))
+			it.GitoidSha256HasPrefix, err = ec.unmarshalOString2ᚖstring(ctx, v)
 			if err != nil {
 				return it, err
 			}
-		case "gitbomSha256HasSuffix":
+		case "gitoidSha256HasSuffix":
 			var err error
 
-			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("gitbomSha256HasSuffix"))
-			it.GitbomSha256HasSuffix, err = ec.unmarshalOString2ᚖstring(ctx, v)
+			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("gitoidSha256HasSuffix"))
+			it.GitoidSha256HasSuffix, err = ec.unmarshalOString2ᚖstring(ctx, v)
 			if err != nil {
 				return it, err
 			}
-		case "gitbomSha256EqualFold":
+		case "gitoidSha256EqualFold":
 			var err error
 
-			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("gitbomSha256EqualFold"))
-			it.GitbomSha256EqualFold, err = ec.unmarshalOString2ᚖstring(ctx, v)
+			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("gitoidSha256EqualFold"))
+			it.GitoidSha256EqualFold, err = ec.unmarshalOString2ᚖstring(ctx, v)
 			if err != nil {
 				return it, err
 			}
-		case "gitbomSha256ContainsFold":
+		case "gitoidSha256ContainsFold":
 			var err error
 
-			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("gitbomSha256ContainsFold"))
-			it.GitbomSha256ContainsFold, err = ec.unmarshalOString2ᚖstring(ctx, v)
+			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("gitoidSha256ContainsFold"))
+			it.GitoidSha256ContainsFold, err = ec.unmarshalOString2ᚖstring(ctx, v)
 			if err != nil {
 				return it, err
 			}
@@ -7270,9 +7270,9 @@ func (ec *executionContext) _Dsse(ctx context.Context, sel ast.SelectionSet, obj
 			if out.Values[i] == graphql.Null {
 				atomic.AddUint32(&invalids, 1)
 			}
-		case "gitbom_sha256":
+		case "gitoid_sha256":
 
-			out.Values[i] = ec._Dsse_gitbom_sha256(ctx, field, obj)
+			out.Values[i] = ec._Dsse_gitoid_sha256(ctx, field, obj)
 
 			if out.Values[i] == graphql.Null {
 				atomic.AddUint32(&invalids, 1)

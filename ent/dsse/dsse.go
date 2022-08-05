@@ -7,8 +7,8 @@ const (
 	Label = "dsse"
 	// FieldID holds the string denoting the id field in the database.
 	FieldID = "id"
-	// FieldGitbomSha256 holds the string denoting the gitbom_sha256 field in the database.
-	FieldGitbomSha256 = "gitbom_sha256"
+	// FieldGitoidSha256 holds the string denoting the gitoid_sha256 field in the database.
+	FieldGitoidSha256 = "gitoid_sha256"
 	// FieldPayloadType holds the string denoting the payload_type field in the database.
 	FieldPayloadType = "payload_type"
 	// EdgeStatement holds the string denoting the statement edge name in mutations.
@@ -45,7 +45,7 @@ const (
 // Columns holds all SQL columns for dsse fields.
 var Columns = []string{
 	FieldID,
-	FieldGitbomSha256,
+	FieldGitoidSha256,
 	FieldPayloadType,
 }
 
@@ -71,8 +71,8 @@ func ValidColumn(column string) bool {
 }
 
 var (
-	// GitbomSha256Validator is a validator for the "gitbom_sha256" field. It is called by the builders before save.
-	GitbomSha256Validator func(string) error
+	// GitoidSha256Validator is a validator for the "gitoid_sha256" field. It is called by the builders before save.
+	GitoidSha256Validator func(string) error
 	// PayloadTypeValidator is a validator for the "payload_type" field. It is called by the builders before save.
 	PayloadTypeValidator func(string) error
 )

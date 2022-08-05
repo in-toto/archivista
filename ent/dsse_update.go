@@ -30,9 +30,9 @@ func (du *DsseUpdate) Where(ps ...predicate.Dsse) *DsseUpdate {
 	return du
 }
 
-// SetGitbomSha256 sets the "gitbom_sha256" field.
-func (du *DsseUpdate) SetGitbomSha256(s string) *DsseUpdate {
-	du.mutation.SetGitbomSha256(s)
+// SetGitoidSha256 sets the "gitoid_sha256" field.
+func (du *DsseUpdate) SetGitoidSha256(s string) *DsseUpdate {
+	du.mutation.SetGitoidSha256(s)
 	return du
 }
 
@@ -206,9 +206,9 @@ func (du *DsseUpdate) ExecX(ctx context.Context) {
 
 // check runs all checks and user-defined validators on the builder.
 func (du *DsseUpdate) check() error {
-	if v, ok := du.mutation.GitbomSha256(); ok {
-		if err := dsse.GitbomSha256Validator(v); err != nil {
-			return &ValidationError{Name: "gitbom_sha256", err: fmt.Errorf(`ent: validator failed for field "Dsse.gitbom_sha256": %w`, err)}
+	if v, ok := du.mutation.GitoidSha256(); ok {
+		if err := dsse.GitoidSha256Validator(v); err != nil {
+			return &ValidationError{Name: "gitoid_sha256", err: fmt.Errorf(`ent: validator failed for field "Dsse.gitoid_sha256": %w`, err)}
 		}
 	}
 	if v, ok := du.mutation.PayloadType(); ok {
@@ -237,11 +237,11 @@ func (du *DsseUpdate) sqlSave(ctx context.Context) (n int, err error) {
 			}
 		}
 	}
-	if value, ok := du.mutation.GitbomSha256(); ok {
+	if value, ok := du.mutation.GitoidSha256(); ok {
 		_spec.Fields.Set = append(_spec.Fields.Set, &sqlgraph.FieldSpec{
 			Type:   field.TypeString,
 			Value:  value,
-			Column: dsse.FieldGitbomSha256,
+			Column: dsse.FieldGitoidSha256,
 		})
 	}
 	if value, ok := du.mutation.PayloadType(); ok {
@@ -413,9 +413,9 @@ type DsseUpdateOne struct {
 	mutation *DsseMutation
 }
 
-// SetGitbomSha256 sets the "gitbom_sha256" field.
-func (duo *DsseUpdateOne) SetGitbomSha256(s string) *DsseUpdateOne {
-	duo.mutation.SetGitbomSha256(s)
+// SetGitoidSha256 sets the "gitoid_sha256" field.
+func (duo *DsseUpdateOne) SetGitoidSha256(s string) *DsseUpdateOne {
+	duo.mutation.SetGitoidSha256(s)
 	return duo
 }
 
@@ -602,9 +602,9 @@ func (duo *DsseUpdateOne) ExecX(ctx context.Context) {
 
 // check runs all checks and user-defined validators on the builder.
 func (duo *DsseUpdateOne) check() error {
-	if v, ok := duo.mutation.GitbomSha256(); ok {
-		if err := dsse.GitbomSha256Validator(v); err != nil {
-			return &ValidationError{Name: "gitbom_sha256", err: fmt.Errorf(`ent: validator failed for field "Dsse.gitbom_sha256": %w`, err)}
+	if v, ok := duo.mutation.GitoidSha256(); ok {
+		if err := dsse.GitoidSha256Validator(v); err != nil {
+			return &ValidationError{Name: "gitoid_sha256", err: fmt.Errorf(`ent: validator failed for field "Dsse.gitoid_sha256": %w`, err)}
 		}
 	}
 	if v, ok := duo.mutation.PayloadType(); ok {
@@ -650,11 +650,11 @@ func (duo *DsseUpdateOne) sqlSave(ctx context.Context) (_node *Dsse, err error) 
 			}
 		}
 	}
-	if value, ok := duo.mutation.GitbomSha256(); ok {
+	if value, ok := duo.mutation.GitoidSha256(); ok {
 		_spec.Fields.Set = append(_spec.Fields.Set, &sqlgraph.FieldSpec{
 			Type:   field.TypeString,
 			Value:  value,
-			Column: dsse.FieldGitbomSha256,
+			Column: dsse.FieldGitoidSha256,
 		})
 	}
 	if value, ok := duo.mutation.PayloadType(); ok {

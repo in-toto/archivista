@@ -16,8 +16,8 @@ type Dsse struct {
 	config `json:"-"`
 	// ID of the ent.
 	ID int `json:"id,omitempty"`
-	// GitbomSha256 holds the value of the "gitbom_sha256" field.
-	GitbomSha256 string `json:"gitbom_sha256,omitempty"`
+	// GitoidSha256 holds the value of the "gitoid_sha256" field.
+	GitoidSha256 string `json:"gitoid_sha256,omitempty"`
 	// PayloadType holds the value of the "payload_type" field.
 	PayloadType string `json:"payload_type,omitempty"`
 	// Edges holds the relations/edges for other nodes in the graph.
@@ -80,7 +80,7 @@ func (*Dsse) scanValues(columns []string) ([]interface{}, error) {
 		switch columns[i] {
 		case dsse.FieldID:
 			values[i] = new(sql.NullInt64)
-		case dsse.FieldGitbomSha256, dsse.FieldPayloadType:
+		case dsse.FieldGitoidSha256, dsse.FieldPayloadType:
 			values[i] = new(sql.NullString)
 		case dsse.ForeignKeys[0]: // dsse_statement
 			values[i] = new(sql.NullInt64)
@@ -105,11 +105,11 @@ func (d *Dsse) assignValues(columns []string, values []interface{}) error {
 				return fmt.Errorf("unexpected type %T for field id", value)
 			}
 			d.ID = int(value.Int64)
-		case dsse.FieldGitbomSha256:
+		case dsse.FieldGitoidSha256:
 			if value, ok := values[i].(*sql.NullString); !ok {
-				return fmt.Errorf("unexpected type %T for field gitbom_sha256", values[i])
+				return fmt.Errorf("unexpected type %T for field gitoid_sha256", values[i])
 			} else if value.Valid {
-				d.GitbomSha256 = value.String
+				d.GitoidSha256 = value.String
 			}
 		case dsse.FieldPayloadType:
 			if value, ok := values[i].(*sql.NullString); !ok {
@@ -167,8 +167,8 @@ func (d *Dsse) String() string {
 	var builder strings.Builder
 	builder.WriteString("Dsse(")
 	builder.WriteString(fmt.Sprintf("id=%v, ", d.ID))
-	builder.WriteString("gitbom_sha256=")
-	builder.WriteString(d.GitbomSha256)
+	builder.WriteString("gitoid_sha256=")
+	builder.WriteString(d.GitoidSha256)
 	builder.WriteString(", ")
 	builder.WriteString("payload_type=")
 	builder.WriteString(d.PayloadType)

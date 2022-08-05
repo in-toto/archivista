@@ -14,7 +14,7 @@ type Dsse struct {
 // Fields of the Statement.
 func (Dsse) Fields() []ent.Field {
 	return []ent.Field{
-		field.String("gitbom_sha256").NotEmpty().Unique(),
+		field.String("gitoid_sha256").NotEmpty().Unique(),
 		field.String("payload_type").NotEmpty(),
 	}
 }

@@ -91,10 +91,10 @@ func IDLTE(id int) predicate.Dsse {
 	})
 }
 
-// GitbomSha256 applies equality check predicate on the "gitbom_sha256" field. It's identical to GitbomSha256EQ.
-func GitbomSha256(v string) predicate.Dsse {
+// GitoidSha256 applies equality check predicate on the "gitoid_sha256" field. It's identical to GitoidSha256EQ.
+func GitoidSha256(v string) predicate.Dsse {
 	return predicate.Dsse(func(s *sql.Selector) {
-		s.Where(sql.EQ(s.C(FieldGitbomSha256), v))
+		s.Where(sql.EQ(s.C(FieldGitoidSha256), v))
 	})
 }
 
@@ -105,22 +105,22 @@ func PayloadType(v string) predicate.Dsse {
 	})
 }
 
-// GitbomSha256EQ applies the EQ predicate on the "gitbom_sha256" field.
-func GitbomSha256EQ(v string) predicate.Dsse {
+// GitoidSha256EQ applies the EQ predicate on the "gitoid_sha256" field.
+func GitoidSha256EQ(v string) predicate.Dsse {
 	return predicate.Dsse(func(s *sql.Selector) {
-		s.Where(sql.EQ(s.C(FieldGitbomSha256), v))
+		s.Where(sql.EQ(s.C(FieldGitoidSha256), v))
 	})
 }
 
-// GitbomSha256NEQ applies the NEQ predicate on the "gitbom_sha256" field.
-func GitbomSha256NEQ(v string) predicate.Dsse {
+// GitoidSha256NEQ applies the NEQ predicate on the "gitoid_sha256" field.
+func GitoidSha256NEQ(v string) predicate.Dsse {
 	return predicate.Dsse(func(s *sql.Selector) {
-		s.Where(sql.NEQ(s.C(FieldGitbomSha256), v))
+		s.Where(sql.NEQ(s.C(FieldGitoidSha256), v))
 	})
 }
 
-// GitbomSha256In applies the In predicate on the "gitbom_sha256" field.
-func GitbomSha256In(vs ...string) predicate.Dsse {
+// GitoidSha256In applies the In predicate on the "gitoid_sha256" field.
+func GitoidSha256In(vs ...string) predicate.Dsse {
 	v := make([]interface{}, len(vs))
 	for i := range v {
 		v[i] = vs[i]
@@ -132,12 +132,12 @@ func GitbomSha256In(vs ...string) predicate.Dsse {
 			s.Where(sql.False())
 			return
 		}
-		s.Where(sql.In(s.C(FieldGitbomSha256), v...))
+		s.Where(sql.In(s.C(FieldGitoidSha256), v...))
 	})
 }
 
-// GitbomSha256NotIn applies the NotIn predicate on the "gitbom_sha256" field.
-func GitbomSha256NotIn(vs ...string) predicate.Dsse {
+// GitoidSha256NotIn applies the NotIn predicate on the "gitoid_sha256" field.
+func GitoidSha256NotIn(vs ...string) predicate.Dsse {
 	v := make([]interface{}, len(vs))
 	for i := range v {
 		v[i] = vs[i]
@@ -149,70 +149,70 @@ func GitbomSha256NotIn(vs ...string) predicate.Dsse {
 			s.Where(sql.False())
 			return
 		}
-		s.Where(sql.NotIn(s.C(FieldGitbomSha256), v...))
+		s.Where(sql.NotIn(s.C(FieldGitoidSha256), v...))
 	})
 }
 
-// GitbomSha256GT applies the GT predicate on the "gitbom_sha256" field.
-func GitbomSha256GT(v string) predicate.Dsse {
+// GitoidSha256GT applies the GT predicate on the "gitoid_sha256" field.
+func GitoidSha256GT(v string) predicate.Dsse {
 	return predicate.Dsse(func(s *sql.Selector) {
-		s.Where(sql.GT(s.C(FieldGitbomSha256), v))
+		s.Where(sql.GT(s.C(FieldGitoidSha256), v))
 	})
 }
 
-// GitbomSha256GTE applies the GTE predicate on the "gitbom_sha256" field.
-func GitbomSha256GTE(v string) predicate.Dsse {
+// GitoidSha256GTE applies the GTE predicate on the "gitoid_sha256" field.
+func GitoidSha256GTE(v string) predicate.Dsse {
 	return predicate.Dsse(func(s *sql.Selector) {
-		s.Where(sql.GTE(s.C(FieldGitbomSha256), v))
+		s.Where(sql.GTE(s.C(FieldGitoidSha256), v))
 	})
 }
 
-// GitbomSha256LT applies the LT predicate on the "gitbom_sha256" field.
-func GitbomSha256LT(v string) predicate.Dsse {
+// GitoidSha256LT applies the LT predicate on the "gitoid_sha256" field.
+func GitoidSha256LT(v string) predicate.Dsse {
 	return predicate.Dsse(func(s *sql.Selector) {
-		s.Where(sql.LT(s.C(FieldGitbomSha256), v))
+		s.Where(sql.LT(s.C(FieldGitoidSha256), v))
 	})
 }
 
-// GitbomSha256LTE applies the LTE predicate on the "gitbom_sha256" field.
-func GitbomSha256LTE(v string) predicate.Dsse {
+// GitoidSha256LTE applies the LTE predicate on the "gitoid_sha256" field.
+func GitoidSha256LTE(v string) predicate.Dsse {
 	return predicate.Dsse(func(s *sql.Selector) {
-		s.Where(sql.LTE(s.C(FieldGitbomSha256), v))
+		s.Where(sql.LTE(s.C(FieldGitoidSha256), v))
 	})
 }
 
-// GitbomSha256Contains applies the Contains predicate on the "gitbom_sha256" field.
-func GitbomSha256Contains(v string) predicate.Dsse {
+// GitoidSha256Contains applies the Contains predicate on the "gitoid_sha256" field.
+func GitoidSha256Contains(v string) predicate.Dsse {
 	return predicate.Dsse(func(s *sql.Selector) {
-		s.Where(sql.Contains(s.C(FieldGitbomSha256), v))
+		s.Where(sql.Contains(s.C(FieldGitoidSha256), v))
 	})
 }
 
-// GitbomSha256HasPrefix applies the HasPrefix predicate on the "gitbom_sha256" field.
-func GitbomSha256HasPrefix(v string) predicate.Dsse {
+// GitoidSha256HasPrefix applies the HasPrefix predicate on the "gitoid_sha256" field.
+func GitoidSha256HasPrefix(v string) predicate.Dsse {
 	return predicate.Dsse(func(s *sql.Selector) {
-		s.Where(sql.HasPrefix(s.C(FieldGitbomSha256), v))
+		s.Where(sql.HasPrefix(s.C(FieldGitoidSha256), v))
 	})
 }
 
-// GitbomSha256HasSuffix applies the HasSuffix predicate on the "gitbom_sha256" field.
-func GitbomSha256HasSuffix(v string) predicate.Dsse {
+// GitoidSha256HasSuffix applies the HasSuffix predicate on the "gitoid_sha256" field.
+func GitoidSha256HasSuffix(v string) predicate.Dsse {
 	return predicate.Dsse(func(s *sql.Selector) {
-		s.Where(sql.HasSuffix(s.C(FieldGitbomSha256), v))
+		s.Where(sql.HasSuffix(s.C(FieldGitoidSha256), v))
 	})
 }
 
-// GitbomSha256EqualFold applies the EqualFold predicate on the "gitbom_sha256" field.
-func GitbomSha256EqualFold(v string) predicate.Dsse {
+// GitoidSha256EqualFold applies the EqualFold predicate on the "gitoid_sha256" field.
+func GitoidSha256EqualFold(v string) predicate.Dsse {
 	return predicate.Dsse(func(s *sql.Selector) {
-		s.Where(sql.EqualFold(s.C(FieldGitbomSha256), v))
+		s.Where(sql.EqualFold(s.C(FieldGitoidSha256), v))
 	})
 }
 
-// GitbomSha256ContainsFold applies the ContainsFold predicate on the "gitbom_sha256" field.
-func GitbomSha256ContainsFold(v string) predicate.Dsse {
+// GitoidSha256ContainsFold applies the ContainsFold predicate on the "gitoid_sha256" field.
+func GitoidSha256ContainsFold(v string) predicate.Dsse {
 	return predicate.Dsse(func(s *sql.Selector) {
-		s.Where(sql.ContainsFold(s.C(FieldGitbomSha256), v))
+		s.Where(sql.ContainsFold(s.C(FieldGitoidSha256), v))
 	})
 }
 

@@ -2,7 +2,7 @@ scalar Cursor
 
 type Dsse {
     id: ID!
-    gitbom_sha256: String!
+    gitoid_sha256: String!
     payload_type: String!
     statement: Statement!
     signatures: [Signature!]
