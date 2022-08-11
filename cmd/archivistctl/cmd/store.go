@@ -20,7 +20,7 @@ var (
 		SilenceUsage: true,
 		Args:         cobra.MinimumNArgs(1),
 		RunE: func(cmd *cobra.Command, args []string) error {
-			conn, err := newConn(archivistUrl)
+			conn, err := newConn(archivistGrpcUrl)
 			defer conn.Close()
 			if err != nil {
 				return err

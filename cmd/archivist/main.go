@@ -125,9 +125,6 @@ func main() {
 	now = time.Now()
 
 	grpcServer := grpc.NewServer(grpcOptions...)
-	archivistService := server.NewArchivistServer(mysqlStore)
-	archivist.RegisterArchivistServer(grpcServer, archivistService)
-
 	collectorService := server.NewCollectorServer(mysqlStore, fileStore)
 	archivist.RegisterCollectorServer(grpcServer, collectorService)
 

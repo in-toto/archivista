@@ -7,7 +7,8 @@ import (
 )
 
 var (
-	archivistUrl string
+	archivistGrpcUrl string
+	archivistGqlUrl  string
 
 	rootCmd = &cobra.Command{
 		Use:   "archivistctl",
@@ -16,7 +17,8 @@ var (
 )
 
 func init() {
-	rootCmd.PersistentFlags().StringVarP(&archivistUrl, "archivisturl", "u", "localhost:8080", "url of the archivist instance")
+	rootCmd.PersistentFlags().StringVarP(&archivistGrpcUrl, "grpc-url", "u", "localhost:8080", "url of the archivist grpc service")
+	rootCmd.PersistentFlags().StringVarP(&archivistGqlUrl, "graphql-url", "q", "http://localhost:8082/query", "url of the archivist graphql service")
 }
 
 func Execute() error {

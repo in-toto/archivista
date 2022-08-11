@@ -1,14 +1,12 @@
 package cmd
 
 import (
-	"context"
+	"encoding/json"
 	"errors"
 	"fmt"
-	"io"
 	"strings"
 
 	"github.com/spf13/cobra"
-	"github.com/testifysec/archivist-api/pkg/api/archivist"
 )
 
 var (
@@ -34,18 +32,12 @@ Digests are expected to be in the form algorithm:digest, for instance: sha256:45
 			return nil
 		},
 		RunE: func(cmd *cobra.Command, args []string) error {
-			conn, err := newConn(archivistUrl)
-			defer conn.Close()
-			if err != nil {
-				return nil
-			}
-
 			algo, digest, err := validateDigestString(args[0])
 			if err != nil {
 				return err
 			}
 
-			return searchArchivist(cmd.Context(), archivist.NewArchivistClient(conn), algo, digest, collectionName)
+			return searchArchivist(archivistGqlUrl, algo, digest)
 		},
 	}
 )
@@ -64,29 +56,84 @@ func validateDigestString(ds string) (algo, digest string, err error) {
 	return algo, digest, nil
 }
 
-func searchArchivist(ctx context.Context, client archivist.ArchivistClient, algo, digest, collName string) error {
-	req := &archivist.GetBySubjectDigestRequest{Algorithm: algo, Value: digest, CollectionName: collName}
-	stream, err := client.GetBySubjectDigest(ctx, req)
+func searchArchivist(url, algo, digest string) error {
+	query, err := json.Marshal(searchQuery(algo, digest))
+	if err != nil {
+		return nil
+	}
+
+	results, err := executeGraphQlQuery(url, query)
 	if err != nil {
 		return err
 	}
 
-	for {
-		resp, err := stream.Recv()
-		if err == io.EOF {
-			break
+	parsedResults := struct {
+		Data struct {
+			Dsses struct {
+				Edges []struct {
+					Node struct {
+						GitoidSha256 string `json:"gitoid_sha256"`
+						Statement    struct {
+							AttestationCollection struct {
+								Name         string `json:"name"`
+								Attestations []struct {
+									Type string `json:"type"`
+								} `json:"attestations"`
+							} `json:"attestation_collection"`
+						} `json:"statement"`
+					} `json:"node"`
+				} `json:"edges"`
+			} `json:"dsses"`
+		} `json:"data"`
+	}{}
+
+	if err := json.Unmarshal(results, &parsedResults); err != nil {
+		return err
+	}
+
+	for _, edge := range parsedResults.Data.Dsses.Edges {
+		fmt.Printf("Gitoid: %s\n", edge.Node.GitoidSha256)
+		fmt.Printf("Collection name: %s\n", edge.Node.Statement.AttestationCollection.Name)
+		types := make([]string, 0, len(edge.Node.Statement.AttestationCollection.Attestations))
+		for _, attestation := range edge.Node.Statement.AttestationCollection.Attestations {
+			types = append(types, attestation.Type)
 		}
 
-		if err != nil {
-			return err
-		}
-
-		printResponse(resp)
+		fmt.Printf("Attestations: %s\n\n", strings.Join(types, ", "))
 	}
 
 	return nil
 }
 
-func printResponse(resp *archivist.GetBySubjectDigestResponse) {
-	fmt.Printf("Gitoid: %s\nCollection name: %s\nAttestations: %s\n\n", resp.GetGitoid(), resp.GetCollectionName(), strings.Join(resp.GetAttestations(), ", "))
+func searchQuery(algo, value string) map[string]string {
+	return map[string]string{
+		"query": fmt.Sprintf(`{
+  dsses(
+    where: {
+      hasStatementWith: {
+        hasSubjectsWith: {
+          hasSubjectDigestsWith: {
+            value: "%v", 
+            algorithm: "%v"
+          }
+        }
+      }
+    }
+  ) {
+    edges {
+      node {
+        gitoid_sha256
+        statement {
+          attestation_collection {
+            name
+            attestations {
+              type
+            }
+          }
+        }
+      }
+    }
+  }
+}`, value, algo),
+	}
 }

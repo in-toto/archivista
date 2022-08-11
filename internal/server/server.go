@@ -27,68 +27,15 @@ import (
 
 const ChunkSize = 64 * 1024 //64kb seems to be somewhat of an agreed upon message size when streaming: https://github.com/grpc/grpc.github.io/issues/371
 
-type archivistServer struct {
-	archivist.UnimplementedArchivistServer
-
-	store MetadataStorer
-}
-
-func NewArchivistServer(store MetadataStorer) archivist.ArchivistServer {
-	return &archivistServer{
-		store: store,
-	}
-}
-
-func (s *archivistServer) GetBySubjectDigest(request *archivist.GetBySubjectDigestRequest, server archivist.Archivist_GetBySubjectDigestServer) error {
-	ctx, cancel := context.WithCancel(server.Context())
-	defer cancel()
-	log.FromContext(ctx).Info("retrieving by subject... ")
-	responses, err := s.store.GetBySubjectDigest(ctx, request)
-	if err != nil {
-		return err
-	}
-
-	for response := range responses {
-		if err := server.Send(response); err != nil {
-			return err
-		}
-	}
-
-	return nil
-}
-
-func (s *archivistServer) GetSubjects(req *archivist.GetSubjectsRequest, server archivist.Archivist_GetSubjectsServer) error {
-	ctx, cancel := context.WithCancel(server.Context())
-	defer cancel()
-	subjects, err := s.store.GetSubjects(ctx, req)
-	if err != nil {
-		return err
-	}
-
-	for subject := range subjects {
-		if err := server.Send(subject); err != nil {
-			return err
-		}
-	}
-
-	return nil
-}
-
 type collectorServer struct {
 	archivist.UnimplementedCollectorServer
 
-	metadataStore MetadataStorer
 	objectStore   ObjectStorer
+	metadataStore Storer
 }
 
 type Storer interface {
 	Store(context.Context, string, []byte) error
-}
-
-type MetadataStorer interface {
-	Storer
-	GetBySubjectDigest(context.Context, *archivist.GetBySubjectDigestRequest) (<-chan *archivist.GetBySubjectDigestResponse, error)
-	GetSubjects(context.Context, *archivist.GetSubjectsRequest) (<-chan *archivist.GetSubjectsResponse, error)
 }
 
 type ObjectStorer interface {
@@ -96,7 +43,7 @@ type ObjectStorer interface {
 	Get(context.Context, *archivist.GetRequest) (io.ReadCloser, error)
 }
 
-func NewCollectorServer(metadataStore MetadataStorer, objectStore ObjectStorer) archivist.CollectorServer {
+func NewCollectorServer(metadataStore Storer, objectStore ObjectStorer) archivist.CollectorServer {
 	return &collectorServer{
 		objectStore:   objectStore,
 		metadataStore: metadataStore,
