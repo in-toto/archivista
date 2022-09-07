@@ -338,7 +338,6 @@ func (acq *AttestationCollectionQuery) WithStatement(opts ...func(*StatementQuer
 //		GroupBy(attestationcollection.FieldName).
 //		Aggregate(ent.Count()).
 //		Scan(ctx, &v)
-//
 func (acq *AttestationCollectionQuery) GroupBy(field string, fields ...string) *AttestationCollectionGroupBy {
 	grbuild := &AttestationCollectionGroupBy{config: acq.config}
 	grbuild.fields = append([]string{field}, fields...)
@@ -365,7 +364,6 @@ func (acq *AttestationCollectionQuery) GroupBy(field string, fields ...string) *
 //	client.AttestationCollection.Query().
 //		Select(attestationcollection.FieldName).
 //		Scan(ctx, &v)
-//
 func (acq *AttestationCollectionQuery) Select(fields ...string) *AttestationCollectionSelect {
 	acq.fields = append(acq.fields, fields...)
 	selbuild := &AttestationCollectionSelect{AttestationCollectionQuery: acq}

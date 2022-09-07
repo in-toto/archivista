@@ -301,7 +301,6 @@ func (pdq *PayloadDigestQuery) WithDsse(opts ...func(*DsseQuery)) *PayloadDigest
 //		GroupBy(payloaddigest.FieldAlgorithm).
 //		Aggregate(ent.Count()).
 //		Scan(ctx, &v)
-//
 func (pdq *PayloadDigestQuery) GroupBy(field string, fields ...string) *PayloadDigestGroupBy {
 	grbuild := &PayloadDigestGroupBy{config: pdq.config}
 	grbuild.fields = append([]string{field}, fields...)
@@ -328,7 +327,6 @@ func (pdq *PayloadDigestQuery) GroupBy(field string, fields ...string) *PayloadD
 //	client.PayloadDigest.Query().
 //		Select(payloaddigest.FieldAlgorithm).
 //		Scan(ctx, &v)
-//
 func (pdq *PayloadDigestQuery) Select(fields ...string) *PayloadDigestSelect {
 	pdq.fields = append(pdq.fields, fields...)
 	selbuild := &PayloadDigestSelect{PayloadDigestQuery: pdq}

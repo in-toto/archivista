@@ -374,7 +374,6 @@ func (dq *DsseQuery) WithPayloadDigests(opts ...func(*PayloadDigestQuery)) *Dsse
 //		GroupBy(dsse.FieldGitoidSha256).
 //		Aggregate(ent.Count()).
 //		Scan(ctx, &v)
-//
 func (dq *DsseQuery) GroupBy(field string, fields ...string) *DsseGroupBy {
 	grbuild := &DsseGroupBy{config: dq.config}
 	grbuild.fields = append([]string{field}, fields...)
@@ -401,7 +400,6 @@ func (dq *DsseQuery) GroupBy(field string, fields ...string) *DsseGroupBy {
 //	client.Dsse.Query().
 //		Select(dsse.FieldGitoidSha256).
 //		Scan(ctx, &v)
-//
 func (dq *DsseQuery) Select(fields ...string) *DsseSelect {
 	dq.fields = append(dq.fields, fields...)
 	selbuild := &DsseSelect{DsseQuery: dq}

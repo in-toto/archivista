@@ -94,7 +94,7 @@ var (
 	SignaturesColumns = []*schema.Column{
 		{Name: "id", Type: field.TypeInt, Increment: true},
 		{Name: "key_id", Type: field.TypeString},
-		{Name: "signature", Type: field.TypeString, Unique: true},
+		{Name: "signature", Type: field.TypeString, SchemaType: map[string]string{"mysql": "text"}},
 		{Name: "dsse_signatures", Type: field.TypeInt, Nullable: true},
 	}
 	// SignaturesTable holds the schema information for the "signatures" table.

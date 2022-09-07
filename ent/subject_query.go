@@ -338,7 +338,6 @@ func (sq *SubjectQuery) WithStatement(opts ...func(*StatementQuery)) *SubjectQue
 //		GroupBy(subject.FieldName).
 //		Aggregate(ent.Count()).
 //		Scan(ctx, &v)
-//
 func (sq *SubjectQuery) GroupBy(field string, fields ...string) *SubjectGroupBy {
 	grbuild := &SubjectGroupBy{config: sq.config}
 	grbuild.fields = append([]string{field}, fields...)
@@ -365,7 +364,6 @@ func (sq *SubjectQuery) GroupBy(field string, fields ...string) *SubjectGroupBy 
 //	client.Subject.Query().
 //		Select(subject.FieldName).
 //		Scan(ctx, &v)
-//
 func (sq *SubjectQuery) Select(fields ...string) *SubjectSelect {
 	sq.fields = append(sq.fields, fields...)
 	selbuild := &SubjectSelect{SubjectQuery: sq}

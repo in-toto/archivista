@@ -301,7 +301,6 @@ func (sdq *SubjectDigestQuery) WithSubject(opts ...func(*SubjectQuery)) *Subject
 //		GroupBy(subjectdigest.FieldAlgorithm).
 //		Aggregate(ent.Count()).
 //		Scan(ctx, &v)
-//
 func (sdq *SubjectDigestQuery) GroupBy(field string, fields ...string) *SubjectDigestGroupBy {
 	grbuild := &SubjectDigestGroupBy{config: sdq.config}
 	grbuild.fields = append([]string{field}, fields...)
@@ -328,7 +327,6 @@ func (sdq *SubjectDigestQuery) GroupBy(field string, fields ...string) *SubjectD
 //	client.SubjectDigest.Query().
 //		Select(subjectdigest.FieldAlgorithm).
 //		Scan(ctx, &v)
-//
 func (sdq *SubjectDigestQuery) Select(fields ...string) *SubjectDigestSelect {
 	sdq.fields = append(sdq.fields, fields...)
 	selbuild := &SubjectDigestSelect{SubjectDigestQuery: sdq}

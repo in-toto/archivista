@@ -301,7 +301,6 @@ func (sq *SignatureQuery) WithDsse(opts ...func(*DsseQuery)) *SignatureQuery {
 //		GroupBy(signature.FieldKeyID).
 //		Aggregate(ent.Count()).
 //		Scan(ctx, &v)
-//
 func (sq *SignatureQuery) GroupBy(field string, fields ...string) *SignatureGroupBy {
 	grbuild := &SignatureGroupBy{config: sq.config}
 	grbuild.fields = append([]string{field}, fields...)
@@ -328,7 +327,6 @@ func (sq *SignatureQuery) GroupBy(field string, fields ...string) *SignatureGrou
 //	client.Signature.Query().
 //		Select(signature.FieldKeyID).
 //		Scan(ctx, &v)
-//
 func (sq *SignatureQuery) Select(fields ...string) *SignatureSelect {
 	sq.fields = append(sq.fields, fields...)
 	selbuild := &SignatureSelect{SignatureQuery: sq}
