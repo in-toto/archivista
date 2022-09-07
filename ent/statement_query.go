@@ -373,7 +373,6 @@ func (sq *StatementQuery) WithDsse(opts ...func(*DsseQuery)) *StatementQuery {
 //		GroupBy(statement.FieldPredicate).
 //		Aggregate(ent.Count()).
 //		Scan(ctx, &v)
-//
 func (sq *StatementQuery) GroupBy(field string, fields ...string) *StatementGroupBy {
 	grbuild := &StatementGroupBy{config: sq.config}
 	grbuild.fields = append([]string{field}, fields...)
@@ -400,7 +399,6 @@ func (sq *StatementQuery) GroupBy(field string, fields ...string) *StatementGrou
 //	client.Statement.Query().
 //		Select(statement.FieldPredicate).
 //		Scan(ctx, &v)
-//
 func (sq *StatementQuery) Select(fields ...string) *StatementSelect {
 	sq.fields = append(sq.fields, fields...)
 	selbuild := &StatementSelect{StatementQuery: sq}

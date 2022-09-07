@@ -301,7 +301,6 @@ func (aq *AttestationQuery) WithAttestationCollection(opts ...func(*AttestationC
 //		GroupBy(attestation.FieldType).
 //		Aggregate(ent.Count()).
 //		Scan(ctx, &v)
-//
 func (aq *AttestationQuery) GroupBy(field string, fields ...string) *AttestationGroupBy {
 	grbuild := &AttestationGroupBy{config: aq.config}
 	grbuild.fields = append([]string{field}, fields...)
@@ -328,7 +327,6 @@ func (aq *AttestationQuery) GroupBy(field string, fields ...string) *Attestation
 //	client.Attestation.Query().
 //		Select(attestation.FieldType).
 //		Scan(ctx, &v)
-//
 func (aq *AttestationQuery) Select(fields ...string) *AttestationSelect {
 	aq.fields = append(aq.fields, fields...)
 	selbuild := &AttestationSelect{AttestationQuery: aq}

@@ -2,6 +2,7 @@ package schema
 
 import (
 	"entgo.io/ent"
+	"entgo.io/ent/dialect"
 	"entgo.io/ent/schema/edge"
 	"entgo.io/ent/schema/field"
 )
@@ -15,7 +16,7 @@ type Signature struct {
 func (Signature) Fields() []ent.Field {
 	return []ent.Field{
 		field.String("key_id").NotEmpty(),
-		field.String("signature").Unique().NotEmpty(),
+		field.String("signature").NotEmpty().SchemaType(map[string]string{dialect.MySQL: "text"}),
 	}
 }
 
