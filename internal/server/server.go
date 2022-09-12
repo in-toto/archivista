@@ -147,11 +147,11 @@ func (s *collectorServer) Get(request *archivist.GetRequest, server archivist.Co
 	}
 
 	objReader, err := s.objectStore.Get(server.Context(), request)
-	defer objReader.Close()
 	if err != nil {
 		return err
 	}
 
+	defer objReader.Close()
 	chunk := &archivist.Chunk{}
 	buf := make([]byte, ChunkSize)
 	r := bufio.NewReaderSize(objReader, ChunkSize)

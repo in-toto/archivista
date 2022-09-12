@@ -97,7 +97,7 @@ func main() {
 
 	log.FromContext(ctx).WithField("duration", time.Since(now)).Infof("completed phase 2: retrieve spiffe svid")
 	grpcOptions := make([]grpc.ServerOption, 0)
-	if cfg.EnableSPIFFE == true {
+	if cfg.EnableSPIFFE {
 		opts := initSpiffeConnection(ctx, cfg)
 		grpcOptions = append(grpcOptions, opts...)
 	} else {
