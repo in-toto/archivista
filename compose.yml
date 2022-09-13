@@ -32,7 +32,7 @@ services:
     restart: unless-stopped
     environment:
       ARCHIVIST_ENABLE_SPIFFE: "false"
-      ARCHIVIST_LISTEN_ON: tcp://0.0.0.0:8080
+      ARCHIVIST_LISTEN_ON: tcp://0.0.0.0:8099
       ARCHIVIST_STORAGE_BACKEND: BLOB
       ARCHIVIST_FILE_DIR: /tmp/archivist/
       ARCHIVIST_FILE_SERVE_ON: :8081
@@ -44,9 +44,10 @@ services:
       ARCHIVIST_ENABLE_GRAPHQL: "true"
       ARCHIVIST_GRAPHQL_LISTEN_ON: tcp://0.0.0.0:8082
       ARCHIVIST_GRAPHQL_WEB_CLIENT_ENABLE: "true"
+      ARCHIVIST_CORS_ALLOW_ORIGINS: "http://localhost:1234"
 
     ports:
-      - 8080:8080
+      - 8099:8099
       - 8081:8081
       - 8082:8082
     volumes:
