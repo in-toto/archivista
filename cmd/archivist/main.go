@@ -31,6 +31,7 @@ import (
 	"syscall"
 	"time"
 
+	"github.com/99designs/gqlgen/graphql/playground"
 	root "github.com/testifysec/archivist"
 	"github.com/testifysec/archivist-api/pkg/api/archivist"
 	"github.com/testifysec/archivist/internal/config"
@@ -41,7 +42,6 @@ import (
 
 	"entgo.io/contrib/entgql"
 	"github.com/99designs/gqlgen/graphql/handler"
-	"github.com/99designs/gqlgen/graphql/playground"
 	nested "github.com/antonfisher/nested-logrus-formatter"
 	"github.com/gorilla/mux"
 	"github.com/networkservicemesh/sdk/pkg/tools/debug"
@@ -143,16 +143,17 @@ func main() {
 	if cfg.EnableGraphql {
 		client := mysqlStore.GetClient()
 		srv := handler.NewDefaultServer(root.NewSchema(client))
-		srv.Use(entgql.Transactioner{TxOpener: client})
 
+		srv.Use(entgql.Transactioner{TxOpener: client})
 		router := mux.NewRouter()
+
+		router.Handle("/query", srv)
 
 		if cfg.GraphqlWebClientEnable {
 			router.Handle("/",
 				playground.Handler("Archivist", "/query"),
 			)
 		}
-		router.Handle("/query", srv)
 
 		p := &proxy{
 			client: fileStore,
@@ -175,9 +176,11 @@ func main() {
 			log.FromContext(ctx).Fatalf("unable to start graphql listener: %+v", err)
 		}
 
+		corsRouter := &CORSRouterDecorator{router, cfg.CORSAllowOrigins}
+
 		go func() {
-			if err := http.Serve(gqlListener, router); err != nil {
-				log.FromContext(ctx).Error("http server terminated", err)
+			if err := http.Serve(gqlListener, corsRouter); err != nil {
+				log.FromContext(ctx).Fatalf("unable to start graphql server: %+v", err)
 			}
 		}()
 	} else {
@@ -296,4 +299,25 @@ func (p *proxy) ServeHTTP(w http.ResponseWriter, req *http.Request) {
 		w.WriteHeader(500)
 		return
 	}
+}
+
+type CORSRouterDecorator struct {
+	Router  *mux.Router
+	origins []string
+}
+
+func (c *CORSRouterDecorator) ServeHTTP(w http.ResponseWriter, r *http.Request) {
+	for _, origin := range c.origins {
+		w.Header().Add("Access-Control-Allow-Origin", origin)
+	}
+	w.Header().Add("Access-Control-Allow-Methods", "GET, OPTIONS")
+	w.Header().Add("Access-Control-Allow-Headers", "Accept, Content-Type, Content-Length, Accept-Encoding, X-CSRF-Token, Authorization")
+
+	// Stop here for a Preflighted OPTIONS request.
+	if r.Method == "OPTIONS" {
+		return
+	}
+
+	c.Router.ServeHTTP(w, r)
+
 }
