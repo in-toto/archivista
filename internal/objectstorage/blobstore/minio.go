@@ -22,7 +22,6 @@ import (
 
 	"github.com/minio/minio-go"
 	"github.com/minio/minio-go/pkg/credentials"
-	"github.com/testifysec/archivist-api/pkg/api/archivist"
 )
 
 type Store struct {
@@ -77,8 +76,8 @@ func New(ctx context.Context, endpoint, accessKeyId, secretAccessKeyId, bucketNa
 	}, errCh, nil
 }
 
-func (s *Store) Get(ctx context.Context, req *archivist.GetRequest) (io.ReadCloser, error) {
-	return s.client.GetObjectWithContext(ctx, s.bucket, req.GetGitoid(), minio.GetObjectOptions{})
+func (s *Store) Get(ctx context.Context, gitoid string) (io.ReadCloser, error) {
+	return s.client.GetObjectWithContext(ctx, s.bucket, gitoid, minio.GetObjectOptions{})
 }
 
 func (s *Store) Store(ctx context.Context, gitoid string, payload []byte) error {
