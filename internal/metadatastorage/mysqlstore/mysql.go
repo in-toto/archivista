@@ -25,14 +25,7 @@ import (
 	"ariga.io/sqlcomment"
 	"entgo.io/ent/dialect/sql"
 	"github.com/networkservicemesh/sdk/pkg/tools/log"
-	"github.com/testifysec/archivist-api/pkg/api/archivist"
 	"github.com/testifysec/archivist/ent"
-	"github.com/testifysec/archivist/ent/attestationcollection"
-	entdsse "github.com/testifysec/archivist/ent/dsse"
-	"github.com/testifysec/archivist/ent/predicate"
-	"github.com/testifysec/archivist/ent/statement"
-	"github.com/testifysec/archivist/ent/subject"
-	"github.com/testifysec/archivist/ent/subjectdigest"
 	"github.com/testifysec/go-witness/attestation"
 	"github.com/testifysec/go-witness/cryptoutil"
 	"github.com/testifysec/go-witness/dsse"
@@ -92,93 +85,6 @@ func New(ctx context.Context, connectionstring string) (*Store, <-chan error, er
 	return &Store{
 		client: client,
 	}, errCh, nil
-}
-
-func (s *Store) GetBySubjectDigest(ctx context.Context, request *archivist.GetBySubjectDigestRequest) (<-chan *archivist.GetBySubjectDigestResponse, error) {
-	statementPredicates := []predicate.Statement{statement.HasSubjectsWith(
-		subject.HasSubjectDigestsWith(
-			subjectdigest.And(
-				subjectdigest.Algorithm(request.Algorithm),
-				subjectdigest.Value(request.Value),
-			),
-		),
-	),
-	}
-
-	if len(request.CollectionName) > 0 {
-		statementPredicates = append(statementPredicates, statement.HasAttestationCollectionsWith(attestationcollection.Name(request.GetCollectionName())))
-	}
-
-	res, err := s.client.Dsse.Query().Where(
-		entdsse.HasStatementWith(statementPredicates...),
-	).WithStatement(func(q *ent.StatementQuery) {
-		q.WithAttestationCollections(func(q *ent.AttestationCollectionQuery) {
-			q.WithAttestations()
-		})
-	}).All(ctx)
-
-	if err != nil {
-		return nil, err
-	}
-
-	out := make(chan *archivist.GetBySubjectDigestResponse, 1)
-	go func() {
-		defer close(out)
-		for _, curDsse := range res {
-			response := &archivist.GetBySubjectDigestResponse{}
-			response.Gitoid = curDsse.GitoidSha256
-			response.CollectionName = curDsse.Edges.Statement.Edges.AttestationCollections.Name
-			for _, curAttestation := range curDsse.Edges.Statement.Edges.AttestationCollections.Edges.Attestations {
-				response.Attestations = append(response.Attestations, curAttestation.Type)
-			}
-
-			select {
-			case <-ctx.Done():
-				return
-			case out <- response:
-			}
-		}
-	}()
-
-	return out, nil
-}
-
-func (s *Store) GetSubjects(ctx context.Context, req *archivist.GetSubjectsRequest) (<-chan *archivist.GetSubjectsResponse, error) {
-	subjects, err := s.client.Subject.Query().Where(
-		subject.HasStatementWith(
-			statement.HasDsseWith(
-				entdsse.GitoidSha256(req.GetEnvelopeGitoid()),
-			),
-		),
-	).WithSubjectDigests().All(ctx)
-
-	if err != nil {
-		return nil, err
-	}
-
-	out := make(chan *archivist.GetSubjectsResponse, 1)
-	go func() {
-		defer close(out)
-
-		for _, subject := range subjects {
-			response := &archivist.GetSubjectsResponse{
-				Name:   subject.Name,
-				Digest: make(map[string]string),
-			}
-
-			for _, digest := range subject.Edges.SubjectDigests {
-				response.Digest[digest.Algorithm] = digest.Value
-			}
-
-			select {
-			case <-ctx.Done():
-				return
-			case out <- response:
-			}
-		}
-	}()
-
-	return out, nil
 }
 
 func (s *Store) withTx(ctx context.Context, fn func(tx *ent.Tx) error) error {

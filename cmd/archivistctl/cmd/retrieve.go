@@ -15,15 +15,13 @@
 package cmd
 
 import (
-	"bytes"
-	"context"
 	"fmt"
 	"io"
 	"os"
 	"strings"
 
 	"github.com/spf13/cobra"
-	"github.com/testifysec/archivist-api/pkg/api/archivist"
+	"github.com/testifysec/archivist/client"
 )
 
 var (
@@ -41,11 +39,6 @@ var (
 		SilenceUsage: true,
 		Args:         cobra.ExactArgs(1),
 		RunE: func(cmd *cobra.Command, args []string) error {
-			conn, err := newConn(archivistUrl)
-			if err != nil {
-				return err
-			}
-
 			var out io.Writer = os.Stdout
 			if len(outFile) > 0 {
 				file, err := os.Create(outFile)
@@ -57,7 +50,7 @@ var (
 				out = file
 			}
 
-			return retrieveEnvelope(cmd.Context(), archivist.NewCollectorClient(conn), args[0], out)
+			return client.Download(cmd.Context(), archivistUrl, args[0], out)
 		},
 	}
 
@@ -67,12 +60,13 @@ var (
 		SilenceUsage: true,
 		Args:         cobra.ExactArgs(1),
 		RunE: func(cmd *cobra.Command, args []string) error {
-			conn, err := newConn(archivistUrl)
+			results, err := client.GraphQlQuery[retrieveSubjectResults](cmd.Context(), archivistUrl, retrieveSubjectsQuery, retrieveSubjectVars{Gitoid: args[0]})
 			if err != nil {
 				return err
 			}
 
-			return retrieveSubjects(cmd.Context(), archivist.NewArchivistClient(conn), args[0])
+			printSubjects(results)
+			return nil
 		},
 	}
 )
@@ -84,57 +78,59 @@ func init() {
 	envelopeCmd.Flags().StringVarP(&outFile, "out", "o", "", "File to write the envelope out to. Defaults to stdout")
 }
 
-func retrieveSubjects(ctx context.Context, client archivist.ArchivistClient, gitoid string) error {
-	stream, err := client.GetSubjects(ctx, &archivist.GetSubjectsRequest{EnvelopeGitoid: gitoid})
-	if err != nil {
-		return err
-	}
+func printSubjects(results retrieveSubjectResults) {
+	for _, edge := range results.Dsses.Edges {
+		for _, subject := range edge.Node.Statement.Subjects {
+			digestStrings := make([]string, 0, len(subject.SubjectDigest))
+			for _, digest := range subject.SubjectDigest {
+				digestStrings = append(digestStrings, fmt.Sprintf("%s:%s", digest.Algorithm, digest.Value))
+			}
 
-	for {
-		subject, err := stream.Recv()
-		if err == io.EOF {
-			break
+			fmt.Printf("Name: %s\nDigests: %s\n", subject.Name, strings.Join(digestStrings, ", "))
 		}
-
-		if err != nil {
-			return err
-		}
-
-		fmt.Printf("Name: %s\nDigests:\n%s\n", subject.GetName(), digestString(subject.GetDigest()))
 	}
-
-	return nil
 }
 
-func digestString(digest map[string]string) string {
-	sb := strings.Builder{}
-	for algo, value := range digest {
-		sb.WriteString(fmt.Sprintf("Algo: %s\nValue: %s\n", algo, value))
-	}
-
-	return sb.String()
+type retrieveSubjectVars struct {
+	Gitoid string `json:"gitoid"`
 }
 
-func retrieveEnvelope(ctx context.Context, client archivist.CollectorClient, gitoid string, out io.Writer) error {
-	stream, err := client.Get(ctx, &archivist.GetRequest{Gitoid: gitoid})
-	if err != nil {
-		return err
-	}
-
-	for {
-		chunk, err := stream.Recv()
-		if err == io.EOF {
-			break
-		}
-
-		if err != nil {
-			return err
-		}
-
-		if _, err := io.Copy(out, bytes.NewReader(chunk.GetChunk())); err != nil {
-			return err
-		}
-	}
-
-	return nil
+type retrieveSubjectResults struct {
+	Dsses struct {
+		Edges []struct {
+			Node struct {
+				Statement struct {
+					Subjects []struct {
+						Name          string `json:"name"`
+						SubjectDigest []struct {
+							Algorithm string `json:"algorithm"`
+							Value     string `json:"value"`
+						} `json:"subject_digest"`
+					} `json:"subjects"`
+				} `json:"statement"`
+			} `json:"node"`
+		} `json:"edges"`
+	} `json:"dsses"`
 }
+
+const retrieveSubjectsQuery = `query($gitoid: String!) {
+	dsses(
+		where: {
+			gitoidSha256: $gitoid 
+		}
+	) {
+		edges {
+			node {
+				statement {
+					subjects {
+						name
+						subject_digest {
+							algorithm
+							value
+						}
+					}
+				}
+			}
+		}
+	}
+}`
