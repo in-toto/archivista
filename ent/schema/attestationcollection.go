@@ -18,6 +18,7 @@ import (
 	"entgo.io/ent"
 	"entgo.io/ent/schema/edge"
 	"entgo.io/ent/schema/field"
+	"entgo.io/ent/schema/index"
 )
 
 // AttestationCollection represents a witness attestation collection
@@ -35,5 +36,11 @@ func (AttestationCollection) Edges() []ent.Edge {
 	return []ent.Edge{
 		edge.To("attestations", Attestation.Type),
 		edge.From("statement", Statement.Type).Ref("attestation_collections").Unique().Required(),
+	}
+}
+
+func (AttestationCollection) Indexes() []ent.Index {
+	return []ent.Index{
+		index.Fields("name"),
 	}
 }

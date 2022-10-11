@@ -18,6 +18,7 @@ import (
 	"entgo.io/ent"
 	"entgo.io/ent/schema/edge"
 	"entgo.io/ent/schema/field"
+	"entgo.io/ent/schema/index"
 )
 
 // Statement represents an in-toto statement from an archived dsse envelope
@@ -39,5 +40,11 @@ func (Statement) Edges() []ent.Edge {
 		edge.To("attestation_collections", AttestationCollection.Type).Unique(),
 
 		edge.From("dsse", Dsse.Type).Ref("statement"),
+	}
+}
+
+func (Statement) Indexes() []ent.Index {
+	return []ent.Index{
+		index.Fields("predicate"),
 	}
 }

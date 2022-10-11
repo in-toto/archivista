@@ -19,6 +19,7 @@ import (
 	"entgo.io/ent/dialect"
 	"entgo.io/ent/schema/edge"
 	"entgo.io/ent/schema/field"
+	"entgo.io/ent/schema/index"
 )
 
 // Signature represents signatures on a DSSE envelope
@@ -38,5 +39,11 @@ func (Signature) Fields() []ent.Field {
 func (Signature) Edges() []ent.Edge {
 	return []ent.Edge{
 		edge.From("dsse", Dsse.Type).Ref("signatures").Unique(),
+	}
+}
+
+func (Signature) Indexes() []ent.Index {
+	return []ent.Index{
+		index.Fields("key_id"),
 	}
 }
