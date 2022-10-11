@@ -15,7 +15,9 @@
 package schema
 
 import (
+	"entgo.io/contrib/entgql"
 	"entgo.io/ent"
+	"entgo.io/ent/schema"
 	"entgo.io/ent/schema/edge"
 	"entgo.io/ent/schema/field"
 )
@@ -39,5 +41,12 @@ func (Dsse) Edges() []ent.Edge {
 		edge.To("statement", Statement.Type).Unique(),
 		edge.To("signatures", Signature.Type),
 		edge.To("payload_digests", PayloadDigest.Type),
+	}
+}
+
+func (Dsse) Annotations() []schema.Annotation {
+	return []schema.Annotation{
+		entgql.RelayConnection(),
+		entgql.QueryField(),
 	}
 }

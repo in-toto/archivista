@@ -28,14 +28,15 @@ import (
 func main() {
 	ex, err := entgql.NewExtension(
 		entgql.WithWhereInputs(true),
-		entgql.WithConfigPath("../gqlgen.yml"),
-		entgql.WithSchemaPath("../ent.graphql"),
+		entgql.WithConfigPath("./gqlgen.yml"),
+		entgql.WithSchemaGenerator(),
+		entgql.WithSchemaPath("./ent.graphql"),
 	)
 
 	if err != nil {
 		log.Fatalf("creating entgql extension: %v", err)
 	}
-	if err := entc.Generate("./schema", &gen.Config{}, entc.Extensions(ex)); err != nil {
+	if err := entc.Generate("./ent/schema", &gen.Config{}, entc.Extensions(ex)); err != nil {
 		log.Fatalf("running ent codegen: %v", err)
 	}
 }
