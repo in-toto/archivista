@@ -279,6 +279,22 @@ type Query {
     """Filtering options for Dsses returned from the connection."""
     where: DsseWhereInput
   ): DsseConnection!
+  subjects(
+    """Returns the elements in the list that come after the specified cursor."""
+    after: Cursor
+
+    """Returns the first _n_ elements from the list."""
+    first: Int
+
+    """Returns the elements in the list that come before the specified cursor."""
+    before: Cursor
+
+    """Returns the last _n_ elements from the list."""
+    last: Int
+
+    """Filtering options for Subjects returned from the connection."""
+    where: SubjectWhereInput
+  ): SubjectConnection!
 }
 type Signature implements Node {
   id: ID!
@@ -338,7 +354,22 @@ input SignatureWhereInput {
 type Statement implements Node {
   id: ID!
   predicate: String!
-  subjects: [Subject!]
+  subjects(
+    """Returns the elements in the list that come after the specified cursor."""
+    after: Cursor
+
+    """Returns the first _n_ elements from the list."""
+    first: Int
+
+    """Returns the elements in the list that come before the specified cursor."""
+    before: Cursor
+
+    """Returns the last _n_ elements from the list."""
+    last: Int
+
+    """Filtering options for Subjects returned from the connection."""
+    where: SubjectWhereInput
+  ): SubjectConnection!
   attestationCollections: AttestationCollection
   dsse: [Dsse!]
 }
@@ -388,6 +419,15 @@ type Subject implements Node {
   name: String!
   subjectDigests: [SubjectDigest!]
   statement: Statement
+}
+"""A connection to a list of items."""
+type SubjectConnection {
+  """A list of edges."""
+  edges: [SubjectEdge]
+  """Information to aid in pagination."""
+  pageInfo: PageInfo!
+  """Identifies the total count of items in the connection."""
+  totalCount: Int!
 }
 type SubjectDigest implements Node {
   id: ID!
@@ -443,6 +483,13 @@ input SubjectDigestWhereInput {
   """subject edge predicates"""
   hasSubject: Boolean
   hasSubjectWith: [SubjectWhereInput!]
+}
+"""An edge in a connection."""
+type SubjectEdge {
+  """The item at the end of the edge."""
+  node: Subject
+  """A cursor for use in pagination."""
+  cursor: Cursor!
 }
 """
 SubjectWhereInput is used for filtering Subject objects.

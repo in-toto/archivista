@@ -15,7 +15,9 @@
 package schema
 
 import (
+	"entgo.io/contrib/entgql"
 	"entgo.io/ent"
+	"entgo.io/ent/schema"
 	"entgo.io/ent/schema/edge"
 	"entgo.io/ent/schema/field"
 	"entgo.io/ent/schema/index"
@@ -47,5 +49,12 @@ func (Subject) Indexes() []ent.Index {
 	return []ent.Index{
 		// Index on the "name" field.
 		index.Fields("name"),
+	}
+}
+
+func (Subject) Annotations() []schema.Annotation {
+	return []schema.Annotation{
+		entgql.RelayConnection(),
+		entgql.QueryField(),
 	}
 }
