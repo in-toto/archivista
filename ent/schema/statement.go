@@ -15,6 +15,7 @@
 package schema
 
 import (
+	"entgo.io/contrib/entgql"
 	"entgo.io/ent"
 	"entgo.io/ent/schema/edge"
 	"entgo.io/ent/schema/field"
@@ -36,7 +37,7 @@ func (Statement) Fields() []ent.Field {
 // Edges of the Statement.
 func (Statement) Edges() []ent.Edge {
 	return []ent.Edge{
-		edge.To("subjects", Subject.Type),
+		edge.To("subjects", Subject.Type).Annotations(entgql.RelayConnection()),
 		edge.To("attestation_collections", AttestationCollection.Type).Unique(),
 
 		edge.From("dsse", Dsse.Type).Ref("statement"),

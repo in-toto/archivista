@@ -86,15 +86,13 @@ func init() {
 }
 
 func printSubjects(results retrieveSubjectResults) {
-	for _, edge := range results.Dsses.Edges {
-		for _, subject := range edge.Node.Statement.Subjects {
-			digestStrings := make([]string, 0, len(subject.SubjectDigest))
-			for _, digest := range subject.SubjectDigest {
-				digestStrings = append(digestStrings, fmt.Sprintf("%s:%s", digest.Algorithm, digest.Value))
-			}
-
-			fmt.Printf("Name: %s\nDigests: %s\n", subject.Name, strings.Join(digestStrings, ", "))
+	for _, edge := range results.Subjects.Edges {
+		digestStrings := make([]string, 0, len(edge.Node.SubjectDigests))
+		for _, digest := range edge.Node.SubjectDigests {
+			digestStrings = append(digestStrings, fmt.Sprintf("%s:%s", digest.Algorithm, digest.Value))
 		}
+
+		fmt.Printf("Name: %s\nDigests: %s\n", edge.Node.Name, strings.Join(digestStrings, ", "))
 	}
 }
 
@@ -103,41 +101,37 @@ type retrieveSubjectVars struct {
 }
 
 type retrieveSubjectResults struct {
-	Dsses struct {
+	Subjects struct {
 		Edges []struct {
 			Node struct {
-				Statement struct {
-					Subjects []struct {
-						Name          string `json:"name"`
-						SubjectDigest []struct {
-							Algorithm string `json:"algorithm"`
-							Value     string `json:"value"`
-						} `json:"subject_digest"`
-					} `json:"subjects"`
-				} `json:"statement"`
+				Name           string `json:"name"`
+				SubjectDigests []struct {
+					Algorithm string `json:"algorithm"`
+					Value     string `json:"value"`
+				} `json:"subjectDigests"`
 			} `json:"node"`
 		} `json:"edges"`
-	} `json:"dsses"`
+	} `json:"subjects"`
 }
 
 const retrieveSubjectsQuery = `query($gitoid: String!) {
-	dsses(
+	subjects(
 		where: {
-			gitoidSha256: $gitoid 
+			hasStatementWith:{
+        hasDsseWith:{
+          gitoidSha256: $gitoid
+        }
+      } 
 		}
 	) {
 		edges {
-			node {
-				statement {
-					subjects {
-						name
-						subject_digest {
-							algorithm
-							value
-						}
-					}
-				}
-			}
-		}
-	}
+      node{
+        name
+        subjectDigests{
+          algorithm
+          value
+        }
+      }
+    }
+  }
 }`

@@ -95,14 +95,14 @@ type searchResults struct {
 	Dsses struct {
 		Edges []struct {
 			Node struct {
-				GitoidSha256 string `json:"gitoid_sha256"`
+				GitoidSha256 string `json:"gitoidSha256"`
 				Statement    struct {
 					AttestationCollection struct {
 						Name         string `json:"name"`
 						Attestations []struct {
 							Type string `json:"type"`
 						} `json:"attestations"`
-					} `json:"attestation_collection"`
+					} `json:"attestationCollections"`
 				} `json:"statement"`
 			} `json:"node"`
 		} `json:"edges"`
@@ -124,9 +124,9 @@ const searchQuery = `query($algo: String!, $digest: String!) {
   ) {
     edges {
       node {
-        gitoid_sha256
+        gitoidSha256
         statement {
-          attestation_collection {
+          attestationCollections {
             name
             attestations {
               type
