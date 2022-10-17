@@ -37,8 +37,6 @@ type Config struct {
 
 type ResolverRoot interface {
 	Query() QueryResolver
-	Statement() StatementResolver
-	Subject() SubjectResolver
 }
 
 type DirectiveRoot struct {
@@ -46,14 +44,16 @@ type DirectiveRoot struct {
 
 type ComplexityRoot struct {
 	Attestation struct {
-		ID   func(childComplexity int) int
-		Type func(childComplexity int) int
+		AttestationCollection func(childComplexity int) int
+		ID                    func(childComplexity int) int
+		Type                  func(childComplexity int) int
 	}
 
 	AttestationCollection struct {
 		Attestations func(childComplexity int) int
 		ID           func(childComplexity int) int
 		Name         func(childComplexity int) int
+		Statement    func(childComplexity int) int
 	}
 
 	Dsse struct {
@@ -85,56 +85,64 @@ type ComplexityRoot struct {
 
 	PayloadDigest struct {
 		Algorithm func(childComplexity int) int
+		Dsse      func(childComplexity int) int
 		ID        func(childComplexity int) int
 		Value     func(childComplexity int) int
 	}
 
 	Query struct {
-		Dsses  func(childComplexity int, after *ent.Cursor, first *int, before *ent.Cursor, last *int, where *ent.DsseWhereInput) int
-		Status func(childComplexity int) int
+		Dsses    func(childComplexity int, after *ent.Cursor, first *int, before *ent.Cursor, last *int, where *ent.DsseWhereInput) int
+		Node     func(childComplexity int, id int) int
+		Nodes    func(childComplexity int, ids []int) int
+		Subjects func(childComplexity int, after *ent.Cursor, first *int, before *ent.Cursor, last *int, where *ent.SubjectWhereInput) int
 	}
 
 	Signature struct {
+		Dsse      func(childComplexity int) int
 		ID        func(childComplexity int) int
 		KeyID     func(childComplexity int) int
 		Signature func(childComplexity int) int
 	}
 
 	Statement struct {
-		AttestationCollection func(childComplexity int) int
-		ID                    func(childComplexity int) int
-		Predicate             func(childComplexity int) int
-		Subjects              func(childComplexity int) int
-	}
-
-	Status struct {
-		Database func(childComplexity int) int
-		Graphql  func(childComplexity int) int
-		Grpc     func(childComplexity int) int
+		AttestationCollections func(childComplexity int) int
+		Dsse                   func(childComplexity int) int
+		ID                     func(childComplexity int) int
+		Predicate              func(childComplexity int) int
+		Subjects               func(childComplexity int, after *ent.Cursor, first *int, before *ent.Cursor, last *int, where *ent.SubjectWhereInput) int
 	}
 
 	Subject struct {
-		ID            func(childComplexity int) int
-		Name          func(childComplexity int) int
-		SubjectDigest func(childComplexity int) int
+		ID             func(childComplexity int) int
+		Name           func(childComplexity int) int
+		Statement      func(childComplexity int) int
+		SubjectDigests func(childComplexity int) int
+	}
+
+	SubjectConnection struct {
+		Edges      func(childComplexity int) int
+		PageInfo   func(childComplexity int) int
+		TotalCount func(childComplexity int) int
 	}
 
 	SubjectDigest struct {
 		Algorithm func(childComplexity int) int
 		ID        func(childComplexity int) int
+		Subject   func(childComplexity int) int
 		Value     func(childComplexity int) int
+	}
+
+	SubjectEdge struct {
+		Cursor func(childComplexity int) int
+		Node   func(childComplexity int) int
 	}
 }
 
 type QueryResolver interface {
-	Status(ctx context.Context) (*Status, error)
+	Node(ctx context.Context, id int) (ent.Noder, error)
+	Nodes(ctx context.Context, ids []int) ([]ent.Noder, error)
 	Dsses(ctx context.Context, after *ent.Cursor, first *int, before *ent.Cursor, last *int, where *ent.DsseWhereInput) (*ent.DsseConnection, error)
-}
-type StatementResolver interface {
-	AttestationCollection(ctx context.Context, obj *ent.Statement) (*ent.AttestationCollection, error)
-}
-type SubjectResolver interface {
-	SubjectDigest(ctx context.Context, obj *ent.Subject) ([]*ent.SubjectDigest, error)
+	Subjects(ctx context.Context, after *ent.Cursor, first *int, before *ent.Cursor, last *int, where *ent.SubjectWhereInput) (*ent.SubjectConnection, error)
 }
 
 type executableSchema struct {
@@ -151,6 +159,13 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 	ec := executionContext{nil, e}
 	_ = ec
 	switch typeName + "." + field {
+
+	case "Attestation.attestationCollection":
+		if e.complexity.Attestation.AttestationCollection == nil {
+			break
+		}
+
+		return e.complexity.Attestation.AttestationCollection(childComplexity), true
 
 	case "Attestation.id":
 		if e.complexity.Attestation.ID == nil {
@@ -187,7 +202,14 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 
 		return e.complexity.AttestationCollection.Name(childComplexity), true
 
-	case "Dsse.gitoid_sha256":
+	case "AttestationCollection.statement":
+		if e.complexity.AttestationCollection.Statement == nil {
+			break
+		}
+
+		return e.complexity.AttestationCollection.Statement(childComplexity), true
+
+	case "Dsse.gitoidSha256":
 		if e.complexity.Dsse.GitoidSha256 == nil {
 			break
 		}
@@ -201,14 +223,14 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 
 		return e.complexity.Dsse.ID(childComplexity), true
 
-	case "Dsse.payload_digests":
+	case "Dsse.payloadDigests":
 		if e.complexity.Dsse.PayloadDigests == nil {
 			break
 		}
 
 		return e.complexity.Dsse.PayloadDigests(childComplexity), true
 
-	case "Dsse.payload_type":
+	case "Dsse.payloadType":
 		if e.complexity.Dsse.PayloadType == nil {
 			break
 		}
@@ -299,6 +321,13 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 
 		return e.complexity.PayloadDigest.Algorithm(childComplexity), true
 
+	case "PayloadDigest.dsse":
+		if e.complexity.PayloadDigest.Dsse == nil {
+			break
+		}
+
+		return e.complexity.PayloadDigest.Dsse(childComplexity), true
+
 	case "PayloadDigest.id":
 		if e.complexity.PayloadDigest.ID == nil {
 			break
@@ -325,12 +354,48 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 
 		return e.complexity.Query.Dsses(childComplexity, args["after"].(*ent.Cursor), args["first"].(*int), args["before"].(*ent.Cursor), args["last"].(*int), args["where"].(*ent.DsseWhereInput)), true
 
-	case "Query.status":
-		if e.complexity.Query.Status == nil {
+	case "Query.node":
+		if e.complexity.Query.Node == nil {
 			break
 		}
 
-		return e.complexity.Query.Status(childComplexity), true
+		args, err := ec.field_Query_node_args(context.TODO(), rawArgs)
+		if err != nil {
+			return 0, false
+		}
+
+		return e.complexity.Query.Node(childComplexity, args["id"].(int)), true
+
+	case "Query.nodes":
+		if e.complexity.Query.Nodes == nil {
+			break
+		}
+
+		args, err := ec.field_Query_nodes_args(context.TODO(), rawArgs)
+		if err != nil {
+			return 0, false
+		}
+
+		return e.complexity.Query.Nodes(childComplexity, args["ids"].([]int)), true
+
+	case "Query.subjects":
+		if e.complexity.Query.Subjects == nil {
+			break
+		}
+
+		args, err := ec.field_Query_subjects_args(context.TODO(), rawArgs)
+		if err != nil {
+			return 0, false
+		}
+
+		return e.complexity.Query.Subjects(childComplexity, args["after"].(*ent.Cursor), args["first"].(*int), args["before"].(*ent.Cursor), args["last"].(*int), args["where"].(*ent.SubjectWhereInput)), true
+
+	case "Signature.dsse":
+		if e.complexity.Signature.Dsse == nil {
+			break
+		}
+
+		return e.complexity.Signature.Dsse(childComplexity), true
 
 	case "Signature.id":
 		if e.complexity.Signature.ID == nil {
@@ -339,7 +404,7 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 
 		return e.complexity.Signature.ID(childComplexity), true
 
-	case "Signature.key_id":
+	case "Signature.keyID":
 		if e.complexity.Signature.KeyID == nil {
 			break
 		}
@@ -353,12 +418,19 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 
 		return e.complexity.Signature.Signature(childComplexity), true
 
-	case "Statement.attestation_collection":
-		if e.complexity.Statement.AttestationCollection == nil {
+	case "Statement.attestationCollections":
+		if e.complexity.Statement.AttestationCollections == nil {
 			break
 		}
 
-		return e.complexity.Statement.AttestationCollection(childComplexity), true
+		return e.complexity.Statement.AttestationCollections(childComplexity), true
+
+	case "Statement.dsse":
+		if e.complexity.Statement.Dsse == nil {
+			break
+		}
+
+		return e.complexity.Statement.Dsse(childComplexity), true
 
 	case "Statement.id":
 		if e.complexity.Statement.ID == nil {
@@ -379,28 +451,12 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 			break
 		}
 
-		return e.complexity.Statement.Subjects(childComplexity), true
-
-	case "Status.database":
-		if e.complexity.Status.Database == nil {
-			break
+		args, err := ec.field_Statement_subjects_args(context.TODO(), rawArgs)
+		if err != nil {
+			return 0, false
 		}
 
-		return e.complexity.Status.Database(childComplexity), true
-
-	case "Status.graphql":
-		if e.complexity.Status.Graphql == nil {
-			break
-		}
-
-		return e.complexity.Status.Graphql(childComplexity), true
-
-	case "Status.grpc":
-		if e.complexity.Status.Grpc == nil {
-			break
-		}
-
-		return e.complexity.Status.Grpc(childComplexity), true
+		return e.complexity.Statement.Subjects(childComplexity, args["after"].(*ent.Cursor), args["first"].(*int), args["before"].(*ent.Cursor), args["last"].(*int), args["where"].(*ent.SubjectWhereInput)), true
 
 	case "Subject.id":
 		if e.complexity.Subject.ID == nil {
@@ -416,12 +472,40 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 
 		return e.complexity.Subject.Name(childComplexity), true
 
-	case "Subject.subject_digest":
-		if e.complexity.Subject.SubjectDigest == nil {
+	case "Subject.statement":
+		if e.complexity.Subject.Statement == nil {
 			break
 		}
 
-		return e.complexity.Subject.SubjectDigest(childComplexity), true
+		return e.complexity.Subject.Statement(childComplexity), true
+
+	case "Subject.subjectDigests":
+		if e.complexity.Subject.SubjectDigests == nil {
+			break
+		}
+
+		return e.complexity.Subject.SubjectDigests(childComplexity), true
+
+	case "SubjectConnection.edges":
+		if e.complexity.SubjectConnection.Edges == nil {
+			break
+		}
+
+		return e.complexity.SubjectConnection.Edges(childComplexity), true
+
+	case "SubjectConnection.pageInfo":
+		if e.complexity.SubjectConnection.PageInfo == nil {
+			break
+		}
+
+		return e.complexity.SubjectConnection.PageInfo(childComplexity), true
+
+	case "SubjectConnection.totalCount":
+		if e.complexity.SubjectConnection.TotalCount == nil {
+			break
+		}
+
+		return e.complexity.SubjectConnection.TotalCount(childComplexity), true
 
 	case "SubjectDigest.algorithm":
 		if e.complexity.SubjectDigest.Algorithm == nil {
@@ -437,12 +521,33 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 
 		return e.complexity.SubjectDigest.ID(childComplexity), true
 
+	case "SubjectDigest.subject":
+		if e.complexity.SubjectDigest.Subject == nil {
+			break
+		}
+
+		return e.complexity.SubjectDigest.Subject(childComplexity), true
+
 	case "SubjectDigest.value":
 		if e.complexity.SubjectDigest.Value == nil {
 			break
 		}
 
 		return e.complexity.SubjectDigest.Value(childComplexity), true
+
+	case "SubjectEdge.cursor":
+		if e.complexity.SubjectEdge.Cursor == nil {
+			break
+		}
+
+		return e.complexity.SubjectEdge.Cursor(childComplexity), true
+
+	case "SubjectEdge.node":
+		if e.complexity.SubjectEdge.Node == nil {
+			break
+		}
+
+		return e.complexity.SubjectEdge.Node(childComplexity), true
 
 	}
 	return 0, false
@@ -505,106 +610,20 @@ func (ec *executionContext) introspectType(name string) (*introspection.Type, er
 }
 
 var sources = []*ast.Source{
-	{Name: "archivist.graphql", Input: `scalar Cursor
-
-type Dsse {
-    id: ID!
-    gitoid_sha256: String!
-    payload_type: String!
-    statement: Statement!
-    signatures: [Signature!]
-    payload_digests: [PayloadDigest!]
+	{Name: "ent.graphql", Input: `directive @goField(forceResolver: Boolean, name: String) on FIELD_DEFINITION | INPUT_FIELD_DEFINITION
+directive @goModel(model: String, models: [String!]) on OBJECT | INPUT_OBJECT | SCALAR | ENUM | INTERFACE | UNION
+type Attestation implements Node {
+  id: ID!
+  type: String!
+  attestationCollection: AttestationCollection!
 }
-
-type Statement {
-   id: ID!
-   predicate: String!
-   subjects: [Subject!]
-   attestation_collection: AttestationCollection!
+type AttestationCollection implements Node {
+  id: ID!
+  name: String!
+  attestations: [Attestation!]
+  statement: Statement!
 }
-
-type Signature {
-    id: ID!
-    key_id: String!
-    signature: String!
-}
-
-type PayloadDigest {
-    id: ID!
-    algorithm: String!
-    value: String!
-}
-
-type SubjectDigest {
-    id: ID!
-    algorithm: String!
-    value: String!
-}
-
-type Subject {
-    id: ID!
-    name: String!
-    subject_digest: [SubjectDigest!]
-}
-
-type AttestationCollection {
-    id: ID!
-    name: String!
-    attestations: [Attestation]
-}
-
-type Attestation {
-    id: ID!
-    type: String!
-}
-
-type PageInfo {
-    hasNextPage: Boolean!
-    hasPreviousPage: Boolean!
-    startCursor: Cursor
-    endCursor: Cursor
-}
-
-type DsseConnection {
-    totalCount: Int!
-    pageInfo: PageInfo!
-    edges: [DsseEdge]
-}
-
-type DsseEdge {
-    node: Dsse
-    cursor: Cursor!
-}
-
-type Status {
-    database: String!
-    graphql: String!
-    grpc: String!
-}
-
-type Query {
-    """
-    ` + "`" + `status` + "`" + ` returns the status of the GraphQL server and database.
-
-    Including ` + "`" + `database` + "`" + ` will test database connectivity.
-    """
-    status: Status!
-
-    """
-    Retrieves all DSSE entries that match the query specified in ` + "`" + `where` + "`" + `.
-
-    This interface conforms to the Relay Pagination Spec (https://relay.dev/graphql/connections.htm)
-    """
-    dsses(
-        after: Cursor,
-        first: Int,
-        before: Cursor,
-        last: Int,
-        where: DsseWhereInput
-    ): DsseConnection!
-}
-`, BuiltIn: false},
-	{Name: "ent.graphql", Input: `"""
+"""
 AttestationCollectionWhereInput is used for filtering AttestationCollection objects.
 Input was generated by ent.
 """
@@ -678,6 +697,35 @@ input AttestationWhereInput {
   hasAttestationCollectionWith: [AttestationCollectionWhereInput!]
 }
 """
+Define a Relay Cursor type:
+https://relay.dev/graphql/connections.htm#sec-Cursor
+"""
+scalar Cursor
+type Dsse implements Node {
+  id: ID!
+  gitoidSha256: String!
+  payloadType: String!
+  statement: Statement
+  signatures: [Signature!]
+  payloadDigests: [PayloadDigest!]
+}
+"""A connection to a list of items."""
+type DsseConnection {
+  """A list of edges."""
+  edges: [DsseEdge]
+  """Information to aid in pagination."""
+  pageInfo: PageInfo!
+  """Identifies the total count of items in the connection."""
+  totalCount: Int!
+}
+"""An edge in a connection."""
+type DsseEdge {
+  """The item at the end of the edge."""
+  node: Dsse
+  """A cursor for use in pagination."""
+  cursor: Cursor!
+}
+"""
 DsseWhereInput is used for filtering Dsse objects.
 Input was generated by ent.
 """
@@ -733,6 +781,41 @@ input DsseWhereInput {
   hasPayloadDigestsWith: [PayloadDigestWhereInput!]
 }
 """
+An object with an ID.
+Follows the [Relay Global Object Identification Specification](https://relay.dev/graphql/objectidentification.htm)
+"""
+interface Node @goModel(model: "github.com/testifysec/archivist/ent.Noder") {
+  """The id of the object."""
+  id: ID!
+}
+"""Possible directions in which to order a list of items when provided an ` + "`" + `orderBy` + "`" + ` argument."""
+enum OrderDirection {
+  """Specifies an ascending order for a given ` + "`" + `orderBy` + "`" + ` argument."""
+  ASC
+  """Specifies a descending order for a given ` + "`" + `orderBy` + "`" + ` argument."""
+  DESC
+}
+"""
+Information about pagination in a connection.
+https://relay.dev/graphql/connections.htm#sec-undefined.PageInfo
+"""
+type PageInfo {
+  """When paginating forwards, are there more items?"""
+  hasNextPage: Boolean!
+  """When paginating backwards, are there more items?"""
+  hasPreviousPage: Boolean!
+  """When paginating backwards, the cursor to continue."""
+  startCursor: Cursor
+  """When paginating forwards, the cursor to continue."""
+  endCursor: Cursor
+}
+type PayloadDigest implements Node {
+  id: ID!
+  algorithm: String!
+  value: String!
+  dsse: Dsse
+}
+"""
 PayloadDigestWhereInput is used for filtering PayloadDigest objects.
 Input was generated by ent.
 """
@@ -780,6 +863,56 @@ input PayloadDigestWhereInput {
   """dsse edge predicates"""
   hasDsse: Boolean
   hasDsseWith: [DsseWhereInput!]
+}
+type Query {
+  """Fetches an object given its ID."""
+  node(
+    """ID of the object."""
+    id: ID!
+  ): Node
+  """Lookup nodes by a list of IDs."""
+  nodes(
+    """The list of node IDs."""
+    ids: [ID!]!
+  ): [Node]!
+  dsses(
+    """Returns the elements in the list that come after the specified cursor."""
+    after: Cursor
+
+    """Returns the first _n_ elements from the list."""
+    first: Int
+
+    """Returns the elements in the list that come before the specified cursor."""
+    before: Cursor
+
+    """Returns the last _n_ elements from the list."""
+    last: Int
+
+    """Filtering options for Dsses returned from the connection."""
+    where: DsseWhereInput
+  ): DsseConnection!
+  subjects(
+    """Returns the elements in the list that come after the specified cursor."""
+    after: Cursor
+
+    """Returns the first _n_ elements from the list."""
+    first: Int
+
+    """Returns the elements in the list that come before the specified cursor."""
+    before: Cursor
+
+    """Returns the last _n_ elements from the list."""
+    last: Int
+
+    """Filtering options for Subjects returned from the connection."""
+    where: SubjectWhereInput
+  ): SubjectConnection!
+}
+type Signature implements Node {
+  id: ID!
+  keyID: String!
+  signature: String!
+  dsse: Dsse
 }
 """
 SignatureWhereInput is used for filtering Signature objects.
@@ -830,6 +963,28 @@ input SignatureWhereInput {
   hasDsse: Boolean
   hasDsseWith: [DsseWhereInput!]
 }
+type Statement implements Node {
+  id: ID!
+  predicate: String!
+  subjects(
+    """Returns the elements in the list that come after the specified cursor."""
+    after: Cursor
+
+    """Returns the first _n_ elements from the list."""
+    first: Int
+
+    """Returns the elements in the list that come before the specified cursor."""
+    before: Cursor
+
+    """Returns the last _n_ elements from the list."""
+    last: Int
+
+    """Filtering options for Subjects returned from the connection."""
+    where: SubjectWhereInput
+  ): SubjectConnection!
+  attestationCollections: AttestationCollection
+  dsse: [Dsse!]
+}
 """
 StatementWhereInput is used for filtering Statement objects.
 Input was generated by ent.
@@ -870,6 +1025,27 @@ input StatementWhereInput {
   """dsse edge predicates"""
   hasDsse: Boolean
   hasDsseWith: [DsseWhereInput!]
+}
+type Subject implements Node {
+  id: ID!
+  name: String!
+  subjectDigests: [SubjectDigest!]
+  statement: Statement
+}
+"""A connection to a list of items."""
+type SubjectConnection {
+  """A list of edges."""
+  edges: [SubjectEdge]
+  """Information to aid in pagination."""
+  pageInfo: PageInfo!
+  """Identifies the total count of items in the connection."""
+  totalCount: Int!
+}
+type SubjectDigest implements Node {
+  id: ID!
+  algorithm: String!
+  value: String!
+  subject: Subject
 }
 """
 SubjectDigestWhereInput is used for filtering SubjectDigest objects.
@@ -919,6 +1095,13 @@ input SubjectDigestWhereInput {
   """subject edge predicates"""
   hasSubject: Boolean
   hasSubjectWith: [SubjectWhereInput!]
+}
+"""An edge in a connection."""
+type SubjectEdge {
+  """The item at the end of the edge."""
+  node: Subject
+  """A cursor for use in pagination."""
+  cursor: Cursor!
 }
 """
 SubjectWhereInput is used for filtering Subject objects.
@@ -1024,6 +1207,138 @@ func (ec *executionContext) field_Query_dsses_args(ctx context.Context, rawArgs 
 	if tmp, ok := rawArgs["where"]; ok {
 		ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("where"))
 		arg4, err = ec.unmarshalODsseWhereInput2ᚖgithubᚗcomᚋtestifysecᚋarchivistᚋentᚐDsseWhereInput(ctx, tmp)
+		if err != nil {
+			return nil, err
+		}
+	}
+	args["where"] = arg4
+	return args, nil
+}
+
+func (ec *executionContext) field_Query_node_args(ctx context.Context, rawArgs map[string]interface{}) (map[string]interface{}, error) {
+	var err error
+	args := map[string]interface{}{}
+	var arg0 int
+	if tmp, ok := rawArgs["id"]; ok {
+		ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("id"))
+		arg0, err = ec.unmarshalNID2int(ctx, tmp)
+		if err != nil {
+			return nil, err
+		}
+	}
+	args["id"] = arg0
+	return args, nil
+}
+
+func (ec *executionContext) field_Query_nodes_args(ctx context.Context, rawArgs map[string]interface{}) (map[string]interface{}, error) {
+	var err error
+	args := map[string]interface{}{}
+	var arg0 []int
+	if tmp, ok := rawArgs["ids"]; ok {
+		ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("ids"))
+		arg0, err = ec.unmarshalNID2ᚕintᚄ(ctx, tmp)
+		if err != nil {
+			return nil, err
+		}
+	}
+	args["ids"] = arg0
+	return args, nil
+}
+
+func (ec *executionContext) field_Query_subjects_args(ctx context.Context, rawArgs map[string]interface{}) (map[string]interface{}, error) {
+	var err error
+	args := map[string]interface{}{}
+	var arg0 *ent.Cursor
+	if tmp, ok := rawArgs["after"]; ok {
+		ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("after"))
+		arg0, err = ec.unmarshalOCursor2ᚖgithubᚗcomᚋtestifysecᚋarchivistᚋentᚐCursor(ctx, tmp)
+		if err != nil {
+			return nil, err
+		}
+	}
+	args["after"] = arg0
+	var arg1 *int
+	if tmp, ok := rawArgs["first"]; ok {
+		ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("first"))
+		arg1, err = ec.unmarshalOInt2ᚖint(ctx, tmp)
+		if err != nil {
+			return nil, err
+		}
+	}
+	args["first"] = arg1
+	var arg2 *ent.Cursor
+	if tmp, ok := rawArgs["before"]; ok {
+		ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("before"))
+		arg2, err = ec.unmarshalOCursor2ᚖgithubᚗcomᚋtestifysecᚋarchivistᚋentᚐCursor(ctx, tmp)
+		if err != nil {
+			return nil, err
+		}
+	}
+	args["before"] = arg2
+	var arg3 *int
+	if tmp, ok := rawArgs["last"]; ok {
+		ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("last"))
+		arg3, err = ec.unmarshalOInt2ᚖint(ctx, tmp)
+		if err != nil {
+			return nil, err
+		}
+	}
+	args["last"] = arg3
+	var arg4 *ent.SubjectWhereInput
+	if tmp, ok := rawArgs["where"]; ok {
+		ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("where"))
+		arg4, err = ec.unmarshalOSubjectWhereInput2ᚖgithubᚗcomᚋtestifysecᚋarchivistᚋentᚐSubjectWhereInput(ctx, tmp)
+		if err != nil {
+			return nil, err
+		}
+	}
+	args["where"] = arg4
+	return args, nil
+}
+
+func (ec *executionContext) field_Statement_subjects_args(ctx context.Context, rawArgs map[string]interface{}) (map[string]interface{}, error) {
+	var err error
+	args := map[string]interface{}{}
+	var arg0 *ent.Cursor
+	if tmp, ok := rawArgs["after"]; ok {
+		ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("after"))
+		arg0, err = ec.unmarshalOCursor2ᚖgithubᚗcomᚋtestifysecᚋarchivistᚋentᚐCursor(ctx, tmp)
+		if err != nil {
+			return nil, err
+		}
+	}
+	args["after"] = arg0
+	var arg1 *int
+	if tmp, ok := rawArgs["first"]; ok {
+		ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("first"))
+		arg1, err = ec.unmarshalOInt2ᚖint(ctx, tmp)
+		if err != nil {
+			return nil, err
+		}
+	}
+	args["first"] = arg1
+	var arg2 *ent.Cursor
+	if tmp, ok := rawArgs["before"]; ok {
+		ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("before"))
+		arg2, err = ec.unmarshalOCursor2ᚖgithubᚗcomᚋtestifysecᚋarchivistᚋentᚐCursor(ctx, tmp)
+		if err != nil {
+			return nil, err
+		}
+	}
+	args["before"] = arg2
+	var arg3 *int
+	if tmp, ok := rawArgs["last"]; ok {
+		ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("last"))
+		arg3, err = ec.unmarshalOInt2ᚖint(ctx, tmp)
+		if err != nil {
+			return nil, err
+		}
+	}
+	args["last"] = arg3
+	var arg4 *ent.SubjectWhereInput
+	if tmp, ok := rawArgs["where"]; ok {
+		ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("where"))
+		arg4, err = ec.unmarshalOSubjectWhereInput2ᚖgithubᚗcomᚋtestifysecᚋarchivistᚋentᚐSubjectWhereInput(ctx, tmp)
 		if err != nil {
 			return nil, err
 		}
@@ -1158,6 +1473,60 @@ func (ec *executionContext) fieldContext_Attestation_type(ctx context.Context, f
 	return fc, nil
 }
 
+func (ec *executionContext) _Attestation_attestationCollection(ctx context.Context, field graphql.CollectedField, obj *ent.Attestation) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_Attestation_attestationCollection(ctx, field)
+	if err != nil {
+		return graphql.Null
+	}
+	ctx = graphql.WithFieldContext(ctx, fc)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.AttestationCollection(ctx)
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.(*ent.AttestationCollection)
+	fc.Result = res
+	return ec.marshalNAttestationCollection2ᚖgithubᚗcomᚋtestifysecᚋarchivistᚋentᚐAttestationCollection(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) fieldContext_Attestation_attestationCollection(ctx context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "Attestation",
+		Field:      field,
+		IsMethod:   true,
+		IsResolver: false,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			switch field.Name {
+			case "id":
+				return ec.fieldContext_AttestationCollection_id(ctx, field)
+			case "name":
+				return ec.fieldContext_AttestationCollection_name(ctx, field)
+			case "attestations":
+				return ec.fieldContext_AttestationCollection_attestations(ctx, field)
+			case "statement":
+				return ec.fieldContext_AttestationCollection_statement(ctx, field)
+			}
+			return nil, fmt.Errorf("no field named %q was found under type AttestationCollection", field.Name)
+		},
+	}
+	return fc, nil
+}
+
 func (ec *executionContext) _AttestationCollection_id(ctx context.Context, field graphql.CollectedField, obj *ent.AttestationCollection) (ret graphql.Marshaler) {
 	fc, err := ec.fieldContext_AttestationCollection_id(ctx, field)
 	if err != nil {
@@ -1271,7 +1640,7 @@ func (ec *executionContext) _AttestationCollection_attestations(ctx context.Cont
 	}
 	res := resTmp.([]*ent.Attestation)
 	fc.Result = res
-	return ec.marshalOAttestation2ᚕᚖgithubᚗcomᚋtestifysecᚋarchivistᚋentᚐAttestation(ctx, field.Selections, res)
+	return ec.marshalOAttestation2ᚕᚖgithubᚗcomᚋtestifysecᚋarchivistᚋentᚐAttestationᚄ(ctx, field.Selections, res)
 }
 
 func (ec *executionContext) fieldContext_AttestationCollection_attestations(ctx context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
@@ -1286,8 +1655,66 @@ func (ec *executionContext) fieldContext_AttestationCollection_attestations(ctx 
 				return ec.fieldContext_Attestation_id(ctx, field)
 			case "type":
 				return ec.fieldContext_Attestation_type(ctx, field)
+			case "attestationCollection":
+				return ec.fieldContext_Attestation_attestationCollection(ctx, field)
 			}
 			return nil, fmt.Errorf("no field named %q was found under type Attestation", field.Name)
+		},
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _AttestationCollection_statement(ctx context.Context, field graphql.CollectedField, obj *ent.AttestationCollection) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_AttestationCollection_statement(ctx, field)
+	if err != nil {
+		return graphql.Null
+	}
+	ctx = graphql.WithFieldContext(ctx, fc)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.Statement(ctx)
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.(*ent.Statement)
+	fc.Result = res
+	return ec.marshalNStatement2ᚖgithubᚗcomᚋtestifysecᚋarchivistᚋentᚐStatement(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) fieldContext_AttestationCollection_statement(ctx context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "AttestationCollection",
+		Field:      field,
+		IsMethod:   true,
+		IsResolver: false,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			switch field.Name {
+			case "id":
+				return ec.fieldContext_Statement_id(ctx, field)
+			case "predicate":
+				return ec.fieldContext_Statement_predicate(ctx, field)
+			case "subjects":
+				return ec.fieldContext_Statement_subjects(ctx, field)
+			case "attestationCollections":
+				return ec.fieldContext_Statement_attestationCollections(ctx, field)
+			case "dsse":
+				return ec.fieldContext_Statement_dsse(ctx, field)
+			}
+			return nil, fmt.Errorf("no field named %q was found under type Statement", field.Name)
 		},
 	}
 	return fc, nil
@@ -1337,8 +1764,8 @@ func (ec *executionContext) fieldContext_Dsse_id(ctx context.Context, field grap
 	return fc, nil
 }
 
-func (ec *executionContext) _Dsse_gitoid_sha256(ctx context.Context, field graphql.CollectedField, obj *ent.Dsse) (ret graphql.Marshaler) {
-	fc, err := ec.fieldContext_Dsse_gitoid_sha256(ctx, field)
+func (ec *executionContext) _Dsse_gitoidSha256(ctx context.Context, field graphql.CollectedField, obj *ent.Dsse) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_Dsse_gitoidSha256(ctx, field)
 	if err != nil {
 		return graphql.Null
 	}
@@ -1368,7 +1795,7 @@ func (ec *executionContext) _Dsse_gitoid_sha256(ctx context.Context, field graph
 	return ec.marshalNString2string(ctx, field.Selections, res)
 }
 
-func (ec *executionContext) fieldContext_Dsse_gitoid_sha256(ctx context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+func (ec *executionContext) fieldContext_Dsse_gitoidSha256(ctx context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
 	fc = &graphql.FieldContext{
 		Object:     "Dsse",
 		Field:      field,
@@ -1381,8 +1808,8 @@ func (ec *executionContext) fieldContext_Dsse_gitoid_sha256(ctx context.Context,
 	return fc, nil
 }
 
-func (ec *executionContext) _Dsse_payload_type(ctx context.Context, field graphql.CollectedField, obj *ent.Dsse) (ret graphql.Marshaler) {
-	fc, err := ec.fieldContext_Dsse_payload_type(ctx, field)
+func (ec *executionContext) _Dsse_payloadType(ctx context.Context, field graphql.CollectedField, obj *ent.Dsse) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_Dsse_payloadType(ctx, field)
 	if err != nil {
 		return graphql.Null
 	}
@@ -1412,7 +1839,7 @@ func (ec *executionContext) _Dsse_payload_type(ctx context.Context, field graphq
 	return ec.marshalNString2string(ctx, field.Selections, res)
 }
 
-func (ec *executionContext) fieldContext_Dsse_payload_type(ctx context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+func (ec *executionContext) fieldContext_Dsse_payloadType(ctx context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
 	fc = &graphql.FieldContext{
 		Object:     "Dsse",
 		Field:      field,
@@ -1446,14 +1873,11 @@ func (ec *executionContext) _Dsse_statement(ctx context.Context, field graphql.C
 		return graphql.Null
 	}
 	if resTmp == nil {
-		if !graphql.HasFieldError(ctx, fc) {
-			ec.Errorf(ctx, "must not be null")
-		}
 		return graphql.Null
 	}
 	res := resTmp.(*ent.Statement)
 	fc.Result = res
-	return ec.marshalNStatement2ᚖgithubᚗcomᚋtestifysecᚋarchivistᚋentᚐStatement(ctx, field.Selections, res)
+	return ec.marshalOStatement2ᚖgithubᚗcomᚋtestifysecᚋarchivistᚋentᚐStatement(ctx, field.Selections, res)
 }
 
 func (ec *executionContext) fieldContext_Dsse_statement(ctx context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
@@ -1470,8 +1894,10 @@ func (ec *executionContext) fieldContext_Dsse_statement(ctx context.Context, fie
 				return ec.fieldContext_Statement_predicate(ctx, field)
 			case "subjects":
 				return ec.fieldContext_Statement_subjects(ctx, field)
-			case "attestation_collection":
-				return ec.fieldContext_Statement_attestation_collection(ctx, field)
+			case "attestationCollections":
+				return ec.fieldContext_Statement_attestationCollections(ctx, field)
+			case "dsse":
+				return ec.fieldContext_Statement_dsse(ctx, field)
 			}
 			return nil, fmt.Errorf("no field named %q was found under type Statement", field.Name)
 		},
@@ -1517,10 +1943,12 @@ func (ec *executionContext) fieldContext_Dsse_signatures(ctx context.Context, fi
 			switch field.Name {
 			case "id":
 				return ec.fieldContext_Signature_id(ctx, field)
-			case "key_id":
-				return ec.fieldContext_Signature_key_id(ctx, field)
+			case "keyID":
+				return ec.fieldContext_Signature_keyID(ctx, field)
 			case "signature":
 				return ec.fieldContext_Signature_signature(ctx, field)
+			case "dsse":
+				return ec.fieldContext_Signature_dsse(ctx, field)
 			}
 			return nil, fmt.Errorf("no field named %q was found under type Signature", field.Name)
 		},
@@ -1528,8 +1956,8 @@ func (ec *executionContext) fieldContext_Dsse_signatures(ctx context.Context, fi
 	return fc, nil
 }
 
-func (ec *executionContext) _Dsse_payload_digests(ctx context.Context, field graphql.CollectedField, obj *ent.Dsse) (ret graphql.Marshaler) {
-	fc, err := ec.fieldContext_Dsse_payload_digests(ctx, field)
+func (ec *executionContext) _Dsse_payloadDigests(ctx context.Context, field graphql.CollectedField, obj *ent.Dsse) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_Dsse_payloadDigests(ctx, field)
 	if err != nil {
 		return graphql.Null
 	}
@@ -1556,7 +1984,7 @@ func (ec *executionContext) _Dsse_payload_digests(ctx context.Context, field gra
 	return ec.marshalOPayloadDigest2ᚕᚖgithubᚗcomᚋtestifysecᚋarchivistᚋentᚐPayloadDigestᚄ(ctx, field.Selections, res)
 }
 
-func (ec *executionContext) fieldContext_Dsse_payload_digests(ctx context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+func (ec *executionContext) fieldContext_Dsse_payloadDigests(ctx context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
 	fc = &graphql.FieldContext{
 		Object:     "Dsse",
 		Field:      field,
@@ -1570,6 +1998,8 @@ func (ec *executionContext) fieldContext_Dsse_payload_digests(ctx context.Contex
 				return ec.fieldContext_PayloadDigest_algorithm(ctx, field)
 			case "value":
 				return ec.fieldContext_PayloadDigest_value(ctx, field)
+			case "dsse":
+				return ec.fieldContext_PayloadDigest_dsse(ctx, field)
 			}
 			return nil, fmt.Errorf("no field named %q was found under type PayloadDigest", field.Name)
 		},
@@ -1577,8 +2007,8 @@ func (ec *executionContext) fieldContext_Dsse_payload_digests(ctx context.Contex
 	return fc, nil
 }
 
-func (ec *executionContext) _DsseConnection_totalCount(ctx context.Context, field graphql.CollectedField, obj *ent.DsseConnection) (ret graphql.Marshaler) {
-	fc, err := ec.fieldContext_DsseConnection_totalCount(ctx, field)
+func (ec *executionContext) _DsseConnection_edges(ctx context.Context, field graphql.CollectedField, obj *ent.DsseConnection) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_DsseConnection_edges(ctx, field)
 	if err != nil {
 		return graphql.Null
 	}
@@ -1591,31 +2021,34 @@ func (ec *executionContext) _DsseConnection_totalCount(ctx context.Context, fiel
 	}()
 	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
 		ctx = rctx // use context from middleware stack in children
-		return obj.TotalCount, nil
+		return obj.Edges, nil
 	})
 	if err != nil {
 		ec.Error(ctx, err)
 		return graphql.Null
 	}
 	if resTmp == nil {
-		if !graphql.HasFieldError(ctx, fc) {
-			ec.Errorf(ctx, "must not be null")
-		}
 		return graphql.Null
 	}
-	res := resTmp.(int)
+	res := resTmp.([]*ent.DsseEdge)
 	fc.Result = res
-	return ec.marshalNInt2int(ctx, field.Selections, res)
+	return ec.marshalODsseEdge2ᚕᚖgithubᚗcomᚋtestifysecᚋarchivistᚋentᚐDsseEdge(ctx, field.Selections, res)
 }
 
-func (ec *executionContext) fieldContext_DsseConnection_totalCount(ctx context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+func (ec *executionContext) fieldContext_DsseConnection_edges(ctx context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
 	fc = &graphql.FieldContext{
 		Object:     "DsseConnection",
 		Field:      field,
 		IsMethod:   false,
 		IsResolver: false,
 		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
-			return nil, errors.New("field of type Int does not have child fields")
+			switch field.Name {
+			case "node":
+				return ec.fieldContext_DsseEdge_node(ctx, field)
+			case "cursor":
+				return ec.fieldContext_DsseEdge_cursor(ctx, field)
+			}
+			return nil, fmt.Errorf("no field named %q was found under type DsseEdge", field.Name)
 		},
 	}
 	return fc, nil
@@ -1675,8 +2108,8 @@ func (ec *executionContext) fieldContext_DsseConnection_pageInfo(ctx context.Con
 	return fc, nil
 }
 
-func (ec *executionContext) _DsseConnection_edges(ctx context.Context, field graphql.CollectedField, obj *ent.DsseConnection) (ret graphql.Marshaler) {
-	fc, err := ec.fieldContext_DsseConnection_edges(ctx, field)
+func (ec *executionContext) _DsseConnection_totalCount(ctx context.Context, field graphql.CollectedField, obj *ent.DsseConnection) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_DsseConnection_totalCount(ctx, field)
 	if err != nil {
 		return graphql.Null
 	}
@@ -1689,34 +2122,31 @@ func (ec *executionContext) _DsseConnection_edges(ctx context.Context, field gra
 	}()
 	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
 		ctx = rctx // use context from middleware stack in children
-		return obj.Edges, nil
+		return obj.TotalCount, nil
 	})
 	if err != nil {
 		ec.Error(ctx, err)
 		return graphql.Null
 	}
 	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
 		return graphql.Null
 	}
-	res := resTmp.([]*ent.DsseEdge)
+	res := resTmp.(int)
 	fc.Result = res
-	return ec.marshalODsseEdge2ᚕᚖgithubᚗcomᚋtestifysecᚋarchivistᚋentᚐDsseEdge(ctx, field.Selections, res)
+	return ec.marshalNInt2int(ctx, field.Selections, res)
 }
 
-func (ec *executionContext) fieldContext_DsseConnection_edges(ctx context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+func (ec *executionContext) fieldContext_DsseConnection_totalCount(ctx context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
 	fc = &graphql.FieldContext{
 		Object:     "DsseConnection",
 		Field:      field,
 		IsMethod:   false,
 		IsResolver: false,
 		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
-			switch field.Name {
-			case "node":
-				return ec.fieldContext_DsseEdge_node(ctx, field)
-			case "cursor":
-				return ec.fieldContext_DsseEdge_cursor(ctx, field)
-			}
-			return nil, fmt.Errorf("no field named %q was found under type DsseEdge", field.Name)
+			return nil, errors.New("field of type Int does not have child fields")
 		},
 	}
 	return fc, nil
@@ -1760,16 +2190,16 @@ func (ec *executionContext) fieldContext_DsseEdge_node(ctx context.Context, fiel
 			switch field.Name {
 			case "id":
 				return ec.fieldContext_Dsse_id(ctx, field)
-			case "gitoid_sha256":
-				return ec.fieldContext_Dsse_gitoid_sha256(ctx, field)
-			case "payload_type":
-				return ec.fieldContext_Dsse_payload_type(ctx, field)
+			case "gitoidSha256":
+				return ec.fieldContext_Dsse_gitoidSha256(ctx, field)
+			case "payloadType":
+				return ec.fieldContext_Dsse_payloadType(ctx, field)
 			case "statement":
 				return ec.fieldContext_Dsse_statement(ctx, field)
 			case "signatures":
 				return ec.fieldContext_Dsse_signatures(ctx, field)
-			case "payload_digests":
-				return ec.fieldContext_Dsse_payload_digests(ctx, field)
+			case "payloadDigests":
+				return ec.fieldContext_Dsse_payloadDigests(ctx, field)
 			}
 			return nil, fmt.Errorf("no field named %q was found under type Dsse", field.Name)
 		},
@@ -2123,8 +2553,8 @@ func (ec *executionContext) fieldContext_PayloadDigest_value(ctx context.Context
 	return fc, nil
 }
 
-func (ec *executionContext) _Query_status(ctx context.Context, field graphql.CollectedField) (ret graphql.Marshaler) {
-	fc, err := ec.fieldContext_Query_status(ctx, field)
+func (ec *executionContext) _PayloadDigest_dsse(ctx context.Context, field graphql.CollectedField, obj *ent.PayloadDigest) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_PayloadDigest_dsse(ctx, field)
 	if err != nil {
 		return graphql.Null
 	}
@@ -2137,7 +2567,114 @@ func (ec *executionContext) _Query_status(ctx context.Context, field graphql.Col
 	}()
 	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
 		ctx = rctx // use context from middleware stack in children
-		return ec.resolvers.Query().Status(rctx)
+		return obj.Dsse(ctx)
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		return graphql.Null
+	}
+	res := resTmp.(*ent.Dsse)
+	fc.Result = res
+	return ec.marshalODsse2ᚖgithubᚗcomᚋtestifysecᚋarchivistᚋentᚐDsse(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) fieldContext_PayloadDigest_dsse(ctx context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "PayloadDigest",
+		Field:      field,
+		IsMethod:   true,
+		IsResolver: false,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			switch field.Name {
+			case "id":
+				return ec.fieldContext_Dsse_id(ctx, field)
+			case "gitoidSha256":
+				return ec.fieldContext_Dsse_gitoidSha256(ctx, field)
+			case "payloadType":
+				return ec.fieldContext_Dsse_payloadType(ctx, field)
+			case "statement":
+				return ec.fieldContext_Dsse_statement(ctx, field)
+			case "signatures":
+				return ec.fieldContext_Dsse_signatures(ctx, field)
+			case "payloadDigests":
+				return ec.fieldContext_Dsse_payloadDigests(ctx, field)
+			}
+			return nil, fmt.Errorf("no field named %q was found under type Dsse", field.Name)
+		},
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _Query_node(ctx context.Context, field graphql.CollectedField) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_Query_node(ctx, field)
+	if err != nil {
+		return graphql.Null
+	}
+	ctx = graphql.WithFieldContext(ctx, fc)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return ec.resolvers.Query().Node(rctx, fc.Args["id"].(int))
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		return graphql.Null
+	}
+	res := resTmp.(ent.Noder)
+	fc.Result = res
+	return ec.marshalONode2githubᚗcomᚋtestifysecᚋarchivistᚋentᚐNoder(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) fieldContext_Query_node(ctx context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "Query",
+		Field:      field,
+		IsMethod:   true,
+		IsResolver: true,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return nil, errors.New("FieldContext.Child cannot be called on type INTERFACE")
+		},
+	}
+	defer func() {
+		if r := recover(); r != nil {
+			err = ec.Recover(ctx, r)
+			ec.Error(ctx, err)
+		}
+	}()
+	ctx = graphql.WithFieldContext(ctx, fc)
+	if fc.Args, err = ec.field_Query_node_args(ctx, field.ArgumentMap(ec.Variables)); err != nil {
+		ec.Error(ctx, err)
+		return
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _Query_nodes(ctx context.Context, field graphql.CollectedField) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_Query_nodes(ctx, field)
+	if err != nil {
+		return graphql.Null
+	}
+	ctx = graphql.WithFieldContext(ctx, fc)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return ec.resolvers.Query().Nodes(rctx, fc.Args["ids"].([]int))
 	})
 	if err != nil {
 		ec.Error(ctx, err)
@@ -2149,28 +2686,31 @@ func (ec *executionContext) _Query_status(ctx context.Context, field graphql.Col
 		}
 		return graphql.Null
 	}
-	res := resTmp.(*Status)
+	res := resTmp.([]ent.Noder)
 	fc.Result = res
-	return ec.marshalNStatus2ᚖgithubᚗcomᚋtestifysecᚋarchivistᚐStatus(ctx, field.Selections, res)
+	return ec.marshalNNode2ᚕgithubᚗcomᚋtestifysecᚋarchivistᚋentᚐNoder(ctx, field.Selections, res)
 }
 
-func (ec *executionContext) fieldContext_Query_status(ctx context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+func (ec *executionContext) fieldContext_Query_nodes(ctx context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
 	fc = &graphql.FieldContext{
 		Object:     "Query",
 		Field:      field,
 		IsMethod:   true,
 		IsResolver: true,
 		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
-			switch field.Name {
-			case "database":
-				return ec.fieldContext_Status_database(ctx, field)
-			case "graphql":
-				return ec.fieldContext_Status_graphql(ctx, field)
-			case "grpc":
-				return ec.fieldContext_Status_grpc(ctx, field)
-			}
-			return nil, fmt.Errorf("no field named %q was found under type Status", field.Name)
+			return nil, errors.New("FieldContext.Child cannot be called on type INTERFACE")
 		},
+	}
+	defer func() {
+		if r := recover(); r != nil {
+			err = ec.Recover(ctx, r)
+			ec.Error(ctx, err)
+		}
+	}()
+	ctx = graphql.WithFieldContext(ctx, fc)
+	if fc.Args, err = ec.field_Query_nodes_args(ctx, field.ArgumentMap(ec.Variables)); err != nil {
+		ec.Error(ctx, err)
+		return
 	}
 	return fc, nil
 }
@@ -2214,12 +2754,12 @@ func (ec *executionContext) fieldContext_Query_dsses(ctx context.Context, field 
 		IsResolver: true,
 		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
 			switch field.Name {
-			case "totalCount":
-				return ec.fieldContext_DsseConnection_totalCount(ctx, field)
-			case "pageInfo":
-				return ec.fieldContext_DsseConnection_pageInfo(ctx, field)
 			case "edges":
 				return ec.fieldContext_DsseConnection_edges(ctx, field)
+			case "pageInfo":
+				return ec.fieldContext_DsseConnection_pageInfo(ctx, field)
+			case "totalCount":
+				return ec.fieldContext_DsseConnection_totalCount(ctx, field)
 			}
 			return nil, fmt.Errorf("no field named %q was found under type DsseConnection", field.Name)
 		},
@@ -2232,6 +2772,69 @@ func (ec *executionContext) fieldContext_Query_dsses(ctx context.Context, field 
 	}()
 	ctx = graphql.WithFieldContext(ctx, fc)
 	if fc.Args, err = ec.field_Query_dsses_args(ctx, field.ArgumentMap(ec.Variables)); err != nil {
+		ec.Error(ctx, err)
+		return
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _Query_subjects(ctx context.Context, field graphql.CollectedField) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_Query_subjects(ctx, field)
+	if err != nil {
+		return graphql.Null
+	}
+	ctx = graphql.WithFieldContext(ctx, fc)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return ec.resolvers.Query().Subjects(rctx, fc.Args["after"].(*ent.Cursor), fc.Args["first"].(*int), fc.Args["before"].(*ent.Cursor), fc.Args["last"].(*int), fc.Args["where"].(*ent.SubjectWhereInput))
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.(*ent.SubjectConnection)
+	fc.Result = res
+	return ec.marshalNSubjectConnection2ᚖgithubᚗcomᚋtestifysecᚋarchivistᚋentᚐSubjectConnection(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) fieldContext_Query_subjects(ctx context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "Query",
+		Field:      field,
+		IsMethod:   true,
+		IsResolver: true,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			switch field.Name {
+			case "edges":
+				return ec.fieldContext_SubjectConnection_edges(ctx, field)
+			case "pageInfo":
+				return ec.fieldContext_SubjectConnection_pageInfo(ctx, field)
+			case "totalCount":
+				return ec.fieldContext_SubjectConnection_totalCount(ctx, field)
+			}
+			return nil, fmt.Errorf("no field named %q was found under type SubjectConnection", field.Name)
+		},
+	}
+	defer func() {
+		if r := recover(); r != nil {
+			err = ec.Recover(ctx, r)
+			ec.Error(ctx, err)
+		}
+	}()
+	ctx = graphql.WithFieldContext(ctx, fc)
+	if fc.Args, err = ec.field_Query_subjects_args(ctx, field.ArgumentMap(ec.Variables)); err != nil {
 		ec.Error(ctx, err)
 		return
 	}
@@ -2411,8 +3014,8 @@ func (ec *executionContext) fieldContext_Signature_id(ctx context.Context, field
 	return fc, nil
 }
 
-func (ec *executionContext) _Signature_key_id(ctx context.Context, field graphql.CollectedField, obj *ent.Signature) (ret graphql.Marshaler) {
-	fc, err := ec.fieldContext_Signature_key_id(ctx, field)
+func (ec *executionContext) _Signature_keyID(ctx context.Context, field graphql.CollectedField, obj *ent.Signature) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_Signature_keyID(ctx, field)
 	if err != nil {
 		return graphql.Null
 	}
@@ -2442,7 +3045,7 @@ func (ec *executionContext) _Signature_key_id(ctx context.Context, field graphql
 	return ec.marshalNString2string(ctx, field.Selections, res)
 }
 
-func (ec *executionContext) fieldContext_Signature_key_id(ctx context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+func (ec *executionContext) fieldContext_Signature_keyID(ctx context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
 	fc = &graphql.FieldContext{
 		Object:     "Signature",
 		Field:      field,
@@ -2494,6 +3097,61 @@ func (ec *executionContext) fieldContext_Signature_signature(ctx context.Context
 		IsResolver: false,
 		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
 			return nil, errors.New("field of type String does not have child fields")
+		},
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _Signature_dsse(ctx context.Context, field graphql.CollectedField, obj *ent.Signature) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_Signature_dsse(ctx, field)
+	if err != nil {
+		return graphql.Null
+	}
+	ctx = graphql.WithFieldContext(ctx, fc)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.Dsse(ctx)
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		return graphql.Null
+	}
+	res := resTmp.(*ent.Dsse)
+	fc.Result = res
+	return ec.marshalODsse2ᚖgithubᚗcomᚋtestifysecᚋarchivistᚋentᚐDsse(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) fieldContext_Signature_dsse(ctx context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "Signature",
+		Field:      field,
+		IsMethod:   true,
+		IsResolver: false,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			switch field.Name {
+			case "id":
+				return ec.fieldContext_Dsse_id(ctx, field)
+			case "gitoidSha256":
+				return ec.fieldContext_Dsse_gitoidSha256(ctx, field)
+			case "payloadType":
+				return ec.fieldContext_Dsse_payloadType(ctx, field)
+			case "statement":
+				return ec.fieldContext_Dsse_statement(ctx, field)
+			case "signatures":
+				return ec.fieldContext_Dsse_signatures(ctx, field)
+			case "payloadDigests":
+				return ec.fieldContext_Dsse_payloadDigests(ctx, field)
+			}
+			return nil, fmt.Errorf("no field named %q was found under type Dsse", field.Name)
 		},
 	}
 	return fc, nil
@@ -2601,18 +3259,21 @@ func (ec *executionContext) _Statement_subjects(ctx context.Context, field graph
 	}()
 	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
 		ctx = rctx // use context from middleware stack in children
-		return obj.Subjects(ctx)
+		return obj.Subjects(ctx, fc.Args["after"].(*ent.Cursor), fc.Args["first"].(*int), fc.Args["before"].(*ent.Cursor), fc.Args["last"].(*int), fc.Args["where"].(*ent.SubjectWhereInput))
 	})
 	if err != nil {
 		ec.Error(ctx, err)
 		return graphql.Null
 	}
 	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
 		return graphql.Null
 	}
-	res := resTmp.([]*ent.Subject)
+	res := resTmp.(*ent.SubjectConnection)
 	fc.Result = res
-	return ec.marshalOSubject2ᚕᚖgithubᚗcomᚋtestifysecᚋarchivistᚋentᚐSubjectᚄ(ctx, field.Selections, res)
+	return ec.marshalNSubjectConnection2ᚖgithubᚗcomᚋtestifysecᚋarchivistᚋentᚐSubjectConnection(ctx, field.Selections, res)
 }
 
 func (ec *executionContext) fieldContext_Statement_subjects(ctx context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
@@ -2623,21 +3284,32 @@ func (ec *executionContext) fieldContext_Statement_subjects(ctx context.Context,
 		IsResolver: false,
 		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
 			switch field.Name {
-			case "id":
-				return ec.fieldContext_Subject_id(ctx, field)
-			case "name":
-				return ec.fieldContext_Subject_name(ctx, field)
-			case "subject_digest":
-				return ec.fieldContext_Subject_subject_digest(ctx, field)
+			case "edges":
+				return ec.fieldContext_SubjectConnection_edges(ctx, field)
+			case "pageInfo":
+				return ec.fieldContext_SubjectConnection_pageInfo(ctx, field)
+			case "totalCount":
+				return ec.fieldContext_SubjectConnection_totalCount(ctx, field)
 			}
-			return nil, fmt.Errorf("no field named %q was found under type Subject", field.Name)
+			return nil, fmt.Errorf("no field named %q was found under type SubjectConnection", field.Name)
 		},
+	}
+	defer func() {
+		if r := recover(); r != nil {
+			err = ec.Recover(ctx, r)
+			ec.Error(ctx, err)
+		}
+	}()
+	ctx = graphql.WithFieldContext(ctx, fc)
+	if fc.Args, err = ec.field_Statement_subjects_args(ctx, field.ArgumentMap(ec.Variables)); err != nil {
+		ec.Error(ctx, err)
+		return
 	}
 	return fc, nil
 }
 
-func (ec *executionContext) _Statement_attestation_collection(ctx context.Context, field graphql.CollectedField, obj *ent.Statement) (ret graphql.Marshaler) {
-	fc, err := ec.fieldContext_Statement_attestation_collection(ctx, field)
+func (ec *executionContext) _Statement_attestationCollections(ctx context.Context, field graphql.CollectedField, obj *ent.Statement) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_Statement_attestationCollections(ctx, field)
 	if err != nil {
 		return graphql.Null
 	}
@@ -2650,29 +3322,26 @@ func (ec *executionContext) _Statement_attestation_collection(ctx context.Contex
 	}()
 	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
 		ctx = rctx // use context from middleware stack in children
-		return ec.resolvers.Statement().AttestationCollection(rctx, obj)
+		return obj.AttestationCollections(ctx)
 	})
 	if err != nil {
 		ec.Error(ctx, err)
 		return graphql.Null
 	}
 	if resTmp == nil {
-		if !graphql.HasFieldError(ctx, fc) {
-			ec.Errorf(ctx, "must not be null")
-		}
 		return graphql.Null
 	}
 	res := resTmp.(*ent.AttestationCollection)
 	fc.Result = res
-	return ec.marshalNAttestationCollection2ᚖgithubᚗcomᚋtestifysecᚋarchivistᚋentᚐAttestationCollection(ctx, field.Selections, res)
+	return ec.marshalOAttestationCollection2ᚖgithubᚗcomᚋtestifysecᚋarchivistᚋentᚐAttestationCollection(ctx, field.Selections, res)
 }
 
-func (ec *executionContext) fieldContext_Statement_attestation_collection(ctx context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+func (ec *executionContext) fieldContext_Statement_attestationCollections(ctx context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
 	fc = &graphql.FieldContext{
 		Object:     "Statement",
 		Field:      field,
 		IsMethod:   true,
-		IsResolver: true,
+		IsResolver: false,
 		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
 			switch field.Name {
 			case "id":
@@ -2681,6 +3350,8 @@ func (ec *executionContext) fieldContext_Statement_attestation_collection(ctx co
 				return ec.fieldContext_AttestationCollection_name(ctx, field)
 			case "attestations":
 				return ec.fieldContext_AttestationCollection_attestations(ctx, field)
+			case "statement":
+				return ec.fieldContext_AttestationCollection_statement(ctx, field)
 			}
 			return nil, fmt.Errorf("no field named %q was found under type AttestationCollection", field.Name)
 		},
@@ -2688,8 +3359,8 @@ func (ec *executionContext) fieldContext_Statement_attestation_collection(ctx co
 	return fc, nil
 }
 
-func (ec *executionContext) _Status_database(ctx context.Context, field graphql.CollectedField, obj *Status) (ret graphql.Marshaler) {
-	fc, err := ec.fieldContext_Status_database(ctx, field)
+func (ec *executionContext) _Statement_dsse(ctx context.Context, field graphql.CollectedField, obj *ent.Statement) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_Statement_dsse(ctx, field)
 	if err != nil {
 		return graphql.Null
 	}
@@ -2702,119 +3373,42 @@ func (ec *executionContext) _Status_database(ctx context.Context, field graphql.
 	}()
 	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
 		ctx = rctx // use context from middleware stack in children
-		return obj.Database, nil
+		return obj.Dsse(ctx)
 	})
 	if err != nil {
 		ec.Error(ctx, err)
 		return graphql.Null
 	}
 	if resTmp == nil {
-		if !graphql.HasFieldError(ctx, fc) {
-			ec.Errorf(ctx, "must not be null")
-		}
 		return graphql.Null
 	}
-	res := resTmp.(string)
+	res := resTmp.([]*ent.Dsse)
 	fc.Result = res
-	return ec.marshalNString2string(ctx, field.Selections, res)
+	return ec.marshalODsse2ᚕᚖgithubᚗcomᚋtestifysecᚋarchivistᚋentᚐDsseᚄ(ctx, field.Selections, res)
 }
 
-func (ec *executionContext) fieldContext_Status_database(ctx context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+func (ec *executionContext) fieldContext_Statement_dsse(ctx context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
 	fc = &graphql.FieldContext{
-		Object:     "Status",
+		Object:     "Statement",
 		Field:      field,
-		IsMethod:   false,
+		IsMethod:   true,
 		IsResolver: false,
 		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
-			return nil, errors.New("field of type String does not have child fields")
-		},
-	}
-	return fc, nil
-}
-
-func (ec *executionContext) _Status_graphql(ctx context.Context, field graphql.CollectedField, obj *Status) (ret graphql.Marshaler) {
-	fc, err := ec.fieldContext_Status_graphql(ctx, field)
-	if err != nil {
-		return graphql.Null
-	}
-	ctx = graphql.WithFieldContext(ctx, fc)
-	defer func() {
-		if r := recover(); r != nil {
-			ec.Error(ctx, ec.Recover(ctx, r))
-			ret = graphql.Null
-		}
-	}()
-	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
-		ctx = rctx // use context from middleware stack in children
-		return obj.Graphql, nil
-	})
-	if err != nil {
-		ec.Error(ctx, err)
-		return graphql.Null
-	}
-	if resTmp == nil {
-		if !graphql.HasFieldError(ctx, fc) {
-			ec.Errorf(ctx, "must not be null")
-		}
-		return graphql.Null
-	}
-	res := resTmp.(string)
-	fc.Result = res
-	return ec.marshalNString2string(ctx, field.Selections, res)
-}
-
-func (ec *executionContext) fieldContext_Status_graphql(ctx context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
-	fc = &graphql.FieldContext{
-		Object:     "Status",
-		Field:      field,
-		IsMethod:   false,
-		IsResolver: false,
-		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
-			return nil, errors.New("field of type String does not have child fields")
-		},
-	}
-	return fc, nil
-}
-
-func (ec *executionContext) _Status_grpc(ctx context.Context, field graphql.CollectedField, obj *Status) (ret graphql.Marshaler) {
-	fc, err := ec.fieldContext_Status_grpc(ctx, field)
-	if err != nil {
-		return graphql.Null
-	}
-	ctx = graphql.WithFieldContext(ctx, fc)
-	defer func() {
-		if r := recover(); r != nil {
-			ec.Error(ctx, ec.Recover(ctx, r))
-			ret = graphql.Null
-		}
-	}()
-	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
-		ctx = rctx // use context from middleware stack in children
-		return obj.Grpc, nil
-	})
-	if err != nil {
-		ec.Error(ctx, err)
-		return graphql.Null
-	}
-	if resTmp == nil {
-		if !graphql.HasFieldError(ctx, fc) {
-			ec.Errorf(ctx, "must not be null")
-		}
-		return graphql.Null
-	}
-	res := resTmp.(string)
-	fc.Result = res
-	return ec.marshalNString2string(ctx, field.Selections, res)
-}
-
-func (ec *executionContext) fieldContext_Status_grpc(ctx context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
-	fc = &graphql.FieldContext{
-		Object:     "Status",
-		Field:      field,
-		IsMethod:   false,
-		IsResolver: false,
-		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
-			return nil, errors.New("field of type String does not have child fields")
+			switch field.Name {
+			case "id":
+				return ec.fieldContext_Dsse_id(ctx, field)
+			case "gitoidSha256":
+				return ec.fieldContext_Dsse_gitoidSha256(ctx, field)
+			case "payloadType":
+				return ec.fieldContext_Dsse_payloadType(ctx, field)
+			case "statement":
+				return ec.fieldContext_Dsse_statement(ctx, field)
+			case "signatures":
+				return ec.fieldContext_Dsse_signatures(ctx, field)
+			case "payloadDigests":
+				return ec.fieldContext_Dsse_payloadDigests(ctx, field)
+			}
+			return nil, fmt.Errorf("no field named %q was found under type Dsse", field.Name)
 		},
 	}
 	return fc, nil
@@ -2908,8 +3502,8 @@ func (ec *executionContext) fieldContext_Subject_name(ctx context.Context, field
 	return fc, nil
 }
 
-func (ec *executionContext) _Subject_subject_digest(ctx context.Context, field graphql.CollectedField, obj *ent.Subject) (ret graphql.Marshaler) {
-	fc, err := ec.fieldContext_Subject_subject_digest(ctx, field)
+func (ec *executionContext) _Subject_subjectDigests(ctx context.Context, field graphql.CollectedField, obj *ent.Subject) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_Subject_subjectDigests(ctx, field)
 	if err != nil {
 		return graphql.Null
 	}
@@ -2922,7 +3516,7 @@ func (ec *executionContext) _Subject_subject_digest(ctx context.Context, field g
 	}()
 	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
 		ctx = rctx // use context from middleware stack in children
-		return ec.resolvers.Subject().SubjectDigest(rctx, obj)
+		return obj.SubjectDigests(ctx)
 	})
 	if err != nil {
 		ec.Error(ctx, err)
@@ -2936,12 +3530,12 @@ func (ec *executionContext) _Subject_subject_digest(ctx context.Context, field g
 	return ec.marshalOSubjectDigest2ᚕᚖgithubᚗcomᚋtestifysecᚋarchivistᚋentᚐSubjectDigestᚄ(ctx, field.Selections, res)
 }
 
-func (ec *executionContext) fieldContext_Subject_subject_digest(ctx context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+func (ec *executionContext) fieldContext_Subject_subjectDigests(ctx context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
 	fc = &graphql.FieldContext{
 		Object:     "Subject",
 		Field:      field,
 		IsMethod:   true,
-		IsResolver: true,
+		IsResolver: false,
 		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
 			switch field.Name {
 			case "id":
@@ -2950,8 +3544,208 @@ func (ec *executionContext) fieldContext_Subject_subject_digest(ctx context.Cont
 				return ec.fieldContext_SubjectDigest_algorithm(ctx, field)
 			case "value":
 				return ec.fieldContext_SubjectDigest_value(ctx, field)
+			case "subject":
+				return ec.fieldContext_SubjectDigest_subject(ctx, field)
 			}
 			return nil, fmt.Errorf("no field named %q was found under type SubjectDigest", field.Name)
+		},
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _Subject_statement(ctx context.Context, field graphql.CollectedField, obj *ent.Subject) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_Subject_statement(ctx, field)
+	if err != nil {
+		return graphql.Null
+	}
+	ctx = graphql.WithFieldContext(ctx, fc)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.Statement(ctx)
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		return graphql.Null
+	}
+	res := resTmp.(*ent.Statement)
+	fc.Result = res
+	return ec.marshalOStatement2ᚖgithubᚗcomᚋtestifysecᚋarchivistᚋentᚐStatement(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) fieldContext_Subject_statement(ctx context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "Subject",
+		Field:      field,
+		IsMethod:   true,
+		IsResolver: false,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			switch field.Name {
+			case "id":
+				return ec.fieldContext_Statement_id(ctx, field)
+			case "predicate":
+				return ec.fieldContext_Statement_predicate(ctx, field)
+			case "subjects":
+				return ec.fieldContext_Statement_subjects(ctx, field)
+			case "attestationCollections":
+				return ec.fieldContext_Statement_attestationCollections(ctx, field)
+			case "dsse":
+				return ec.fieldContext_Statement_dsse(ctx, field)
+			}
+			return nil, fmt.Errorf("no field named %q was found under type Statement", field.Name)
+		},
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _SubjectConnection_edges(ctx context.Context, field graphql.CollectedField, obj *ent.SubjectConnection) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_SubjectConnection_edges(ctx, field)
+	if err != nil {
+		return graphql.Null
+	}
+	ctx = graphql.WithFieldContext(ctx, fc)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.Edges, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		return graphql.Null
+	}
+	res := resTmp.([]*ent.SubjectEdge)
+	fc.Result = res
+	return ec.marshalOSubjectEdge2ᚕᚖgithubᚗcomᚋtestifysecᚋarchivistᚋentᚐSubjectEdge(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) fieldContext_SubjectConnection_edges(ctx context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "SubjectConnection",
+		Field:      field,
+		IsMethod:   false,
+		IsResolver: false,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			switch field.Name {
+			case "node":
+				return ec.fieldContext_SubjectEdge_node(ctx, field)
+			case "cursor":
+				return ec.fieldContext_SubjectEdge_cursor(ctx, field)
+			}
+			return nil, fmt.Errorf("no field named %q was found under type SubjectEdge", field.Name)
+		},
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _SubjectConnection_pageInfo(ctx context.Context, field graphql.CollectedField, obj *ent.SubjectConnection) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_SubjectConnection_pageInfo(ctx, field)
+	if err != nil {
+		return graphql.Null
+	}
+	ctx = graphql.WithFieldContext(ctx, fc)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.PageInfo, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.(ent.PageInfo)
+	fc.Result = res
+	return ec.marshalNPageInfo2githubᚗcomᚋtestifysecᚋarchivistᚋentᚐPageInfo(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) fieldContext_SubjectConnection_pageInfo(ctx context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "SubjectConnection",
+		Field:      field,
+		IsMethod:   false,
+		IsResolver: false,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			switch field.Name {
+			case "hasNextPage":
+				return ec.fieldContext_PageInfo_hasNextPage(ctx, field)
+			case "hasPreviousPage":
+				return ec.fieldContext_PageInfo_hasPreviousPage(ctx, field)
+			case "startCursor":
+				return ec.fieldContext_PageInfo_startCursor(ctx, field)
+			case "endCursor":
+				return ec.fieldContext_PageInfo_endCursor(ctx, field)
+			}
+			return nil, fmt.Errorf("no field named %q was found under type PageInfo", field.Name)
+		},
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _SubjectConnection_totalCount(ctx context.Context, field graphql.CollectedField, obj *ent.SubjectConnection) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_SubjectConnection_totalCount(ctx, field)
+	if err != nil {
+		return graphql.Null
+	}
+	ctx = graphql.WithFieldContext(ctx, fc)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.TotalCount, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.(int)
+	fc.Result = res
+	return ec.marshalNInt2int(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) fieldContext_SubjectConnection_totalCount(ctx context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "SubjectConnection",
+		Field:      field,
+		IsMethod:   false,
+		IsResolver: false,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return nil, errors.New("field of type Int does not have child fields")
 		},
 	}
 	return fc, nil
@@ -3084,6 +3878,152 @@ func (ec *executionContext) fieldContext_SubjectDigest_value(ctx context.Context
 		IsResolver: false,
 		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
 			return nil, errors.New("field of type String does not have child fields")
+		},
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _SubjectDigest_subject(ctx context.Context, field graphql.CollectedField, obj *ent.SubjectDigest) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_SubjectDigest_subject(ctx, field)
+	if err != nil {
+		return graphql.Null
+	}
+	ctx = graphql.WithFieldContext(ctx, fc)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.Subject(ctx)
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		return graphql.Null
+	}
+	res := resTmp.(*ent.Subject)
+	fc.Result = res
+	return ec.marshalOSubject2ᚖgithubᚗcomᚋtestifysecᚋarchivistᚋentᚐSubject(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) fieldContext_SubjectDigest_subject(ctx context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "SubjectDigest",
+		Field:      field,
+		IsMethod:   true,
+		IsResolver: false,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			switch field.Name {
+			case "id":
+				return ec.fieldContext_Subject_id(ctx, field)
+			case "name":
+				return ec.fieldContext_Subject_name(ctx, field)
+			case "subjectDigests":
+				return ec.fieldContext_Subject_subjectDigests(ctx, field)
+			case "statement":
+				return ec.fieldContext_Subject_statement(ctx, field)
+			}
+			return nil, fmt.Errorf("no field named %q was found under type Subject", field.Name)
+		},
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _SubjectEdge_node(ctx context.Context, field graphql.CollectedField, obj *ent.SubjectEdge) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_SubjectEdge_node(ctx, field)
+	if err != nil {
+		return graphql.Null
+	}
+	ctx = graphql.WithFieldContext(ctx, fc)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.Node, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		return graphql.Null
+	}
+	res := resTmp.(*ent.Subject)
+	fc.Result = res
+	return ec.marshalOSubject2ᚖgithubᚗcomᚋtestifysecᚋarchivistᚋentᚐSubject(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) fieldContext_SubjectEdge_node(ctx context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "SubjectEdge",
+		Field:      field,
+		IsMethod:   false,
+		IsResolver: false,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			switch field.Name {
+			case "id":
+				return ec.fieldContext_Subject_id(ctx, field)
+			case "name":
+				return ec.fieldContext_Subject_name(ctx, field)
+			case "subjectDigests":
+				return ec.fieldContext_Subject_subjectDigests(ctx, field)
+			case "statement":
+				return ec.fieldContext_Subject_statement(ctx, field)
+			}
+			return nil, fmt.Errorf("no field named %q was found under type Subject", field.Name)
+		},
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _SubjectEdge_cursor(ctx context.Context, field graphql.CollectedField, obj *ent.SubjectEdge) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_SubjectEdge_cursor(ctx, field)
+	if err != nil {
+		return graphql.Null
+	}
+	ctx = graphql.WithFieldContext(ctx, fc)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.Cursor, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.(ent.Cursor)
+	fc.Result = res
+	return ec.marshalNCursor2githubᚗcomᚋtestifysecᚋarchivistᚋentᚐCursor(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) fieldContext_SubjectEdge_cursor(ctx context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "SubjectEdge",
+		Field:      field,
+		IsMethod:   false,
+		IsResolver: false,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return nil, errors.New("field of type Cursor does not have child fields")
 		},
 	}
 	return fc, nil
@@ -7162,11 +8102,60 @@ func (ec *executionContext) unmarshalInputSubjectWhereInput(ctx context.Context,
 
 // region    ************************** interface.gotpl ***************************
 
+func (ec *executionContext) _Node(ctx context.Context, sel ast.SelectionSet, obj ent.Noder) graphql.Marshaler {
+	switch obj := (obj).(type) {
+	case nil:
+		return graphql.Null
+	case *ent.Attestation:
+		if obj == nil {
+			return graphql.Null
+		}
+		return ec._Attestation(ctx, sel, obj)
+	case *ent.AttestationCollection:
+		if obj == nil {
+			return graphql.Null
+		}
+		return ec._AttestationCollection(ctx, sel, obj)
+	case *ent.Dsse:
+		if obj == nil {
+			return graphql.Null
+		}
+		return ec._Dsse(ctx, sel, obj)
+	case *ent.PayloadDigest:
+		if obj == nil {
+			return graphql.Null
+		}
+		return ec._PayloadDigest(ctx, sel, obj)
+	case *ent.Signature:
+		if obj == nil {
+			return graphql.Null
+		}
+		return ec._Signature(ctx, sel, obj)
+	case *ent.Statement:
+		if obj == nil {
+			return graphql.Null
+		}
+		return ec._Statement(ctx, sel, obj)
+	case *ent.Subject:
+		if obj == nil {
+			return graphql.Null
+		}
+		return ec._Subject(ctx, sel, obj)
+	case *ent.SubjectDigest:
+		if obj == nil {
+			return graphql.Null
+		}
+		return ec._SubjectDigest(ctx, sel, obj)
+	default:
+		panic(fmt.Errorf("unexpected type %T", obj))
+	}
+}
+
 // endregion ************************** interface.gotpl ***************************
 
 // region    **************************** object.gotpl ****************************
 
-var attestationImplementors = []string{"Attestation"}
+var attestationImplementors = []string{"Attestation", "Node"}
 
 func (ec *executionContext) _Attestation(ctx context.Context, sel ast.SelectionSet, obj *ent.Attestation) graphql.Marshaler {
 	fields := graphql.CollectFields(ec.OperationContext, sel, attestationImplementors)
@@ -7181,15 +8170,35 @@ func (ec *executionContext) _Attestation(ctx context.Context, sel ast.SelectionS
 			out.Values[i] = ec._Attestation_id(ctx, field, obj)
 
 			if out.Values[i] == graphql.Null {
-				invalids++
+				atomic.AddUint32(&invalids, 1)
 			}
 		case "type":
 
 			out.Values[i] = ec._Attestation_type(ctx, field, obj)
 
 			if out.Values[i] == graphql.Null {
-				invalids++
+				atomic.AddUint32(&invalids, 1)
 			}
+		case "attestationCollection":
+			field := field
+
+			innerFunc := func(ctx context.Context) (res graphql.Marshaler) {
+				defer func() {
+					if r := recover(); r != nil {
+						ec.Error(ctx, ec.Recover(ctx, r))
+					}
+				}()
+				res = ec._Attestation_attestationCollection(ctx, field, obj)
+				if res == graphql.Null {
+					atomic.AddUint32(&invalids, 1)
+				}
+				return res
+			}
+
+			out.Concurrently(i, func() graphql.Marshaler {
+				return innerFunc(ctx)
+
+			})
 		default:
 			panic("unknown field " + strconv.Quote(field.Name))
 		}
@@ -7201,7 +8210,7 @@ func (ec *executionContext) _Attestation(ctx context.Context, sel ast.SelectionS
 	return out
 }
 
-var attestationCollectionImplementors = []string{"AttestationCollection"}
+var attestationCollectionImplementors = []string{"AttestationCollection", "Node"}
 
 func (ec *executionContext) _AttestationCollection(ctx context.Context, sel ast.SelectionSet, obj *ent.AttestationCollection) graphql.Marshaler {
 	fields := graphql.CollectFields(ec.OperationContext, sel, attestationCollectionImplementors)
@@ -7242,6 +8251,26 @@ func (ec *executionContext) _AttestationCollection(ctx context.Context, sel ast.
 				return innerFunc(ctx)
 
 			})
+		case "statement":
+			field := field
+
+			innerFunc := func(ctx context.Context) (res graphql.Marshaler) {
+				defer func() {
+					if r := recover(); r != nil {
+						ec.Error(ctx, ec.Recover(ctx, r))
+					}
+				}()
+				res = ec._AttestationCollection_statement(ctx, field, obj)
+				if res == graphql.Null {
+					atomic.AddUint32(&invalids, 1)
+				}
+				return res
+			}
+
+			out.Concurrently(i, func() graphql.Marshaler {
+				return innerFunc(ctx)
+
+			})
 		default:
 			panic("unknown field " + strconv.Quote(field.Name))
 		}
@@ -7253,7 +8282,7 @@ func (ec *executionContext) _AttestationCollection(ctx context.Context, sel ast.
 	return out
 }
 
-var dsseImplementors = []string{"Dsse"}
+var dsseImplementors = []string{"Dsse", "Node"}
 
 func (ec *executionContext) _Dsse(ctx context.Context, sel ast.SelectionSet, obj *ent.Dsse) graphql.Marshaler {
 	fields := graphql.CollectFields(ec.OperationContext, sel, dsseImplementors)
@@ -7270,16 +8299,16 @@ func (ec *executionContext) _Dsse(ctx context.Context, sel ast.SelectionSet, obj
 			if out.Values[i] == graphql.Null {
 				atomic.AddUint32(&invalids, 1)
 			}
-		case "gitoid_sha256":
+		case "gitoidSha256":
 
-			out.Values[i] = ec._Dsse_gitoid_sha256(ctx, field, obj)
+			out.Values[i] = ec._Dsse_gitoidSha256(ctx, field, obj)
 
 			if out.Values[i] == graphql.Null {
 				atomic.AddUint32(&invalids, 1)
 			}
-		case "payload_type":
+		case "payloadType":
 
-			out.Values[i] = ec._Dsse_payload_type(ctx, field, obj)
+			out.Values[i] = ec._Dsse_payloadType(ctx, field, obj)
 
 			if out.Values[i] == graphql.Null {
 				atomic.AddUint32(&invalids, 1)
@@ -7294,9 +8323,6 @@ func (ec *executionContext) _Dsse(ctx context.Context, sel ast.SelectionSet, obj
 					}
 				}()
 				res = ec._Dsse_statement(ctx, field, obj)
-				if res == graphql.Null {
-					atomic.AddUint32(&invalids, 1)
-				}
 				return res
 			}
 
@@ -7321,7 +8347,7 @@ func (ec *executionContext) _Dsse(ctx context.Context, sel ast.SelectionSet, obj
 				return innerFunc(ctx)
 
 			})
-		case "payload_digests":
+		case "payloadDigests":
 			field := field
 
 			innerFunc := func(ctx context.Context) (res graphql.Marshaler) {
@@ -7330,7 +8356,7 @@ func (ec *executionContext) _Dsse(ctx context.Context, sel ast.SelectionSet, obj
 						ec.Error(ctx, ec.Recover(ctx, r))
 					}
 				}()
-				res = ec._Dsse_payload_digests(ctx, field, obj)
+				res = ec._Dsse_payloadDigests(ctx, field, obj)
 				return res
 			}
 
@@ -7359,13 +8385,10 @@ func (ec *executionContext) _DsseConnection(ctx context.Context, sel ast.Selecti
 		switch field.Name {
 		case "__typename":
 			out.Values[i] = graphql.MarshalString("DsseConnection")
-		case "totalCount":
+		case "edges":
 
-			out.Values[i] = ec._DsseConnection_totalCount(ctx, field, obj)
+			out.Values[i] = ec._DsseConnection_edges(ctx, field, obj)
 
-			if out.Values[i] == graphql.Null {
-				invalids++
-			}
 		case "pageInfo":
 
 			out.Values[i] = ec._DsseConnection_pageInfo(ctx, field, obj)
@@ -7373,10 +8396,13 @@ func (ec *executionContext) _DsseConnection(ctx context.Context, sel ast.Selecti
 			if out.Values[i] == graphql.Null {
 				invalids++
 			}
-		case "edges":
+		case "totalCount":
 
-			out.Values[i] = ec._DsseConnection_edges(ctx, field, obj)
+			out.Values[i] = ec._DsseConnection_totalCount(ctx, field, obj)
 
+			if out.Values[i] == graphql.Null {
+				invalids++
+			}
 		default:
 			panic("unknown field " + strconv.Quote(field.Name))
 		}
@@ -7463,7 +8489,7 @@ func (ec *executionContext) _PageInfo(ctx context.Context, sel ast.SelectionSet,
 	return out
 }
 
-var payloadDigestImplementors = []string{"PayloadDigest"}
+var payloadDigestImplementors = []string{"PayloadDigest", "Node"}
 
 func (ec *executionContext) _PayloadDigest(ctx context.Context, sel ast.SelectionSet, obj *ent.PayloadDigest) graphql.Marshaler {
 	fields := graphql.CollectFields(ec.OperationContext, sel, payloadDigestImplementors)
@@ -7478,22 +8504,39 @@ func (ec *executionContext) _PayloadDigest(ctx context.Context, sel ast.Selectio
 			out.Values[i] = ec._PayloadDigest_id(ctx, field, obj)
 
 			if out.Values[i] == graphql.Null {
-				invalids++
+				atomic.AddUint32(&invalids, 1)
 			}
 		case "algorithm":
 
 			out.Values[i] = ec._PayloadDigest_algorithm(ctx, field, obj)
 
 			if out.Values[i] == graphql.Null {
-				invalids++
+				atomic.AddUint32(&invalids, 1)
 			}
 		case "value":
 
 			out.Values[i] = ec._PayloadDigest_value(ctx, field, obj)
 
 			if out.Values[i] == graphql.Null {
-				invalids++
+				atomic.AddUint32(&invalids, 1)
 			}
+		case "dsse":
+			field := field
+
+			innerFunc := func(ctx context.Context) (res graphql.Marshaler) {
+				defer func() {
+					if r := recover(); r != nil {
+						ec.Error(ctx, ec.Recover(ctx, r))
+					}
+				}()
+				res = ec._PayloadDigest_dsse(ctx, field, obj)
+				return res
+			}
+
+			out.Concurrently(i, func() graphql.Marshaler {
+				return innerFunc(ctx)
+
+			})
 		default:
 			panic("unknown field " + strconv.Quote(field.Name))
 		}
@@ -7524,7 +8567,7 @@ func (ec *executionContext) _Query(ctx context.Context, sel ast.SelectionSet) gr
 		switch field.Name {
 		case "__typename":
 			out.Values[i] = graphql.MarshalString("Query")
-		case "status":
+		case "node":
 			field := field
 
 			innerFunc := func(ctx context.Context) (res graphql.Marshaler) {
@@ -7533,7 +8576,27 @@ func (ec *executionContext) _Query(ctx context.Context, sel ast.SelectionSet) gr
 						ec.Error(ctx, ec.Recover(ctx, r))
 					}
 				}()
-				res = ec._Query_status(ctx, field)
+				res = ec._Query_node(ctx, field)
+				return res
+			}
+
+			rrm := func(ctx context.Context) graphql.Marshaler {
+				return ec.OperationContext.RootResolverMiddleware(ctx, innerFunc)
+			}
+
+			out.Concurrently(i, func() graphql.Marshaler {
+				return rrm(innerCtx)
+			})
+		case "nodes":
+			field := field
+
+			innerFunc := func(ctx context.Context) (res graphql.Marshaler) {
+				defer func() {
+					if r := recover(); r != nil {
+						ec.Error(ctx, ec.Recover(ctx, r))
+					}
+				}()
+				res = ec._Query_nodes(ctx, field)
 				if res == graphql.Null {
 					atomic.AddUint32(&invalids, 1)
 				}
@@ -7570,6 +8633,29 @@ func (ec *executionContext) _Query(ctx context.Context, sel ast.SelectionSet) gr
 			out.Concurrently(i, func() graphql.Marshaler {
 				return rrm(innerCtx)
 			})
+		case "subjects":
+			field := field
+
+			innerFunc := func(ctx context.Context) (res graphql.Marshaler) {
+				defer func() {
+					if r := recover(); r != nil {
+						ec.Error(ctx, ec.Recover(ctx, r))
+					}
+				}()
+				res = ec._Query_subjects(ctx, field)
+				if res == graphql.Null {
+					atomic.AddUint32(&invalids, 1)
+				}
+				return res
+			}
+
+			rrm := func(ctx context.Context) graphql.Marshaler {
+				return ec.OperationContext.RootResolverMiddleware(ctx, innerFunc)
+			}
+
+			out.Concurrently(i, func() graphql.Marshaler {
+				return rrm(innerCtx)
+			})
 		case "__type":
 
 			out.Values[i] = ec.OperationContext.RootResolverMiddleware(innerCtx, func(ctx context.Context) (res graphql.Marshaler) {
@@ -7593,7 +8679,7 @@ func (ec *executionContext) _Query(ctx context.Context, sel ast.SelectionSet) gr
 	return out
 }
 
-var signatureImplementors = []string{"Signature"}
+var signatureImplementors = []string{"Signature", "Node"}
 
 func (ec *executionContext) _Signature(ctx context.Context, sel ast.SelectionSet, obj *ent.Signature) graphql.Marshaler {
 	fields := graphql.CollectFields(ec.OperationContext, sel, signatureImplementors)
@@ -7608,22 +8694,39 @@ func (ec *executionContext) _Signature(ctx context.Context, sel ast.SelectionSet
 			out.Values[i] = ec._Signature_id(ctx, field, obj)
 
 			if out.Values[i] == graphql.Null {
-				invalids++
+				atomic.AddUint32(&invalids, 1)
 			}
-		case "key_id":
+		case "keyID":
 
-			out.Values[i] = ec._Signature_key_id(ctx, field, obj)
+			out.Values[i] = ec._Signature_keyID(ctx, field, obj)
 
 			if out.Values[i] == graphql.Null {
-				invalids++
+				atomic.AddUint32(&invalids, 1)
 			}
 		case "signature":
 
 			out.Values[i] = ec._Signature_signature(ctx, field, obj)
 
 			if out.Values[i] == graphql.Null {
-				invalids++
+				atomic.AddUint32(&invalids, 1)
 			}
+		case "dsse":
+			field := field
+
+			innerFunc := func(ctx context.Context) (res graphql.Marshaler) {
+				defer func() {
+					if r := recover(); r != nil {
+						ec.Error(ctx, ec.Recover(ctx, r))
+					}
+				}()
+				res = ec._Signature_dsse(ctx, field, obj)
+				return res
+			}
+
+			out.Concurrently(i, func() graphql.Marshaler {
+				return innerFunc(ctx)
+
+			})
 		default:
 			panic("unknown field " + strconv.Quote(field.Name))
 		}
@@ -7635,7 +8738,7 @@ func (ec *executionContext) _Signature(ctx context.Context, sel ast.SelectionSet
 	return out
 }
 
-var statementImplementors = []string{"Statement"}
+var statementImplementors = []string{"Statement", "Node"}
 
 func (ec *executionContext) _Statement(ctx context.Context, sel ast.SelectionSet, obj *ent.Statement) graphql.Marshaler {
 	fields := graphql.CollectFields(ec.OperationContext, sel, statementImplementors)
@@ -7669,23 +8772,6 @@ func (ec *executionContext) _Statement(ctx context.Context, sel ast.SelectionSet
 					}
 				}()
 				res = ec._Statement_subjects(ctx, field, obj)
-				return res
-			}
-
-			out.Concurrently(i, func() graphql.Marshaler {
-				return innerFunc(ctx)
-
-			})
-		case "attestation_collection":
-			field := field
-
-			innerFunc := func(ctx context.Context) (res graphql.Marshaler) {
-				defer func() {
-					if r := recover(); r != nil {
-						ec.Error(ctx, ec.Recover(ctx, r))
-					}
-				}()
-				res = ec._Statement_attestation_collection(ctx, field, obj)
 				if res == graphql.Null {
 					atomic.AddUint32(&invalids, 1)
 				}
@@ -7696,6 +8782,40 @@ func (ec *executionContext) _Statement(ctx context.Context, sel ast.SelectionSet
 				return innerFunc(ctx)
 
 			})
+		case "attestationCollections":
+			field := field
+
+			innerFunc := func(ctx context.Context) (res graphql.Marshaler) {
+				defer func() {
+					if r := recover(); r != nil {
+						ec.Error(ctx, ec.Recover(ctx, r))
+					}
+				}()
+				res = ec._Statement_attestationCollections(ctx, field, obj)
+				return res
+			}
+
+			out.Concurrently(i, func() graphql.Marshaler {
+				return innerFunc(ctx)
+
+			})
+		case "dsse":
+			field := field
+
+			innerFunc := func(ctx context.Context) (res graphql.Marshaler) {
+				defer func() {
+					if r := recover(); r != nil {
+						ec.Error(ctx, ec.Recover(ctx, r))
+					}
+				}()
+				res = ec._Statement_dsse(ctx, field, obj)
+				return res
+			}
+
+			out.Concurrently(i, func() graphql.Marshaler {
+				return innerFunc(ctx)
+
+			})
 		default:
 			panic("unknown field " + strconv.Quote(field.Name))
 		}
@@ -7707,49 +8827,7 @@ func (ec *executionContext) _Statement(ctx context.Context, sel ast.SelectionSet
 	return out
 }
 
-var statusImplementors = []string{"Status"}
-
-func (ec *executionContext) _Status(ctx context.Context, sel ast.SelectionSet, obj *Status) graphql.Marshaler {
-	fields := graphql.CollectFields(ec.OperationContext, sel, statusImplementors)
-	out := graphql.NewFieldSet(fields)
-	var invalids uint32
-	for i, field := range fields {
-		switch field.Name {
-		case "__typename":
-			out.Values[i] = graphql.MarshalString("Status")
-		case "database":
-
-			out.Values[i] = ec._Status_database(ctx, field, obj)
-
-			if out.Values[i] == graphql.Null {
-				invalids++
-			}
-		case "graphql":
-
-			out.Values[i] = ec._Status_graphql(ctx, field, obj)
-
-			if out.Values[i] == graphql.Null {
-				invalids++
-			}
-		case "grpc":
-
-			out.Values[i] = ec._Status_grpc(ctx, field, obj)
-
-			if out.Values[i] == graphql.Null {
-				invalids++
-			}
-		default:
-			panic("unknown field " + strconv.Quote(field.Name))
-		}
-	}
-	out.Dispatch()
-	if invalids > 0 {
-		return graphql.Null
-	}
-	return out
-}
-
-var subjectImplementors = []string{"Subject"}
+var subjectImplementors = []string{"Subject", "Node"}
 
 func (ec *executionContext) _Subject(ctx context.Context, sel ast.SelectionSet, obj *ent.Subject) graphql.Marshaler {
 	fields := graphql.CollectFields(ec.OperationContext, sel, subjectImplementors)
@@ -7773,7 +8851,7 @@ func (ec *executionContext) _Subject(ctx context.Context, sel ast.SelectionSet, 
 			if out.Values[i] == graphql.Null {
 				atomic.AddUint32(&invalids, 1)
 			}
-		case "subject_digest":
+		case "subjectDigests":
 			field := field
 
 			innerFunc := func(ctx context.Context) (res graphql.Marshaler) {
@@ -7782,7 +8860,24 @@ func (ec *executionContext) _Subject(ctx context.Context, sel ast.SelectionSet, 
 						ec.Error(ctx, ec.Recover(ctx, r))
 					}
 				}()
-				res = ec._Subject_subject_digest(ctx, field, obj)
+				res = ec._Subject_subjectDigests(ctx, field, obj)
+				return res
+			}
+
+			out.Concurrently(i, func() graphql.Marshaler {
+				return innerFunc(ctx)
+
+			})
+		case "statement":
+			field := field
+
+			innerFunc := func(ctx context.Context) (res graphql.Marshaler) {
+				defer func() {
+					if r := recover(); r != nil {
+						ec.Error(ctx, ec.Recover(ctx, r))
+					}
+				}()
+				res = ec._Subject_statement(ctx, field, obj)
 				return res
 			}
 
@@ -7801,7 +8896,46 @@ func (ec *executionContext) _Subject(ctx context.Context, sel ast.SelectionSet, 
 	return out
 }
 
-var subjectDigestImplementors = []string{"SubjectDigest"}
+var subjectConnectionImplementors = []string{"SubjectConnection"}
+
+func (ec *executionContext) _SubjectConnection(ctx context.Context, sel ast.SelectionSet, obj *ent.SubjectConnection) graphql.Marshaler {
+	fields := graphql.CollectFields(ec.OperationContext, sel, subjectConnectionImplementors)
+	out := graphql.NewFieldSet(fields)
+	var invalids uint32
+	for i, field := range fields {
+		switch field.Name {
+		case "__typename":
+			out.Values[i] = graphql.MarshalString("SubjectConnection")
+		case "edges":
+
+			out.Values[i] = ec._SubjectConnection_edges(ctx, field, obj)
+
+		case "pageInfo":
+
+			out.Values[i] = ec._SubjectConnection_pageInfo(ctx, field, obj)
+
+			if out.Values[i] == graphql.Null {
+				invalids++
+			}
+		case "totalCount":
+
+			out.Values[i] = ec._SubjectConnection_totalCount(ctx, field, obj)
+
+			if out.Values[i] == graphql.Null {
+				invalids++
+			}
+		default:
+			panic("unknown field " + strconv.Quote(field.Name))
+		}
+	}
+	out.Dispatch()
+	if invalids > 0 {
+		return graphql.Null
+	}
+	return out
+}
+
+var subjectDigestImplementors = []string{"SubjectDigest", "Node"}
 
 func (ec *executionContext) _SubjectDigest(ctx context.Context, sel ast.SelectionSet, obj *ent.SubjectDigest) graphql.Marshaler {
 	fields := graphql.CollectFields(ec.OperationContext, sel, subjectDigestImplementors)
@@ -7816,18 +8950,67 @@ func (ec *executionContext) _SubjectDigest(ctx context.Context, sel ast.Selectio
 			out.Values[i] = ec._SubjectDigest_id(ctx, field, obj)
 
 			if out.Values[i] == graphql.Null {
-				invalids++
+				atomic.AddUint32(&invalids, 1)
 			}
 		case "algorithm":
 
 			out.Values[i] = ec._SubjectDigest_algorithm(ctx, field, obj)
 
 			if out.Values[i] == graphql.Null {
-				invalids++
+				atomic.AddUint32(&invalids, 1)
 			}
 		case "value":
 
 			out.Values[i] = ec._SubjectDigest_value(ctx, field, obj)
+
+			if out.Values[i] == graphql.Null {
+				atomic.AddUint32(&invalids, 1)
+			}
+		case "subject":
+			field := field
+
+			innerFunc := func(ctx context.Context) (res graphql.Marshaler) {
+				defer func() {
+					if r := recover(); r != nil {
+						ec.Error(ctx, ec.Recover(ctx, r))
+					}
+				}()
+				res = ec._SubjectDigest_subject(ctx, field, obj)
+				return res
+			}
+
+			out.Concurrently(i, func() graphql.Marshaler {
+				return innerFunc(ctx)
+
+			})
+		default:
+			panic("unknown field " + strconv.Quote(field.Name))
+		}
+	}
+	out.Dispatch()
+	if invalids > 0 {
+		return graphql.Null
+	}
+	return out
+}
+
+var subjectEdgeImplementors = []string{"SubjectEdge"}
+
+func (ec *executionContext) _SubjectEdge(ctx context.Context, sel ast.SelectionSet, obj *ent.SubjectEdge) graphql.Marshaler {
+	fields := graphql.CollectFields(ec.OperationContext, sel, subjectEdgeImplementors)
+	out := graphql.NewFieldSet(fields)
+	var invalids uint32
+	for i, field := range fields {
+		switch field.Name {
+		case "__typename":
+			out.Values[i] = graphql.MarshalString("SubjectEdge")
+		case "node":
+
+			out.Values[i] = ec._SubjectEdge_node(ctx, field, obj)
+
+		case "cursor":
+
+			out.Values[i] = ec._SubjectEdge_cursor(ctx, field, obj)
 
 			if out.Values[i] == graphql.Null {
 				invalids++
@@ -8161,8 +9344,14 @@ func (ec *executionContext) ___Type(ctx context.Context, sel ast.SelectionSet, o
 
 // region    ***************************** type.gotpl *****************************
 
-func (ec *executionContext) marshalNAttestationCollection2githubᚗcomᚋtestifysecᚋarchivistᚋentᚐAttestationCollection(ctx context.Context, sel ast.SelectionSet, v ent.AttestationCollection) graphql.Marshaler {
-	return ec._AttestationCollection(ctx, sel, &v)
+func (ec *executionContext) marshalNAttestation2ᚖgithubᚗcomᚋtestifysecᚋarchivistᚋentᚐAttestation(ctx context.Context, sel ast.SelectionSet, v *ent.Attestation) graphql.Marshaler {
+	if v == nil {
+		if !graphql.HasFieldError(ctx, graphql.GetFieldContext(ctx)) {
+			ec.Errorf(ctx, "the requested element is null which the schema does not allow")
+		}
+		return graphql.Null
+	}
+	return ec._Attestation(ctx, sel, v)
 }
 
 func (ec *executionContext) marshalNAttestationCollection2ᚖgithubᚗcomᚋtestifysecᚋarchivistᚋentᚐAttestationCollection(ctx context.Context, sel ast.SelectionSet, v *ent.AttestationCollection) graphql.Marshaler {
@@ -8210,6 +9399,16 @@ func (ec *executionContext) marshalNCursor2githubᚗcomᚋtestifysecᚋarchivist
 	return v
 }
 
+func (ec *executionContext) marshalNDsse2ᚖgithubᚗcomᚋtestifysecᚋarchivistᚋentᚐDsse(ctx context.Context, sel ast.SelectionSet, v *ent.Dsse) graphql.Marshaler {
+	if v == nil {
+		if !graphql.HasFieldError(ctx, graphql.GetFieldContext(ctx)) {
+			ec.Errorf(ctx, "the requested element is null which the schema does not allow")
+		}
+		return graphql.Null
+	}
+	return ec._Dsse(ctx, sel, v)
+}
+
 func (ec *executionContext) marshalNDsseConnection2githubᚗcomᚋtestifysecᚋarchivistᚋentᚐDsseConnection(ctx context.Context, sel ast.SelectionSet, v ent.DsseConnection) graphql.Marshaler {
 	return ec._DsseConnection(ctx, sel, &v)
 }
@@ -8244,6 +9443,38 @@ func (ec *executionContext) marshalNID2int(ctx context.Context, sel ast.Selectio
 	return res
 }
 
+func (ec *executionContext) unmarshalNID2ᚕintᚄ(ctx context.Context, v interface{}) ([]int, error) {
+	var vSlice []interface{}
+	if v != nil {
+		vSlice = graphql.CoerceList(v)
+	}
+	var err error
+	res := make([]int, len(vSlice))
+	for i := range vSlice {
+		ctx := graphql.WithPathContext(ctx, graphql.NewPathWithIndex(i))
+		res[i], err = ec.unmarshalNID2int(ctx, vSlice[i])
+		if err != nil {
+			return nil, err
+		}
+	}
+	return res, nil
+}
+
+func (ec *executionContext) marshalNID2ᚕintᚄ(ctx context.Context, sel ast.SelectionSet, v []int) graphql.Marshaler {
+	ret := make(graphql.Array, len(v))
+	for i := range v {
+		ret[i] = ec.marshalNID2int(ctx, sel, v[i])
+	}
+
+	for _, e := range ret {
+		if e == graphql.Null {
+			return graphql.Null
+		}
+	}
+
+	return ret
+}
+
 func (ec *executionContext) unmarshalNInt2int(ctx context.Context, v interface{}) (int, error) {
 	res, err := graphql.UnmarshalInt(v)
 	return res, graphql.ErrorOnPath(ctx, err)
@@ -8257,6 +9488,44 @@ func (ec *executionContext) marshalNInt2int(ctx context.Context, sel ast.Selecti
 		}
 	}
 	return res
+}
+
+func (ec *executionContext) marshalNNode2ᚕgithubᚗcomᚋtestifysecᚋarchivistᚋentᚐNoder(ctx context.Context, sel ast.SelectionSet, v []ent.Noder) graphql.Marshaler {
+	ret := make(graphql.Array, len(v))
+	var wg sync.WaitGroup
+	isLen1 := len(v) == 1
+	if !isLen1 {
+		wg.Add(len(v))
+	}
+	for i := range v {
+		i := i
+		fc := &graphql.FieldContext{
+			Index:  &i,
+			Result: &v[i],
+		}
+		ctx := graphql.WithFieldContext(ctx, fc)
+		f := func(i int) {
+			defer func() {
+				if r := recover(); r != nil {
+					ec.Error(ctx, ec.Recover(ctx, r))
+					ret = nil
+				}
+			}()
+			if !isLen1 {
+				defer wg.Done()
+			}
+			ret[i] = ec.marshalONode2githubᚗcomᚋtestifysecᚋarchivistᚋentᚐNoder(ctx, sel, v[i])
+		}
+		if isLen1 {
+			f(i)
+		} else {
+			go f(i)
+		}
+
+	}
+	wg.Wait()
+
+	return ret
 }
 
 func (ec *executionContext) marshalNPageInfo2githubᚗcomᚋtestifysecᚋarchivistᚋentᚐPageInfo(ctx context.Context, sel ast.SelectionSet, v ent.PageInfo) graphql.Marshaler {
@@ -8308,20 +9577,6 @@ func (ec *executionContext) unmarshalNStatementWhereInput2ᚖgithubᚗcomᚋtest
 	return &res, graphql.ErrorOnPath(ctx, err)
 }
 
-func (ec *executionContext) marshalNStatus2githubᚗcomᚋtestifysecᚋarchivistᚐStatus(ctx context.Context, sel ast.SelectionSet, v Status) graphql.Marshaler {
-	return ec._Status(ctx, sel, &v)
-}
-
-func (ec *executionContext) marshalNStatus2ᚖgithubᚗcomᚋtestifysecᚋarchivistᚐStatus(ctx context.Context, sel ast.SelectionSet, v *Status) graphql.Marshaler {
-	if v == nil {
-		if !graphql.HasFieldError(ctx, graphql.GetFieldContext(ctx)) {
-			ec.Errorf(ctx, "the requested element is null which the schema does not allow")
-		}
-		return graphql.Null
-	}
-	return ec._Status(ctx, sel, v)
-}
-
 func (ec *executionContext) unmarshalNString2string(ctx context.Context, v interface{}) (string, error) {
 	res, err := graphql.UnmarshalString(v)
 	return res, graphql.ErrorOnPath(ctx, err)
@@ -8337,14 +9592,18 @@ func (ec *executionContext) marshalNString2string(ctx context.Context, sel ast.S
 	return res
 }
 
-func (ec *executionContext) marshalNSubject2ᚖgithubᚗcomᚋtestifysecᚋarchivistᚋentᚐSubject(ctx context.Context, sel ast.SelectionSet, v *ent.Subject) graphql.Marshaler {
+func (ec *executionContext) marshalNSubjectConnection2githubᚗcomᚋtestifysecᚋarchivistᚋentᚐSubjectConnection(ctx context.Context, sel ast.SelectionSet, v ent.SubjectConnection) graphql.Marshaler {
+	return ec._SubjectConnection(ctx, sel, &v)
+}
+
+func (ec *executionContext) marshalNSubjectConnection2ᚖgithubᚗcomᚋtestifysecᚋarchivistᚋentᚐSubjectConnection(ctx context.Context, sel ast.SelectionSet, v *ent.SubjectConnection) graphql.Marshaler {
 	if v == nil {
 		if !graphql.HasFieldError(ctx, graphql.GetFieldContext(ctx)) {
 			ec.Errorf(ctx, "the requested element is null which the schema does not allow")
 		}
 		return graphql.Null
 	}
-	return ec._Subject(ctx, sel, v)
+	return ec._SubjectConnection(ctx, sel, v)
 }
 
 func (ec *executionContext) marshalNSubjectDigest2ᚖgithubᚗcomᚋtestifysecᚋarchivistᚋentᚐSubjectDigest(ctx context.Context, sel ast.SelectionSet, v *ent.SubjectDigest) graphql.Marshaler {
@@ -8620,7 +9879,7 @@ func (ec *executionContext) marshalN__TypeKind2string(ctx context.Context, sel a
 	return res
 }
 
-func (ec *executionContext) marshalOAttestation2ᚕᚖgithubᚗcomᚋtestifysecᚋarchivistᚋentᚐAttestation(ctx context.Context, sel ast.SelectionSet, v []*ent.Attestation) graphql.Marshaler {
+func (ec *executionContext) marshalOAttestation2ᚕᚖgithubᚗcomᚋtestifysecᚋarchivistᚋentᚐAttestationᚄ(ctx context.Context, sel ast.SelectionSet, v []*ent.Attestation) graphql.Marshaler {
 	if v == nil {
 		return graphql.Null
 	}
@@ -8647,7 +9906,7 @@ func (ec *executionContext) marshalOAttestation2ᚕᚖgithubᚗcomᚋtestifysec�
 			if !isLen1 {
 				defer wg.Done()
 			}
-			ret[i] = ec.marshalOAttestation2ᚖgithubᚗcomᚋtestifysecᚋarchivistᚋentᚐAttestation(ctx, sel, v[i])
+			ret[i] = ec.marshalNAttestation2ᚖgithubᚗcomᚋtestifysecᚋarchivistᚋentᚐAttestation(ctx, sel, v[i])
 		}
 		if isLen1 {
 			f(i)
@@ -8658,14 +9917,20 @@ func (ec *executionContext) marshalOAttestation2ᚕᚖgithubᚗcomᚋtestifysec�
 	}
 	wg.Wait()
 
+	for _, e := range ret {
+		if e == graphql.Null {
+			return graphql.Null
+		}
+	}
+
 	return ret
 }
 
-func (ec *executionContext) marshalOAttestation2ᚖgithubᚗcomᚋtestifysecᚋarchivistᚋentᚐAttestation(ctx context.Context, sel ast.SelectionSet, v *ent.Attestation) graphql.Marshaler {
+func (ec *executionContext) marshalOAttestationCollection2ᚖgithubᚗcomᚋtestifysecᚋarchivistᚋentᚐAttestationCollection(ctx context.Context, sel ast.SelectionSet, v *ent.AttestationCollection) graphql.Marshaler {
 	if v == nil {
 		return graphql.Null
 	}
-	return ec._Attestation(ctx, sel, v)
+	return ec._AttestationCollection(ctx, sel, v)
 }
 
 func (ec *executionContext) unmarshalOAttestationCollectionWhereInput2ᚕᚖgithubᚗcomᚋtestifysecᚋarchivistᚋentᚐAttestationCollectionWhereInputᚄ(ctx context.Context, v interface{}) ([]*ent.AttestationCollectionWhereInput, error) {
@@ -8764,6 +10029,53 @@ func (ec *executionContext) marshalOCursor2ᚖgithubᚗcomᚋtestifysecᚋarchiv
 		return graphql.Null
 	}
 	return v
+}
+
+func (ec *executionContext) marshalODsse2ᚕᚖgithubᚗcomᚋtestifysecᚋarchivistᚋentᚐDsseᚄ(ctx context.Context, sel ast.SelectionSet, v []*ent.Dsse) graphql.Marshaler {
+	if v == nil {
+		return graphql.Null
+	}
+	ret := make(graphql.Array, len(v))
+	var wg sync.WaitGroup
+	isLen1 := len(v) == 1
+	if !isLen1 {
+		wg.Add(len(v))
+	}
+	for i := range v {
+		i := i
+		fc := &graphql.FieldContext{
+			Index:  &i,
+			Result: &v[i],
+		}
+		ctx := graphql.WithFieldContext(ctx, fc)
+		f := func(i int) {
+			defer func() {
+				if r := recover(); r != nil {
+					ec.Error(ctx, ec.Recover(ctx, r))
+					ret = nil
+				}
+			}()
+			if !isLen1 {
+				defer wg.Done()
+			}
+			ret[i] = ec.marshalNDsse2ᚖgithubᚗcomᚋtestifysecᚋarchivistᚋentᚐDsse(ctx, sel, v[i])
+		}
+		if isLen1 {
+			f(i)
+		} else {
+			go f(i)
+		}
+
+	}
+	wg.Wait()
+
+	for _, e := range ret {
+		if e == graphql.Null {
+			return graphql.Null
+		}
+	}
+
+	return ret
 }
 
 func (ec *executionContext) marshalODsse2ᚖgithubᚗcomᚋtestifysecᚋarchivistᚋentᚐDsse(ctx context.Context, sel ast.SelectionSet, v *ent.Dsse) graphql.Marshaler {
@@ -8919,6 +10231,13 @@ func (ec *executionContext) marshalOInt2ᚖint(ctx context.Context, sel ast.Sele
 	return res
 }
 
+func (ec *executionContext) marshalONode2githubᚗcomᚋtestifysecᚋarchivistᚋentᚐNoder(ctx context.Context, sel ast.SelectionSet, v ent.Noder) graphql.Marshaler {
+	if v == nil {
+		return graphql.Null
+	}
+	return ec._Node(ctx, sel, v)
+}
+
 func (ec *executionContext) marshalOPayloadDigest2ᚕᚖgithubᚗcomᚋtestifysecᚋarchivistᚋentᚐPayloadDigestᚄ(ctx context.Context, sel ast.SelectionSet, v []*ent.PayloadDigest) graphql.Marshaler {
 	if v == nil {
 		return graphql.Null
@@ -9069,6 +10388,13 @@ func (ec *executionContext) unmarshalOSignatureWhereInput2ᚖgithubᚗcomᚋtest
 	return &res, graphql.ErrorOnPath(ctx, err)
 }
 
+func (ec *executionContext) marshalOStatement2ᚖgithubᚗcomᚋtestifysecᚋarchivistᚋentᚐStatement(ctx context.Context, sel ast.SelectionSet, v *ent.Statement) graphql.Marshaler {
+	if v == nil {
+		return graphql.Null
+	}
+	return ec._Statement(ctx, sel, v)
+}
+
 func (ec *executionContext) unmarshalOStatementWhereInput2ᚕᚖgithubᚗcomᚋtestifysecᚋarchivistᚋentᚐStatementWhereInputᚄ(ctx context.Context, v interface{}) ([]*ent.StatementWhereInput, error) {
 	if v == nil {
 		return nil, nil
@@ -9151,51 +10477,11 @@ func (ec *executionContext) marshalOString2ᚖstring(ctx context.Context, sel as
 	return res
 }
 
-func (ec *executionContext) marshalOSubject2ᚕᚖgithubᚗcomᚋtestifysecᚋarchivistᚋentᚐSubjectᚄ(ctx context.Context, sel ast.SelectionSet, v []*ent.Subject) graphql.Marshaler {
+func (ec *executionContext) marshalOSubject2ᚖgithubᚗcomᚋtestifysecᚋarchivistᚋentᚐSubject(ctx context.Context, sel ast.SelectionSet, v *ent.Subject) graphql.Marshaler {
 	if v == nil {
 		return graphql.Null
 	}
-	ret := make(graphql.Array, len(v))
-	var wg sync.WaitGroup
-	isLen1 := len(v) == 1
-	if !isLen1 {
-		wg.Add(len(v))
-	}
-	for i := range v {
-		i := i
-		fc := &graphql.FieldContext{
-			Index:  &i,
-			Result: &v[i],
-		}
-		ctx := graphql.WithFieldContext(ctx, fc)
-		f := func(i int) {
-			defer func() {
-				if r := recover(); r != nil {
-					ec.Error(ctx, ec.Recover(ctx, r))
-					ret = nil
-				}
-			}()
-			if !isLen1 {
-				defer wg.Done()
-			}
-			ret[i] = ec.marshalNSubject2ᚖgithubᚗcomᚋtestifysecᚋarchivistᚋentᚐSubject(ctx, sel, v[i])
-		}
-		if isLen1 {
-			f(i)
-		} else {
-			go f(i)
-		}
-
-	}
-	wg.Wait()
-
-	for _, e := range ret {
-		if e == graphql.Null {
-			return graphql.Null
-		}
-	}
-
-	return ret
+	return ec._Subject(ctx, sel, v)
 }
 
 func (ec *executionContext) marshalOSubjectDigest2ᚕᚖgithubᚗcomᚋtestifysecᚋarchivistᚋentᚐSubjectDigestᚄ(ctx context.Context, sel ast.SelectionSet, v []*ent.SubjectDigest) graphql.Marshaler {
@@ -9271,6 +10557,54 @@ func (ec *executionContext) unmarshalOSubjectDigestWhereInput2ᚖgithubᚗcomᚋ
 	}
 	res, err := ec.unmarshalInputSubjectDigestWhereInput(ctx, v)
 	return &res, graphql.ErrorOnPath(ctx, err)
+}
+
+func (ec *executionContext) marshalOSubjectEdge2ᚕᚖgithubᚗcomᚋtestifysecᚋarchivistᚋentᚐSubjectEdge(ctx context.Context, sel ast.SelectionSet, v []*ent.SubjectEdge) graphql.Marshaler {
+	if v == nil {
+		return graphql.Null
+	}
+	ret := make(graphql.Array, len(v))
+	var wg sync.WaitGroup
+	isLen1 := len(v) == 1
+	if !isLen1 {
+		wg.Add(len(v))
+	}
+	for i := range v {
+		i := i
+		fc := &graphql.FieldContext{
+			Index:  &i,
+			Result: &v[i],
+		}
+		ctx := graphql.WithFieldContext(ctx, fc)
+		f := func(i int) {
+			defer func() {
+				if r := recover(); r != nil {
+					ec.Error(ctx, ec.Recover(ctx, r))
+					ret = nil
+				}
+			}()
+			if !isLen1 {
+				defer wg.Done()
+			}
+			ret[i] = ec.marshalOSubjectEdge2ᚖgithubᚗcomᚋtestifysecᚋarchivistᚋentᚐSubjectEdge(ctx, sel, v[i])
+		}
+		if isLen1 {
+			f(i)
+		} else {
+			go f(i)
+		}
+
+	}
+	wg.Wait()
+
+	return ret
+}
+
+func (ec *executionContext) marshalOSubjectEdge2ᚖgithubᚗcomᚋtestifysecᚋarchivistᚋentᚐSubjectEdge(ctx context.Context, sel ast.SelectionSet, v *ent.SubjectEdge) graphql.Marshaler {
+	if v == nil {
+		return graphql.Null
+	}
+	return ec._SubjectEdge(ctx, sel, v)
 }
 
 func (ec *executionContext) unmarshalOSubjectWhereInput2ᚕᚖgithubᚗcomᚋtestifysecᚋarchivistᚋentᚐSubjectWhereInputᚄ(ctx context.Context, v interface{}) ([]*ent.SubjectWhereInput, error) {

@@ -18,6 +18,7 @@ import (
 	"entgo.io/ent"
 	"entgo.io/ent/schema/edge"
 	"entgo.io/ent/schema/field"
+	"entgo.io/ent/schema/index"
 )
 
 // SubjectDigest represents the digests of a subject from an in-toto statement
@@ -39,5 +40,12 @@ func (SubjectDigest) Edges() []ent.Edge {
 		edge.From("subject", Subject.Type).
 			Ref("subject_digests").
 			Unique(),
+	}
+}
+
+func (SubjectDigest) Indexes() []ent.Index {
+	return []ent.Index{
+		// Index on the "value" field.
+		index.Fields("value"),
 	}
 }

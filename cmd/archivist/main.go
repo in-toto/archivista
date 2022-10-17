@@ -22,7 +22,6 @@ package main
 import (
 	"context"
 	"fmt"
-	"io"
 	"net"
 	"net/http"
 	"os"
@@ -31,30 +30,22 @@ import (
 	"syscall"
 	"time"
 
+	"entgo.io/contrib/entgql"
+	"github.com/99designs/gqlgen/graphql/handler"
 	"github.com/99designs/gqlgen/graphql/playground"
-	root "github.com/testifysec/archivist"
-	"github.com/testifysec/archivist-api/pkg/api/archivist"
+	nested "github.com/antonfisher/nested-logrus-formatter"
+	"github.com/gorilla/handlers"
+	"github.com/gorilla/mux"
+	"github.com/networkservicemesh/sdk/pkg/tools/debug"
+	"github.com/networkservicemesh/sdk/pkg/tools/log"
+	"github.com/networkservicemesh/sdk/pkg/tools/log/logruslogger"
+	"github.com/sirupsen/logrus"
+	"github.com/testifysec/archivist"
 	"github.com/testifysec/archivist/internal/config"
 	"github.com/testifysec/archivist/internal/metadatastorage/mysqlstore"
 	"github.com/testifysec/archivist/internal/objectstorage/blobstore"
 	"github.com/testifysec/archivist/internal/objectstorage/filestore"
 	"github.com/testifysec/archivist/internal/server"
-
-	"entgo.io/contrib/entgql"
-	"github.com/99designs/gqlgen/graphql/handler"
-	nested "github.com/antonfisher/nested-logrus-formatter"
-	"github.com/gorilla/mux"
-	"github.com/networkservicemesh/sdk/pkg/tools/debug"
-	"github.com/networkservicemesh/sdk/pkg/tools/grpcutils"
-	"github.com/networkservicemesh/sdk/pkg/tools/log"
-	"github.com/networkservicemesh/sdk/pkg/tools/log/logruslogger"
-	"github.com/sirupsen/logrus"
-	"github.com/spiffe/go-spiffe/v2/spiffeid"
-	"github.com/spiffe/go-spiffe/v2/spiffetls/tlsconfig"
-	"github.com/spiffe/go-spiffe/v2/svid/x509svid"
-	"github.com/spiffe/go-spiffe/v2/workloadapi"
-	"google.golang.org/grpc"
-	"google.golang.org/grpc/credentials"
 )
 
 func main() {
@@ -92,20 +83,8 @@ func main() {
 
 	log.FromContext(ctx).WithField("duration", time.Since(now)).Infof("completed phase 1: get config from environment")
 
-	log.FromContext(ctx).Infof("executing phase 2: get spiffe svid (time since start: %s)", time.Since(startTime))
-	now = time.Now()
-
-	log.FromContext(ctx).WithField("duration", time.Since(now)).Infof("completed phase 2: retrieve spiffe svid")
-	grpcOptions := make([]grpc.ServerOption, 0)
-	if cfg.EnableSPIFFE {
-		opts := initSpiffeConnection(ctx, cfg)
-		grpcOptions = append(grpcOptions, opts...)
-	} else {
-		log.FromContext(ctx).WithField("duration", time.Since(now)).Infof("completed phase 2: SKIPPED")
-	}
-
 	// ********************************************************************************
-	log.FromContext(ctx).Infof("executing phase 3: initializing storage clients (time since start: %s)", time.Since(startTime))
+	log.FromContext(ctx).Infof("executing phase 2: initializing storage clients (time since start: %s)", time.Since(startTime))
 	// ********************************************************************************
 	now = time.Now()
 	fileStore, fileStoreCh, err := initObjectStore(ctx, cfg)
@@ -119,119 +98,65 @@ func main() {
 	}
 
 	log.FromContext(ctx).WithField("duration", time.Since(now)).Infof("completed phase 3: initializing storage clients")
+
 	// ********************************************************************************
-	log.FromContext(ctx).Infof("executing phase 4: create and register grpc service (time since start: %s)", time.Since(startTime))
-	// ********************************************************************************
-	now = time.Now()
-
-	grpcServer := grpc.NewServer(grpcOptions...)
-	archivistService := server.NewArchivistServer(mysqlStore)
-	archivist.RegisterArchivistServer(grpcServer, archivistService)
-
-	collectorService := server.NewCollectorServer(mysqlStore, fileStore)
-	archivist.RegisterCollectorServer(grpcServer, collectorService)
-
-	srvErrCh := grpcutils.ListenAndServe(ctx, &cfg.ListenOn, grpcServer)
-	exitOnErrCh(ctx, cancel, srvErrCh)
-
-	log.FromContext(ctx).WithField("duration", time.Since(now)).Infof("completed phase 4: create and register grpc server")
-	// ********************************************************************************
-	log.FromContext(ctx).Infof("executing phase 5: create and register http service (time since start: %s)", time.Since(startTime))
+	log.FromContext(ctx).Infof("executing phase 3: create and register http service (time since start: %s)", time.Since(startTime))
 	// ********************************************************************************
 	now = time.Now()
+	server := server.New(mysqlStore, fileStore)
+	router := mux.NewRouter()
+	router.HandleFunc("/download/{gitoid}", server.GetHandler)
+	router.HandleFunc("/upload", server.StoreHandler)
 
 	if cfg.EnableGraphql {
 		client := mysqlStore.GetClient()
-		srv := handler.NewDefaultServer(root.NewSchema(client))
-
+		srv := handler.NewDefaultServer(archivist.NewSchema(client))
 		srv.Use(entgql.Transactioner{TxOpener: client})
-		router := mux.NewRouter()
-
 		router.Handle("/query", srv)
-
 		if cfg.GraphqlWebClientEnable {
 			router.Handle("/",
 				playground.Handler("Archivist", "/query"),
 			)
 		}
-
-		p := &proxy{
-			client: fileStore,
-		}
-		router.Handle("/download/{gitoid}", p)
-
-		gqlAddress := cfg.GraphqlListenOn
-		gqlAddress = strings.ToLower(strings.TrimSpace(gqlAddress))
-		gqlProto := ""
-		if strings.HasPrefix(gqlAddress, "tcp://") {
-			gqlProto = "tcp"
-			gqlAddress = gqlAddress[len("tcp://"):]
-		} else if strings.HasPrefix(gqlAddress, "unix://") {
-			gqlProto = "unix"
-			gqlAddress = gqlAddress[len("unix://"):]
-		}
-
-		gqlListener, err := net.Listen(gqlProto, gqlAddress)
-		if err != nil {
-			log.FromContext(ctx).Fatalf("unable to start graphql listener: %+v", err)
-		}
-
-		corsRouter := &CORSRouterDecorator{router, cfg.CORSAllowOrigins}
-
-		go func() {
-			if err := http.Serve(gqlListener, corsRouter); err != nil {
-				log.FromContext(ctx).Fatalf("unable to start graphql server: %+v", err)
-			}
-		}()
-	} else {
-		log.FromContext(ctx).Info("graphql disabled, skipping")
 	}
 
-	log.FromContext(ctx).WithField("duration", time.Since(now)).Infof("completed phase 5: create and register http service")
+	listenAddress := cfg.ListenOn
+	listenAddress = strings.ToLower(strings.TrimSpace(listenAddress))
+	proto := ""
+	if strings.HasPrefix(listenAddress, "tcp://") {
+		proto = "tcp"
+		listenAddress = listenAddress[len("tcp://"):]
+	} else if strings.HasPrefix(listenAddress, "unix://") {
+		proto = "unix"
+		listenAddress = listenAddress[len("unix://"):]
+	}
 
+	listener, err := net.Listen(proto, listenAddress)
+	if err != nil {
+		log.FromContext(ctx).Fatalf("unable to start http listener: %+v", err)
+	}
+
+	go func() {
+		if err := http.Serve(listener, handlers.CORS(
+			handlers.AllowedOrigins(cfg.CORSAllowOrigins),
+			handlers.AllowedMethods([]string{"GET", "POST", "OPTIONS"}),
+			handlers.AllowedHeaders([]string{"Accept", "Content-Type", "Content-Length", "Accept-Encoding", "X-CSRF-Token", "Authorization"}),
+		)(router)); err != nil {
+			log.FromContext(ctx).Fatalf("unable to start http server: %+v", err)
+		}
+	}()
+
+	log.FromContext(ctx).WithField("duration", time.Since(now)).Infof("completed phase 5: create and register http service")
 	log.FromContext(ctx).Infof("startup complete (time since start: %s)", time.Since(startTime))
 
 	<-ctx.Done()
-	<-srvErrCh
 	<-fileStoreCh
 	<-mysqlStoreCh
 
 	log.FromContext(ctx).Infof("exiting, uptime: %v", time.Since(startTime))
 }
 
-func initSpiffeConnection(ctx context.Context, cfg *config.Config) []grpc.ServerOption {
-	var source *workloadapi.X509Source
-	var svid *x509svid.SVID
-	var authorizer tlsconfig.Authorizer
-
-	if cfg.SPIFFETrustedServerId != "" {
-		trustID := spiffeid.RequireFromString(cfg.SPIFFETrustedServerId)
-		authorizer = tlsconfig.AuthorizeID(trustID)
-	} else {
-		authorizer = tlsconfig.AuthorizeAny()
-	}
-
-	workloadOpts := []workloadapi.X509SourceOption{
-		workloadapi.WithClientOptions(workloadapi.WithAddr(cfg.SPIFFEAddress)),
-	}
-	source, err := workloadapi.NewX509Source(ctx, workloadOpts...)
-	if err != nil {
-		log.FromContext(ctx).Fatalf("error getting x509 source: %+v", err)
-	}
-	opts := []grpc.ServerOption{
-		grpc.Creds(credentials.NewTLS(tlsconfig.MTLSServerConfig(source, source, authorizer))),
-	}
-
-	svid, err = source.GetX509SVID()
-	if err != nil {
-		log.FromContext(ctx).Fatalf("error getting x509 svid: %+v", err)
-	}
-
-	log.FromContext(ctx).Infof("SVID: %q", svid.ID)
-	return opts
-}
-
-func initObjectStore(ctx context.Context, cfg *config.Config) (server.ObjectStorer, <-chan error, error) {
+func initObjectStore(ctx context.Context, cfg *config.Config) (server.StorerGetter, <-chan error, error) {
 	switch strings.ToUpper(cfg.StorageBackend) {
 	case "FILE":
 		return filestore.New(ctx, cfg.FileDir, cfg.FileServeOn)
@@ -257,67 +182,4 @@ func initObjectStore(ctx context.Context, cfg *config.Config) (server.ObjectStor
 	default:
 		return nil, nil, fmt.Errorf("unknown storage backend: %s", cfg.StorageBackend)
 	}
-}
-
-func exitOnErrCh(ctx context.Context, cancel context.CancelFunc, errCh <-chan error) {
-	// If we already have an error, log it and exit
-	select {
-	case err := <-errCh:
-		log.FromContext(ctx).Fatal(err)
-	default:
-	}
-	// Otherwise, wait for an error in the background to log and cancel
-	go func(ctx context.Context, errCh <-chan error) {
-		err := <-errCh
-		if err != nil {
-			log.FromContext(ctx).Error(err)
-		}
-		cancel()
-	}(ctx, errCh)
-}
-
-type proxy struct {
-	client server.ObjectStorer
-}
-
-func (p *proxy) ServeHTTP(w http.ResponseWriter, req *http.Request) {
-	vars := mux.Vars(req)
-	ctx := context.Background()
-	attestation, err := p.client.Get(ctx, &archivist.GetRequest{
-		Gitoid: vars["gitoid"],
-	})
-	if err != nil {
-		log.Default().Error(err)
-		// TODO handle error codes more effectively
-		w.WriteHeader(400)
-		return
-	}
-	_, err = io.Copy(w, attestation)
-	if err != nil {
-		log.Default().Error(err)
-		// TODO handle error codes more effectively
-		w.WriteHeader(500)
-		return
-	}
-}
-
-type CORSRouterDecorator struct {
-	Router  *mux.Router
-	origins []string
-}
-
-func (c *CORSRouterDecorator) ServeHTTP(w http.ResponseWriter, r *http.Request) {
-	for _, origin := range c.origins {
-		w.Header().Add("Access-Control-Allow-Origin", origin)
-	}
-	w.Header().Add("Access-Control-Allow-Methods", "GET, OPTIONS")
-	w.Header().Add("Access-Control-Allow-Headers", "Accept, Content-Type, Content-Length, Accept-Encoding, X-CSRF-Token, Authorization")
-
-	// Stop here for a Preflighted OPTIONS request.
-	if r.Method == "OPTIONS" {
-		return
-	}
-
-	c.Router.ServeHTTP(w, r)
-
 }

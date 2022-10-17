@@ -15,159 +15,129 @@
 package server
 
 import (
-	"bufio"
 	"bytes"
 	"context"
+	"encoding/json"
+	"errors"
+	"fmt"
 	"io"
+	"net/http"
+	"strings"
 
 	"github.com/edwarnicke/gitoid"
+	"github.com/gorilla/mux"
 	"github.com/networkservicemesh/sdk/pkg/tools/log"
-	"github.com/testifysec/archivist-api/pkg/api/archivist"
+	archivistapi "github.com/testifysec/archivist-api"
 )
 
-const ChunkSize = 64 * 1024 //64kb seems to be somewhat of an agreed upon message size when streaming: https://github.com/grpc/grpc.github.io/issues/371
-
-type archivistServer struct {
-	archivist.UnimplementedArchivistServer
-
-	store MetadataStorer
-}
-
-func NewArchivistServer(store MetadataStorer) archivist.ArchivistServer {
-	return &archivistServer{
-		store: store,
-	}
-}
-
-func (s *archivistServer) GetBySubjectDigest(request *archivist.GetBySubjectDigestRequest, server archivist.Archivist_GetBySubjectDigestServer) error {
-	ctx, cancel := context.WithCancel(server.Context())
-	defer cancel()
-	log.FromContext(ctx).Info("retrieving by subject... ")
-	responses, err := s.store.GetBySubjectDigest(ctx, request)
-	if err != nil {
-		return err
-	}
-
-	for response := range responses {
-		if err := server.Send(response); err != nil {
-			return err
-		}
-	}
-
-	return nil
-}
-
-func (s *archivistServer) GetSubjects(req *archivist.GetSubjectsRequest, server archivist.Archivist_GetSubjectsServer) error {
-	ctx, cancel := context.WithCancel(server.Context())
-	defer cancel()
-	subjects, err := s.store.GetSubjects(ctx, req)
-	if err != nil {
-		return err
-	}
-
-	for subject := range subjects {
-		if err := server.Send(subject); err != nil {
-			return err
-		}
-	}
-
-	return nil
-}
-
-type collectorServer struct {
-	archivist.UnimplementedCollectorServer
-
-	metadataStore MetadataStorer
-	objectStore   ObjectStorer
+type Server struct {
+	metadataStore Storer
+	objectStore   StorerGetter
 }
 
 type Storer interface {
 	Store(context.Context, string, []byte) error
 }
 
-type MetadataStorer interface {
+type Getter interface {
+	Get(context.Context, string) (io.ReadCloser, error)
+}
+
+type StorerGetter interface {
 	Storer
-	GetBySubjectDigest(context.Context, *archivist.GetBySubjectDigestRequest) (<-chan *archivist.GetBySubjectDigestResponse, error)
-	GetSubjects(context.Context, *archivist.GetSubjectsRequest) (<-chan *archivist.GetSubjectsResponse, error)
+	Getter
 }
 
-type ObjectStorer interface {
-	Storer
-	Get(context.Context, *archivist.GetRequest) (io.ReadCloser, error)
+func New(metadataStore Storer, objectStore StorerGetter) *Server {
+	return &Server{metadataStore, objectStore}
 }
 
-func NewCollectorServer(metadataStore MetadataStorer, objectStore ObjectStorer) archivist.CollectorServer {
-	return &collectorServer{
-		objectStore:   objectStore,
-		metadataStore: metadataStore,
-	}
-}
-
-func (s *collectorServer) Store(server archivist.Collector_StoreServer) error {
-	ctx := server.Context()
-	payload := make([]byte, 0)
-	for {
-		c, err := server.Recv()
-		if err == io.EOF {
-			break
-		}
-
-		if err != nil {
-			return err
-		}
-
-		payload = append(payload, c.GetChunk()...)
+func (s *Server) Store(ctx context.Context, r io.Reader) (archivistapi.StoreResponse, error) {
+	payload, err := io.ReadAll(r)
+	if err != nil {
+		return archivistapi.StoreResponse{}, err
 	}
 
-	// generate gitoid
-	gid, err := gitoid.New(bytes.NewBuffer(payload), gitoid.WithContentLength(int64(len(payload))), gitoid.WithSha256())
+	gid, err := gitoid.New(bytes.NewReader(payload), gitoid.WithContentLength(int64(len(payload))), gitoid.WithSha256())
 	if err != nil {
 		log.FromContext(ctx).Errorf("failed to generate gitoid: %v", err)
-		return err
+		return archivistapi.StoreResponse{}, err
 	}
 
 	if err := s.metadataStore.Store(ctx, gid.String(), payload); err != nil {
 		log.FromContext(ctx).Errorf("received error from metadata store: %+v", err)
-		return err
+		return archivistapi.StoreResponse{}, err
 	}
 
 	if s.objectStore != nil {
 		if err := s.objectStore.Store(ctx, gid.String(), payload); err != nil {
 			log.FromContext(ctx).Errorf("received error from object store: %+v", err)
-			return err
+			return archivistapi.StoreResponse{}, err
 		}
 	}
 
-	return server.SendAndClose(&archivist.StoreResponse{Gitoid: gid.String()})
+	return archivistapi.StoreResponse{Gitoid: gid.String()}, nil
 }
 
-func (s *collectorServer) Get(request *archivist.GetRequest, server archivist.Collector_GetServer) error {
-	if s.objectStore == nil {
-		return s.UnimplementedCollectorServer.Get(request, server)
+func (s *Server) StoreHandler(w http.ResponseWriter, r *http.Request) {
+	if r.Method != http.MethodPost {
+		http.Error(w, fmt.Sprintf("%s is an unsupported method", r.Method), http.StatusBadRequest)
+		return
 	}
 
-	objReader, err := s.objectStore.Get(server.Context(), request)
+	defer r.Body.Close()
+	resp, err := s.Store(r.Context(), r.Body)
 	if err != nil {
-		return err
+		http.Error(w, err.Error(), http.StatusBadRequest)
+		return
 	}
 
-	defer objReader.Close()
-	chunk := &archivist.Chunk{}
-	buf := make([]byte, ChunkSize)
-	r := bufio.NewReaderSize(objReader, ChunkSize)
-	for {
-		n, err := io.ReadFull(r, buf)
-		if err == io.EOF {
-			break
-		} else if err != nil && err != io.ErrUnexpectedEOF {
-			return err
-		}
-
-		chunk.Chunk = buf[:n]
-		if err := server.Send(chunk); err != nil {
-			return err
-		}
+	encoder := json.NewEncoder(w)
+	if err := encoder.Encode(resp); err != nil {
+		log.FromContext(r.Context()).Errorf("failed to copy storeresponse to response: %+v", err)
+		w.WriteHeader(http.StatusInternalServerError)
+		return
 	}
 
-	return nil
+	w.Header().Set("Content-Type", "application/json")
+}
+
+func (s *Server) Get(ctx context.Context, gitoid string) (io.ReadCloser, error) {
+	if len(strings.TrimSpace(gitoid)) == 0 {
+		return nil, errors.New("gitoid parameter is required")
+	}
+
+	if s.objectStore == nil {
+		return nil, errors.New("object store unavailable")
+	}
+
+	objReader, err := s.objectStore.Get(ctx, gitoid)
+	if err != nil {
+		log.FromContext(ctx).Errorf("failed to get object: %+v", err)
+	}
+
+	return objReader, err
+}
+
+func (s *Server) GetHandler(w http.ResponseWriter, r *http.Request) {
+	if r.Method != http.MethodGet {
+		http.Error(w, fmt.Sprintf("%s is an unsupported method", r.Method), http.StatusBadRequest)
+		return
+	}
+
+	vars := mux.Vars(r)
+	attestationReader, err := s.Get(r.Context(), vars["gitoid"])
+	if err != nil {
+		http.Error(w, err.Error(), http.StatusBadRequest)
+		return
+	}
+
+	defer attestationReader.Close()
+	if _, err := io.Copy(w, attestationReader); err != nil {
+		log.FromContext(r.Context()).Errorf("failed to copy attestation to response: %+v", err)
+		w.WriteHeader(http.StatusBadRequest)
+		return
+	}
+
+	w.Header().Set("Content-Type", "application/json")
 }

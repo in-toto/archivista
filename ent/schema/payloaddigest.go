@@ -18,6 +18,7 @@ import (
 	"entgo.io/ent"
 	"entgo.io/ent/schema/edge"
 	"entgo.io/ent/schema/field"
+	"entgo.io/ent/schema/index"
 )
 
 // PayloadDigest represents the digest of the payload of a DSSE envelope
@@ -39,5 +40,11 @@ func (PayloadDigest) Edges() []ent.Edge {
 		edge.From("dsse", Dsse.Type).
 			Ref("payload_digests").
 			Unique(),
+	}
+}
+
+func (PayloadDigest) Indexes() []ent.Index {
+	return []ent.Index{
+		index.Fields("value"),
 	}
 }

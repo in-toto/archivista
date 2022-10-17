@@ -20,7 +20,7 @@ build-and-push-server:
     KO_DOCKER_REPO: registry.gitlab.com/testifysec/judge-platform/archivist/archivist
   stage: build
   image:
-    name: registry.gitlab.com/testifysec/docker-images/ko:0.11.2
+    name: registry.gitlab.com/testifysec/docker-images/ko:0.11.2-go1.19.2
     entrypoint: [""]
   script:
     - ko auth login -u ${CI_REGISTRY_USER} -p ${CI_REGISTRY_PASSWORD} ${CI_REGISTRY}
@@ -31,7 +31,7 @@ build-and-push-client:
     KO_DOCKER_REPO: registry.gitlab.com/testifysec/judge-platform/archivist/archivistctl
   stage: build
   image:
-    name: registry.gitlab.com/testifysec/docker-images/ko:0.11.2
+    name: registry.gitlab.com/testifysec/docker-images/ko:0.11.2-go1.19.2
     entrypoint: [""]
   script:
     - ko auth login -u ${CI_REGISTRY_USER} -p ${CI_REGISTRY_PASSWORD} ${CI_REGISTRY}

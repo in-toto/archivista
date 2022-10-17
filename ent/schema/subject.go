@@ -15,9 +15,12 @@
 package schema
 
 import (
+	"entgo.io/contrib/entgql"
 	"entgo.io/ent"
+	"entgo.io/ent/schema"
 	"entgo.io/ent/schema/edge"
 	"entgo.io/ent/schema/field"
+	"entgo.io/ent/schema/index"
 )
 
 // Subject represents subjects from an in-toto statement.
@@ -39,5 +42,19 @@ func (Subject) Edges() []ent.Edge {
 
 		edge.From("statement", Statement.Type).
 			Ref("subjects").Unique(),
+	}
+}
+
+func (Subject) Indexes() []ent.Index {
+	return []ent.Index{
+		// Index on the "name" field.
+		index.Fields("name"),
+	}
+}
+
+func (Subject) Annotations() []schema.Annotation {
+	return []schema.Annotation{
+		entgql.RelayConnection(),
+		entgql.QueryField(),
 	}
 }

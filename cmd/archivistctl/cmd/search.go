@@ -15,19 +15,15 @@
 package cmd
 
 import (
-	"context"
 	"errors"
 	"fmt"
-	"io"
 	"strings"
 
 	"github.com/spf13/cobra"
-	"github.com/testifysec/archivist-api/pkg/api/archivist"
+	archivistapi "github.com/testifysec/archivist-api"
 )
 
 var (
-	collectionName string
-
 	searchCmd = &cobra.Command{
 		Use:          "search",
 		Short:        "Searches the archivist instance for an attestation matching a query",
@@ -48,25 +44,24 @@ Digests are expected to be in the form algorithm:digest, for instance: sha256:45
 			return nil
 		},
 		RunE: func(cmd *cobra.Command, args []string) error {
-			conn, err := newConn(archivistUrl)
-			if err != nil {
-				return nil
-			}
-
-			defer conn.Close()
 			algo, digest, err := validateDigestString(args[0])
 			if err != nil {
 				return err
 			}
 
-			return searchArchivist(cmd.Context(), archivist.NewArchivistClient(conn), algo, digest, collectionName)
+			results, err := archivistapi.GraphQlQuery[searchResults](cmd.Context(), archivistUrl, searchQuery, searchVars{Algorithm: algo, Digest: digest})
+			if err != nil {
+				return err
+			}
+
+			printResults(results)
+			return nil
 		},
 	}
 )
 
 func init() {
 	rootCmd.AddCommand(searchCmd)
-	searchCmd.Flags().StringVarP(&collectionName, "collectionname", "n", "", "Only envelopes containing an attestation collection with the provided name will be returned.")
 }
 
 func validateDigestString(ds string) (algo, digest string, err error) {
@@ -78,29 +73,67 @@ func validateDigestString(ds string) (algo, digest string, err error) {
 	return algo, digest, nil
 }
 
-func searchArchivist(ctx context.Context, client archivist.ArchivistClient, algo, digest, collName string) error {
-	req := &archivist.GetBySubjectDigestRequest{Algorithm: algo, Value: digest, CollectionName: collName}
-	stream, err := client.GetBySubjectDigest(ctx, req)
-	if err != nil {
-		return err
-	}
-
-	for {
-		resp, err := stream.Recv()
-		if err == io.EOF {
-			break
+func printResults(results searchResults) {
+	for _, edge := range results.Dsses.Edges {
+		fmt.Printf("Gitoid: %s\n", edge.Node.GitoidSha256)
+		fmt.Printf("Collection name: %s\n", edge.Node.Statement.AttestationCollection.Name)
+		types := make([]string, 0, len(edge.Node.Statement.AttestationCollection.Attestations))
+		for _, attestation := range edge.Node.Statement.AttestationCollection.Attestations {
+			types = append(types, attestation.Type)
 		}
 
-		if err != nil {
-			return err
-		}
-
-		printResponse(resp)
+		fmt.Printf("Attestations: %s\n\n", strings.Join(types, ", "))
 	}
-
-	return nil
 }
 
-func printResponse(resp *archivist.GetBySubjectDigestResponse) {
-	fmt.Printf("Gitoid: %s\nCollection name: %s\nAttestations: %s\n\n", resp.GetGitoid(), resp.GetCollectionName(), strings.Join(resp.GetAttestations(), ", "))
+type searchVars struct {
+	Algorithm string `json:"algo"`
+	Digest    string `json:"digest"`
 }
+
+type searchResults struct {
+	Dsses struct {
+		Edges []struct {
+			Node struct {
+				GitoidSha256 string `json:"gitoidSha256"`
+				Statement    struct {
+					AttestationCollection struct {
+						Name         string `json:"name"`
+						Attestations []struct {
+							Type string `json:"type"`
+						} `json:"attestations"`
+					} `json:"attestationCollections"`
+				} `json:"statement"`
+			} `json:"node"`
+		} `json:"edges"`
+	} `json:"dsses"`
+}
+
+const searchQuery = `query($algo: String!, $digest: String!) {
+  dsses(
+    where: {
+      hasStatementWith: {
+        hasSubjectsWith: {
+          hasSubjectDigestsWith: {
+            value: $digest, 
+            algorithm: $algo
+          }
+        }
+      }
+    }
+  ) {
+    edges {
+      node {
+        gitoidSha256
+        statement {
+          attestationCollections {
+            name
+            attestations {
+              type
+            }
+          }
+        }
+      }
+    }
+  }
+}`

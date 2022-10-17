@@ -23,7 +23,6 @@ import (
 	"path/filepath"
 
 	"github.com/gorilla/handlers"
-	"github.com/testifysec/archivist-api/pkg/api/archivist"
 )
 
 type Store struct {
@@ -44,8 +43,8 @@ func New(ctx context.Context, directory string, address string) (*Store, <-chan 
 	}, errCh, nil
 }
 
-func (s *Store) Get(ctx context.Context, request *archivist.GetRequest) (io.ReadCloser, error) {
-	return os.Open(filepath.Join(s.prefix, request.GetGitoid()+".json"))
+func (s *Store) Get(ctx context.Context, gitoid string) (io.ReadCloser, error) {
+	return os.Open(filepath.Join(s.prefix, gitoid+".json"))
 }
 
 func (s *Store) Store(ctx context.Context, gitoid string, payload []byte) error {
