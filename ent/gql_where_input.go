@@ -5,6 +5,7 @@ package ent
 import (
 	"errors"
 	"fmt"
+	"time"
 
 	"github.com/testifysec/archivist/ent/attestation"
 	"github.com/testifysec/archivist/ent/attestationcollection"
@@ -15,6 +16,7 @@ import (
 	"github.com/testifysec/archivist/ent/statement"
 	"github.com/testifysec/archivist/ent/subject"
 	"github.com/testifysec/archivist/ent/subjectdigest"
+	"github.com/testifysec/archivist/ent/timestamp"
 )
 
 // AttestationWhereInput represents a where input for filtering Attestation queries.
@@ -1041,6 +1043,10 @@ type SignatureWhereInput struct {
 	// "dsse" edge predicates.
 	HasDsse     *bool             `json:"hasDsse,omitempty"`
 	HasDsseWith []*DsseWhereInput `json:"hasDsseWith,omitempty"`
+
+	// "timestamps" edge predicates.
+	HasTimestamps     *bool                  `json:"hasTimestamps,omitempty"`
+	HasTimestampsWith []*TimestampWhereInput `json:"hasTimestampsWith,omitempty"`
 }
 
 // AddPredicates adds custom predicates to the where input to be used during the filtering phase.
@@ -1234,6 +1240,24 @@ func (i *SignatureWhereInput) P() (predicate.Signature, error) {
 			with = append(with, p)
 		}
 		predicates = append(predicates, signature.HasDsseWith(with...))
+	}
+	if i.HasTimestamps != nil {
+		p := signature.HasTimestamps()
+		if !*i.HasTimestamps {
+			p = signature.Not(p)
+		}
+		predicates = append(predicates, p)
+	}
+	if len(i.HasTimestampsWith) > 0 {
+		with := make([]predicate.Timestamp, 0, len(i.HasTimestampsWith))
+		for _, w := range i.HasTimestampsWith {
+			p, err := w.P()
+			if err != nil {
+				return nil, fmt.Errorf("%w: field 'HasTimestampsWith'", err)
+			}
+			with = append(with, p)
+		}
+		predicates = append(predicates, signature.HasTimestampsWith(with...))
 	}
 	switch len(predicates) {
 	case 0:
@@ -1962,5 +1986,239 @@ func (i *SubjectDigestWhereInput) P() (predicate.SubjectDigest, error) {
 		return predicates[0], nil
 	default:
 		return subjectdigest.And(predicates...), nil
+	}
+}
+
+// TimestampWhereInput represents a where input for filtering Timestamp queries.
+type TimestampWhereInput struct {
+	Predicates []predicate.Timestamp  `json:"-"`
+	Not        *TimestampWhereInput   `json:"not,omitempty"`
+	Or         []*TimestampWhereInput `json:"or,omitempty"`
+	And        []*TimestampWhereInput `json:"and,omitempty"`
+
+	// "id" field predicates.
+	ID      *int  `json:"id,omitempty"`
+	IDNEQ   *int  `json:"idNEQ,omitempty"`
+	IDIn    []int `json:"idIn,omitempty"`
+	IDNotIn []int `json:"idNotIn,omitempty"`
+	IDGT    *int  `json:"idGT,omitempty"`
+	IDGTE   *int  `json:"idGTE,omitempty"`
+	IDLT    *int  `json:"idLT,omitempty"`
+	IDLTE   *int  `json:"idLTE,omitempty"`
+
+	// "type" field predicates.
+	Type             *string  `json:"type,omitempty"`
+	TypeNEQ          *string  `json:"typeNEQ,omitempty"`
+	TypeIn           []string `json:"typeIn,omitempty"`
+	TypeNotIn        []string `json:"typeNotIn,omitempty"`
+	TypeGT           *string  `json:"typeGT,omitempty"`
+	TypeGTE          *string  `json:"typeGTE,omitempty"`
+	TypeLT           *string  `json:"typeLT,omitempty"`
+	TypeLTE          *string  `json:"typeLTE,omitempty"`
+	TypeContains     *string  `json:"typeContains,omitempty"`
+	TypeHasPrefix    *string  `json:"typeHasPrefix,omitempty"`
+	TypeHasSuffix    *string  `json:"typeHasSuffix,omitempty"`
+	TypeEqualFold    *string  `json:"typeEqualFold,omitempty"`
+	TypeContainsFold *string  `json:"typeContainsFold,omitempty"`
+
+	// "timestamp" field predicates.
+	Timestamp      *time.Time  `json:"timestamp,omitempty"`
+	TimestampNEQ   *time.Time  `json:"timestampNEQ,omitempty"`
+	TimestampIn    []time.Time `json:"timestampIn,omitempty"`
+	TimestampNotIn []time.Time `json:"timestampNotIn,omitempty"`
+	TimestampGT    *time.Time  `json:"timestampGT,omitempty"`
+	TimestampGTE   *time.Time  `json:"timestampGTE,omitempty"`
+	TimestampLT    *time.Time  `json:"timestampLT,omitempty"`
+	TimestampLTE   *time.Time  `json:"timestampLTE,omitempty"`
+
+	// "signature" edge predicates.
+	HasSignature     *bool                  `json:"hasSignature,omitempty"`
+	HasSignatureWith []*SignatureWhereInput `json:"hasSignatureWith,omitempty"`
+}
+
+// AddPredicates adds custom predicates to the where input to be used during the filtering phase.
+func (i *TimestampWhereInput) AddPredicates(predicates ...predicate.Timestamp) {
+	i.Predicates = append(i.Predicates, predicates...)
+}
+
+// Filter applies the TimestampWhereInput filter on the TimestampQuery builder.
+func (i *TimestampWhereInput) Filter(q *TimestampQuery) (*TimestampQuery, error) {
+	if i == nil {
+		return q, nil
+	}
+	p, err := i.P()
+	if err != nil {
+		if err == ErrEmptyTimestampWhereInput {
+			return q, nil
+		}
+		return nil, err
+	}
+	return q.Where(p), nil
+}
+
+// ErrEmptyTimestampWhereInput is returned in case the TimestampWhereInput is empty.
+var ErrEmptyTimestampWhereInput = errors.New("ent: empty predicate TimestampWhereInput")
+
+// P returns a predicate for filtering timestamps.
+// An error is returned if the input is empty or invalid.
+func (i *TimestampWhereInput) P() (predicate.Timestamp, error) {
+	var predicates []predicate.Timestamp
+	if i.Not != nil {
+		p, err := i.Not.P()
+		if err != nil {
+			return nil, fmt.Errorf("%w: field 'not'", err)
+		}
+		predicates = append(predicates, timestamp.Not(p))
+	}
+	switch n := len(i.Or); {
+	case n == 1:
+		p, err := i.Or[0].P()
+		if err != nil {
+			return nil, fmt.Errorf("%w: field 'or'", err)
+		}
+		predicates = append(predicates, p)
+	case n > 1:
+		or := make([]predicate.Timestamp, 0, n)
+		for _, w := range i.Or {
+			p, err := w.P()
+			if err != nil {
+				return nil, fmt.Errorf("%w: field 'or'", err)
+			}
+			or = append(or, p)
+		}
+		predicates = append(predicates, timestamp.Or(or...))
+	}
+	switch n := len(i.And); {
+	case n == 1:
+		p, err := i.And[0].P()
+		if err != nil {
+			return nil, fmt.Errorf("%w: field 'and'", err)
+		}
+		predicates = append(predicates, p)
+	case n > 1:
+		and := make([]predicate.Timestamp, 0, n)
+		for _, w := range i.And {
+			p, err := w.P()
+			if err != nil {
+				return nil, fmt.Errorf("%w: field 'and'", err)
+			}
+			and = append(and, p)
+		}
+		predicates = append(predicates, timestamp.And(and...))
+	}
+	predicates = append(predicates, i.Predicates...)
+	if i.ID != nil {
+		predicates = append(predicates, timestamp.IDEQ(*i.ID))
+	}
+	if i.IDNEQ != nil {
+		predicates = append(predicates, timestamp.IDNEQ(*i.IDNEQ))
+	}
+	if len(i.IDIn) > 0 {
+		predicates = append(predicates, timestamp.IDIn(i.IDIn...))
+	}
+	if len(i.IDNotIn) > 0 {
+		predicates = append(predicates, timestamp.IDNotIn(i.IDNotIn...))
+	}
+	if i.IDGT != nil {
+		predicates = append(predicates, timestamp.IDGT(*i.IDGT))
+	}
+	if i.IDGTE != nil {
+		predicates = append(predicates, timestamp.IDGTE(*i.IDGTE))
+	}
+	if i.IDLT != nil {
+		predicates = append(predicates, timestamp.IDLT(*i.IDLT))
+	}
+	if i.IDLTE != nil {
+		predicates = append(predicates, timestamp.IDLTE(*i.IDLTE))
+	}
+	if i.Type != nil {
+		predicates = append(predicates, timestamp.TypeEQ(*i.Type))
+	}
+	if i.TypeNEQ != nil {
+		predicates = append(predicates, timestamp.TypeNEQ(*i.TypeNEQ))
+	}
+	if len(i.TypeIn) > 0 {
+		predicates = append(predicates, timestamp.TypeIn(i.TypeIn...))
+	}
+	if len(i.TypeNotIn) > 0 {
+		predicates = append(predicates, timestamp.TypeNotIn(i.TypeNotIn...))
+	}
+	if i.TypeGT != nil {
+		predicates = append(predicates, timestamp.TypeGT(*i.TypeGT))
+	}
+	if i.TypeGTE != nil {
+		predicates = append(predicates, timestamp.TypeGTE(*i.TypeGTE))
+	}
+	if i.TypeLT != nil {
+		predicates = append(predicates, timestamp.TypeLT(*i.TypeLT))
+	}
+	if i.TypeLTE != nil {
+		predicates = append(predicates, timestamp.TypeLTE(*i.TypeLTE))
+	}
+	if i.TypeContains != nil {
+		predicates = append(predicates, timestamp.TypeContains(*i.TypeContains))
+	}
+	if i.TypeHasPrefix != nil {
+		predicates = append(predicates, timestamp.TypeHasPrefix(*i.TypeHasPrefix))
+	}
+	if i.TypeHasSuffix != nil {
+		predicates = append(predicates, timestamp.TypeHasSuffix(*i.TypeHasSuffix))
+	}
+	if i.TypeEqualFold != nil {
+		predicates = append(predicates, timestamp.TypeEqualFold(*i.TypeEqualFold))
+	}
+	if i.TypeContainsFold != nil {
+		predicates = append(predicates, timestamp.TypeContainsFold(*i.TypeContainsFold))
+	}
+	if i.Timestamp != nil {
+		predicates = append(predicates, timestamp.TimestampEQ(*i.Timestamp))
+	}
+	if i.TimestampNEQ != nil {
+		predicates = append(predicates, timestamp.TimestampNEQ(*i.TimestampNEQ))
+	}
+	if len(i.TimestampIn) > 0 {
+		predicates = append(predicates, timestamp.TimestampIn(i.TimestampIn...))
+	}
+	if len(i.TimestampNotIn) > 0 {
+		predicates = append(predicates, timestamp.TimestampNotIn(i.TimestampNotIn...))
+	}
+	if i.TimestampGT != nil {
+		predicates = append(predicates, timestamp.TimestampGT(*i.TimestampGT))
+	}
+	if i.TimestampGTE != nil {
+		predicates = append(predicates, timestamp.TimestampGTE(*i.TimestampGTE))
+	}
+	if i.TimestampLT != nil {
+		predicates = append(predicates, timestamp.TimestampLT(*i.TimestampLT))
+	}
+	if i.TimestampLTE != nil {
+		predicates = append(predicates, timestamp.TimestampLTE(*i.TimestampLTE))
+	}
+
+	if i.HasSignature != nil {
+		p := timestamp.HasSignature()
+		if !*i.HasSignature {
+			p = timestamp.Not(p)
+		}
+		predicates = append(predicates, p)
+	}
+	if len(i.HasSignatureWith) > 0 {
+		with := make([]predicate.Signature, 0, len(i.HasSignatureWith))
+		for _, w := range i.HasSignatureWith {
+			p, err := w.P()
+			if err != nil {
+				return nil, fmt.Errorf("%w: field 'HasSignatureWith'", err)
+			}
+			with = append(with, p)
+		}
+		predicates = append(predicates, timestamp.HasSignatureWith(with...))
+	}
+	switch len(predicates) {
+	case 0:
+		return nil, ErrEmptyTimestampWhereInput
+	case 1:
+		return predicates[0], nil
+	default:
+		return timestamp.And(predicates...), nil
 	}
 }

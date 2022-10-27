@@ -72,6 +72,14 @@ func (s *Signature) Dsse(ctx context.Context) (*Dsse, error) {
 	return result, MaskNotFound(err)
 }
 
+func (s *Signature) Timestamps(ctx context.Context) ([]*Timestamp, error) {
+	result, err := s.Edges.TimestampsOrErr()
+	if IsNotLoaded(err) {
+		result, err = s.QueryTimestamps().All(ctx)
+	}
+	return result, err
+}
+
 func (s *Statement) Subjects(
 	ctx context.Context, after *Cursor, first *int, before *Cursor, last *int, where *SubjectWhereInput,
 ) (*SubjectConnection, error) {
@@ -179,6 +187,14 @@ func (sd *SubjectDigest) Subject(ctx context.Context) (*Subject, error) {
 	result, err := sd.Edges.SubjectOrErr()
 	if IsNotLoaded(err) {
 		result, err = sd.QuerySubject().Only(ctx)
+	}
+	return result, MaskNotFound(err)
+}
+
+func (t *Timestamp) Signature(ctx context.Context) (*Signature, error) {
+	result, err := t.Edges.SignatureOrErr()
+	if IsNotLoaded(err) {
+		result, err = t.QuerySignature().Only(ctx)
 	}
 	return result, MaskNotFound(err)
 }

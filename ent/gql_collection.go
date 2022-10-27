@@ -300,6 +300,15 @@ func (s *SignatureQuery) collectField(ctx context.Context, op *graphql.Operation
 				return err
 			}
 			s.withDsse = query
+		case "timestamps":
+			var (
+				path  = append(path, field.Name)
+				query = &TimestampQuery{config: s.config}
+			)
+			if err := query.collectField(ctx, op, field, path, satisfies...); err != nil {
+				return err
+			}
+			s.withTimestamps = query
 		}
 	}
 	return nil
@@ -622,6 +631,65 @@ func newSubjectDigestPaginateArgs(rv map[string]interface{}) *subjectdigestPagin
 	}
 	if v, ok := rv[whereField].(*SubjectDigestWhereInput); ok {
 		args.opts = append(args.opts, WithSubjectDigestFilter(v.Filter))
+	}
+	return args
+}
+
+// CollectFields tells the query-builder to eagerly load connected nodes by resolver context.
+func (t *TimestampQuery) CollectFields(ctx context.Context, satisfies ...string) (*TimestampQuery, error) {
+	fc := graphql.GetFieldContext(ctx)
+	if fc == nil {
+		return t, nil
+	}
+	if err := t.collectField(ctx, graphql.GetOperationContext(ctx), fc.Field, nil, satisfies...); err != nil {
+		return nil, err
+	}
+	return t, nil
+}
+
+func (t *TimestampQuery) collectField(ctx context.Context, op *graphql.OperationContext, field graphql.CollectedField, path []string, satisfies ...string) error {
+	path = append([]string(nil), path...)
+	for _, field := range graphql.CollectFields(op, field.Selections, satisfies) {
+		switch field.Name {
+		case "signature":
+			var (
+				path  = append(path, field.Name)
+				query = &SignatureQuery{config: t.config}
+			)
+			if err := query.collectField(ctx, op, field, path, satisfies...); err != nil {
+				return err
+			}
+			t.withSignature = query
+		}
+	}
+	return nil
+}
+
+type timestampPaginateArgs struct {
+	first, last   *int
+	after, before *Cursor
+	opts          []TimestampPaginateOption
+}
+
+func newTimestampPaginateArgs(rv map[string]interface{}) *timestampPaginateArgs {
+	args := &timestampPaginateArgs{}
+	if rv == nil {
+		return args
+	}
+	if v := rv[firstField]; v != nil {
+		args.first = v.(*int)
+	}
+	if v := rv[lastField]; v != nil {
+		args.last = v.(*int)
+	}
+	if v := rv[afterField]; v != nil {
+		args.after = v.(*Cursor)
+	}
+	if v := rv[beforeField]; v != nil {
+		args.before = v.(*Cursor)
+	}
+	if v, ok := rv[whereField].(*TimestampWhereInput); ok {
+		args.opts = append(args.opts, WithTimestampFilter(v.Filter))
 	}
 	return args
 }

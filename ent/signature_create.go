@@ -11,6 +11,7 @@ import (
 	"entgo.io/ent/schema/field"
 	"github.com/testifysec/archivist/ent/dsse"
 	"github.com/testifysec/archivist/ent/signature"
+	"github.com/testifysec/archivist/ent/timestamp"
 )
 
 // SignatureCreate is the builder for creating a Signature entity.
@@ -49,6 +50,21 @@ func (sc *SignatureCreate) SetNillableDsseID(id *int) *SignatureCreate {
 // SetDsse sets the "dsse" edge to the Dsse entity.
 func (sc *SignatureCreate) SetDsse(d *Dsse) *SignatureCreate {
 	return sc.SetDsseID(d.ID)
+}
+
+// AddTimestampIDs adds the "timestamps" edge to the Timestamp entity by IDs.
+func (sc *SignatureCreate) AddTimestampIDs(ids ...int) *SignatureCreate {
+	sc.mutation.AddTimestampIDs(ids...)
+	return sc
+}
+
+// AddTimestamps adds the "timestamps" edges to the Timestamp entity.
+func (sc *SignatureCreate) AddTimestamps(t ...*Timestamp) *SignatureCreate {
+	ids := make([]int, len(t))
+	for i := range t {
+		ids[i] = t[i].ID
+	}
+	return sc.AddTimestampIDs(ids...)
 }
 
 // Mutation returns the SignatureMutation object of the builder.
@@ -204,6 +220,25 @@ func (sc *SignatureCreate) createSpec() (*Signature, *sqlgraph.CreateSpec) {
 			edge.Target.Nodes = append(edge.Target.Nodes, k)
 		}
 		_node.dsse_signatures = &nodes[0]
+		_spec.Edges = append(_spec.Edges, edge)
+	}
+	if nodes := sc.mutation.TimestampsIDs(); len(nodes) > 0 {
+		edge := &sqlgraph.EdgeSpec{
+			Rel:     sqlgraph.O2M,
+			Inverse: false,
+			Table:   signature.TimestampsTable,
+			Columns: []string{signature.TimestampsColumn},
+			Bidi:    false,
+			Target: &sqlgraph.EdgeTarget{
+				IDSpec: &sqlgraph.FieldSpec{
+					Type:   field.TypeInt,
+					Column: timestamp.FieldID,
+				},
+			},
+		}
+		for _, k := range nodes {
+			edge.Target.Nodes = append(edge.Target.Nodes, k)
+		}
 		_spec.Edges = append(_spec.Edges, edge)
 	}
 	return _node, _spec

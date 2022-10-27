@@ -18,6 +18,7 @@ import (
 	"github.com/testifysec/archivist/ent/statement"
 	"github.com/testifysec/archivist/ent/subject"
 	"github.com/testifysec/archivist/ent/subjectdigest"
+	"github.com/testifysec/archivist/ent/timestamp"
 )
 
 // ent aliases to avoid import conflicts in user's code.
@@ -46,6 +47,7 @@ func columnChecker(table string) func(string) error {
 		statement.Table:             statement.ValidColumn,
 		subject.Table:               subject.ValidColumn,
 		subjectdigest.Table:         subjectdigest.ValidColumn,
+		timestamp.Table:             timestamp.ValidColumn,
 	}
 	check, ok := checks[table]
 	if !ok {

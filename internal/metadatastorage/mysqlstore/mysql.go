@@ -24,14 +24,14 @@ import (
 
 	"ariga.io/sqlcomment"
 	"entgo.io/ent/dialect/sql"
+	"github.com/digitorus/timestamp"
+	"github.com/go-sql-driver/mysql"
 	"github.com/networkservicemesh/sdk/pkg/tools/log"
 	"github.com/testifysec/archivist/ent"
 	"github.com/testifysec/go-witness/attestation"
 	"github.com/testifysec/go-witness/cryptoutil"
 	"github.com/testifysec/go-witness/dsse"
 	"github.com/testifysec/go-witness/intoto"
-
-	_ "github.com/go-sql-driver/mysql"
 )
 
 // mysql has a limit of 65536 parameters in a single query. each subject has ~2 parameters [statment id and name],
@@ -47,6 +47,13 @@ type Store struct {
 }
 
 func New(ctx context.Context, connectionstring string) (*Store, <-chan error, error) {
+	dbConfig, err := mysql.ParseDSN(connectionstring)
+	if err != nil {
+		return nil, nil, err
+	}
+
+	dbConfig.ParseTime = true
+	connectionstring = dbConfig.FormatDSN()
 	drv, err := sql.Open("mysql", connectionstring)
 	if err != nil {
 		return nil, nil, err
@@ -150,13 +157,29 @@ func (s *Store) Store(ctx context.Context, gitoid string, obj []byte) error {
 		}
 
 		for _, sig := range envelope.Signatures {
-			_, err = tx.Signature.Create().
+			storedSig, err := tx.Signature.Create().
 				SetKeyID(sig.KeyID).
 				SetSignature(base64.StdEncoding.EncodeToString(sig.Signature)).
 				SetDsse(dsse).
 				Save(ctx)
 			if err != nil {
 				return err
+			}
+
+			for _, timestamp := range sig.Timestamps {
+				timestampedTime, err := timeFromTimestamp(timestamp)
+				if err != nil {
+					return err
+				}
+
+				_, err = tx.Timestamp.Create().
+					SetSignature(storedSig).
+					SetTimestamp(timestampedTime).
+					SetType(string(timestamp.Type)).
+					Save(ctx)
+				if err != nil {
+					return err
+				}
 			}
 		}
 
@@ -273,4 +296,18 @@ func batch[TCreate any, TResult any](ctx context.Context, batchSize int, create 
 	}
 
 	return results, nil
+}
+
+func timeFromTimestamp(ts dsse.SignatureTimestamp) (time.Time, error) {
+	switch ts.Type {
+	case dsse.TimestampRFC3161:
+		tspResponse, err := timestamp.Parse(ts.Data)
+		if err != nil {
+			return time.Time{}, nil
+		}
+
+		return tspResponse.Time, nil
+	default:
+		return time.Time{}, fmt.Errorf("unknown timestamp type: %v", ts.Type)
+	}
 }

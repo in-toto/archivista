@@ -32,6 +32,7 @@ type hooks struct {
 	Statement             []ent.Hook
 	Subject               []ent.Hook
 	SubjectDigest         []ent.Hook
+	Timestamp             []ent.Hook
 }
 
 // Options applies the options on the config object.
