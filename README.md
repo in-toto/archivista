@@ -1,5 +1,9 @@
 # archivist
 
+Archivist helps organizations discover attestations and provenance of their software artifacts.
+
+Archivist is an attestation store with first-class support for Witness attestations but supports any [in-toto](https://in-toto.io) attestation making it work well with other open-source tools that generate in-toto attestations.
+
 ## building
 
 ```sh
