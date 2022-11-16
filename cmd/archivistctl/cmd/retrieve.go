@@ -15,7 +15,6 @@
 package cmd
 
 import (
-	"encoding/json"
 	"fmt"
 	"io"
 	"os"
@@ -51,13 +50,7 @@ var (
 				out = file
 			}
 
-			env, err := archivistapi.Download(cmd.Context(), archivistUrl, args[0])
-			if err != nil {
-				return err
-			}
-
-			enc := json.NewEncoder(out)
-			return enc.Encode(env)
+			return archivistapi.DownloadWithWriter(cmd.Context(), archivistUrl, args[0], out)
 		},
 	}
 

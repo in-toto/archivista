@@ -16,13 +16,11 @@ package cmd
 
 import (
 	"context"
-	"encoding/json"
 	"fmt"
 	"os"
 
 	"github.com/spf13/cobra"
 	archivistapi "github.com/testifysec/archivist-api"
-	"github.com/testifysec/go-witness/dsse"
 )
 
 var (
@@ -56,13 +54,7 @@ func storeAttestationByPath(ctx context.Context, baseUrl, path string) (string, 
 	}
 
 	defer file.Close()
-	dec := json.NewDecoder(file)
-	env := dsse.Envelope{}
-	if err := dec.Decode(&env); err != nil {
-		return "", err
-	}
-
-	resp, err := archivistapi.Store(ctx, baseUrl, env)
+	resp, err := archivistapi.StoreWithReader(ctx, baseUrl, file)
 	if err != nil {
 		return "", err
 	}

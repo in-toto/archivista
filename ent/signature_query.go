@@ -4,6 +4,7 @@ package ent
 
 import (
 	"context"
+	"database/sql/driver"
 	"fmt"
 	"math"
 
@@ -13,21 +14,23 @@ import (
 	"github.com/testifysec/archivist/ent/dsse"
 	"github.com/testifysec/archivist/ent/predicate"
 	"github.com/testifysec/archivist/ent/signature"
+	"github.com/testifysec/archivist/ent/timestamp"
 )
 
 // SignatureQuery is the builder for querying Signature entities.
 type SignatureQuery struct {
 	config
-	limit      *int
-	offset     *int
-	unique     *bool
-	order      []OrderFunc
-	fields     []string
-	predicates []predicate.Signature
-	withDsse   *DsseQuery
-	withFKs    bool
-	modifiers  []func(*sql.Selector)
-	loadTotal  []func(context.Context, []*Signature) error
+	limit          *int
+	offset         *int
+	unique         *bool
+	order          []OrderFunc
+	fields         []string
+	predicates     []predicate.Signature
+	withDsse       *DsseQuery
+	withTimestamps *TimestampQuery
+	withFKs        bool
+	modifiers      []func(*sql.Selector)
+	loadTotal      []func(context.Context, []*Signature) error
 	// intermediate query (i.e. traversal path).
 	sql  *sql.Selector
 	path func(context.Context) (*sql.Selector, error)
@@ -79,6 +82,28 @@ func (sq *SignatureQuery) QueryDsse() *DsseQuery {
 			sqlgraph.From(signature.Table, signature.FieldID, selector),
 			sqlgraph.To(dsse.Table, dsse.FieldID),
 			sqlgraph.Edge(sqlgraph.M2O, true, signature.DsseTable, signature.DsseColumn),
+		)
+		fromU = sqlgraph.SetNeighbors(sq.driver.Dialect(), step)
+		return fromU, nil
+	}
+	return query
+}
+
+// QueryTimestamps chains the current query on the "timestamps" edge.
+func (sq *SignatureQuery) QueryTimestamps() *TimestampQuery {
+	query := &TimestampQuery{config: sq.config}
+	query.path = func(ctx context.Context) (fromU *sql.Selector, err error) {
+		if err := sq.prepareQuery(ctx); err != nil {
+			return nil, err
+		}
+		selector := sq.sqlQuery(ctx)
+		if err := selector.Err(); err != nil {
+			return nil, err
+		}
+		step := sqlgraph.NewStep(
+			sqlgraph.From(signature.Table, signature.FieldID, selector),
+			sqlgraph.To(timestamp.Table, timestamp.FieldID),
+			sqlgraph.Edge(sqlgraph.O2M, false, signature.TimestampsTable, signature.TimestampsColumn),
 		)
 		fromU = sqlgraph.SetNeighbors(sq.driver.Dialect(), step)
 		return fromU, nil
@@ -262,12 +287,13 @@ func (sq *SignatureQuery) Clone() *SignatureQuery {
 		return nil
 	}
 	return &SignatureQuery{
-		config:     sq.config,
-		limit:      sq.limit,
-		offset:     sq.offset,
-		order:      append([]OrderFunc{}, sq.order...),
-		predicates: append([]predicate.Signature{}, sq.predicates...),
-		withDsse:   sq.withDsse.Clone(),
+		config:         sq.config,
+		limit:          sq.limit,
+		offset:         sq.offset,
+		order:          append([]OrderFunc{}, sq.order...),
+		predicates:     append([]predicate.Signature{}, sq.predicates...),
+		withDsse:       sq.withDsse.Clone(),
+		withTimestamps: sq.withTimestamps.Clone(),
 		// clone intermediate query.
 		sql:    sq.sql.Clone(),
 		path:   sq.path,
@@ -283,6 +309,17 @@ func (sq *SignatureQuery) WithDsse(opts ...func(*DsseQuery)) *SignatureQuery {
 		opt(query)
 	}
 	sq.withDsse = query
+	return sq
+}
+
+// WithTimestamps tells the query-builder to eager-load the nodes that are connected to
+// the "timestamps" edge. The optional arguments are used to configure the query builder of the edge.
+func (sq *SignatureQuery) WithTimestamps(opts ...func(*TimestampQuery)) *SignatureQuery {
+	query := &TimestampQuery{config: sq.config}
+	for _, opt := range opts {
+		opt(query)
+	}
+	sq.withTimestamps = query
 	return sq
 }
 
@@ -355,8 +392,9 @@ func (sq *SignatureQuery) sqlAll(ctx context.Context, hooks ...queryHook) ([]*Si
 		nodes       = []*Signature{}
 		withFKs     = sq.withFKs
 		_spec       = sq.querySpec()
-		loadedTypes = [1]bool{
+		loadedTypes = [2]bool{
 			sq.withDsse != nil,
+			sq.withTimestamps != nil,
 		}
 	)
 	if sq.withDsse != nil {
@@ -389,6 +427,13 @@ func (sq *SignatureQuery) sqlAll(ctx context.Context, hooks ...queryHook) ([]*Si
 	if query := sq.withDsse; query != nil {
 		if err := sq.loadDsse(ctx, query, nodes, nil,
 			func(n *Signature, e *Dsse) { n.Edges.Dsse = e }); err != nil {
+			return nil, err
+		}
+	}
+	if query := sq.withTimestamps; query != nil {
+		if err := sq.loadTimestamps(ctx, query, nodes,
+			func(n *Signature) { n.Edges.Timestamps = []*Timestamp{} },
+			func(n *Signature, e *Timestamp) { n.Edges.Timestamps = append(n.Edges.Timestamps, e) }); err != nil {
 			return nil, err
 		}
 	}
@@ -426,6 +471,37 @@ func (sq *SignatureQuery) loadDsse(ctx context.Context, query *DsseQuery, nodes 
 		for i := range nodes {
 			assign(nodes[i], n)
 		}
+	}
+	return nil
+}
+func (sq *SignatureQuery) loadTimestamps(ctx context.Context, query *TimestampQuery, nodes []*Signature, init func(*Signature), assign func(*Signature, *Timestamp)) error {
+	fks := make([]driver.Value, 0, len(nodes))
+	nodeids := make(map[int]*Signature)
+	for i := range nodes {
+		fks = append(fks, nodes[i].ID)
+		nodeids[nodes[i].ID] = nodes[i]
+		if init != nil {
+			init(nodes[i])
+		}
+	}
+	query.withFKs = true
+	query.Where(predicate.Timestamp(func(s *sql.Selector) {
+		s.Where(sql.InValues(signature.TimestampsColumn, fks...))
+	}))
+	neighbors, err := query.All(ctx)
+	if err != nil {
+		return err
+	}
+	for _, n := range neighbors {
+		fk := n.signature_timestamps
+		if fk == nil {
+			return fmt.Errorf(`foreign-key "signature_timestamps" is nil for node %v`, n.ID)
+		}
+		node, ok := nodeids[*fk]
+		if !ok {
+			return fmt.Errorf(`unexpected foreign-key "signature_timestamps" returned %v for node %v`, *fk, n.ID)
+		}
+		assign(node, n)
 	}
 	return nil
 }

@@ -8,6 +8,7 @@ require (
 	entgo.io/ent v0.11.3
 	github.com/99designs/gqlgen v0.17.5-0.20220428154617-9250f9ac1f90
 	github.com/antonfisher/nested-logrus-formatter v1.3.1
+	github.com/digitorus/timestamp v0.0.0-20220704143351-8225fba02d52
 	github.com/edwarnicke/gitoid v0.0.0-20220710194850-1be5bfda1f9d
 	github.com/go-sql-driver/mysql v1.6.0
 	github.com/gorilla/handlers v1.5.1
@@ -18,8 +19,8 @@ require (
 	github.com/networkservicemesh/sdk v1.6.0
 	github.com/sirupsen/logrus v1.9.0
 	github.com/spf13/cobra v1.5.0
-	github.com/testifysec/archivist-api v0.0.0-20221012004029-f5ceac2d8a3b
-	github.com/testifysec/go-witness v0.1.13
+	github.com/testifysec/archivist-api v0.0.0-20221115001947-07357e56e17e
+	github.com/testifysec/go-witness v0.1.15
 	github.com/vektah/gqlparser/v2 v2.4.7
 	github.com/vmihailenco/msgpack/v5 v5.0.0-beta.9
 	golang.org/x/sync v0.0.0-20220907140024-f12130a52804
@@ -31,11 +32,13 @@ require (
 	github.com/agnivade/levenshtein v1.1.1 // indirect
 	github.com/apparentlymart/go-textseg/v13 v13.0.0 // indirect
 	github.com/cenkalti/backoff/v4 v4.1.3 // indirect
+	github.com/digitorus/pkcs7 v0.0.0-20220704143225-a9c8106cbfc6 // indirect
 	github.com/felixge/httpsnoop v1.0.2 // indirect
-	github.com/go-ini/ini v1.66.4 // indirect
+	github.com/go-ini/ini v1.67.0 // indirect
 	github.com/go-logr/logr v1.2.3 // indirect
 	github.com/go-logr/stdr v1.2.2 // indirect
 	github.com/go-openapi/inflect v0.19.0 // indirect
+	github.com/go-test/deep v1.0.8 // indirect
 	github.com/golang/groupcache v0.0.0-20210331224755-41bb18bfe9da // indirect
 	github.com/golang/protobuf v1.5.2 // indirect
 	github.com/google/go-cmp v0.5.8 // indirect
@@ -46,6 +49,8 @@ require (
 	github.com/hashicorp/golang-lru v0.5.4 // indirect
 	github.com/hashicorp/hcl/v2 v2.13.0 // indirect
 	github.com/inconshreveable/mousetrap v1.0.0 // indirect
+	github.com/kr/pretty v0.3.0 // indirect
+	github.com/kylelemons/godebug v1.1.0 // indirect
 	github.com/mitchellh/go-homedir v1.1.0 // indirect
 	github.com/mitchellh/go-wordwrap v0.0.0-20150314170334-ad45545899c7 // indirect
 	github.com/mitchellh/mapstructure v1.5.0 // indirect
@@ -74,5 +79,6 @@ require (
 	google.golang.org/genproto v0.0.0-20220908141613-51c1cc9bc6d0 // indirect
 	google.golang.org/grpc v1.49.0 // indirect
 	google.golang.org/protobuf v1.28.1 // indirect
+	gopkg.in/check.v1 v1.0.0-20201130134442-10cb98267c6c // indirect
 	gopkg.in/yaml.v2 v2.4.0 // indirect
 )

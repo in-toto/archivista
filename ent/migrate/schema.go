@@ -212,6 +212,27 @@ var (
 			},
 		},
 	}
+	// TimestampsColumns holds the columns for the "timestamps" table.
+	TimestampsColumns = []*schema.Column{
+		{Name: "id", Type: field.TypeInt, Increment: true},
+		{Name: "type", Type: field.TypeString},
+		{Name: "timestamp", Type: field.TypeTime},
+		{Name: "signature_timestamps", Type: field.TypeInt, Nullable: true},
+	}
+	// TimestampsTable holds the schema information for the "timestamps" table.
+	TimestampsTable = &schema.Table{
+		Name:       "timestamps",
+		Columns:    TimestampsColumns,
+		PrimaryKey: []*schema.Column{TimestampsColumns[0]},
+		ForeignKeys: []*schema.ForeignKey{
+			{
+				Symbol:     "timestamps_signatures_timestamps",
+				Columns:    []*schema.Column{TimestampsColumns[3]},
+				RefColumns: []*schema.Column{SignaturesColumns[0]},
+				OnDelete:   schema.SetNull,
+			},
+		},
+	}
 	// Tables holds all the tables in the schema.
 	Tables = []*schema.Table{
 		AttestationsTable,
@@ -222,6 +243,7 @@ var (
 		StatementsTable,
 		SubjectsTable,
 		SubjectDigestsTable,
+		TimestampsTable,
 	}
 )
 
@@ -233,4 +255,5 @@ func init() {
 	SignaturesTable.ForeignKeys[0].RefTable = DssesTable
 	SubjectsTable.ForeignKeys[0].RefTable = StatementsTable
 	SubjectDigestsTable.ForeignKeys[0].RefTable = SubjectsTable
+	TimestampsTable.ForeignKeys[0].RefTable = SignaturesTable
 }

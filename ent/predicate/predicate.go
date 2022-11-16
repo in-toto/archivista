@@ -29,3 +29,6 @@ type Subject func(*sql.Selector)
 
 // SubjectDigest is the predicate function for subjectdigest builders.
 type SubjectDigest func(*sql.Selector)
+
+// Timestamp is the predicate function for timestamp builders.
+type Timestamp func(*sql.Selector)

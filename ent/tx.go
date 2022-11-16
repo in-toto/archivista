@@ -28,6 +28,8 @@ type Tx struct {
 	Subject *SubjectClient
 	// SubjectDigest is the client for interacting with the SubjectDigest builders.
 	SubjectDigest *SubjectDigestClient
+	// Timestamp is the client for interacting with the Timestamp builders.
+	Timestamp *TimestampClient
 
 	// lazily loaded.
 	client     *Client
@@ -171,6 +173,7 @@ func (tx *Tx) init() {
 	tx.Statement = NewStatementClient(tx.config)
 	tx.Subject = NewSubjectClient(tx.config)
 	tx.SubjectDigest = NewSubjectDigestClient(tx.config)
+	tx.Timestamp = NewTimestampClient(tx.config)
 }
 
 // txDriver wraps the given dialect.Tx with a nop dialect.Driver implementation.

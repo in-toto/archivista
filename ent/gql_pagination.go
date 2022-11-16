@@ -22,6 +22,7 @@ import (
 	"github.com/testifysec/archivist/ent/statement"
 	"github.com/testifysec/archivist/ent/subject"
 	"github.com/testifysec/archivist/ent/subjectdigest"
+	"github.com/testifysec/archivist/ent/timestamp"
 	"github.com/vektah/gqlparser/v2/gqlerror"
 	"github.com/vmihailenco/msgpack/v5"
 )
@@ -2125,5 +2126,240 @@ func (sd *SubjectDigest) ToEdge(order *SubjectDigestOrder) *SubjectDigestEdge {
 	return &SubjectDigestEdge{
 		Node:   sd,
 		Cursor: order.Field.toCursor(sd),
+	}
+}
+
+// TimestampEdge is the edge representation of Timestamp.
+type TimestampEdge struct {
+	Node   *Timestamp `json:"node"`
+	Cursor Cursor     `json:"cursor"`
+}
+
+// TimestampConnection is the connection containing edges to Timestamp.
+type TimestampConnection struct {
+	Edges      []*TimestampEdge `json:"edges"`
+	PageInfo   PageInfo         `json:"pageInfo"`
+	TotalCount int              `json:"totalCount"`
+}
+
+func (c *TimestampConnection) build(nodes []*Timestamp, pager *timestampPager, after *Cursor, first *int, before *Cursor, last *int) {
+	c.PageInfo.HasNextPage = before != nil
+	c.PageInfo.HasPreviousPage = after != nil
+	if first != nil && *first+1 == len(nodes) {
+		c.PageInfo.HasNextPage = true
+		nodes = nodes[:len(nodes)-1]
+	} else if last != nil && *last+1 == len(nodes) {
+		c.PageInfo.HasPreviousPage = true
+		nodes = nodes[:len(nodes)-1]
+	}
+	var nodeAt func(int) *Timestamp
+	if last != nil {
+		n := len(nodes) - 1
+		nodeAt = func(i int) *Timestamp {
+			return nodes[n-i]
+		}
+	} else {
+		nodeAt = func(i int) *Timestamp {
+			return nodes[i]
+		}
+	}
+	c.Edges = make([]*TimestampEdge, len(nodes))
+	for i := range nodes {
+		node := nodeAt(i)
+		c.Edges[i] = &TimestampEdge{
+			Node:   node,
+			Cursor: pager.toCursor(node),
+		}
+	}
+	if l := len(c.Edges); l > 0 {
+		c.PageInfo.StartCursor = &c.Edges[0].Cursor
+		c.PageInfo.EndCursor = &c.Edges[l-1].Cursor
+	}
+	if c.TotalCount == 0 {
+		c.TotalCount = len(nodes)
+	}
+}
+
+// TimestampPaginateOption enables pagination customization.
+type TimestampPaginateOption func(*timestampPager) error
+
+// WithTimestampOrder configures pagination ordering.
+func WithTimestampOrder(order *TimestampOrder) TimestampPaginateOption {
+	if order == nil {
+		order = DefaultTimestampOrder
+	}
+	o := *order
+	return func(pager *timestampPager) error {
+		if err := o.Direction.Validate(); err != nil {
+			return err
+		}
+		if o.Field == nil {
+			o.Field = DefaultTimestampOrder.Field
+		}
+		pager.order = &o
+		return nil
+	}
+}
+
+// WithTimestampFilter configures pagination filter.
+func WithTimestampFilter(filter func(*TimestampQuery) (*TimestampQuery, error)) TimestampPaginateOption {
+	return func(pager *timestampPager) error {
+		if filter == nil {
+			return errors.New("TimestampQuery filter cannot be nil")
+		}
+		pager.filter = filter
+		return nil
+	}
+}
+
+type timestampPager struct {
+	order  *TimestampOrder
+	filter func(*TimestampQuery) (*TimestampQuery, error)
+}
+
+func newTimestampPager(opts []TimestampPaginateOption) (*timestampPager, error) {
+	pager := &timestampPager{}
+	for _, opt := range opts {
+		if err := opt(pager); err != nil {
+			return nil, err
+		}
+	}
+	if pager.order == nil {
+		pager.order = DefaultTimestampOrder
+	}
+	return pager, nil
+}
+
+func (p *timestampPager) applyFilter(query *TimestampQuery) (*TimestampQuery, error) {
+	if p.filter != nil {
+		return p.filter(query)
+	}
+	return query, nil
+}
+
+func (p *timestampPager) toCursor(t *Timestamp) Cursor {
+	return p.order.Field.toCursor(t)
+}
+
+func (p *timestampPager) applyCursors(query *TimestampQuery, after, before *Cursor) *TimestampQuery {
+	for _, predicate := range cursorsToPredicates(
+		p.order.Direction, after, before,
+		p.order.Field.field, DefaultTimestampOrder.Field.field,
+	) {
+		query = query.Where(predicate)
+	}
+	return query
+}
+
+func (p *timestampPager) applyOrder(query *TimestampQuery, reverse bool) *TimestampQuery {
+	direction := p.order.Direction
+	if reverse {
+		direction = direction.reverse()
+	}
+	query = query.Order(direction.orderFunc(p.order.Field.field))
+	if p.order.Field != DefaultTimestampOrder.Field {
+		query = query.Order(direction.orderFunc(DefaultTimestampOrder.Field.field))
+	}
+	return query
+}
+
+func (p *timestampPager) orderExpr(reverse bool) sql.Querier {
+	direction := p.order.Direction
+	if reverse {
+		direction = direction.reverse()
+	}
+	return sql.ExprFunc(func(b *sql.Builder) {
+		b.Ident(p.order.Field.field).Pad().WriteString(string(direction))
+		if p.order.Field != DefaultTimestampOrder.Field {
+			b.Comma().Ident(DefaultTimestampOrder.Field.field).Pad().WriteString(string(direction))
+		}
+	})
+}
+
+// Paginate executes the query and returns a relay based cursor connection to Timestamp.
+func (t *TimestampQuery) Paginate(
+	ctx context.Context, after *Cursor, first *int,
+	before *Cursor, last *int, opts ...TimestampPaginateOption,
+) (*TimestampConnection, error) {
+	if err := validateFirstLast(first, last); err != nil {
+		return nil, err
+	}
+	pager, err := newTimestampPager(opts)
+	if err != nil {
+		return nil, err
+	}
+	if t, err = pager.applyFilter(t); err != nil {
+		return nil, err
+	}
+	conn := &TimestampConnection{Edges: []*TimestampEdge{}}
+	if !hasCollectedField(ctx, edgesField) || first != nil && *first == 0 || last != nil && *last == 0 {
+		if hasCollectedField(ctx, totalCountField) || hasCollectedField(ctx, pageInfoField) {
+			if conn.TotalCount, err = t.Count(ctx); err != nil {
+				return nil, err
+			}
+			conn.PageInfo.HasNextPage = first != nil && conn.TotalCount > 0
+			conn.PageInfo.HasPreviousPage = last != nil && conn.TotalCount > 0
+		}
+		return conn, nil
+	}
+
+	if (after != nil || first != nil || before != nil || last != nil) && hasCollectedField(ctx, totalCountField) {
+		count, err := t.Clone().Count(ctx)
+		if err != nil {
+			return nil, err
+		}
+		conn.TotalCount = count
+	}
+
+	t = pager.applyCursors(t, after, before)
+	t = pager.applyOrder(t, last != nil)
+	if limit := paginateLimit(first, last); limit != 0 {
+		t.Limit(limit)
+	}
+	if field := collectedField(ctx, edgesField, nodeField); field != nil {
+		if err := t.collectField(ctx, graphql.GetOperationContext(ctx), *field, []string{edgesField, nodeField}); err != nil {
+			return nil, err
+		}
+	}
+
+	nodes, err := t.All(ctx)
+	if err != nil || len(nodes) == 0 {
+		return conn, err
+	}
+	conn.build(nodes, pager, after, first, before, last)
+	return conn, nil
+}
+
+// TimestampOrderField defines the ordering field of Timestamp.
+type TimestampOrderField struct {
+	field    string
+	toCursor func(*Timestamp) Cursor
+}
+
+// TimestampOrder defines the ordering of Timestamp.
+type TimestampOrder struct {
+	Direction OrderDirection       `json:"direction"`
+	Field     *TimestampOrderField `json:"field"`
+}
+
+// DefaultTimestampOrder is the default ordering of Timestamp.
+var DefaultTimestampOrder = &TimestampOrder{
+	Direction: OrderDirectionAsc,
+	Field: &TimestampOrderField{
+		field: timestamp.FieldID,
+		toCursor: func(t *Timestamp) Cursor {
+			return Cursor{ID: t.ID}
+		},
+	},
+}
+
+// ToEdge converts Timestamp into TimestampEdge.
+func (t *Timestamp) ToEdge(order *TimestampOrder) *TimestampEdge {
+	if order == nil {
+		order = DefaultTimestampOrder
+	}
+	return &TimestampEdge{
+		Node:   t,
+		Cursor: order.Field.toCursor(t),
 	}
 }

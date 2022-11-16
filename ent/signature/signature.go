@@ -13,6 +13,8 @@ const (
 	FieldSignature = "signature"
 	// EdgeDsse holds the string denoting the dsse edge name in mutations.
 	EdgeDsse = "dsse"
+	// EdgeTimestamps holds the string denoting the timestamps edge name in mutations.
+	EdgeTimestamps = "timestamps"
 	// Table holds the table name of the signature in the database.
 	Table = "signatures"
 	// DsseTable is the table that holds the dsse relation/edge.
@@ -22,6 +24,13 @@ const (
 	DsseInverseTable = "dsses"
 	// DsseColumn is the table column denoting the dsse relation/edge.
 	DsseColumn = "dsse_signatures"
+	// TimestampsTable is the table that holds the timestamps relation/edge.
+	TimestampsTable = "timestamps"
+	// TimestampsInverseTable is the table name for the Timestamp entity.
+	// It exists in this package in order to avoid circular dependency with the "timestamp" package.
+	TimestampsInverseTable = "timestamps"
+	// TimestampsColumn is the table column denoting the timestamps relation/edge.
+	TimestampsColumn = "signature_timestamps"
 )
 
 // Columns holds all SQL columns for signature fields.

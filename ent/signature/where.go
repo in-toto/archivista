@@ -319,6 +319,34 @@ func HasDsseWith(preds ...predicate.Dsse) predicate.Signature {
 	})
 }
 
+// HasTimestamps applies the HasEdge predicate on the "timestamps" edge.
+func HasTimestamps() predicate.Signature {
+	return predicate.Signature(func(s *sql.Selector) {
+		step := sqlgraph.NewStep(
+			sqlgraph.From(Table, FieldID),
+			sqlgraph.To(TimestampsTable, FieldID),
+			sqlgraph.Edge(sqlgraph.O2M, false, TimestampsTable, TimestampsColumn),
+		)
+		sqlgraph.HasNeighbors(s, step)
+	})
+}
+
+// HasTimestampsWith applies the HasEdge predicate on the "timestamps" edge with a given conditions (other predicates).
+func HasTimestampsWith(preds ...predicate.Timestamp) predicate.Signature {
+	return predicate.Signature(func(s *sql.Selector) {
+		step := sqlgraph.NewStep(
+			sqlgraph.From(Table, FieldID),
+			sqlgraph.To(TimestampsInverseTable, FieldID),
+			sqlgraph.Edge(sqlgraph.O2M, false, TimestampsTable, TimestampsColumn),
+		)
+		sqlgraph.HasNeighborsWith(s, step, func(s *sql.Selector) {
+			for _, p := range preds {
+				p(s)
+			}
+		})
+	})
+}
+
 // And groups predicates with the AND operator between them.
 func And(predicates ...predicate.Signature) predicate.Signature {
 	return predicate.Signature(func(s *sql.Selector) {

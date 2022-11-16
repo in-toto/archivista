@@ -30,11 +30,13 @@ type Signature struct {
 type SignatureEdges struct {
 	// Dsse holds the value of the dsse edge.
 	Dsse *Dsse `json:"dsse,omitempty"`
+	// Timestamps holds the value of the timestamps edge.
+	Timestamps []*Timestamp `json:"timestamps,omitempty"`
 	// loadedTypes holds the information for reporting if a
 	// type was loaded (or requested) in eager-loading or not.
-	loadedTypes [1]bool
+	loadedTypes [2]bool
 	// totalCount holds the count of the edges above.
-	totalCount [1]*int
+	totalCount [2]*int
 }
 
 // DsseOrErr returns the Dsse value or an error if the edge
@@ -48,6 +50,15 @@ func (e SignatureEdges) DsseOrErr() (*Dsse, error) {
 		return e.Dsse, nil
 	}
 	return nil, &NotLoadedError{edge: "dsse"}
+}
+
+// TimestampsOrErr returns the Timestamps value or an error if the edge
+// was not loaded in eager-loading.
+func (e SignatureEdges) TimestampsOrErr() ([]*Timestamp, error) {
+	if e.loadedTypes[1] {
+		return e.Timestamps, nil
+	}
+	return nil, &NotLoadedError{edge: "timestamps"}
 }
 
 // scanValues returns the types for scanning values from sql.Rows.
@@ -109,6 +120,11 @@ func (s *Signature) assignValues(columns []string, values []any) error {
 // QueryDsse queries the "dsse" edge of the Signature entity.
 func (s *Signature) QueryDsse() *DsseQuery {
 	return (&SignatureClient{config: s.config}).QueryDsse(s)
+}
+
+// QueryTimestamps queries the "timestamps" edge of the Signature entity.
+func (s *Signature) QueryTimestamps() *TimestampQuery {
+	return (&SignatureClient{config: s.config}).QueryTimestamps(s)
 }
 
 // Update returns a builder for updating this Signature.

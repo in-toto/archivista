@@ -18,6 +18,7 @@ import (
 	"github.com/testifysec/archivist/ent/statement"
 	"github.com/testifysec/archivist/ent/subject"
 	"github.com/testifysec/archivist/ent/subjectdigest"
+	"github.com/testifysec/archivist/ent/timestamp"
 
 	"entgo.io/ent/dialect"
 	"entgo.io/ent/dialect/sql"
@@ -45,6 +46,8 @@ type Client struct {
 	Subject *SubjectClient
 	// SubjectDigest is the client for interacting with the SubjectDigest builders.
 	SubjectDigest *SubjectDigestClient
+	// Timestamp is the client for interacting with the Timestamp builders.
+	Timestamp *TimestampClient
 	// additional fields for node api
 	tables tables
 }
@@ -68,6 +71,7 @@ func (c *Client) init() {
 	c.Statement = NewStatementClient(c.config)
 	c.Subject = NewSubjectClient(c.config)
 	c.SubjectDigest = NewSubjectDigestClient(c.config)
+	c.Timestamp = NewTimestampClient(c.config)
 }
 
 // Open opens a database/sql.DB specified by the driver name and
@@ -109,6 +113,7 @@ func (c *Client) Tx(ctx context.Context) (*Tx, error) {
 		Statement:             NewStatementClient(cfg),
 		Subject:               NewSubjectClient(cfg),
 		SubjectDigest:         NewSubjectDigestClient(cfg),
+		Timestamp:             NewTimestampClient(cfg),
 	}, nil
 }
 
@@ -136,6 +141,7 @@ func (c *Client) BeginTx(ctx context.Context, opts *sql.TxOptions) (*Tx, error) 
 		Statement:             NewStatementClient(cfg),
 		Subject:               NewSubjectClient(cfg),
 		SubjectDigest:         NewSubjectDigestClient(cfg),
+		Timestamp:             NewTimestampClient(cfg),
 	}, nil
 }
 
@@ -172,6 +178,7 @@ func (c *Client) Use(hooks ...Hook) {
 	c.Statement.Use(hooks...)
 	c.Subject.Use(hooks...)
 	c.SubjectDigest.Use(hooks...)
+	c.Timestamp.Use(hooks...)
 }
 
 // AttestationClient is a client for the Attestation schema.
@@ -747,6 +754,22 @@ func (c *SignatureClient) QueryDsse(s *Signature) *DsseQuery {
 	return query
 }
 
+// QueryTimestamps queries the timestamps edge of a Signature.
+func (c *SignatureClient) QueryTimestamps(s *Signature) *TimestampQuery {
+	query := &TimestampQuery{config: c.config}
+	query.path = func(ctx context.Context) (fromV *sql.Selector, _ error) {
+		id := s.ID
+		step := sqlgraph.NewStep(
+			sqlgraph.From(signature.Table, signature.FieldID, id),
+			sqlgraph.To(timestamp.Table, timestamp.FieldID),
+			sqlgraph.Edge(sqlgraph.O2M, false, signature.TimestampsTable, signature.TimestampsColumn),
+		)
+		fromV = sqlgraph.Neighbors(s.driver.Dialect(), step)
+		return fromV, nil
+	}
+	return query
+}
+
 // Hooks returns the client hooks.
 func (c *SignatureClient) Hooks() []Hook {
 	return c.hooks.Signature
@@ -1116,4 +1139,110 @@ func (c *SubjectDigestClient) QuerySubject(sd *SubjectDigest) *SubjectQuery {
 // Hooks returns the client hooks.
 func (c *SubjectDigestClient) Hooks() []Hook {
 	return c.hooks.SubjectDigest
+}
+
+// TimestampClient is a client for the Timestamp schema.
+type TimestampClient struct {
+	config
+}
+
+// NewTimestampClient returns a client for the Timestamp from the given config.
+func NewTimestampClient(c config) *TimestampClient {
+	return &TimestampClient{config: c}
+}
+
+// Use adds a list of mutation hooks to the hooks stack.
+// A call to `Use(f, g, h)` equals to `timestamp.Hooks(f(g(h())))`.
+func (c *TimestampClient) Use(hooks ...Hook) {
+	c.hooks.Timestamp = append(c.hooks.Timestamp, hooks...)
+}
+
+// Create returns a builder for creating a Timestamp entity.
+func (c *TimestampClient) Create() *TimestampCreate {
+	mutation := newTimestampMutation(c.config, OpCreate)
+	return &TimestampCreate{config: c.config, hooks: c.Hooks(), mutation: mutation}
+}
+
+// CreateBulk returns a builder for creating a bulk of Timestamp entities.
+func (c *TimestampClient) CreateBulk(builders ...*TimestampCreate) *TimestampCreateBulk {
+	return &TimestampCreateBulk{config: c.config, builders: builders}
+}
+
+// Update returns an update builder for Timestamp.
+func (c *TimestampClient) Update() *TimestampUpdate {
+	mutation := newTimestampMutation(c.config, OpUpdate)
+	return &TimestampUpdate{config: c.config, hooks: c.Hooks(), mutation: mutation}
+}
+
+// UpdateOne returns an update builder for the given entity.
+func (c *TimestampClient) UpdateOne(t *Timestamp) *TimestampUpdateOne {
+	mutation := newTimestampMutation(c.config, OpUpdateOne, withTimestamp(t))
+	return &TimestampUpdateOne{config: c.config, hooks: c.Hooks(), mutation: mutation}
+}
+
+// UpdateOneID returns an update builder for the given id.
+func (c *TimestampClient) UpdateOneID(id int) *TimestampUpdateOne {
+	mutation := newTimestampMutation(c.config, OpUpdateOne, withTimestampID(id))
+	return &TimestampUpdateOne{config: c.config, hooks: c.Hooks(), mutation: mutation}
+}
+
+// Delete returns a delete builder for Timestamp.
+func (c *TimestampClient) Delete() *TimestampDelete {
+	mutation := newTimestampMutation(c.config, OpDelete)
+	return &TimestampDelete{config: c.config, hooks: c.Hooks(), mutation: mutation}
+}
+
+// DeleteOne returns a builder for deleting the given entity.
+func (c *TimestampClient) DeleteOne(t *Timestamp) *TimestampDeleteOne {
+	return c.DeleteOneID(t.ID)
+}
+
+// DeleteOne returns a builder for deleting the given entity by its id.
+func (c *TimestampClient) DeleteOneID(id int) *TimestampDeleteOne {
+	builder := c.Delete().Where(timestamp.ID(id))
+	builder.mutation.id = &id
+	builder.mutation.op = OpDeleteOne
+	return &TimestampDeleteOne{builder}
+}
+
+// Query returns a query builder for Timestamp.
+func (c *TimestampClient) Query() *TimestampQuery {
+	return &TimestampQuery{
+		config: c.config,
+	}
+}
+
+// Get returns a Timestamp entity by its id.
+func (c *TimestampClient) Get(ctx context.Context, id int) (*Timestamp, error) {
+	return c.Query().Where(timestamp.ID(id)).Only(ctx)
+}
+
+// GetX is like Get, but panics if an error occurs.
+func (c *TimestampClient) GetX(ctx context.Context, id int) *Timestamp {
+	obj, err := c.Get(ctx, id)
+	if err != nil {
+		panic(err)
+	}
+	return obj
+}
+
+// QuerySignature queries the signature edge of a Timestamp.
+func (c *TimestampClient) QuerySignature(t *Timestamp) *SignatureQuery {
+	query := &SignatureQuery{config: c.config}
+	query.path = func(ctx context.Context) (fromV *sql.Selector, _ error) {
+		id := t.ID
+		step := sqlgraph.NewStep(
+			sqlgraph.From(timestamp.Table, timestamp.FieldID, id),
+			sqlgraph.To(signature.Table, signature.FieldID),
+			sqlgraph.Edge(sqlgraph.M2O, true, timestamp.SignatureTable, timestamp.SignatureColumn),
+		)
+		fromV = sqlgraph.Neighbors(t.driver.Dialect(), step)
+		return fromV, nil
+	}
+	return query
+}
+
+// Hooks returns the client hooks.
+func (c *TimestampClient) Hooks() []Hook {
+	return c.hooks.Timestamp
 }
