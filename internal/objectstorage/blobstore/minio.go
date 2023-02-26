@@ -19,9 +19,10 @@ import (
 	"context"
 	"fmt"
 	"io"
+	"os"
 
-	"github.com/minio/minio-go"
-	"github.com/minio/minio-go/pkg/credentials"
+	"github.com/minio/minio-go/v6"
+	"github.com/minio/minio-go/v6/pkg/credentials"
 )
 
 type Store struct {
@@ -44,24 +45,35 @@ func (store *Store) PutBlob(idx string, obj []byte) error {
 }
 
 // New returns a reader/writer for storing/retrieving attestations
-func New(ctx context.Context, endpoint, accessKeyId, secretAccessKeyId, bucketName string, useTLS bool) (*Store, <-chan error, error) {
+func New(ctx context.Context, endpoint, accessKeyId, secretAccessKeyId, bucketName string, useTLS bool, useIRSA bool) (*Store, <-chan error, error) {
 	errCh := make(chan error)
 	go func() {
 		<-ctx.Done()
 		close(errCh)
 	}()
 
+  var creds *credentials.Credentials
+  if useIRSA {
+    creds = credentials.NewIAM("https://sts.amazonaws.com")
+  } else {
+    creds = credentials.NewStaticV4(accessKeyId, secretAccessKeyId, "")
+  }
+
 	c, err := minio.NewWithOptions(endpoint, &minio.Options{
-		Creds:  credentials.NewStaticV4(accessKeyId, secretAccessKeyId, ""),
+		Creds:  creds,
 		Secure: useTLS,
+		//BucketLookup: minio.BucketLookupDNS,
 	})
 	if err != nil {
 		return nil, errCh, err
 	}
 
+	c.TraceOn(os.Stdout) 
+	c.TraceErrorsOnlyOff()
+
 	exists, err := c.BucketExists(bucketName)
 	if !exists || err != nil {
-		return nil, errCh, fmt.Errorf("failed to find bucket exists: %v", err)
+		return nil, errCh, fmt.Errorf("failed to find bucket: %s error: %v", bucketName, err)
 	}
 
 	loc, err := c.GetBucketLocation(bucketName)

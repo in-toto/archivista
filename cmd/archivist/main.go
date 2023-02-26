@@ -162,6 +162,10 @@ func initObjectStore(ctx context.Context, cfg *config.Config) (server.StorerGett
 		return filestore.New(ctx, cfg.FileDir, cfg.FileServeOn)
 
 	case "BLOB":
+		log.FromContext(ctx).Debugf("cfg.BlobStoreEndpoint %s", cfg.BlobStoreEndpoint)
+		log.FromContext(ctx).Debugf("cfg.BlobStoreBucketName %s", cfg.BlobStoreBucketName)
+		log.FromContext(ctx).Debugf("cfg.BlobStoreUseTLS %s", cfg.BlobStoreUseTLS)
+		log.FromContext(ctx).Debugf("cfg.BlobStoreUseIRSA %s", cfg.BlobStoreUseIRSA)
 		return blobstore.New(
 			ctx,
 			cfg.BlobStoreEndpoint,
@@ -169,6 +173,7 @@ func initObjectStore(ctx context.Context, cfg *config.Config) (server.StorerGett
 			cfg.BlobStoreSecretAccessKeyId,
 			cfg.BlobStoreBucketName,
 			cfg.BlobStoreUseTLS,
+			cfg.BlobStoreUseIRSA,
 		)
 
 	case "":
