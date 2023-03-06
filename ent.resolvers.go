@@ -1,4 +1,4 @@
-// Copyright 2022 The Archivist Contributors
+// Copyright 2023 The Archivista Contributors
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -12,7 +12,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-package archivist
+package archivista
 
 // This file will be automatically regenerated based on the schema, any resolver implementations
 // will be copied through when generating and any unknown code will be moved to the end.
@@ -20,7 +20,7 @@ package archivist
 import (
 	"context"
 
-	"github.com/testifysec/archivist/ent"
+	"github.com/testifysec/archivista/ent"
 )
 
 func (r *queryResolver) Node(ctx context.Context, id int) (ent.Noder, error) {

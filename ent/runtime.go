@@ -3,15 +3,15 @@
 package ent
 
 import (
-	"github.com/testifysec/archivist/ent/attestation"
-	"github.com/testifysec/archivist/ent/attestationcollection"
-	"github.com/testifysec/archivist/ent/dsse"
-	"github.com/testifysec/archivist/ent/payloaddigest"
-	"github.com/testifysec/archivist/ent/schema"
-	"github.com/testifysec/archivist/ent/signature"
-	"github.com/testifysec/archivist/ent/statement"
-	"github.com/testifysec/archivist/ent/subject"
-	"github.com/testifysec/archivist/ent/subjectdigest"
+	"github.com/testifysec/archivista/ent/attestation"
+	"github.com/testifysec/archivista/ent/attestationcollection"
+	"github.com/testifysec/archivista/ent/dsse"
+	"github.com/testifysec/archivista/ent/payloaddigest"
+	"github.com/testifysec/archivista/ent/schema"
+	"github.com/testifysec/archivista/ent/signature"
+	"github.com/testifysec/archivista/ent/statement"
+	"github.com/testifysec/archivista/ent/subject"
+	"github.com/testifysec/archivista/ent/subjectdigest"
 )
 
 // The init function reads all schema descriptors with runtime code

@@ -1,4 +1,4 @@
-// Copyright 2022 The Archivist Contributors
+// Copyright 2022 The Archivista Contributors
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -20,15 +20,15 @@ import (
 	"strings"
 
 	"github.com/spf13/cobra"
-	archivistapi "github.com/testifysec/archivist-api"
+	archivistaapi "github.com/testifysec/archivista-api"
 )
 
 var (
 	searchCmd = &cobra.Command{
 		Use:          "search",
-		Short:        "Searches the archivist instance for an attestation matching a query",
+		Short:        "Searches the archivista instance for an attestation matching a query",
 		SilenceUsage: true,
-		Long: `Searches the archivist instance for an envelope with a specified subject digest.
+		Long: `Searches the archivista instance for an envelope with a specified subject digest.
 Optionally a collection name can be provided to further constrain results.
 
 Digests are expected to be in the form algorithm:digest, for instance: sha256:456c0c9a7c05e2a7f84c139bbacedbe3e8e88f9c`,
@@ -49,7 +49,7 @@ Digests are expected to be in the form algorithm:digest, for instance: sha256:45
 				return err
 			}
 
-			results, err := archivistapi.GraphQlQuery[searchResults](cmd.Context(), archivistUrl, searchQuery, searchVars{Algorithm: algo, Digest: digest})
+			results, err := archivistaapi.GraphQlQuery[searchResults](cmd.Context(), archivistaUrl, searchQuery, searchVars{Algorithm: algo, Digest: digest})
 			if err != nil {
 				return err
 			}

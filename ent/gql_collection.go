@@ -9,7 +9,7 @@ import (
 
 	"entgo.io/ent/dialect/sql"
 	"github.com/99designs/gqlgen/graphql"
-	"github.com/testifysec/archivist/ent/statement"
+	"github.com/testifysec/archivista/ent/statement"
 )
 
 // CollectFields tells the query-builder to eagerly load connected nodes by resolver context.

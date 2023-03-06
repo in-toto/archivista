@@ -5,12 +5,12 @@ package enttest
 import (
 	"context"
 
-	"github.com/testifysec/archivist/ent"
+	"github.com/testifysec/archivista/ent"
 	// required by schema hooks.
-	_ "github.com/testifysec/archivist/ent/runtime"
+	_ "github.com/testifysec/archivista/ent/runtime"
 
 	"entgo.io/ent/dialect/sql/schema"
-	"github.com/testifysec/archivist/ent/migrate"
+	"github.com/testifysec/archivista/ent/migrate"
 )
 
 type (
