@@ -9,8 +9,8 @@ import (
 	"entgo.io/ent/dialect/sql"
 	"entgo.io/ent/dialect/sql/sqlgraph"
 	"entgo.io/ent/schema/field"
-	"github.com/testifysec/archivist/ent/dsse"
-	"github.com/testifysec/archivist/ent/predicate"
+	"github.com/testifysec/archivista/ent/dsse"
+	"github.com/testifysec/archivista/ent/predicate"
 )
 
 // DsseDelete is the builder for deleting a Dsse entity.

@@ -1,4 +1,4 @@
-# Copyright 2022 The Archivist Contributors
+# Copyright 2022 The Archivista Contributors
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
@@ -27,29 +27,29 @@ services:
     volumes:
       - mysqldata:/var/lib/mysql
 
-  archivist:
+  archivista:
     build: .
     restart: unless-stopped
     environment:
-      ARCHIVIST_LISTEN_ON: tcp://0.0.0.0:8082
-      ARCHIVIST_ENABLE_SPIFFE: "false"
-      ARCHIVIST_STORAGE_BACKEND: BLOB
-      ARCHIVIST_FILE_DIR: /tmp/archivist/
-      ARCHIVIST_FILE_SERVE_ON: :8081
-      ARCHIVIST_BLOB_STORE_USE_TLS: "false"
-      ARCHIVIST_BLOB_STORE_ACCESS_KEY_ID: testifytestifytestify
-      ARCHIVIST_BLOB_STORE_SECRET_ACCESS_KEY_ID: exampleexampleexample
-      ARCHIVIST_BLOB_STORE_BUCKET_NAME: attestations
-      ARCHIVIST_BLOB_STORE_ENDPOINT: minio:9000
-      ARCHIVIST_ENABLE_GRAPHQL: "true"
-      ARCHIVIST_GRAPHQL_WEB_CLIENT_ENABLE: "true"
-      ARCHIVIST_CORS_ALLOW_ORIGINS: "http://localhost:1234"
+      ARCHIVISTA_LISTEN_ON: tcp://0.0.0.0:8082
+      ARCHIVISTA_ENABLE_SPIFFE: "false"
+      ARCHIVISTA_STORAGE_BACKEND: BLOB
+      ARCHIVISTA_FILE_DIR: /tmp/archivista/
+      ARCHIVISTA_FILE_SERVE_ON: :8081
+      ARCHIVISTA_BLOB_STORE_USE_TLS: "false"
+      ARCHIVISTA_BLOB_STORE_ACCESS_KEY_ID: testifytestifytestify
+      ARCHIVISTA_BLOB_STORE_SECRET_ACCESS_KEY_ID: exampleexampleexample
+      ARCHIVISTA_BLOB_STORE_BUCKET_NAME: attestations
+      ARCHIVISTA_BLOB_STORE_ENDPOINT: minio:9000
+      ARCHIVISTA_ENABLE_GRAPHQL: "true"
+      ARCHIVISTA_GRAPHQL_WEB_CLIENT_ENABLE: "true"
+      ARCHIVISTA_CORS_ALLOW_ORIGINS: "http://localhost:1234"
 
     ports:
       - 8081:8081
       - 8082:8082
     volumes:
-      - fileserver:/tmp/archivist
+      - fileserver:/tmp/archivista
 
   minio:
     image: quay.io/minio/minio

@@ -1,4 +1,4 @@
-// Copyright 2022 The Archivist Contributors
+// Copyright 2022 The Archivista Contributors
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -20,18 +20,18 @@ import (
 	"os"
 
 	"github.com/spf13/cobra"
-	archivistapi "github.com/testifysec/archivist-api"
+	archivistaapi "github.com/testifysec/archivista-api"
 )
 
 var (
 	storeCmd = &cobra.Command{
 		Use:          "store",
-		Short:        "stores an attestation on the archivist server",
+		Short:        "stores an attestation on the archivista server",
 		SilenceUsage: true,
 		Args:         cobra.MinimumNArgs(1),
 		RunE: func(cmd *cobra.Command, args []string) error {
 			for _, filePath := range args {
-				if gitoid, err := storeAttestationByPath(cmd.Context(), archivistUrl, filePath); err != nil {
+				if gitoid, err := storeAttestationByPath(cmd.Context(), archivistaUrl, filePath); err != nil {
 					return fmt.Errorf("failed to store %s: %w", filePath, err)
 				} else {
 					fmt.Printf("%s stored with gitoid %s\n", filePath, gitoid)
@@ -54,7 +54,7 @@ func storeAttestationByPath(ctx context.Context, baseUrl, path string) (string, 
 	}
 
 	defer file.Close()
-	resp, err := archivistapi.StoreWithReader(ctx, baseUrl, file)
+	resp, err := archivistaapi.StoreWithReader(ctx, baseUrl, file)
 	if err != nil {
 		return "", err
 	}

@@ -1,4 +1,4 @@
-// Copyright 2022 The Archivist Contributors
+// Copyright 2022 The Archivista Contributors
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -40,12 +40,13 @@ import (
 	"github.com/networkservicemesh/sdk/pkg/tools/log"
 	"github.com/networkservicemesh/sdk/pkg/tools/log/logruslogger"
 	"github.com/sirupsen/logrus"
-	"github.com/testifysec/archivist"
-	"github.com/testifysec/archivist/internal/config"
-	"github.com/testifysec/archivist/internal/metadatastorage/mysqlstore"
-	"github.com/testifysec/archivist/internal/objectstorage/blobstore"
-	"github.com/testifysec/archivist/internal/objectstorage/filestore"
-	"github.com/testifysec/archivist/internal/server"
+
+	"github.com/testifysec/archivista"
+	"github.com/testifysec/archivista/internal/config"
+	"github.com/testifysec/archivista/internal/metadatastorage/mysqlstore"
+	"github.com/testifysec/archivista/internal/objectstorage/blobstore"
+	"github.com/testifysec/archivista/internal/objectstorage/filestore"
+	"github.com/testifysec/archivista/internal/server"
 )
 
 func main() {
@@ -110,12 +111,12 @@ func main() {
 
 	if cfg.EnableGraphql {
 		client := mysqlStore.GetClient()
-		srv := handler.NewDefaultServer(archivist.NewSchema(client))
+		srv := handler.NewDefaultServer(archivista.NewSchema(client))
 		srv.Use(entgql.Transactioner{TxOpener: client})
 		router.Handle("/query", srv)
 		if cfg.GraphqlWebClientEnable {
 			router.Handle("/",
-				playground.Handler("Archivist", "/query"),
+				playground.Handler("Archivista", "/query"),
 			)
 		}
 	}

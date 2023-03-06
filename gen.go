@@ -1,4 +1,4 @@
-// Copyright 2022 The Archivist Contributors
+// Copyright 2022 The Archivista Contributors
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -12,7 +12,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-package archivist
+package archivista
 
 //go:generate go run -mod=mod ./ent/entc.go
 //go:generate go run -mod=mod github.com/99designs/gqlgen

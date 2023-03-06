@@ -1,4 +1,4 @@
-// Copyright 2022 The Archivist Contributors
+// Copyright 2022 The Archivista Contributors
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -21,7 +21,7 @@ import (
 	"strings"
 
 	"github.com/spf13/cobra"
-	archivistapi "github.com/testifysec/archivist-api"
+	archivistaapi "github.com/testifysec/archivista-api"
 )
 
 var (
@@ -29,13 +29,13 @@ var (
 
 	retrieveCmd = &cobra.Command{
 		Use:          "retrieve",
-		Short:        "Retrieve information from an archivist server",
+		Short:        "Retrieve information from an archivista server",
 		SilenceUsage: true,
 	}
 
 	envelopeCmd = &cobra.Command{
 		Use:          "envelope",
-		Short:        "Retrieves a dsse envelope by it's gitoid from archivist",
+		Short:        "Retrieves a dsse envelope by it's gitoid from archivista",
 		SilenceUsage: true,
 		Args:         cobra.ExactArgs(1),
 		RunE: func(cmd *cobra.Command, args []string) error {
@@ -50,7 +50,7 @@ var (
 				out = file
 			}
 
-			return archivistapi.DownloadWithWriter(cmd.Context(), archivistUrl, args[0], out)
+			return archivistaapi.DownloadWithWriter(cmd.Context(), archivistaUrl, args[0], out)
 		},
 	}
 
@@ -60,7 +60,7 @@ var (
 		SilenceUsage: true,
 		Args:         cobra.ExactArgs(1),
 		RunE: func(cmd *cobra.Command, args []string) error {
-			results, err := archivistapi.GraphQlQuery[retrieveSubjectResults](cmd.Context(), archivistUrl, retrieveSubjectsQuery, retrieveSubjectVars{Gitoid: args[0]})
+			results, err := archivistaapi.GraphQlQuery[retrieveSubjectResults](cmd.Context(), archivistaUrl, retrieveSubjectsQuery, retrieveSubjectVars{Gitoid: args[0]})
 			if err != nil {
 				return err
 			}

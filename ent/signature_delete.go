@@ -9,8 +9,8 @@ import (
 	"entgo.io/ent/dialect/sql"
 	"entgo.io/ent/dialect/sql/sqlgraph"
 	"entgo.io/ent/schema/field"
-	"github.com/testifysec/archivist/ent/predicate"
-	"github.com/testifysec/archivist/ent/signature"
+	"github.com/testifysec/archivista/ent/predicate"
+	"github.com/testifysec/archivista/ent/signature"
 )
 
 // SignatureDelete is the builder for deleting a Signature entity.

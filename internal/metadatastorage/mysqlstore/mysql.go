@@ -1,4 +1,4 @@
-// Copyright 2022 The Archivist Contributors
+// Copyright 2022 The Archivista Contributors
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -27,7 +27,7 @@ import (
 	"github.com/digitorus/timestamp"
 	"github.com/go-sql-driver/mysql"
 	"github.com/networkservicemesh/sdk/pkg/tools/log"
-	"github.com/testifysec/archivist/ent"
+	"github.com/testifysec/archivista/ent"
 	"github.com/testifysec/go-witness/attestation"
 	"github.com/testifysec/go-witness/cryptoutil"
 	"github.com/testifysec/go-witness/dsse"
@@ -61,7 +61,7 @@ func New(ctx context.Context, connectionstring string) (*Store, <-chan error, er
 	sqlcommentDrv := sqlcomment.NewDriver(drv,
 		sqlcomment.WithDriverVerTag(),
 		sqlcomment.WithTags(sqlcomment.Tags{
-			sqlcomment.KeyApplication: "archivist",
+			sqlcomment.KeyApplication: "archivista",
 			sqlcomment.KeyFramework:   "net/http",
 		}),
 	)

@@ -7,8 +7,8 @@ import (
 	"strings"
 
 	"entgo.io/ent/dialect/sql"
-	"github.com/testifysec/archivist/ent/dsse"
-	"github.com/testifysec/archivist/ent/statement"
+	"github.com/testifysec/archivista/ent/dsse"
+	"github.com/testifysec/archivista/ent/statement"
 )
 
 // Dsse is the model entity for the Dsse schema.

@@ -10,10 +10,10 @@ import (
 	"entgo.io/ent/dialect/sql"
 	"entgo.io/ent/dialect/sql/sqlgraph"
 	"entgo.io/ent/schema/field"
-	"github.com/testifysec/archivist/ent/predicate"
-	"github.com/testifysec/archivist/ent/statement"
-	"github.com/testifysec/archivist/ent/subject"
-	"github.com/testifysec/archivist/ent/subjectdigest"
+	"github.com/testifysec/archivista/ent/predicate"
+	"github.com/testifysec/archivista/ent/statement"
+	"github.com/testifysec/archivista/ent/subject"
+	"github.com/testifysec/archivista/ent/subjectdigest"
 )
 
 // SubjectUpdate is the builder for updating Subject entities.

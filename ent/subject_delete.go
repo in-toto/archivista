@@ -9,8 +9,8 @@ import (
 	"entgo.io/ent/dialect/sql"
 	"entgo.io/ent/dialect/sql/sqlgraph"
 	"entgo.io/ent/schema/field"
-	"github.com/testifysec/archivist/ent/predicate"
-	"github.com/testifysec/archivist/ent/subject"
+	"github.com/testifysec/archivista/ent/predicate"
+	"github.com/testifysec/archivista/ent/subject"
 )
 
 // SubjectDelete is the builder for deleting a Subject entity.

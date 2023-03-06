@@ -1,4 +1,4 @@
-// Copyright 2022 The Archivist Contributors
+// Copyright 2022 The Archivista Contributors
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -27,7 +27,7 @@ import (
 	"github.com/edwarnicke/gitoid"
 	"github.com/gorilla/mux"
 	"github.com/networkservicemesh/sdk/pkg/tools/log"
-	archivistapi "github.com/testifysec/archivist-api"
+	archivistaapi "github.com/testifysec/archivista-api"
 )
 
 type Server struct {
@@ -52,31 +52,31 @@ func New(metadataStore Storer, objectStore StorerGetter) *Server {
 	return &Server{metadataStore, objectStore}
 }
 
-func (s *Server) Store(ctx context.Context, r io.Reader) (archivistapi.StoreResponse, error) {
+func (s *Server) Store(ctx context.Context, r io.Reader) (archivistaapi.StoreResponse, error) {
 	payload, err := io.ReadAll(r)
 	if err != nil {
-		return archivistapi.StoreResponse{}, err
+		return archivistaapi.StoreResponse{}, err
 	}
 
 	gid, err := gitoid.New(bytes.NewReader(payload), gitoid.WithContentLength(int64(len(payload))), gitoid.WithSha256())
 	if err != nil {
 		log.FromContext(ctx).Errorf("failed to generate gitoid: %v", err)
-		return archivistapi.StoreResponse{}, err
+		return archivistaapi.StoreResponse{}, err
 	}
 
 	if err := s.metadataStore.Store(ctx, gid.String(), payload); err != nil {
 		log.FromContext(ctx).Errorf("received error from metadata store: %+v", err)
-		return archivistapi.StoreResponse{}, err
+		return archivistaapi.StoreResponse{}, err
 	}
 
 	if s.objectStore != nil {
 		if err := s.objectStore.Store(ctx, gid.String(), payload); err != nil {
 			log.FromContext(ctx).Errorf("received error from object store: %+v", err)
-			return archivistapi.StoreResponse{}, err
+			return archivistaapi.StoreResponse{}, err
 		}
 	}
 
-	return archivistapi.StoreResponse{Gitoid: gid.String()}, nil
+	return archivistaapi.StoreResponse{Gitoid: gid.String()}, nil
 }
 
 func (s *Server) StoreHandler(w http.ResponseWriter, r *http.Request) {

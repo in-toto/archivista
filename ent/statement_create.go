@@ -9,10 +9,10 @@ import (
 
 	"entgo.io/ent/dialect/sql/sqlgraph"
 	"entgo.io/ent/schema/field"
-	"github.com/testifysec/archivist/ent/attestationcollection"
-	"github.com/testifysec/archivist/ent/dsse"
-	"github.com/testifysec/archivist/ent/statement"
-	"github.com/testifysec/archivist/ent/subject"
+	"github.com/testifysec/archivista/ent/attestationcollection"
+	"github.com/testifysec/archivista/ent/dsse"
+	"github.com/testifysec/archivista/ent/statement"
+	"github.com/testifysec/archivista/ent/subject"
 )
 
 // StatementCreate is the builder for creating a Statement entity.

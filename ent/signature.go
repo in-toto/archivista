@@ -7,8 +7,8 @@ import (
 	"strings"
 
 	"entgo.io/ent/dialect/sql"
-	"github.com/testifysec/archivist/ent/dsse"
-	"github.com/testifysec/archivist/ent/signature"
+	"github.com/testifysec/archivista/ent/dsse"
+	"github.com/testifysec/archivista/ent/signature"
 )
 
 // Signature is the model entity for the Signature schema.

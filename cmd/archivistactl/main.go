@@ -1,4 +1,4 @@
-// Copyright 2022 The Archivist Contributors
+// Copyright 2022 The Archivista Contributors
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -12,25 +12,16 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-package cmd
+package main
 
 import (
-	"github.com/spf13/cobra"
+	"os"
+
+	"github.com/testifysec/archivista/cmd/archivistactl/cmd"
 )
 
-var (
-	archivistUrl string
-
-	rootCmd = &cobra.Command{
-		Use:   "archivistctl",
-		Short: "A utility to interact with an archivist server",
+func main() {
+	if err := cmd.Execute(); err != nil {
+		os.Exit(1)
 	}
-)
-
-func init() {
-	rootCmd.PersistentFlags().StringVarP(&archivistUrl, "archivisturl", "u", "http://localhost:8082", "url of the archivist instance")
-}
-
-func Execute() error {
-	return rootCmd.Execute()
 }

@@ -10,10 +10,10 @@ import (
 	"entgo.io/ent/dialect/sql"
 	"entgo.io/ent/dialect/sql/sqlgraph"
 	"entgo.io/ent/schema/field"
-	"github.com/testifysec/archivist/ent/dsse"
-	"github.com/testifysec/archivist/ent/predicate"
-	"github.com/testifysec/archivist/ent/signature"
-	"github.com/testifysec/archivist/ent/timestamp"
+	"github.com/testifysec/archivista/ent/dsse"
+	"github.com/testifysec/archivista/ent/predicate"
+	"github.com/testifysec/archivista/ent/signature"
+	"github.com/testifysec/archivista/ent/timestamp"
 )
 
 // SignatureUpdate is the builder for updating Signature entities.

@@ -1,4 +1,4 @@
-module github.com/testifysec/archivist
+module github.com/testifysec/archivista
 
 go 1.19
 
@@ -19,7 +19,8 @@ require (
 	github.com/networkservicemesh/sdk v1.6.0
 	github.com/sirupsen/logrus v1.9.0
 	github.com/spf13/cobra v1.5.0
-	github.com/testifysec/archivist-api v0.0.0-20221115001947-07357e56e17e
+	github.com/stretchr/testify v1.8.0
+	github.com/testifysec/archivista-api v0.0.0-20230303165309-a31a92afd132
 	github.com/testifysec/go-witness v0.1.15
 	github.com/vektah/gqlparser/v2 v2.4.7
 	github.com/vmihailenco/msgpack/v5 v5.0.0-beta.9
@@ -32,6 +33,7 @@ require (
 	github.com/agnivade/levenshtein v1.1.1 // indirect
 	github.com/apparentlymart/go-textseg/v13 v13.0.0 // indirect
 	github.com/cenkalti/backoff/v4 v4.1.3 // indirect
+	github.com/davecgh/go-spew v1.1.1 // indirect
 	github.com/digitorus/pkcs7 v0.0.0-20220704143225-a9c8106cbfc6 // indirect
 	github.com/felixge/httpsnoop v1.0.2 // indirect
 	github.com/go-ini/ini v1.67.0 // indirect
@@ -55,6 +57,7 @@ require (
 	github.com/mitchellh/go-wordwrap v0.0.0-20150314170334-ad45545899c7 // indirect
 	github.com/mitchellh/mapstructure v1.5.0 // indirect
 	github.com/pkg/errors v0.9.1 // indirect
+	github.com/pmezard/go-difflib v1.0.0 // indirect
 	github.com/spf13/pflag v1.0.5 // indirect
 	github.com/vmihailenco/tagparser v0.1.2 // indirect
 	github.com/zclconf/go-cty v1.10.0 // indirect
@@ -81,4 +84,5 @@ require (
 	google.golang.org/protobuf v1.28.1 // indirect
 	gopkg.in/check.v1 v1.0.0-20201130134442-10cb98267c6c // indirect
 	gopkg.in/yaml.v2 v2.4.0 // indirect
+	gopkg.in/yaml.v3 v3.0.1 // indirect
 )

@@ -11,10 +11,10 @@ import (
 	"entgo.io/ent/dialect/sql"
 	"entgo.io/ent/dialect/sql/sqlgraph"
 	"entgo.io/ent/schema/field"
-	"github.com/testifysec/archivist/ent/attestation"
-	"github.com/testifysec/archivist/ent/attestationcollection"
-	"github.com/testifysec/archivist/ent/predicate"
-	"github.com/testifysec/archivist/ent/statement"
+	"github.com/testifysec/archivista/ent/attestation"
+	"github.com/testifysec/archivista/ent/attestationcollection"
+	"github.com/testifysec/archivista/ent/predicate"
+	"github.com/testifysec/archivista/ent/statement"
 )
 
 // AttestationCollectionQuery is the builder for querying AttestationCollection entities.
