@@ -28,7 +28,8 @@ import (
 	"github.com/go-sql-driver/mysql"
 	"github.com/networkservicemesh/sdk/pkg/tools/log"
 	"github.com/testifysec/archivista/ent"
-	"github.com/testifysec/go-witness/attestation"
+	"github.com/testifysec/archivista/internal/metadatastorage"
+	"github.com/testifysec/archivista/internal/metadatastorage/parserregistry"
 	"github.com/testifysec/go-witness/cryptoutil"
 	"github.com/testifysec/go-witness/dsse"
 	"github.com/testifysec/go-witness/intoto"
@@ -115,17 +116,6 @@ func (s *Store) withTx(ctx context.Context, fn func(tx *ent.Tx) error) error {
 	return nil
 }
 
-// attestation.Collection from go-witness will try to parse each of the attestations by calling their factory functions,
-// which require the attestations to be registered in the go-witness library.  We don't really care about the actual attestation
-// data for the purposes here, so just leave it as a raw message.
-type parsedCollection struct {
-	attestation.Collection
-	Attestations []struct {
-		Type        string          `json:"type"`
-		Attestation json.RawMessage `json:"attestation"`
-	} `json:"attestations"`
-}
-
 func (s *Store) Store(ctx context.Context, gitoid string, obj []byte) error {
 	envelope := &dsse.Envelope{}
 	if err := json.Unmarshal(obj, envelope); err != nil {
@@ -142,9 +132,13 @@ func (s *Store) Store(ctx context.Context, gitoid string, obj []byte) error {
 		return err
 	}
 
-	parsedCollection := &parsedCollection{}
-	if err := json.Unmarshal(payload.Predicate, parsedCollection); err != nil {
-		return err
+	predicateParser, ok := parserregistry.ParserForPredicate(payload.PredicateType)
+	var predicateStorer metadatastorage.Storer
+	if ok {
+		predicateStorer, err = predicateParser(payload.Predicate)
+		if err != nil {
+			return fmt.Errorf("unable to parse intoto statements predicate: %w", err)
+		}
 	}
 
 	err = s.withTx(ctx, func(tx *ent.Tx) error {
@@ -240,19 +234,8 @@ func (s *Store) Store(ctx context.Context, gitoid string, obj []byte) error {
 			return err
 		}
 
-		collection, err := tx.AttestationCollection.Create().
-			SetStatementID(stmt.ID).
-			SetName(parsedCollection.Name).
-			Save(ctx)
-		if err != nil {
-			return err
-		}
-
-		for _, a := range parsedCollection.Attestations {
-			if err := tx.Attestation.Create().
-				SetAttestationCollectionID(collection.ID).
-				SetType(a.Type).
-				Exec(ctx); err != nil {
+		if predicateStorer != nil {
+			if err := predicateStorer.Store(ctx, tx, stmt.ID); err != nil {
 				return err
 			}
 		}
