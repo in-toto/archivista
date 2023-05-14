@@ -1,0 +1,15 @@
+apiVersion: v1
+kind: Service
+metadata:
+  labels:
+    app: judge-web
+  name: judge-web
+  namespace: judge
+spec:
+  ports:
+    - port: 8077
+      protocol: TCP
+      targetPort: 8077
+      name: http
+  selector:
+    app: judge-web

@@ -1,0 +1,26 @@
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  namespace: mysql
+  name: phpmyadmin
+  annotations:
+    cert-manager.io/cluster-issuer: tls-ca-issuer
+    nginx.ingress.kubernetes.io/rewrite-target: /
+    nginx.ingress.kubernetes.io/ssl-redirect: "true"
+spec:
+  ingressClassName: nginx
+  tls:
+    - hosts:
+        - phpmyadmin.testifysec.localhost
+      secretName: phpmyadmin-tls      
+  rules:
+  - host: phpmyadmin.testifysec.localhost
+    http:
+      paths:
+        - path: /
+          pathType: Prefix
+          backend:
+            service:
+              name: phpmyadmin
+              port:
+                number: 80

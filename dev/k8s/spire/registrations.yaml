@@ -1,0 +1,59 @@
+#spire-server entry create -admin -spiffeID spiffe://dev.localhost/admin/registrar \
+#-parentID spiffe://dev.localhost/72171f86-1f8d-49e4-a250-b1f1dd5008ad/dev \
+#-selector k8s:ns:spire
+kind: ServiceAccount
+apiVersion: v1
+metadata:
+  name: spire-server-entry-create
+  namespace: spire
+---
+kind: Role
+apiVersion: rbac.authorization.k8s.io/v1
+metadata:
+  name: spire-server-entry-create
+  namespace: spire
+rules:
+  - apiGroups: [""]
+    resources: ["pods", "pods/exec"]
+    verbs: ["get", "exec", "list", "watch", "create", "delete", "update"]
+
+---
+kind: RoleBinding
+apiVersion: rbac.authorization.k8s.io/v1
+metadata:
+  name: spire-server-entry-create
+  namespace: spire
+subjects:
+  - kind: ServiceAccount
+    name: spire-server-entry-create
+    namespace: spire
+roleRef:
+  kind: Role
+  name: spire-server-entry-create
+  apiGroup: rbac.authorization.k8s.io
+---
+apiVersion: batch/v1
+kind: Job
+metadata:
+  namespace: spire
+  name: spire-server-entry-create
+spec:
+  template:
+    spec:
+      serviceAccountName: spire-server-entry-create
+      containers:
+      - name: spire-server-entry-create
+        image: bitnami/kubectl:1.25.3
+        command:
+        - kubectl
+        - exec
+        - --namespace=spire
+        - spire-server-0
+        - --
+        - /bin/bash -c "/ko-app/spire-server entry create -admin -spiffeID spiffe://dev.localhost/admin/registrar -parentID spiffe://dev.localhost/72171f86-1f8d-49e4-a250-b1f1dd5008ad/dev -selector k8s:ns:spire"
+
+        
+        # args:
+        #   - "exec -n spire -it spire-server-0 -- /ko-app/spire-server entry create -admin -spiffeID spiffe://dev.localhost/admin/registrar -parentID spiffe://dev.localhost/72171f86-1f8d-49e4-a250-b1f1dd5008ad/dev -selector k8s:ns:spire"
+      restartPolicy: Never
+  backoffLimit: 4

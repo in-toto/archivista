@@ -1,0 +1,9 @@
+hydra:
+  url: http://hydra.testifysec.localhost
+  client_id: "judge-web"
+  client_scopes: "openid offline"
+  root_url: http://localhost:8077
+
+registrar_svc: https://registrar.testifysec.localhost
+auth_svc: http://auth.testifysec.localhost
+archivist_svc: https://archivist.testifysec.localhost

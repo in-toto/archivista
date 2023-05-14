@@ -1,0 +1,30 @@
+  ci: 
+    assert:
+     # TODO: turn on recommended once we're ready to tackle the tech-debt
+      # preset: "lighthouse:recommended" 
+     # TODO: bump up the assertions below once we're ready to tackle the tech-debt
+      assertions:
+        categories:pwa: 'off'
+        categories:best-practices:
+        - warn
+        - minScore: 0.9
+        categories:seo:
+        - error
+        - minScore: 0.77
+        categories:performance:
+        - warn
+        - minScore: 0.9
+        categories:accessibility:
+        - warn
+        - minScore: 1
+    collect:
+      url: 
+        - "https://judge.testifysec.localhost/"
+        # TODO: enable the ones below when we can run lighthouse with a mock user or mock data
+        # TODO: if we implement Static Site Generation, crawl for static pages instead of specifying so this is automated
+        # - "https://judge.testifysec.localhost/search"
+        # - "https://judge.testifysec.localhost/sources"
+    upload: 
+      # TODO: implement a lighthouse server
+      target: "filesystem"
+      outputDir: ".lighthouseci"

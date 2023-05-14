@@ -1,0 +1,10 @@
+kind: Service
+apiVersion: v1
+metadata:
+  name: hydra 
+  namespace: judge
+spec:
+  type: ExternalName
+  externalName: hydra-public.hydra.svc.cluster.local
+  ports:
+  - port: 4444

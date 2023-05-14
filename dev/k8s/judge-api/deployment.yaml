@@ -1,0 +1,28 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: judge-api
+  namespace: judge-api
+spec:
+  selector:
+    matchLabels:
+      app: judge-api
+  replicas: 1
+  template:
+    metadata:
+      labels:
+        app: judge-api
+    spec:
+      containers:
+        - name: judge-api
+          image: registry.gitlab.com/testifysec/judge-platform/judge-api
+          args: ["serve", "--sql-connection", "root:root@tcp(mysql.mysql.svc.cluster.local:3306)/judgeapi?parseTime=true", "--listen=tcp://0.0.0.0:8080"]
+          ports:
+            - containerPort: 8080
+          resources:
+            limits:
+              cpu: 500m
+              memory: 512Mi
+            requests:
+              cpu: 100m
+              memory: 128Mi

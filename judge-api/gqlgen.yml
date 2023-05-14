@@ -1,0 +1,24 @@
+schema:
+  - host.graphql
+  - ent.graphql
+
+resolver:
+  # Tell gqlgen to generate resolvers next to the schema file.
+  layout: follow-schema
+  dir: .
+
+# gqlgen will search for any type names in the schema in the generated
+# ent package. If they match it will use them, otherwise it will new ones.
+autobind:
+  - gitlab.com/testifysec/judge-platform/judge-api/ent
+
+models:
+  ID:
+    model:
+      - gitlab.com/testifysec/judge-platform/judge-api/ent/schema/uuidgql.UUID
+  Uint64:
+    model:
+      - github.com/99designs/gqlgen/graphql.Uint64
+  UUID:
+    model:
+      - gitlab.com/testifysec/judge-platform/judge-api/ent/schema/uuidgql.UUID

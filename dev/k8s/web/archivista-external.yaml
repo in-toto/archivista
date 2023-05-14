@@ -1,0 +1,10 @@
+kind: Service
+apiVersion: v1
+metadata:
+  name: archivista
+  namespace: judge
+spec:
+  type: ExternalName
+  externalName: archivista.archivista.svc.cluster.local
+  ports:
+  - port: 8082

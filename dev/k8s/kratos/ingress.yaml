@@ -1,0 +1,37 @@
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  namespace: kratos
+  name: kratos-ingress
+  annotations:
+    cert-manager.io/cluster-issuer: tls-ca-issuer
+    nginx.ingress.kubernetes.io/rewrite-target: /
+    kubernetes.io/ssl-redirect: "true"
+spec:
+  ingressClassName: nginx
+  tls:
+    - hosts:
+        - kratos-admin.testifysec.localhost
+        - kratos.testifysec.localhost
+      secretName: kratoslocalhost-tls
+  rules:
+    - host: "kratos-admin.testifysec.localhost"
+      http:
+        paths:
+          - path: /
+            pathType: Prefix
+            backend:
+              service:
+                name: kratos-admin
+                port:
+                  number: 80
+    - host: "kratos.testifysec.localhost"
+      http:
+        paths:
+          - path: /
+            pathType: Prefix
+            backend:
+              service:
+                name: kratos-public
+                port:
+                  number: 80

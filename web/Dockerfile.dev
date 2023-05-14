@@ -1,0 +1,10 @@
+FROM node:18-alpine3.16 AS builder
+RUN apk add --no-cache python3 gcc g++ make musl-dev
+RUN apk add --no-cache nginx inotify-tools
+COPY ./nginx.dev.conf /etc/nginx/http.d/default.conf
+COPY ./entrypoint.dev.sh /entrypoint.sh
+RUN chmod +x /entrypoint.sh
+RUN mkdir -p /run/nginx
+
+WORKDIR /src
+ENTRYPOINT ["/entrypoint.sh"]

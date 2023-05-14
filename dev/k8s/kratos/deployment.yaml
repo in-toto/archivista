@@ -1,0 +1,138 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  labels:
+    app.kubernetes.io/instance: kratos
+    app.kubernetes.io/name: kratos
+    app.kubernetes.io/version: v0.11.1
+  name: kratos
+  namespace: kratos
+spec:
+  progressDeadlineSeconds: 3600
+  replicas: 1
+  revisionHistoryLimit: 10
+  selector:
+    matchLabels:
+      app.kubernetes.io/instance: kratos
+      app.kubernetes.io/name: kratos
+  strategy:
+    rollingUpdate:
+      maxSurge: 30%
+      maxUnavailable: 0
+    type: RollingUpdate
+  template:
+    metadata:
+      annotations:
+      creationTimestamp: null
+      labels:
+        app.kubernetes.io/instance: kratos
+        app.kubernetes.io/name: kratos
+        app.kubernetes.io/version: v0.11.1
+    spec:
+      automountServiceAccountToken: true
+      containers:
+      - args:
+        - serve
+        - all
+#        - --config
+#        - /etc/config/kratos.yaml
+        - --config
+        - /etc/config/kratos/kratos-config.yaml
+        command:
+        - kratos
+        env:
+        - name: DSN
+          valueFrom:
+            secretKeyRef:
+              key: dsn
+              name: kratos
+        - name: SECRETS_DEFAULT
+          valueFrom:
+            secretKeyRef:
+              key: secretsDefault
+              name: kratos
+              optional: true
+        - name: SECRETS_COOKIE
+          valueFrom:
+            secretKeyRef:
+              key: secretsCookie
+              name: kratos
+              optional: true
+        - name: SECRETS_CIPHER
+          valueFrom:
+            secretKeyRef:
+              key: secretsCipher
+              name: kratos
+              optional: true
+        - name: COURIER_SMTP_CONNECTION_URI
+          valueFrom:
+            secretKeyRef:
+              key: smtpConnectionURI
+              name: kratos
+        name: kratos
+        resources:
+          limits:
+            cpu: 300m
+            memory: 500Mi
+          requests:
+            cpu: 100m
+            memory: 200Mi
+        image: oryd/kratos:v0.11.1
+        imagePullPolicy: IfNotPresent
+        ports:
+        - containerPort: 4434
+          name: http-admin
+          protocol: TCP
+        - containerPort: 4433
+          name: http-public
+          protocol: TCP
+        volumeMounts:
+        - mountPath: /etc/ssl/certs/testify-root.pem
+          subPath: rootCA.pem
+          name: testify-root
+        - mountPath: /etc/config/kratos/
+          name: config-volume
+#        - mountPath: /etc/config
+#          name: kratos-config-volume
+#          readOnly: true
+      initContainers:
+      - command:
+        - sh
+        - -c
+        - |
+          until nc -vz -w 1 mysql.mysql.svc.cluster.local 3306; do
+            echo "Waiting for MySQL to be ready..."
+            sleep 1
+          done
+        image: busybox:1.28
+        imagePullPolicy: IfNotPresent
+        name: wait-for-mysql
+        resources: {}
+        terminationMessagePath: /dev/termination-log
+        terminationMessagePolicy: File
+      - command:
+        - sh
+        - -c
+        - |
+          kratos migrate sql --yes "mysql://root:root@tcp(mysql.mysql.svc.cluster.local:3306)/kratos?parseTime=true"
+        image: oryd/kratos:v0.11.1
+        imagePullPolicy: IfNotPresent
+        name: migrate
+        resources: {}
+        terminationMessagePath: /dev/termination-log
+        terminationMessagePolicy: File
+      restartPolicy: Always
+      serviceAccount: kratos
+      serviceAccountName: kratos
+      volumes:
+      - configMap:
+          name: rootca
+        name: testify-root
+      - configMap:
+          defaultMode: 420
+          name: kratos-config-extra
+        name: config-volume
+      - configMap:
+          defaultMode: 420
+          name: kratos-config
+        name: kratos-config-volume

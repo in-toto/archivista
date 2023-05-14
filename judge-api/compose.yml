@@ -1,0 +1,28 @@
+version: '3.9'
+
+services:
+  db:
+    image: mysql:oracle
+    command: --default-authentication-plugin=mysql_native_password
+    restart: always
+    ports:
+      - 3306:3306
+    environment:
+      MYSQL_DATABASE: testify
+      MYSQL_ROOT_PASSWORD: example
+    volumes:
+      - mysqldata:/var/lib/mysql
+
+  judge-api:
+    build: .
+    restart: unless-stopped
+    command: ["serve", "--sql-connection", "root:example@tcp(db:3306)/testify?parseTime=true", "--listen=tcp://0.0.0.0:8080"]
+
+    ports:
+      - 8080:8080
+
+    depends_on:
+      - db
+
+volumes:
+  mysqldata:

@@ -1,0 +1,13 @@
+.minio-data
+.mysql-data
+.certs
+.kpt-pipeline
+.attestations
+bin
+node_modules
+go.work
+go.work.sum
+
+.DS_Store
+
+.op/plugins/glab.json

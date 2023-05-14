@@ -1,0 +1,14 @@
+node_modules/
+.cache/
+public
+src/gatsby-types.d.ts
+
+.DS_Store
+
+.env
+
+coverage/
+
+storybook-static/
+
+.testing-static-queries.json

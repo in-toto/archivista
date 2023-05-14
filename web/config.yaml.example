@@ -1,0 +1,9 @@
+hydra:
+  url: http://hydra.localhost
+  client_id: "auth-code-client1"
+  client_scopes: "openid offline"
+  root_url: http://localhost:8077
+
+registrar_svc: http://registrar.localhost
+auth_svc: http://auth.localhost
+archivist_svc: https://archivist.testifysec.io

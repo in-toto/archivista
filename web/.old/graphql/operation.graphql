@@ -1,0 +1,39 @@
+query bySubjectDigest($digest: String!) {
+  dsses(
+    where: {
+      hasStatementWith: { hasAttestationCollectionsWith: { and: [{ hasStatementWith: { hasSubjectsWith: { hasSubjectDigestsWith: { value: $digest } } } }] } }
+    }
+  ) {
+    totalCount
+    pageInfo {
+      endCursor
+    }
+    edges {
+      node {
+        gitoidSha256
+        statement {
+          subjects(where: { not: { nameHasPrefix: "https://witness.dev/attestations/product/v0.1" } }) {
+            totalCount
+            pageInfo {
+              endCursor
+            }
+            edges {
+              node {
+                name
+                subjectDigests {
+                  value
+                }
+              }
+            }
+          }
+          attestationCollections {
+            name
+            attestations {
+              type
+            }
+          }
+        }
+      }
+    }
+  }
+}

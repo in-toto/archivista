@@ -1,0 +1,16 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: judge-web-config
+  namespace: judge
+data:
+  config.yaml: |
+    hydra:
+      url: https://hydra.testifysec.localhost
+      client_id: "judge-web"
+      client_scopes: "openid offline"
+      root_url: https://judge.testifysec.localhost
+    registrar_svc: https://registrar.testifysec.localhost
+    auth_svc: https://auth.testifysec.localhost
+    archivist_svc: https://archivista.testifysec.localhost
+    archivista_svc: https://archivista.testifysec.localhost
