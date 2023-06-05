@@ -1,92 +1,66 @@
-# Monorepo
+# Judge Platform
 
+This is the internal monorepo project for the Judge Platform, a SaaS (Software as a Service) that provides ready-to-use open source software for supply-chain security.
 
+## Internal Monorepo Structure
 
-## Getting started
+This monorepo is for internal use only and serves as the source of truth for all TestifySec work on the platform. Development should be done within this monorepo, which acts as our home. You are free to work on any project within the monorepo as you would in a normal project.
 
-To make it easy for you to get started with GitLab, here's a list of recommended next steps.
+At the root of the monorepo, we can share configuration files, scripts, and more across the project. However, all subtrees must be self-contained. More details on this will be provided later.
 
-Already a pro? Just edit this README.md and make it your own. Want to make it easy? [Use the template at the bottom](#editing-this-readme)!
+### Private Subfolders vs Public Subtrees
 
-## Add your files
+The monorepo is divided into several subfolders at the root. Most subfolders contain internal private code that supports the platform (e.g., `web/`, `dev/`, `judge-api/`). Other subfolders are [Git Subtrees](https://www.atlassian.com/git/tutorials/git-subtree) linked to public repositories. These special subfolders require synchronization between the monorepo and the associated public repositories. When making changes to these subfolders, it's important to be mindful of the synchronization process.
 
-- [ ] [Create](https://docs.gitlab.com/ee/user/project/repository/web_editor.html#create-a-file) or [upload](https://docs.gitlab.com/ee/user/project/repository/web_editor.html#upload-a-file) files
-- [ ] [Add files using the command line](https://docs.gitlab.com/ee/gitlab-basics/add-file.html#add-a-file-using-the-command-line) or push an existing Git repository with the following command:
+### Prerequisites
 
-```
-cd existing_repo
-git remote add origin https://gitlab.com/testifysec/monorepo.git
-git branch -M main
-git push -uf origin main
-```
+Before you can fully contribute, make sure you have completed the following prerequisites:
 
-## Integrate with your tools
+1. Have a GitLab/GitHub account with access to the TestifySec Git repositories.
+1. Set up SSH keys or HTTP login for your GitLab/GitHub accounts. You can try using the 1Password CLI with Google Cloud and GitHub SSH keys for convenience.
+1. Have the necessary roles to access the attestations via gcloud in the `load attestations` command.
+1. Have your TestifySec physical security key provisioned.
+1. Strongly encouraged to have [nvm](https://github.com/nvm-sh/nvm) installed and configured on your machine to synchronize with the entire team on the Node.js version. You can try installing it with `brew install nvm` and following the setup instructions. Once you have `nvm`, run `nvm use` and `nvm install` to get in sync with the team's specified Node.js version.
+1. Run `npm i` from the root of this repository to install all dependencies.
+1. Run `make hosts` from the `dev/` folder at least once to set up the hosts file for local development.
 
-- [ ] [Set up project integrations](https://gitlab.com/testifysec/monorepo/-/settings/integrations)
+## Getting Started
 
-## Collaborate with your team
+Assuming you have completed all the prerequisites mentioned above, follow these steps to get started:
 
-- [ ] [Invite team members and collaborators](https://docs.gitlab.com/ee/user/project/members/)
-- [ ] [Create a new merge request](https://docs.gitlab.com/ee/user/project/merge_requests/creating_merge_requests.html)
-- [ ] [Automatically close issues from merge requests](https://docs.gitlab.com/ee/user/project/issues/managing_issues.html#closing-issues-automatically)
-- [ ] [Enable merge request approvals](https://docs.gitlab.com/ee/user/project/merge_requests/approvals/)
-- [ ] [Automatically merge when pipeline succeeds](https://docs.gitlab.com/ee/user/project/merge_requests/merge_when_pipeline_succeeds.html)
+1. Run `npm start` to start everything in your development environment using an npm script. This includes running `make deps`, `make up`, and setting up port forwarding.
 
-## Test and Deploy
+   Note: If you use this method, `minikube tunnel` will be used, which may require your password. Be sure not to miss the prompt and press Enter in the minikube tunnel pane if necessary.
 
-Use the built-in continuous integration in GitLab.
+   If you prefer a more manual process, you can follow these alternative steps:
 
-- [ ] [Get started with GitLab CI/CD](https://docs.gitlab.com/ee/ci/quick_start/index.html)
-- [ ] [Analyze your code for known vulnerabilities with Static Application Security Testing(SAST)](https://docs.gitlab.com/ee/user/application_security/sast/)
-- [ ] [Deploy to Kubernetes, Amazon EC2, or Amazon ECS using Auto Deploy](https://docs.gitlab.com/ee/topics/autodevops/requirements.html)
-- [ ] [Use pull-based deployments for improved Kubernetes management](https://docs.gitlab.com/ee/user/clusters/agent/)
-- [ ] [Set up protected environments](https://docs.gitlab.com/ee/ci/environments/protected_environments.html)
+1. Run `make deps` from the `dev/` subfolder to install dependencies.
+1. You should now have everything you need to start contributing. Follow the instructions in the `dev/readme.md` file for the remaining steps, including running `make up`, `make load-attestations`, and `minikube tunnel`.
 
-***
+Once your local environment is set up, you can make changes to the repository as needed.
 
-# Editing this README
+### Load Attestations
 
-When you're ready to make this README your own, just edit this file and use the handy template below (or feel free to structure it however you want - this is just a starting point!). Thank you to [makeareadme.com](https://www.makeareadme.com/) for this template.
+If you want to use a local Archivista and local Judge API with the web project, you need to load the attestations. This requires using your physical security key to log in and load all the attestation
 
-## Suggestions for a good README
-Every project is different, so consider which of these sections apply to yours. The sections used in the template are suggestions for most open source projects. Also keep in mind that while a README can be too long and detailed, too long is better than too short. If you think your README is too long, consider utilizing another form of documentation rather than cutting out information.
+ data to your machine.
 
-## Name
-Choose a self-explaining name for your project.
+To load the attestations, run `make load-attestations` from the `dev/` folder.
 
-## Description
-Let people know what your project can do specifically. Provide context and add a link to any reference visitors might be unfamiliar with. A list of Features or a Background subsection can also be added here. If there are alternatives to your project, this is a good place to list differentiating factors.
+### Getting Started with web/
 
-## Badges
-On some READMEs, you may see small images that convey metadata, such as whether or not all the tests are passing for the project. You can use Shields to add some to your README. Many services also have instructions for adding a badge.
+If you have the local Kubernetes environment running as mentioned above, the web project should already be available in a locally deployed production instance at [https://judge.testifysec.localhost/](https://judge.testifysec.localhost/).
 
-## Visuals
-Depending on what you are making, it can be a good idea to include screenshots or even a video (you'll frequently see GIFs rather than actual videos). Tools like ttygif can help, but check out Asciinema for a more sophisticated method.
+To run a development instance locally with HMR (hot module reloading), use the following commands:
 
-## Installation
-Within a particular ecosystem, there may be a common way of installing things, such as using Yarn, NuGet, or Homebrew. However, consider the possibility that whoever is reading your README is a novice and would like more guidance. Listing specific steps helps remove ambiguity and gets people to using your project as quickly as possible. If it only runs in a specific context like a particular programming language version or operating system or has dependencies that have to be installed manually, also add a Requirements subsection.
+1. Run `npm run start:web` to start the web project in HMR mode.
 
-## Usage
-Use examples liberally, and show the expected output if you can. It's helpful to have inline the smallest example of usage that you can demonstrate, while providing links to more sophisticated examples if they are too long to reasonably include in the README.
+By default, running the web project this way will use the full local Kubernetes environment, including Archivista and Judge, for comprehensive local development. If you want to connect to the remote proxies, follow the instructions below.
 
-## Support
-Tell people where they can go to for help. It can be any combination of an issue tracker, a chat room, an email address, etc.
+#### web/ with Remote Proxies
 
-## Roadmap
-If you have ideas for releases in the future, it is a good idea to list them in the README.
+Note: This may require reintroducing Hydra with Kratos to allow for multiple domains in the login process.
 
-## Contributing
-State if you are open to contributions and what your requirements are for accepting them.
+To run the web project connected to production data, use the following commands:
 
-For people who want to make changes to your project, it's helpful to have some documentation on how to get started. Perhaps there is a script that they should run or some environment variables that they need to set. Make these steps explicit. These instructions could also be useful to your future self.
-
-You can also document commands to lint the code or run tests. These steps help to ensure high code quality and reduce the likelihood that the changes inadvertently break something. Having instructions for running tests is especially helpful if it requires external setup, such as starting a Selenium server for testing in a browser.
-
-## Authors and acknowledgment
-Show your appreciation to those who have contributed to the project.
-
-## License
-For open source projects, say how it is licensed.
-
-## Project status
-If you have run out of energy or time for your project, put a note at the top of the README saying that development has slowed down or stopped completely. Someone may choose to fork your project or volunteer to step in as a maintainer or owner, allowing your project to keep going. You can also make an explicit request for maintainers.
+1. Run `npm run start:web:remote-proxy` to start the web project in HMR mode, connected to the production APIs as remote proxies.

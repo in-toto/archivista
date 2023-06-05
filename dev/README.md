@@ -6,23 +6,9 @@ It will also help you build and deploy changes to gitlab.
 
 ## Getting Started
 
-### Prerequisites
-
-1. You have a gitlab/github account with access to the TestifySec git repos
-
-1. You have ssh keys or http login set up for said gitlab/github accounts.
-
-    **Tip**: [try out 1password cli w/ google cloud and github ssh keys](https://developer.1password.com/docs/cli/get-started/)
-
-1. You have the roles required to access the attestatations via gcloud in the `load attestations` command
-
-1. You have your TestifySec physical security key provisioned
-
-### Installing Deps and Cloning repos
+### Installing Deps
 
 1. `make deps` will Install Dependencies
-
-1. `make clone` will clone all of the repositories into the parent directory of this repo.
 
 ## Frequent Rituals
 

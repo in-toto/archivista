@@ -30,30 +30,6 @@ build:
       ldflags:
       - -extldflags "-static"
 
-  - image: registry.gitlab.com/testifysec/judge-platform/spire-internal/spire-server
-    ko:
-      dir: "../spire-internal"
-      main: "../spire-internal/cmd/spire-server"
-      env:
-      - CGO_ENABLED=0
-      flags:
-      - -trimpath
-      ldflags:
-      - -extldflags "-static"
-    context: "../spire-internal"
-
-  - image: registry.gitlab.com/testifysec/judge-platform/spire-internal/spire-agent
-    ko:
-      dir: "../spire-internal"
-      main: "../spire-internal/cmd/spire-agent"
-      env:
-      - CGO_ENABLED=0
-      flags:
-      - -trimpath
-      ldflags:
-      - -extldflags "-static"
-    context: "../spire-internal"
-
   #web with no hmr
   - image: registry.gitlab.com/testifysec/judge-platform/web
     context: "../web"
@@ -80,8 +56,6 @@ manifests:
     - k8s/grafana-loki/*.yaml
     - k8s/mailhog/*.yaml
     - k8s/coredns/*.yaml
-    - k8s/spire/*.yaml
-    - k8s/spire-agent/*.yaml
     - k8s/web/*.yaml
     - k8s/judge-api/*.yaml
 

@@ -1,1 +1,6 @@
 .DS_Store
+node_modules/
+.env
+coverage/
+storybook-static/
+.testing-static-queries.json

@@ -24,7 +24,7 @@ help:
 
 ## TODO: pin specific version and check hash
 
-deps: go gcloud colima mkcert minikube skaffold helm kubectl nsenter
+deps: go gcloud colima mkcert minikube skaffold helm kubectl nsenter tmux
 
 colima: colima-$(OS)
 
@@ -49,6 +49,15 @@ gcloud-Darwin:
 
 gcloud-Linux:
 	echo todo
+
+tmux: tmux-$(OS)
+
+tmux-Darwin:
+	command -v tmux > /dev/null || brew install tmux
+
+tmux-Linux:
+	sudo apt install tmux
+	mkdir -p bin
 
 nsenter: nsenter-$(OS)
 
@@ -133,9 +142,6 @@ up:
 	fi
 
 	skaffold dev --tail=false
-
-clone:
-	./scripts/clone-repos.sh $(CLONE_OPTS)
 
 port-forward:
 	sudo -E kubectl -n ingress-nginx port-forward service/ingress-nginx-controller 443:443 80:80

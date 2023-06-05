@@ -1,0 +1,20 @@
+{
+  "name": "judge",
+  "version": "0.0.0",
+  "description": "Judge is a SaaS (Software as a Service) which aims to provide our open source software in a ready-to-use state, so that anyone with an interest in using it for supply-chain security can spin up our solutions quickly, easily, and effectively.",
+  "main": "index.js",
+  "scripts": {
+    "start": "cd dev && make deps && tmux has-session -t mysession 2>/dev/null || tmux new-session -d -s mysession 'make up' && tmux split-window -h 'minikube tunnel' && tmux select-layout even-horizontal && tmux attach-session -d -t mysession",
+    "start:web" : "npm start -w web",
+    "start:web:remote-proxy" : "npm run start:remote-proxy -w web",
+    "prepare": "husky install",
+    "pre-push": "npm run pre-push -w web",
+    "pre-commit": "npm run pre-commit -w web"
+  },
+  "devDependencies": {
+    "husky": "8.0.3"
+  },
+  "workspaces" : ["web"],
+  "author": "TestifySec",
+  "license": "UNLICENSED"
+}

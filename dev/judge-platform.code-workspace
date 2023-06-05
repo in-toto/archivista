@@ -1,28 +1,13 @@
 {
 	"folders": [
 		{
-			"path": "../registrar"
-		},
-		{
 			"path": "."
-		},
-		{
-			"path": "../scribe"
-		},
-		{
-			"path": "../spire-internal"
-		},
-		{
-			"path": "../auth-login-provider"
 		},
 		{
 			"path": "../web"
 		},
 		{
 			"path": "../api"
-		},
-		{
-			"path": "../registrar-api"
 		},
 		{
 			"path": "../deployments"
@@ -35,12 +20,6 @@
 		},
 		{
 			"path": "../go-witness"
-		},
-		{
-			"path": "../witness-install-action"
-		},
-		{
-			"path": "../testify-run-action"
 		},
 		{
 			"path": "../archivista"
