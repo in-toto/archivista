@@ -89,7 +89,17 @@ func (r *queryResolver) Projects(ctx context.Context) ([]*ent.Project, error) {
 		return nil, err
 	}
 
-	token := ps[0].InitialAccessToken
+	token := ""
+	for _, provider := range ps {
+		if provider.Provider == "github" {
+			token = provider.InitialAccessToken
+			break
+		}
+	}
+
+	if len(token) == 0 {
+		return nil, fmt.Errorf("no github credential found")
+	}
 
 	c := &http.Client{
 		Timeout: 10 * time.Second,

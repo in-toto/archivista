@@ -4,10 +4,9 @@ import (
 	"context"
 	"crypto/tls"
 	"encoding/json"
-	"fmt"
+	"github.com/google/uuid"
 	"net/http"
 
-	"github.com/google/uuid"
 	kratos "github.com/ory/kratos-client-go"
 	"github.com/sirupsen/logrus"
 	"gitlab.com/testifysec/judge-platform/judge-api/viewer"
@@ -19,6 +18,10 @@ type AuthProvider interface {
 
 type KratosAuthProvider struct {
 	kratosClient *kratos.APIClient
+}
+
+type MetadataPublic struct {
+	AssignedTenants []string `json:"assigned_tenants"`
 }
 
 func NewKratosAuthProvider() *KratosAuthProvider {
@@ -55,25 +58,23 @@ func (k *KratosAuthProvider) ValidateAndGetViewer(ctx context.Context, c string)
 
 	metaDataPublic := session.Identity.GetMetadataPublic()
 
-	type MetadataPublic struct {
-		AssignedTenants []uuid.UUID `json:"assigned_tenants"`
-	}
-
 	var metadata MetadataPublic
 
-	metaDataBytes, ok := metaDataPublic.([]byte)
-	if !ok {
-		logrus.Errorf("Failed to convert metaDataPublic to []byte")
-		return v, fmt.Errorf("metaDataPublic conversion error")
+	m, err := json.Marshal(metaDataPublic)
+	if err != nil {
+		logrus.Errorf("Failed to marshal metadata: %v", err)
+		return v, err
 	}
-
-	err = json.Unmarshal(metaDataBytes, &metadata)
+	err = json.Unmarshal(m, &metadata)
 	if err != nil {
 		logrus.Errorf("Failed to unmarshal metadata: %v", err)
 		return v, err
 	}
 
-	v.TenantsAssigned = metadata.AssignedTenants
+	for _, tenant := range metadata.AssignedTenants {
+		parsedTenant, _ := uuid.Parse(tenant)
+		v.TenantsAssigned = append(v.TenantsAssigned, parsedTenant)
+	}
 
 	return v, nil
 }
