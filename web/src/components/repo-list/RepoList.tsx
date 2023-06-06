@@ -77,7 +77,17 @@ const RepoList = () => {
     </>
   );
 
-  return <>{judge.apiStatus.isLoading ? <SkeletonLoader /> : judge.apiStatus.hasError ? <ErrorState /> : <>{repos.length > 0 && results}</>}</>;
+  return (
+    <>
+      {judge.apiStatus.isLoading || archivista.apiStatus.isLoading ? (
+        <SkeletonLoader />
+      ) : judge.apiStatus.hasError || archivista.apiStatus.hasError ? (
+        <ErrorState />
+      ) : (
+        <>{repos.length > 0 && results}</>
+      )}
+    </>
+  );
 };
 
 export default RepoList;

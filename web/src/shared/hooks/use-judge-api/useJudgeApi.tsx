@@ -46,7 +46,7 @@ const useJudgeApi = (): [JudgeApiProps, (s: string) => void] => {
       console.log(JSON.stringify(json, null, 2));
     } catch (error) {
       console.error(error);
-      // setHasError(true);
+      setHasError(true);
     } finally {
       setIsLoading(false);
     }
