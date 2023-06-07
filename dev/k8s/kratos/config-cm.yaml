@@ -76,6 +76,9 @@ data:
             password:
               hooks:
                 - hook: session
+            oidc:
+              hooks:
+                - hook: session # Always enable this for oidc flows or the user experience suffers significantly!
       default_browser_return_url: https://judge.testifysec.localhost:8077
       allowed_return_urls:
         - https://login.testifysec.localhost
