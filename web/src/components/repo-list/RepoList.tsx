@@ -22,6 +22,7 @@ const RepoList = () => {
   const filteredRepos = judge.results?.filter((repo) => repo.name.toLowerCase().includes(searchText.toLowerCase()));
 
   // Sort the filtered repos based on archivista results and timestamps
+  // TODO: this should not live here, and when we put all of htis in judge-api, we should handle it there.
   filteredRepos.sort((a, b) => {
     const aArchivistaResults = archivista.results.filter((result) =>
       result?.statement?.subjects?.edges?.some((edge) => edge?.node?.name?.includes(a.projecturl))
