@@ -52,11 +52,11 @@ const RepoList = () => {
   const repos = filteredRepos.map((repo) => {
     // Filter archivista results by the current repo's project URL
     const archivistaResultsByRepo = archivista.results.filter((result) =>
-      result?.statement?.subjects?.edges?.some((edge) => edge?.node?.name?.includes(repo?.projecturl))
+      result?.statement?.subjects?.edges?.some((edge) => edge?.node?.name.endsWith(repo?.projecturl))
     );
 
     // only show repos with data
-    if (archivistaResultsByRepo.length > 0)
+    if (archivistaResultsByRepo.length > 1) {
       return (
         <Card sx={{ minWidth: 275, margin: '8px' }} key={repo?.id}>
           <CardContent>
@@ -68,7 +68,7 @@ const RepoList = () => {
           </CardContent>
         </Card>
       );
-    else return null;
+    } else return null;
   });
 
   const results = (
