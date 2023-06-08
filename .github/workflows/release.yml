@@ -85,6 +85,21 @@ jobs:
         with:
           install-only: true
 
+      - name: Run GoReleaser
+        uses: testifysec/witness-run-action@v0.1.2
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          GITHUB_REPOSITORY_OWNER: ${{ github.repository_owner }}
+        with:
+          enable-sigstore: true
+          enable-archivista: true
+          attestations: "github git"
+          trace: false
+          step: build
+          command: goreleaser release --rm-dist
+
+
+  #TODO make new docker containers so we just copy the binaries into the containers
       - name: Set up Docker Buildx
         uses: docker/setup-buildx-action@v1
       - name: Login to GitHub Container Registry
