@@ -12,7 +12,7 @@ To help string this all together, [we orchestrate it with npm workspaces](https:
 
 1. Make changes to contribute to our projects, as normal.
 1. Stage your changes, as normal. 
-1. Make your commit, our `pre-commit` hook will fire from husky, which should run anything we have configured to automate pre-commit, including `lint-staged` to *lint* any code which you touched.
+1. Make your commit, our `pre-commit` hook will fire from husky, which should run anything we have configured to automate pre-commit, including `lint-staged` to *lint* any code which you touched, and `commitlint` to ensure your commit meets conventional commit standards.
 
 **_Note:_**: Our linter scripts are configured to auto-fix lint issues if they can, so if you missed lint issues when you try to commit, you may see the linters auto-fix issues and restage them for you. This is to help automate the process to help developers, so they do not need to think about it as much.
 
