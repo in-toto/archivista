@@ -20,11 +20,11 @@ jobs:
         uses: actions/checkout@v2
       - uses: actions/cache@v2
         with:
-         path: |
-           ~/go/pkg/mod
-           ~/.cache/go-build
-         key: ${{ runner.os }}-go-${{ hashFiles('**/go.sum') }}
-         restore-keys: |
+          path: |
+            ~/go/pkg/mod
+            ~/.cache/go-build
+          key: ${{ runner.os }}-go-${{ hashFiles('**/go.sum') }}
+          restore-keys: |
             ${{ runner.os }}-go-
       - name: Format Unix
         run: test -z $(go fmt ./...)
@@ -70,7 +70,7 @@ jobs:
       - name: Set up Go
         uses: actions/setup-go@v2
         with:
-          go-version: 1.19
+          go-version: 1.20.2
       - uses: actions/cache@v2
         with:
           path: |
@@ -79,31 +79,11 @@ jobs:
           key: ${{ runner.os }}-go-${{ hashFiles('**/go.sum') }}
           restore-keys: |
             ${{ runner.os }}-go-
-      - name: Download GoReleaser
-        run: go install github.com/goreleaser/goreleaser@latest
 
-
-
-      - name: Install UPX
-        uses: crazy-max/ghaction-upx@v2
+      - name: Install GoReleaser
+        uses: goreleaser/goreleaser-action@v4
         with:
           install-only: true
-      - name: UPX version
-        run: upx --version
-
-
-      - name: Run GoReleaser
-        uses: testifysec/witness-run-action@v0.1.2
-        env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-          GITHUB_REPOSITORY_OWNER: ${{ github.repository_owner }}
-        with:
-          enable-sigstore: true
-          enable-archivista: true
-          attestations: "github git"
-          trace: false
-          step: build
-          command: goreleaser release --rm-dist
 
       - name: Set up Docker Buildx
         uses: docker/setup-buildx-action@v1
@@ -114,8 +94,7 @@ jobs:
           username: ${{ github.actor }}
           password: ${{ secrets.AUTH_TOKEN }}
 
-
-      - name: Package
+      - name: Package archivista
         uses: testifysec/witness-run-action@v0.1.2
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
@@ -133,6 +112,28 @@ jobs:
             --iidfile ./iidfile
             --platform linux/amd64
             --tag ghcr.io/${{ github.repository_owner }}/archivista:${{ github.ref_name }}
+            --metadata-file ./metadata-file
+            --attest type=provenance,mode=max
+            --push .
+
+      - name: Package archivistactl
+        uses: testifysec/witness-run-action@v0.1.2
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          GITHUB_REPOSITORY_OWNER: ${{ github.repository_owner }}
+        with:
+          enable-sigstore: true
+          enable-archivista: true
+          attestations: "github git"
+          trace: false
+          step: package
+          command: >
+            docker buildx build
+            --build-arg BINARY_PATH=./dist/archivistactl_linux_amd64_v1/archivistactl
+            --file ./Dockerfile
+            --iidfile ./iidfile
+            --platform linux/amd64
+            --tag ghcr.io/${{ github.repository_owner }}/archivistactl:${{ github.ref_name }}
             --metadata-file ./metadata-file
             --attest type=provenance,mode=max
             --push .
