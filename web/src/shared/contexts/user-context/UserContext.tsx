@@ -63,7 +63,7 @@ export const UserProvider: React.FC<PropsWithChildren> = ({ children }) => {
       // NOTE: This is where we handle login errors gracefully. Ory docs suggests to go to the login page. See: https://www.ory.sh/docs/kratos/quickstart
       console.error(err);
       // Redirect to login page
-      window.location.replace('/login/login');
+      window.location.replace('/login/login?return_to=' + window.location.origin);
     });
   }, [setLogoutUrl, setSession]);
 
