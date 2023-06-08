@@ -1,0 +1,23 @@
+extends:
+  - '@commitlint/config-conventional'
+
+rules:
+  type-enum:
+    - 2
+    - always
+    - [
+        'feat',
+        'fix',
+        'perf',
+        'refactor',
+        'style',
+        'story',
+        'test',
+        'build',
+        'ops',
+        'docs',
+        'chore',
+        'merge',
+        'spike',
+        'revert'
+      ]
