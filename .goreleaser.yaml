@@ -1,0 +1,59 @@
+project_name: archivista
+builds:
+  - ldflags:
+      - "-s -w"
+      - "-extldflags=-zrelro"
+      - "-extldflags=-znow"
+      - "-extldflags -w -X 'github.com/testifysec/archivista/cmd.Version={{.Tag}}-{{.ShortCommit}}'"
+    env:
+      - "CGO_ENABLED=0"
+      - "GO111MODULE=on"
+      - "GOFLAGS=-mod=readonly -trimpath"
+    goos:
+      - linux
+      # - windows
+      # - darwin
+    goarch:
+      - amd64
+      # - arm64
+    main: ./
+gomod:
+  proxy: false
+source:
+  enabled: true
+changelog:
+  use: github
+  groups:
+    - title: Features
+      regexp: "^.*feat[(\\w)]*:+.*$"
+      order: 0
+    - title: 'Bug fixes'
+      regexp: "^.*fix[(\\w)]*:+.*$"
+      order: 1
+    - title: 'Documentation'
+      regexp: "^.*docs[(\\w)]*:+.*$"
+      order: 2
+    - title: Others
+      order: 999
+release:
+  draft: true
+  extra_files:
+    - name_template: witness_linux_amd64
+      glob: dist/archivista_linux_amd64_v1/archivista
+  prerelease: auto
+  github:
+    owner: "{{ .Env.GITHUB_REPOSITORY_OWNER }}"
+upx:
+  -
+    # Whether to enable it or not.
+    enabled: false
+
+    # Compress argument.
+    # Valid options are from '1' (faster) to '9' (better), and 'best'.
+    compress: best
+
+    # Whether to try LZMA (slower).
+    lzma: true
+
+    # Whether to try all methods and filters (slow).
+    brute: true
