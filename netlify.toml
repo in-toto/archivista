@@ -1,20 +1,23 @@
 [[redirects]]
-  from = "/archivista"
-  to = "https://archivista.testifysec.io"
+  from = "/archivista/*"
+  to = "https://archivista.testifysec.io/:splat"
   status = 200
   force = true
+
 [[redirects]]
-  from = "/judge-api"
-  to = "https://judge-api.testifysec.io"
+  from = "/judge-api/*"
+  to = "https://judge-api.testifysec.io/:splat"
   status = 200
   force = true
+
 [[redirects]]
-  from = "/kratos"
-  to = "https://kratos.testifysec.io"
-  status = 200
+  from = "/kratos/*"
+  to = "https://kratos.testifysec.io/:splat"
   force = true
+  status = 200
+
 [[redirects]]
-  from = "/login"
-  to = "https://login.testifysec.io"
-  status = 200
+  from = "/login/*"
+  to = "https://login.testifysec.io/:splat"
   force = true
+  status = 200
