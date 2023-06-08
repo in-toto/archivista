@@ -1,0 +1,2 @@
+'*.{js,jsx,ts,tsx}':
+  - npm test
