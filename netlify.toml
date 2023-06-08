@@ -1,0 +1,20 @@
+[[redirects]]
+  from = "/archivista"
+  to = "https://archivista.testifysec.io"
+  status = 200
+  force = true
+[[redirects]]
+  from = "/judge-api"
+  to = "https://judge-api.testifysec.io"
+  status = 200
+  force = true
+[[redirects]]
+  from = "/kratos"
+  to = "https://kratos.testifysec.io"
+  status = 200
+  force = true
+[[redirects]]
+  from = "/login"
+  to = "https://login.testifysec.io"
+  status = 200
+  force = true
