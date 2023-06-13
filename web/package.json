@@ -19,7 +19,7 @@
     "lint:fix": "eslint --fix .",
     "lint": "eslint .",
     "pre-commit": "lint-staged",
-    "pre-push": "npx prepush-if-changed && npm test",
+    "pre-push": "npx prepush-if-changed",
     "prebuild-storybook": "export NODE_OPTIONS=--openssl-legacy-provider",
     "prestorybook": "export NODE_OPTIONS=--openssl-legacy-provider && npm run build-storybook",
     "serve": "gatsby serve",

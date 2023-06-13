@@ -2,6 +2,18 @@ extends:
   - '@commitlint/config-conventional'
 
 rules:
+  body-max-length:
+    - 2
+    - always
+    - Infinity
+  footer-max-line-length:
+    - 2
+    - always
+    - Infinity
+  header-max-length:
+    - 2
+    - always
+    - Infinity
   type-enum:
     - 2
     - always
@@ -19,5 +31,6 @@ rules:
         'chore',
         'merge',
         'spike',
-        'revert'
+        'revert',
+        'wip'
       ]

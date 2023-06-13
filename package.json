@@ -8,7 +8,7 @@
     "version:perms": "chmod +x ./scripts/update-platform-version.sh",
     "changelog": "npx git-conventional-commits changelog",
     "pre-commit": "npm run pre-commit -w web",
-    "pre-push": "npm run pre-push -w web",
+    "pre-push": "npx prepush-if-changed",
     "prepare": "husky install",
     "remotes:add-all": "npm run remotes:add-archivista & npm run remotes:add-go-witness & npm run remotes:add-witness",
     "remotes:add-archivista": "git remote add -f archivista https://github.com/testifysec/archivista.git",
