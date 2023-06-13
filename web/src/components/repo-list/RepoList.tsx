@@ -13,7 +13,6 @@ const RepoList = () => {
   const [searchText, setSearchText] = useState('');
   const [judge, setQuery] = useJudgeApi();
   const [archivista] = useArchivistaByRepos(judge?.results?.map((r) => r.projecturl));
-  console.log(JSON.stringify(archivista.results[0], null, 2));
 
   const handleSearchChange = (event: React.ChangeEvent<HTMLInputElement>) => {
     setSearchText(event.target.value);
@@ -32,8 +31,8 @@ const RepoList = () => {
     );
 
     if (aArchivistaResults.length && bArchivistaResults.length) {
-      const aLatestTimestamp = Math.max(...aArchivistaResults.map((result) => new Date(result?.signatures?.[0]?.timestamps?.[0]?.timestamp).getTime()));
-      const bLatestTimestamp = Math.max(...bArchivistaResults.map((result) => new Date(result?.signatures?.[0]?.timestamps?.[0]?.timestamp).getTime()));
+      const aLatestTimestamp = Math.max(...aArchivistaResults.map((result) => new Date(result?.signatures?.[0]?.timestamps?.[0]?.timestamp || '').getTime()));
+      const bLatestTimestamp = Math.max(...bArchivistaResults.map((result) => new Date(result?.signatures?.[0]?.timestamps?.[0]?.timestamp || '').getTime()));
 
       return bLatestTimestamp - aLatestTimestamp;
     }

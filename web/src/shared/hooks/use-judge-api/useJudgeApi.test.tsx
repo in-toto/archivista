@@ -1,47 +1,71 @@
-import { act, renderHook } from '@testing-library/react-hooks';
-
+import fetchMock from 'jest-fetch-mock';
+import { renderHook } from '@testing-library/react-hooks';
 import useJudgeApi from './useJudgeApi';
 
+// Mock the fetch function
+const mockedFetch = fetchMock;
+global.fetch = mockedFetch as typeof fetch;
+
 describe('useJudgeApi', () => {
-  test('returns the initial state', () => {
-    const { result } = renderHook(() => useJudgeApi());
-
-    expect(result.current[0]).toEqual({
-      apiStatus: { isLoading: false, hasError: false },
-      results: [],
-      query: '',
-    });
+  beforeEach(() => {
+    fetchMock.resetMocks();
   });
 
-  test('updates the query state', () => {
-    const { result } = renderHook(() => useJudgeApi());
+  test('should handle successful API response', async () => {
+    const responseData = {
+      data: {
+        projects: [
+          { id: 1, repoID: 'repo1', name: 'Project 1', projecturl: 'https://example.com/project1' },
+          { id: 2, repoID: 'repo2', name: 'Project 2', projecturl: 'https://example.com/project2' },
+        ],
+      },
+    };
 
-    act(() => {
-      result.current[1]('new query');
-    });
+    fetchMock.mockResponseOnce(JSON.stringify(responseData));
 
-    expect(result.current[0].query).toBe('new query');
-  });
-
-  test('fetches results when query length is at least 3', async () => {
-    const fetchMock = jest.spyOn(window, 'fetch');
-    fetchMock.mockResolvedValue({
-      json: () => [{ id: 1, name: 'result 1' }],
-    } as unknown as Response);
-
+    // Render the hook
     const { result, waitForNextUpdate } = renderHook(() => useJudgeApi());
-    const [, setQuery] = result.current;
 
-    act(() => {
-      setQuery('abc');
-    });
+    // Set the query
+    result.current[1]('searchQuery');
 
+    // Check the loading state
+    expect(result.current[0].apiStatus.isLoading).toBe(true);
+
+    // Wait for the next update, indicating the API call is finished
     await waitForNextUpdate();
 
-    expect(result.current[0].results).toEqual([{ id: 1, name: 'result 1' }]);
-    expect(fetchMock).toHaveBeenCalledWith('judge-api/query?query=abc', {
-      method: 'GET',
-      credentials: 'include',
-    });
+    // Check the loading state
+    expect(result.current[0].apiStatus.isLoading).toBe(false);
+
+    // Check the results
+    expect(result.current[0].results).toEqual(responseData.data.projects);
+
+    // Check the query
+    expect(result.current[0].query).toBe('searchQuery');
+  });
+
+  test('should handle API error', async () => {
+    const errorMessage = 'API Error';
+
+    fetchMock.mockRejectOnce(new Error(errorMessage));
+
+    // Render the hook
+    const { result, waitForNextUpdate } = renderHook(() => useJudgeApi());
+
+    // Set the query
+    result.current[1]('searchQuery');
+
+    // Check the loading state
+    expect(result.current[0].apiStatus.isLoading).toBe(true);
+
+    // Wait for the next update, indicating the API call is finished
+    await waitForNextUpdate();
+
+    // Check the loading state
+    expect(result.current[0].apiStatus.isLoading).toBe(false);
+
+    // Check the error state
+    expect(result.current[0].apiStatus.hasError).toBe(true);
   });
 });

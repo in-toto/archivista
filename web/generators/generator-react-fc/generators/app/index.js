@@ -66,8 +66,8 @@ module.exports = class extends Generator {
   
     // Mock file
     this.fs.copyTpl(
-      this.templatePath('__mocks__/MyComponent.mock.tsx'),
-      this.destinationPath(`${componentFolder}/__mocks__/${componentName}.mock.tsx`),
+      this.templatePath('__mocks__/MyComponent.tsx'),
+      this.destinationPath(`${componentFolder}/__mocks__/${componentName}.tsx`),
       {
         componentName, 
       }

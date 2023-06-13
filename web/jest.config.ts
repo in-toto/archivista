@@ -29,22 +29,24 @@ export default {
 
   // The directory where Jest should output its coverage files
   coverageDirectory: 'coverage',
-  // coverageThreshold: {
-  //   global: {
-  //     branches: 80,
-  //     functions: 80,
-  //     lines: 80,
-  //     statements: 80,
-  //   },
-  //   each: {
-  //     branches: 80,
-  //     functions: 80,
-  //     lines: 80,
-  //     statements: 80,
-  //   },
-  // },
+  // TODO: You gotta pump those up, these are rookie #s in this racket
+  coverageThreshold: {
+    global: {
+      branches: 9,
+      functions: 15,
+      lines: 26,
+      statements: 26,
+    },
+    './src/**/*.{ts,tsx}': {
+      branches: 0,
+      functions: 0,
+      lines: 0,
+      statements: 0,
+    },
+  },
   collectCoverageFrom: [
     'src/**/*.{ts,tsx}',
+    '!**/*.stories.{ts,tsx}',
     '!**/node_modules/**',
     '!**/.cache/**',
     '!**/public/**',
@@ -192,7 +194,7 @@ export default {
   // ],
 
   // An array of regexp pattern strings that are matched against all test paths, matched tests are skipped
-  testPathIgnorePatterns: ['/node_modules/', '/public/', '.cache', '.old'],
+  testPathIgnorePatterns: ['/node_modules/', '/public/', '.cache', '.old', 'generators'],
 
   // The regexp pattern or array of patterns that Jest uses to detect test files
   // testRegex: [],
@@ -219,7 +221,7 @@ export default {
   // verbose: undefined,
 
   // An array of regexp patterns that are matched against all source file paths before re-running tests in watch mode
-  watchPathIgnorePatterns: ['/public/', '.stories.@(js|jsx|ts|tsx)', '.old/', '\\.gql\\.json$'],
+  watchPathIgnorePatterns: ['/public/', '.stories.@(js|jsx|ts|tsx)', '.old/', '\\.gql\\.json$', 'generators'],
 
   // Whether to use watchman for file crawling
   // watchman: true,

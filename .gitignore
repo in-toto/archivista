@@ -4,3 +4,5 @@ node_modules/
 coverage/
 storybook-static/
 .testing-static-queries.json
+
+.certs/

@@ -2,28 +2,28 @@
 /* eslint-disable @typescript-eslint/no-unsafe-argument */
 /* eslint-disable @typescript-eslint/no-unsafe-member-access */
 import * as React from 'react';
+import * as asn1js from 'asn1js';
 import * as pkijs from 'pkijs';
 
+import { AttestationCollection } from '../../../generated/graphql';
 import { Box } from '@mui/system';
 import Button from '@mui/material/Button';
-import Dialog from '@mui/material/Dialog';
-import { Envelope } from '../../../shared/models/Dsse';
-import Typography from '@mui/material/Typography';
-import { PeculiarCertificateViewer } from '@peculiar/certificates-viewer-react';
-import IconButton from '@mui/material/IconButton';
 import CloseIcon from '@mui/icons-material/Close';
 import Collapse from '@mui/material/Collapse';
-import Tooltip from '@mui/material/Tooltip';
-import FileCopyIcon from '@mui/icons-material/FileCopy';
-import ExpandMoreIcon from '@mui/icons-material/ExpandMore';
-import ExpandLessIcon from '@mui/icons-material/ExpandLess';
+import Dialog from '@mui/material/Dialog';
 import DoneIcon from '@mui/icons-material/Done';
+import { Envelope } from '../../../shared/models/Dsse';
+import ExpandLessIcon from '@mui/icons-material/ExpandLess';
+import ExpandMoreIcon from '@mui/icons-material/ExpandMore';
+import FileCopyIcon from '@mui/icons-material/FileCopy';
+import IconButton from '@mui/material/IconButton';
+import { PeculiarCertificateViewer } from '@peculiar/certificates-viewer-react';
+import Tooltip from '@mui/material/Tooltip';
+import Typography from '@mui/material/Typography';
 import { green } from '@mui/material/colors';
 
-import * as asn1js from 'asn1js';
-
 interface CertModalProps {
-  data?: CertificateInfo[];
+  data?: CertificateInfo[] | Envelope<AttestationCollection>;
   open: boolean;
   onClose: () => void; // Change this from "close" to "onClose"
 }

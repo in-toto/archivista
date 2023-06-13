@@ -471,7 +471,13 @@ export type Signature = Node & {
   id: Scalars["ID"];
   keyID: Scalars["String"];
   signature: Scalars["String"];
+  timestamps: Maybe<Array<Timestamp>>
 };
+
+export type Timestamp = Node & {
+  __typename?: "Timestamp";
+  timestamp: Scalars["String"]
+}
 
 export type Statement = Node & {
   __typename?: "Statement";

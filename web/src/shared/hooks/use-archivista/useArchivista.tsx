@@ -28,7 +28,6 @@ const useArchivista = (): [ArchivistaProps, React.Dispatch<React.SetStateAction<
   }
 
   const isHash = (text: string) => {
-    // Regular expression to check if string is a SHA256 hash
     const regexExpSHA256 = /^[a-f0-9]{64}$/gi;
     const regexExpSHA1 = /^[a-f0-9]{40}$/gi;
 

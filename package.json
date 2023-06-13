@@ -4,17 +4,35 @@
   "description": "Judge is a SaaS (Software as a Service) which aims to provide our open source software in a ready-to-use state, so that anyone with an interest in using it for supply-chain security can spin up our solutions quickly, easily, and effectively.",
   "main": "index.js",
   "scripts": {
+    "subtrees:fetch:all": "npm run subtrees:fetch:archivista & npm run subtrees:fetch:go-witness & npm run subtrees:fetch:witness",
+    "subtrees:fetch:archivista": "git fetch archivista main",
+    "subtrees:fetch:go-witness": "git fetch go-witness main",
+    "subtrees:fetch:witness": "git fetch witness main",
+    "subtrees:pull:archivista": "git subtree pull --prefix archivista/ archivista main --squash",
+    "subtrees:pull:go-witness": "git subtree pull --prefix go-witness/ go-witness main --squash",
+    "subtrees:pull:witness": "git subtree pull --prefix witness/ witness main --squash",
+    "subtress:push:archivista": "git subtree push --prefix archivista/ archivista main",
+    "subtress:push:go-witness": "git subtree push --prefix go-witness/ go-witness main",
+    "subtress:push:witness": "git subtree push --prefix witness/ witness main",
+    "remotes:add-all": "npm run remotes:add-archivista & npm run remotes:add-go-witness & npm run remotes:add-witness",
+    "remotes:add-archivista": "git remote add -f archivista https://github.com/testifysec/archivista.git",
+    "remotes:add-go-witness": "git remote add -f go-witness https://github.com/testifysec/go-witness.git",
+    "remotes:add-witness": "git remote add -f witness https://github.com/testifysec/witness.git",
     "start": "cd dev && make deps && tmux has-session -t mysession 2>/dev/null || tmux new-session -d -s mysession 'make up' && tmux split-window -h 'minikube tunnel' && tmux select-layout even-horizontal && tmux attach-session -d -t mysession",
-    "start:web" : "npm start -w web",
-    "start:web:remote-proxy" : "npm run start:remote-proxy -w web",
+    "start:web": "npm start -w web",
+    "start:web:remote-proxy": "npm run start:remote-proxy -w web",
+    "test": "npm test -w web",
     "prepare": "husky install",
     "pre-push": "npm run pre-push -w web",
     "pre-commit": "npm run pre-commit -w web"
   },
   "devDependencies": {
-    "husky": "8.0.3"
+    "husky": "8.0.3",
+    "jest-fetch-mock": "^3.0.3"
   },
-  "workspaces" : ["web"],
+  "workspaces": [
+    "web"
+  ],
   "author": "TestifySec",
   "license": "UNLICENSED"
 }
