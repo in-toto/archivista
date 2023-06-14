@@ -1,0 +1,41 @@
+project_name: witness
+builds:
+  - ldflags:
+      - "-s -w"
+      - "-extldflags=-zrelro"
+      - "-extldflags=-znow"
+      - "-extldflags -w -X 'github.com/testifysec/witness/cmd.Version={{.Tag}}-{{.ShortCommit}}'"
+    env:
+      - "CGO_ENABLED=0"
+      - "GO111MODULE=on"
+      - "GOFLAGS=-mod=readonly -trimpath"
+    goos:
+      - linux
+      - windows
+      - darwin
+    goarch:
+      - amd64
+      - arm64
+    main: ./
+gomod:
+  proxy: false
+source:
+  enabled: true
+changelog:
+  use: github
+  groups:
+    - title: Features
+      regexp: "^.*feat[(\\w)]*:+.*$"
+      order: 0
+    - title: 'Bug fixes'
+      regexp: "^.*fix[(\\w)]*:+.*$"
+      order: 1
+    - title: 'Documentation'
+      regexp: "^.*docs[(\\w)]*:+.*$"
+      order: 2
+    - title: Others
+      order: 999
+release:
+  prerelease: auto
+  github:
+    owner: "{{ .Env.GITHUB_REPOSITORY_OWNER }}"
