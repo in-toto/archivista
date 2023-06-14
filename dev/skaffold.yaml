@@ -7,7 +7,7 @@ build:
     useBuildkit: false
   artifacts:
   - image: registry.gitlab.com/testifysec/judge-platform/archivista
-    context: "../archivista"
+    context: "../subtrees/archivista"
     ko:
       dir: "../archivista"
       main: "../archivista/cmd/archivista"

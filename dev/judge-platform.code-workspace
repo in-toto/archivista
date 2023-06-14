@@ -16,13 +16,13 @@
 			"path": "../gitlab-runner"
 		},
 		{
-			"path": "../witness"
+			"path": "../subtrees/witness"
 		},
 		{
-			"path": "../go-witness"
+			"path": "../subtrees/go-witness"
 		},
 		{
-			"path": "../archivista"
+			"path": "../subtrees/archivista"
 		}
 	],
 	"settings": {

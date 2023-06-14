@@ -156,13 +156,13 @@ load-attestations: copy-attestations build-archivistactl
 
 build-witness:
 	mkdir -p ./bin
-	cd ../witness && go build -o bin/witness
-	mv ../witness/bin/witness ./bin/witness
+	cd ../subtrees/witness && go build -o bin/witness
+	mv ../subtrees/witness/bin/witness ./bin/witness
 
 build-archivistactl:
 	mkdir -p ./bin
-	cd ../archivista && go build -o ./bin/archivistactl ./cmd/archivistactl/main.go
-	mv ../archivista/bin/archivistactl ./bin/archivistactl
+	cd ../subtrees/archivista && go build -o ./bin/archivistactl ./cmd/archivistactl/main.go
+	mv ../subtrees/archivista/bin/archivistactl ./bin/archivistactl
 
 build-scribe:
 	mkdir -p ./bin
