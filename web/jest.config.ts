@@ -209,10 +209,9 @@ export default {
   // transform: undefined,
 
   // An array of regexp pattern strings that are matched against all source file paths, matched files will skip transformation
-  // transformIgnorePatterns: [
-  //   "/node_modules/",
-  //   "\\.pnp\\.[^\\/]+$"
-  // ],
+  transformIgnorePatterns: ['node_modules/(?!(gatsby|gatsby-script)/)'],
+
+  modulePathIgnorePatterns: ['.cache'],
 
   // An array of regexp pattern strings that are matched against all modules before the module loader will automatically return a mock for them
   // unmockedModulePathPatterns: undefined,
@@ -221,7 +220,7 @@ export default {
   // verbose: undefined,
 
   // An array of regexp patterns that are matched against all source file paths before re-running tests in watch mode
-  watchPathIgnorePatterns: ['/public/', '.stories.@(js|jsx|ts|tsx)', '.old/', '\\.gql\\.json$', 'generators'],
+  watchPathIgnorePatterns: ['.cache/', '/public/', '.stories.@(js|jsx|ts|tsx)', '.old/', '\\.gql\\.json$', 'generators'],
 
   // Whether to use watchman for file crawling
   // watchman: true,

@@ -4,8 +4,8 @@
   "description": "Judge is a SaaS (Software as a Service) which aims to provide our open source software in a ready-to-use state, so that anyone with an interest in using it for supply-chain security can spin up our solutions quickly, easily, and effectively.",
   "main": "index.js",
   "scripts": {
-    "version": "./scripts/update-platform-version.sh",
-    "version:perms": "chmod +x ./scripts/update-platform-version.sh",
+    "build": "npm run build:web",
+    "build:web": "npm run build -w web",
     "changelog": "npx git-conventional-commits changelog",
     "pre-commit": "npm run pre-commit -w web",
     "pre-push": "npx prepush-if-changed",
@@ -33,14 +33,15 @@
     "test:judge-api": "cd judge-api && go test ./... && cd ..",
     "test:web": "npm test -w web",
     "test:witness": "cd subtrees/witness && go test ./... && cd ../..",
-    "test": "npm run test:go && npm test -w web"
+    "test": "npm run test:go && npm test -w web",
+    "version:perms": "chmod +x ./scripts/update-platform-version.sh",
+    "version": "./scripts/update-platform-version.sh"
   },
   "devDependencies": {
     "@commitlint/cli": "^17.6.5",
     "@commitlint/config-conventional": "^17.6.5",
     "git-conventional-commits": "^2.6.5",
     "husky": "8.0.3",
-    "jest-fetch-mock": "^3.0.3",
     "prepush-if-changed": "^1.0.8"
   },
   "workspaces": [
