@@ -4,7 +4,7 @@ metadata:
   labels:
     app.kubernetes.io/instance: kratos
     app.kubernetes.io/name: kratos
-    app.kubernetes.io/version: v0.11.1
+    app.kubernetes.io/version: v0.13.0
   name: kratos
   namespace: kratos
 spec:
@@ -27,7 +27,7 @@ spec:
       labels:
         app.kubernetes.io/instance: kratos
         app.kubernetes.io/name: kratos
-        app.kubernetes.io/version: v0.11.1
+        app.kubernetes.io/version: v0.13.0
     spec:
       automountServiceAccountToken: true
       containers:
@@ -77,7 +77,7 @@ spec:
           requests:
             cpu: 100m
             memory: 200Mi
-        image: oryd/kratos:v0.11.1
+        image: oryd/kratos:v0.13.0
         imagePullPolicy: IfNotPresent
         ports:
         - containerPort: 4434
@@ -115,7 +115,7 @@ spec:
         - -c
         - |
           kratos migrate sql --yes "mysql://root:root@tcp(mysql.mysql.svc.cluster.local:3306)/kratos?parseTime=true"
-        image: oryd/kratos:v0.11.1
+        image: oryd/kratos:v0.13.0
         imagePullPolicy: IfNotPresent
         name: migrate
         resources: {}
