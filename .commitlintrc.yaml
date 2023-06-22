@@ -18,19 +18,20 @@ rules:
     - 2
     - always
     - [
+        'build',
+        'chore',
+        'docs',
         'feat',
         'fix',
+        'merge',
+        'ops',
         'perf',
         'refactor',
-        'style',
-        'story',
-        'test',
-        'build',
-        'ops',
-        'docs',
-        'chore',
-        'merge',
-        'spike',
         'revert',
+        'spike',
+        'story',
+        'style',
+        'subtree',
+        'test',
         'wip'
       ]
