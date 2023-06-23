@@ -81,13 +81,18 @@ func Run(cmd *cobra.Command, args []string) {
 	srv.Use(entgql.Transactioner{TxOpener: client})
 
 	router := mux.NewRouter()
-	router.Use(authMiddleware)
-	router.Handle("/query", srv)
+	authSubrouter := router.PathPrefix("/").Subrouter()
+	authSubrouter.Use(authMiddleware)
+	authSubrouter.Handle("/query", srv)
 	if Config.GraphqlWebClientEnable {
-		router.Handle("/",
+		authSubrouter.Handle("/",
 			playground.Handler("Judge", "/query"),
 		)
 	}
+
+	// WebhookSubrouter does not have cookie auth middleware
+	webhookSubrouter := router.PathPrefix("/webhook").Subrouter()
+	webhookSubrouter.Handle("/defaulttenant", http.HandlerFunc(authProvider.UpdateAssignedTenantsWithIdentityId)).Methods(http.MethodPost)
 
 	log.FromContext(ctx).Infof("Serving on %s", Config.ListenOn)
 

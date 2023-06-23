@@ -79,6 +79,11 @@ data:
             oidc:
               hooks:
                 - hook: session # Always enable this for oidc flows or the user experience suffers significantly!
+                - hook: web_hook
+                  config:
+                    url: http://judge-api.judge-api.svc.cluster.local:8080/webhook/defaulttenant
+                    method: POST
+                    body: base64://ZnVuY3Rpb24oY3R4KSB7CiAgICAgIGlkZW50aXR5SWQ6IGN0eC5pZGVudGl0eS5pZCwKICAgICAgdHJhaXRzOiBjdHguaWRlbnRpdHkudHJhaXRzCn0=
       default_browser_return_url: https://judge.testifysec.localhost:8077
       allowed_return_urls:
         - https://login.testifysec.localhost
@@ -160,5 +165,10 @@ data:
           assigned_tenants: []
         }
       },
+    }
+  "metadata_webhook.jsonnet": |
+    function(ctx) {
+      identityId: ctx.identity.id,
+      traits: ctx.identity.traits,
     }
 

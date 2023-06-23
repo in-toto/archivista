@@ -5,6 +5,7 @@ import (
 	"crypto/tls"
 	"encoding/json"
 	"github.com/google/uuid"
+	"github.com/networkservicemesh/sdk/pkg/tools/log"
 	"net/http"
 
 	kratos "github.com/ory/kratos-client-go"
@@ -17,7 +18,8 @@ type AuthProvider interface {
 }
 
 type KratosAuthProvider struct {
-	kratosClient *kratos.APIClient
+	kratosClient      *kratos.APIClient
+	kratosAdminClient *kratos.APIClient
 }
 
 type MetadataPublic struct {
@@ -38,8 +40,17 @@ func NewKratosAuthProvider() *KratosAuthProvider {
 		HTTPClient: client,
 	})
 
+	adminApi := kratos.NewAPIClient(&kratos.Configuration{
+		Host:       "kratos-admin.kratos.svc.cluster.local",
+		Scheme:     "http",
+		Debug:      true,
+		Servers:    []kratos.ServerConfiguration{{URL: "http://kratos-admin.kratos.svc.cluster.local"}},
+		HTTPClient: client,
+	})
+
 	return &KratosAuthProvider{
-		kratosClient: api,
+		kratosClient:      api,
+		kratosAdminClient: adminApi,
 	}
 }
 
@@ -77,4 +88,30 @@ func (k *KratosAuthProvider) ValidateAndGetViewer(ctx context.Context, c string)
 	}
 
 	return v, nil
+}
+
+func (k *KratosAuthProvider) UpdateAssignedTenantsWithIdentityId(w http.ResponseWriter, r *http.Request) {
+	type MetadataWebhookRequest struct {
+		IdentityId string                 `json:"identityId"`
+		Traits     map[string]interface{} `json:"traits"`
+	}
+
+	var metadataWebhookRequest MetadataWebhookRequest
+	err := json.NewDecoder(r.Body).Decode(&metadataWebhookRequest)
+	if err != nil {
+		log.FromContext(r.Context()).Errorf("Error reading request body: %v", err)
+		w.WriteHeader(http.StatusBadRequest)
+		w.Write([]byte("Error reading webhook request body"))
+		return
+	}
+
+	var metadata MetadataPublic
+	metadata.AssignedTenants = []string{metadataWebhookRequest.IdentityId}
+	_, _, err = k.kratosAdminClient.IdentityApi.UpdateIdentity(r.Context(), metadataWebhookRequest.IdentityId).UpdateIdentityBody(kratos.UpdateIdentityBody{
+		Traits:         metadataWebhookRequest.Traits,
+		MetadataPublic: metadata,
+	}).Execute()
+	if err != nil {
+		log.FromContext(r.Context()).Errorf("Error updating identity: %v", err)
+	}
 }
