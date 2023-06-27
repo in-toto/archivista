@@ -17,8 +17,24 @@ tar -xzf witness.tar.gz
 # Check if UPX is installed, and if not, install it
 if ! command -v upx &> /dev/null; then
     echo "UPX not found, installing..."
-    sudo apt-get update && sudo apt-get install -y upx
+
+    if [[ "$OSTYPE" == "linux-gnu"* ]]; then
+        # Linux
+        sudo apt-get update && sudo apt-get install -y upx
+    elif [[ "$OSTYPE" == "darwin"* ]]; then
+        # macOS
+        if ! command -v brew &> /dev/null; then
+            echo "Homebrew not found, please install Homebrew to continue."
+            exit 1
+        fi
+
+        brew install upx
+    else
+        echo "Unsupported operating system: $OSTYPE"
+        exit 1
+    fi
 fi
+
 
 echo "Compressing Witness binary using UPX..."
 upx --best --ultra-brute witness
