@@ -3,6 +3,7 @@
 import { Avatar, Box, IconButton, Tooltip, Typography, styled } from '@mui/material';
 
 import CheckCircleIcon from '@mui/icons-material/CheckCircle';
+import CommitLink from '../../commit-link/CommitLink';
 import { Dsse } from '../../../generated/graphql';
 import LinkIcon from '@mui/icons-material/Link';
 import React from 'react';
@@ -67,7 +68,7 @@ const TimelineDesktop: React.FC<DesktopTimelineProps> = ({ dsseArray }: DesktopT
         const firstStepTimestamp = new Date(groupByCommit[commit][0].signatures[0].timestamps[0].timestamp).getTime();
         const lastStepTimestamp = new Date(groupByCommit[commit][groupByCommit[commit].length - 1].signatures[0].timestamps[0].timestamp).getTime();
         const timeElapsed = lastStepTimestamp - firstStepTimestamp;
-        const previousCommitTimestamp = index === 0 ? null : new Date(groupByCommit[sortedCommits[index - 1]][0].signatures[0].timestamps[0].timestamp);
+        // const previousCommitTimestamp = index === 0 ? null : new Date(groupByCommit[sortedCommits[index - 1]][0].signatures[0].timestamps[0].timestamp);
 
         return (
           <StyledBox key={commit} sx={{ minWidth: 250, marginRight: '16px' }}>
@@ -75,9 +76,7 @@ const TimelineDesktop: React.FC<DesktopTimelineProps> = ({ dsseArray }: DesktopT
               <Avatar sx={{ backgroundColor: 'success.main', marginRight: '8px' }}>
                 <CheckCircleIcon />
               </Avatar>
-              <Typography variant="subtitle2" sx={{ fontWeight: 'bold' }}>
-                Commit: {commit.split(':').pop()?.slice(0, 7)}
-              </Typography>
+              <CommitLink commit={commit} />
             </Box>
             {groupByCommit[commit].map((dsse, index) => {
               const currentTimestamp = new Date(dsse.signatures[0].timestamps[0].timestamp);
