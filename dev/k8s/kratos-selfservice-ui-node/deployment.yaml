@@ -16,7 +16,7 @@ spec:
       labels:
         app.kubernetes.io/name: kratos-selfservice-ui-node
         app.kubernetes.io/instance: kratos-selfservice-ui-node
-        app.kubernetes.io/version: v0.11.1
+        app.kubernetes.io/version: v0.12.7
       annotations:
     spec:
       imagePullSecrets:
@@ -24,7 +24,7 @@ spec:
       volumes:
       containers:
         - name: kratos-selfservice-ui-node
-          image: oryd/kratos-selfservice-ui-node:v0.11.1
+          image: oryd/kratos-selfservice-ui-node:v0.12.7
           imagePullPolicy: IfNotPresent
           env:
             - name: KRATOS_PUBLIC_URL
