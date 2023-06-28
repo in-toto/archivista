@@ -4,6 +4,7 @@ import { Box, Card, CardContent, TextField, Typography } from '@mui/material';
 import React, { useState } from 'react';
 
 import ErrorState from '../../shared/components/error-state/ErrorState';
+import RepoCard from '../repo-card/RepoCard';
 import SkeletonLoader from '../../shared/components/skeleton-loader/SkeletonLoader';
 import Timeline from '../timeline/Timeline';
 import useArchivistaByRepos from '../../shared/hooks/use-archivista/useArchivistaByRepo';
@@ -56,17 +57,7 @@ const RepoList = () => {
 
     // only show repos with data
     if (archivistaResultsByRepo.length > 1) {
-      return (
-        <Card sx={{ minWidth: 275, margin: '8px' }} key={repo?.id}>
-          <CardContent>
-            <Typography sx={{ fontSize: 20, fontWeight: 'bold', marginBottom: '8px' }}>{repo?.name}</Typography>
-            <Typography sx={{ fontSize: 14, marginBottom: '8px' }}>{repo?.description}</Typography>
-            <Box>
-              <Timeline dsseArray={archivistaResultsByRepo} />
-            </Box>
-          </CardContent>
-        </Card>
-      );
+      return <RepoCard key={repo.id} repo={repo} archivistaResultsByRepo={archivistaResultsByRepo} />;
     } else return null;
   });
 
