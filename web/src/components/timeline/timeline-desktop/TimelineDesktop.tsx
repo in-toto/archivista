@@ -1,12 +1,12 @@
 /* eslint-disable @typescript-eslint/no-unsafe-member-access */
 /* eslint-disable @typescript-eslint/no-unsafe-argument */
 import { Avatar, Box, IconButton, Tooltip, Typography, styled } from '@mui/material';
+import React, { useCallback } from 'react';
 
 import CheckCircleIcon from '@mui/icons-material/CheckCircle';
 import CommitLink from '../../commit-link/CommitLink';
 import { Dsse } from '../../../generated/graphql';
 import LinkIcon from '@mui/icons-material/Link';
-import React from 'react';
 import { useSearch } from '../../../shared/contexts/search-context/SearchContext';
 import { useTheme } from '@mui/material/styles';
 import { useUiState } from '../../../shared/contexts/ui-state-context/UiStateContext';
@@ -34,6 +34,17 @@ const TimelineDesktop: React.FC<DesktopTimelineProps> = ({ dsseArray }: DesktopT
     setSearchQuery(searchValue);
     setUiState({ ...uiState, isSearchOpen: true });
   };
+
+  const copyToClipboard = useCallback((text: string) => {
+    navigator.clipboard
+      .writeText(text)
+      .then(() => {
+        console.log('Copied to clipboard:', text);
+      })
+      .catch((error) => {
+        console.error('Failed to copy to clipboard:', error);
+      });
+  }, []);
 
   const { uiState, setUiState } = useUiState();
 
@@ -68,7 +79,6 @@ const TimelineDesktop: React.FC<DesktopTimelineProps> = ({ dsseArray }: DesktopT
         const firstStepTimestamp = new Date(groupByCommit[commit][0].signatures[0].timestamps[0].timestamp).getTime();
         const lastStepTimestamp = new Date(groupByCommit[commit][groupByCommit[commit].length - 1].signatures[0].timestamps[0].timestamp).getTime();
         const timeElapsed = lastStepTimestamp - firstStepTimestamp;
-        // const previousCommitTimestamp = index === 0 ? null : new Date(groupByCommit[sortedCommits[index - 1]][0].signatures[0].timestamps[0].timestamp);
 
         return (
           <StyledBox key={commit} sx={{ minWidth: 250, marginRight: '16px' }}>
@@ -76,7 +86,7 @@ const TimelineDesktop: React.FC<DesktopTimelineProps> = ({ dsseArray }: DesktopT
               <Avatar sx={{ backgroundColor: 'success.main', marginRight: '8px' }}>
                 <CheckCircleIcon />
               </Avatar>
-              <CommitLink commit={commit} />
+              <CommitLink commit={commit} copyToClipboard={copyToClipboard} />
             </Box>
             {groupByCommit[commit].map((dsse, index) => {
               const currentTimestamp = new Date(dsse.signatures[0].timestamps[0].timestamp);
