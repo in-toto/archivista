@@ -65,7 +65,6 @@
     "gatsby-transformer-remark": "6.7.0",
     "gatsby-transformer-sharp": "5.7.0",
     "gatsby-transformer-yaml": "5.7.0",
-    "generator-react-fc": "file:../generators/react-fc",
     "graphology": "^0.25.1",
     "graphology-layout-forceatlas2": "^0.10.1",
     "graphology-types": "^0.24.7",

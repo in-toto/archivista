@@ -44,9 +44,12 @@
   "devDependencies": {
     "@commitlint/cli": "^17.6.5",
     "@commitlint/config-conventional": "^17.6.5",
+    "generator-react-fc": "file:web/generators/generator-react-fc",
+    "generator-react-hook": "file:web/generators/generator-react-hook",
     "git-conventional-commits": "^2.6.5",
     "husky": "8.0.3",
-    "prepush-if-changed": "^1.0.8"
+    "prepush-if-changed": "^1.0.8",
+    "yeoman-generator": "^5.8.0"
   },
   "workspaces": [
     "web"

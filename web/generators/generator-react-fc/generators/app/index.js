@@ -21,7 +21,7 @@ module.exports = class extends Generator {
       {
         type: 'confirm',
         name: 'storybook',
-        message: `Do you want to generate a ${chalk.green('Storybook')} story for this component? ${chalk.yellow('(y/n)')}`,
+        message: `Do you want to generate a ${chalk.green('Storybook')} story for this component?`,
         default: true,
       },
     ];
