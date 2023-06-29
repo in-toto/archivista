@@ -1,0 +1,72 @@
+name: witness-run
+description: "Creates Attestation of CI Process with Witness"
+inputs:
+  archivista-server:
+    description: "URL of the Archivista server to store or retrieve attestations"
+    required: false
+    default: "https://archivista.testifysec.io"
+  attestations:
+    description: "Attestations to record"
+    required: false
+    default: "environment git github"
+  enable-sigstore:
+    description: 'Use Sigstore for attestation'
+    required: false
+    default: "true"
+  command:
+    description: "command to run"
+    required: true
+  certificate:
+    description: "Path to the signing key's certificate"
+    required: false
+  enable-archivista:
+    description: "Use Archivista to store or retrieve attestations"
+    required: false
+    default: "true"
+  fulcio:
+    description: "Fulcio address to sign with"
+    required: false
+  fulcio-oidc-client-id:
+    description: "OIDC client ID to use for authentication"
+    required: false
+  fulcio-oidc-issuer:
+    description: "OIDC issuer to use for authentication"
+    required: false
+  fulcio-token:
+    description: "Raw token to use for authentication"
+    required: false
+  intermediates:
+    description: "Intermediates that link trust back to a root of trust in the policy"
+    required: false
+  key:
+    description: "Path to the signing key"
+    required: false
+  outfile:
+    description: "File to which to write signed data. Defaults to stdout"
+    required: false
+  product-exclude-glob:
+    description: "Pattern to use when recording products. Files that match this pattern will be excluded as subjects on the attestation."
+    required: false
+  product-include-glob:
+    description: "Pattern to use when recording products. Files that match this pattern will be included as subjects on the attestation."
+    required: false
+  spiffe-socket:
+    description: "Path to the SPIFFE Workload API socket"
+    required: false
+  step:
+    description: "Name of the step being run"
+    required: true
+  timestamp-servers:
+    description: "Timestamp Authority Servers to use when signing envelope"
+    required: false
+  trace:
+    description: "Enable tracing for the command"
+    required: false
+    default: "false"
+  workingdir:
+    description: "Directory from which commands will run"
+    required: false
+
+runs:
+  using: "node16"
+  main: "index.js"

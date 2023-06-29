@@ -1,0 +1,32 @@
+
+permissions:
+  id-token: write # This is required for requesting the JWT
+  contents: read  # This is required for actions/checkout
+name: Test Action
+on:
+  push:
+    branches:
+      - '*'
+
+jobs:
+  test-action:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@v2
+
+      - name: Set up Node.js
+        uses: actions/setup-node@v2
+        with:
+          node-version: 16
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Run your action with sigstore and Archivista
+        uses: ./ # Replace this with the path to your action if different
+        with:
+          step: test
+          command: echo hello > hello.txt
+          enable-sigstore: true
+          enable-archivista: true
