@@ -6,17 +6,19 @@ The public open source code has been added to the project as [Git Subtrees](http
 
 ## List of our subtrees
 
-- <name-of-subtree> <path-to-subtree> <name-of-remote>
-- `subtrees/archivista` `archivista/` `archivista`
-- `subtrees/go-witness` `go-witness/` `go-witness`
-- `subtrees/witness` `witness/` `witness`
+| path-to-subtree               | name-of-subtree      | name-of-remote       |
+| ----------------------------- | -------------------- | -------------------- |
+| `subtrees/archivista`         | `archivista`         | `archivista`         |
+| `subtrees/go-witness`         | `go-witness`         | `go-witness`         |
+| `subtrees/witness`            | `witness`            | `witness`            |
+| `subtrees/witness-run-action` | `witness-run-action` | `witness-run-action` |
 
 ## Getting Started
 
-Assuming you have already gotten started with the root readme.md, then you can do the following: 
+Assuming you have already gotten started with the root readme.md, then you can do the following:
 
-1. `npm run remotes:add-all` this is a one time script to add all of our remotes. You'll only need to run it one time initially, and anytime we add more remote subtrees.
-1. `npm run remotes:fetch-all` will fetch all the remote subtrees. 
+1. `npm run remotes:add:all` this is a one time script to add all of our remotes. You'll only need to run it one time initially, and anytime we add more remote subtrees.
+1. `npm run remotes:fetch:all` will fetch all the remote subtrees.
 
 From there you can add more subtrees, update subtree subfolders, and/or update subtree parent repositories.
 
@@ -28,12 +30,12 @@ Review the scripts in our root `package.json` for helper scripts related to subt
 
 You should add subtrees as remotes for easier management.
 
-1. `git remote add -f <name-of-your-subtree> https://github.com/testifysec/some-great-open-source-project.git` with the name of your subtree and the https or ssh link to the git project
-1. `git subtree add --prefix <path-to-your-subtree> <name-of-your-subtree> main --squash` will create an initial commit for your subtree into the monorepo project.
+1. `git remote add -f <name-of-your-subtree> https://github.com/testifysec/some-great-open-source-project.git` with the name of your subtree and the https or ssh link to the git project. You can add this as a script in our root `package.json` to help other devs out!
+1. `git subtree add --prefix <path-to-your-subtree> <name-of-your-subtree> main --squash` will create an initial commit for your subtree into the monorepo project. This should be a one-time command. Be careful to keep any subtree work completely seperate from any other commits.
 
 ## Updating a subtree with upstream changes
 
-So, some awesome soul decided to help us out and contributed open source changes to one of our subtrees! 
+So, some awesome soul decided to help us out and contributed open source changes to one of our subtrees!
 
 Now what?
 
