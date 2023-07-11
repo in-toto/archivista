@@ -7,6 +7,8 @@
     "build": "npm run build:web",
     "build:web": "npm run build -w web",
     "changelog": "npx git-conventional-commits changelog",
+    "lint": "npm run lint:web",
+    "lint:web": "npm run lint -w web",
     "pre-commit": "npm run pre-commit -w web",
     "pre-push": "npx prepush-if-changed",
     "prepare": "husky install",
