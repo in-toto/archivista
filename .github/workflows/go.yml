@@ -1,0 +1,45 @@
+# This workflow will build a golang project
+# For more information see: https://docs.github.com/en/actions/automating-builds-and-tests/building-and-testing-go
+
+name: go ci
+
+on:
+  push:
+    branches: [ "main" ]
+  pull_request:
+    branches: [ "main" ]
+
+jobs:
+  go_ci:
+        runs-on: ubuntu-latest
+        steps:
+        - uses: actions/checkout@v3
+    
+        - name: Set up Go
+          uses: actions/setup-go@v3
+          with:
+            go-version: 1.19 
+          
+        - name: Build archivista
+          run: cd ./subtrees/archivista && go build -v ./...
+
+        - name: Build go-witness
+          run: cd ./subtrees/go-witness && go build -v ./...
+
+        - name: Build judge-api
+          run: cd ./judge-api && go build -v ./...
+
+        - name: Build witness 
+          run: cd ./subtrees/witness && go build -v ./...
+    
+        - name: Test archivista
+          run: cd ./subtrees/archivista && go test -v ./...
+    
+        - name: Test go-witness
+          run: cd ./subtrees/go-witness && go test -v ./...
+        
+        - name: Test judge-api
+          run: cd ./judge-api && go test -v ./...
+        
+        - name: Test witness
+          run: cd ./subtrees/witness && go test -v ./...
