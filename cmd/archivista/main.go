@@ -36,11 +36,7 @@ import (
 	nested "github.com/antonfisher/nested-logrus-formatter"
 	"github.com/gorilla/handlers"
 	"github.com/gorilla/mux"
-	"github.com/networkservicemesh/sdk/pkg/tools/debug"
-	"github.com/networkservicemesh/sdk/pkg/tools/log"
-	"github.com/networkservicemesh/sdk/pkg/tools/log/logruslogger"
 	"github.com/sirupsen/logrus"
-
 	"github.com/testifysec/archivista"
 	"github.com/testifysec/archivista/internal/config"
 	"github.com/testifysec/archivista/internal/metadatastorage/mysqlstore"
@@ -48,6 +44,10 @@ import (
 	"github.com/testifysec/archivista/internal/objectstorage/filestore"
 	"github.com/testifysec/archivista/internal/server"
 )
+
+func init() {
+	logrus.SetFormatter(&nested.Formatter{})
+}
 
 func main() {
 	ctx, cancel := signal.NotifyContext(
@@ -59,49 +59,42 @@ func main() {
 	)
 	defer cancel()
 
-	logrus.SetFormatter(&nested.Formatter{})
-	log.EnableTracing(true)
-	ctx = log.WithLog(ctx, logruslogger.New(ctx, map[string]interface{}{"cmd": os.Args[0]}))
-
-	if err := debug.Self(); err != nil {
-		log.FromContext(ctx).Infof("%s", err)
-	}
 	startTime := time.Now()
 
-	log.FromContext(ctx).Infof("executing phase 1: get config from environment (time since start: %s)", time.Since(startTime))
+	logrus.Infof("executing phase 1: get config from environment (time since start: %s)", time.Since(startTime))
 	now := time.Now()
 
 	cfg := new(config.Config)
 	if err := cfg.Process(); err != nil {
-		log.FromContext(ctx).Fatal(err)
+		logrus.Fatal(err)
 	}
 
 	level, err := logrus.ParseLevel(cfg.LogLevel)
 	if err != nil {
-		log.FromContext(ctx).Fatalf("invalid log level %s", cfg.LogLevel)
+		logrus.Fatalf("invalid log level %s", cfg.LogLevel)
 	}
 	logrus.SetLevel(level)
 
-	log.FromContext(ctx).WithField("duration", time.Since(now)).Infof("completed phase 1: get config from environment")
+	logrus.WithField("duration", time.Since(now)).Infof("completed phase 1: get config from environment")
 
 	// ********************************************************************************
-	log.FromContext(ctx).Infof("executing phase 2: initializing storage clients (time since start: %s)", time.Since(startTime))
+	logrus.Infof("executing phase 2: initializing storage clients (time since start: %s)", time.Since(startTime))
 	// ********************************************************************************
 	now = time.Now()
 	fileStore, fileStoreCh, err := initObjectStore(ctx, cfg)
 	if err != nil {
-		log.FromContext(ctx).Fatalf("error initializing storage clients: %+v", err)
+		logrus.Fatalf("error initializing storage clients: %+v", err)
 	}
 
 	mysqlStore, mysqlStoreCh, err := mysqlstore.New(ctx, cfg.SQLStoreConnectionString)
 	if err != nil {
-		log.FromContext(ctx).Fatalf("error initializing mysql client: %+v", err)
+		logrus.Fatalf("error initializing mysql client: %+v", err)
 	}
 
-	log.FromContext(ctx).WithField("duration", time.Since(now)).Infof("completed phase 3: initializing storage clients")
+	logrus.WithField("duration", time.Since(now)).Infof("completed phase 3: initializing storage clients")
 
 	// ********************************************************************************
-	log.FromContext(ctx).Infof("executing phase 3: create and register http service (time since start: %s)", time.Since(startTime))
+	logrus.Infof("executing phase 3: create and register http service (time since start: %s)", time.Since(startTime))
 	// ********************************************************************************
 	now = time.Now()
 	server := server.New(mysqlStore, fileStore)
@@ -134,7 +127,7 @@ func main() {
 
 	listener, err := net.Listen(proto, listenAddress)
 	if err != nil {
-		log.FromContext(ctx).Fatalf("unable to start http listener: %+v", err)
+		logrus.Fatalf("unable to start http listener: %+v", err)
 	}
 
 	go func() {
@@ -143,18 +136,18 @@ func main() {
 			handlers.AllowedMethods([]string{"GET", "POST", "OPTIONS"}),
 			handlers.AllowedHeaders([]string{"Accept", "Content-Type", "Content-Length", "Accept-Encoding", "X-CSRF-Token", "Authorization"}),
 		)(router)); err != nil {
-			log.FromContext(ctx).Fatalf("unable to start http server: %+v", err)
+			logrus.Fatalf("unable to start http server: %+v", err)
 		}
 	}()
 
-	log.FromContext(ctx).WithField("duration", time.Since(now)).Infof("completed phase 5: create and register http service")
-	log.FromContext(ctx).Infof("startup complete (time since start: %s)", time.Since(startTime))
+	logrus.WithField("duration", time.Since(now)).Infof("completed phase 5: create and register http service")
+	logrus.Infof("startup complete (time since start: %s)", time.Since(startTime))
 
 	<-ctx.Done()
 	<-fileStoreCh
 	<-mysqlStoreCh
 
-	log.FromContext(ctx).Infof("exiting, uptime: %v", time.Since(startTime))
+	logrus.Infof("exiting, uptime: %v", time.Since(startTime))
 }
 
 func initObjectStore(ctx context.Context, cfg *config.Config) (server.StorerGetter, <-chan error, error) {
