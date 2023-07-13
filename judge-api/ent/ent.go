@@ -11,9 +11,9 @@ import (
 	"entgo.io/ent"
 	"entgo.io/ent/dialect/sql"
 	"entgo.io/ent/dialect/sql/sqlgraph"
-	"gitlab.com/testifysec/judge-platform/judge-api/ent/project"
-	"gitlab.com/testifysec/judge-platform/judge-api/ent/tenant"
-	"gitlab.com/testifysec/judge-platform/judge-api/ent/user"
+	"github.com/testifysec/judge/judge-api/ent/project"
+	"github.com/testifysec/judge/judge-api/ent/tenant"
+	"github.com/testifysec/judge/judge-api/ent/user"
 )
 
 // ent aliases to avoid import conflicts in user's code.

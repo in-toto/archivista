@@ -2,7 +2,7 @@ package judgeapi
 
 import (
 	"github.com/99designs/gqlgen/graphql"
-	"gitlab.com/testifysec/judge-platform/judge-api/ent"
+	"github.com/testifysec/judge/judge-api/ent"
 )
 
 // This file will not be regenerated automatically.

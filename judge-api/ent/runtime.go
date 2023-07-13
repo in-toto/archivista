@@ -2,4 +2,4 @@
 
 package ent
 
-// The schema-stitching logic is generated in gitlab.com/testifysec/judge-platform/judge-api/ent/runtime/runtime.go
+// The schema-stitching logic is generated in github.com/testifysec/judge/judge-api/ent/runtime/runtime.go

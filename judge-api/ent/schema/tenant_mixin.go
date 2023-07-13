@@ -4,8 +4,8 @@ import (
 	"entgo.io/ent"
 	"entgo.io/ent/schema/edge"
 	"entgo.io/ent/schema/mixin"
-	"gitlab.com/testifysec/judge-platform/judge-api/ent/privacy"
-	"gitlab.com/testifysec/judge-platform/judge-api/rule"
+	"github.com/testifysec/judge/judge-api/ent/privacy"
+	"github.com/testifysec/judge/judge-api/rule"
 )
 
 type TenantMixin struct {

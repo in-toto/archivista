@@ -15,11 +15,11 @@ import (
 	"github.com/99designs/gqlgen/graphql"
 	"github.com/99designs/gqlgen/graphql/errcode"
 	"github.com/google/uuid"
+	"github.com/testifysec/judge/judge-api/ent/project"
+	"github.com/testifysec/judge/judge-api/ent/tenant"
+	"github.com/testifysec/judge/judge-api/ent/user"
 	"github.com/vektah/gqlparser/v2/gqlerror"
 	"github.com/vmihailenco/msgpack/v5"
-	"gitlab.com/testifysec/judge-platform/judge-api/ent/project"
-	"gitlab.com/testifysec/judge-platform/judge-api/ent/tenant"
-	"gitlab.com/testifysec/judge-platform/judge-api/ent/user"
 )
 
 // OrderDirection defines the directions in which to order a list of items.

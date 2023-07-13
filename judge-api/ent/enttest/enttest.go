@@ -5,12 +5,12 @@ package enttest
 import (
 	"context"
 
-	"gitlab.com/testifysec/judge-platform/judge-api/ent"
+	"github.com/testifysec/judge/judge-api/ent"
 	// required by schema hooks.
-	_ "gitlab.com/testifysec/judge-platform/judge-api/ent/runtime"
+	_ "github.com/testifysec/judge/judge-api/ent/runtime"
 
 	"entgo.io/ent/dialect/sql/schema"
-	"gitlab.com/testifysec/judge-platform/judge-api/ent/migrate"
+	"github.com/testifysec/judge/judge-api/ent/migrate"
 )
 
 type (

@@ -9,16 +9,16 @@ import (
 	"log"
 
 	"github.com/google/uuid"
-	"gitlab.com/testifysec/judge-platform/judge-api/ent/migrate"
+	"github.com/testifysec/judge/judge-api/ent/migrate"
 
 	"entgo.io/ent"
 	"entgo.io/ent/dialect"
 	"entgo.io/ent/dialect/sql"
 	"entgo.io/ent/dialect/sql/sqlgraph"
-	"gitlab.com/testifysec/judge-platform/judge-api/ent/project"
-	"gitlab.com/testifysec/judge-platform/judge-api/ent/tenant"
-	"gitlab.com/testifysec/judge-platform/judge-api/ent/user"
-	"gitlab.com/testifysec/judge-platform/judge-api/internal/configuration"
+	"github.com/testifysec/judge/judge-api/ent/project"
+	"github.com/testifysec/judge/judge-api/ent/tenant"
+	"github.com/testifysec/judge/judge-api/ent/user"
+	"github.com/testifysec/judge/judge-api/internal/configuration"
 )
 
 // Client is the client that holds all ent builders.

@@ -13,9 +13,9 @@ import (
 	"entgo.io/ent/dialect/sql/sqlgraph"
 	"entgo.io/ent/schema/field"
 	"github.com/google/uuid"
-	"gitlab.com/testifysec/judge-platform/judge-api/ent/predicate"
-	"gitlab.com/testifysec/judge-platform/judge-api/ent/tenant"
-	"gitlab.com/testifysec/judge-platform/judge-api/ent/user"
+	"github.com/testifysec/judge/judge-api/ent/predicate"
+	"github.com/testifysec/judge/judge-api/ent/tenant"
+	"github.com/testifysec/judge/judge-api/ent/user"
 )
 
 // TenantQuery is the builder for querying Tenant entities.

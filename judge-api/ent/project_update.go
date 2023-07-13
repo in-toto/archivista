@@ -12,9 +12,9 @@ import (
 	"entgo.io/ent/dialect/sql/sqlgraph"
 	"entgo.io/ent/schema/field"
 	"github.com/google/uuid"
-	"gitlab.com/testifysec/judge-platform/judge-api/ent/predicate"
-	"gitlab.com/testifysec/judge-platform/judge-api/ent/project"
-	"gitlab.com/testifysec/judge-platform/judge-api/ent/user"
+	"github.com/testifysec/judge/judge-api/ent/predicate"
+	"github.com/testifysec/judge/judge-api/ent/project"
+	"github.com/testifysec/judge/judge-api/ent/user"
 )
 
 // ProjectUpdate is the builder for updating Project entities.

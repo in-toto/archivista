@@ -16,11 +16,11 @@ import (
 	"github.com/99designs/gqlgen/graphql"
 	"github.com/99designs/gqlgen/graphql/introspection"
 	"github.com/google/uuid"
+	"github.com/testifysec/judge/judge-api/ent"
+	"github.com/testifysec/judge/judge-api/ent/schema/uuidgql"
+	"github.com/testifysec/judge/judge-api/ent/tenant"
 	gqlparser "github.com/vektah/gqlparser/v2"
 	"github.com/vektah/gqlparser/v2/ast"
-	"gitlab.com/testifysec/judge-platform/judge-api/ent"
-	"gitlab.com/testifysec/judge-platform/judge-api/ent/schema/uuidgql"
-	"gitlab.com/testifysec/judge-platform/judge-api/ent/tenant"
 )
 
 // region    ************************** generated!.gotpl **************************
@@ -622,7 +622,7 @@ func (ec *executionContext) _PageInfo_startCursor(ctx context.Context, field gra
 	}
 	res := resTmp.(*ent.Cursor)
 	fc.Result = res
-	return ec.marshalOCursor2ᚖgitlabᚗcomᚋtestifysecᚋjudgeᚑplatformᚋjudgeᚑapiᚋentᚐCursor(ctx, field.Selections, res)
+	return ec.marshalOCursor2ᚖgithubᚗcomᚋtestifysecᚋjudgeᚋjudgeᚑapiᚋentᚐCursor(ctx, field.Selections, res)
 }
 
 func (ec *executionContext) fieldContext_PageInfo_startCursor(ctx context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
@@ -663,7 +663,7 @@ func (ec *executionContext) _PageInfo_endCursor(ctx context.Context, field graph
 	}
 	res := resTmp.(*ent.Cursor)
 	fc.Result = res
-	return ec.marshalOCursor2ᚖgitlabᚗcomᚋtestifysecᚋjudgeᚑplatformᚋjudgeᚑapiᚋentᚐCursor(ctx, field.Selections, res)
+	return ec.marshalOCursor2ᚖgithubᚗcomᚋtestifysecᚋjudgeᚋjudgeᚑapiᚋentᚐCursor(ctx, field.Selections, res)
 }
 
 func (ec *executionContext) fieldContext_PageInfo_endCursor(ctx context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
@@ -971,7 +971,7 @@ func (ec *executionContext) _Project_tenant(ctx context.Context, field graphql.C
 	}
 	res := resTmp.(*ent.Tenant)
 	fc.Result = res
-	return ec.marshalNTenant2ᚖgitlabᚗcomᚋtestifysecᚋjudgeᚑplatformᚋjudgeᚑapiᚋentᚐTenant(ctx, field.Selections, res)
+	return ec.marshalNTenant2ᚖgithubᚗcomᚋtestifysecᚋjudgeᚋjudgeᚑapiᚋentᚐTenant(ctx, field.Selections, res)
 }
 
 func (ec *executionContext) fieldContext_Project_tenant(ctx context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
@@ -1036,7 +1036,7 @@ func (ec *executionContext) _Project_createdBy(ctx context.Context, field graphq
 	}
 	res := resTmp.(*ent.User)
 	fc.Result = res
-	return ec.marshalOUser2ᚖgitlabᚗcomᚋtestifysecᚋjudgeᚑplatformᚋjudgeᚑapiᚋentᚐUser(ctx, field.Selections, res)
+	return ec.marshalOUser2ᚖgithubᚗcomᚋtestifysecᚋjudgeᚋjudgeᚑapiᚋentᚐUser(ctx, field.Selections, res)
 }
 
 func (ec *executionContext) fieldContext_Project_createdBy(ctx context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
@@ -1089,7 +1089,7 @@ func (ec *executionContext) _Project_modifiedBy(ctx context.Context, field graph
 	}
 	res := resTmp.(*ent.User)
 	fc.Result = res
-	return ec.marshalOUser2ᚖgitlabᚗcomᚋtestifysecᚋjudgeᚑplatformᚋjudgeᚑapiᚋentᚐUser(ctx, field.Selections, res)
+	return ec.marshalOUser2ᚖgithubᚗcomᚋtestifysecᚋjudgeᚋjudgeᚑapiᚋentᚐUser(ctx, field.Selections, res)
 }
 
 func (ec *executionContext) fieldContext_Project_modifiedBy(ctx context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
@@ -1142,7 +1142,7 @@ func (ec *executionContext) _Query_node(ctx context.Context, field graphql.Colle
 	}
 	res := resTmp.(ent.Noder)
 	fc.Result = res
-	return ec.marshalONode2gitlabᚗcomᚋtestifysecᚋjudgeᚑplatformᚋjudgeᚑapiᚋentᚐNoder(ctx, field.Selections, res)
+	return ec.marshalONode2githubᚗcomᚋtestifysecᚋjudgeᚋjudgeᚑapiᚋentᚐNoder(ctx, field.Selections, res)
 }
 
 func (ec *executionContext) fieldContext_Query_node(ctx context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
@@ -1197,7 +1197,7 @@ func (ec *executionContext) _Query_nodes(ctx context.Context, field graphql.Coll
 	}
 	res := resTmp.([]ent.Noder)
 	fc.Result = res
-	return ec.marshalNNode2ᚕgitlabᚗcomᚋtestifysecᚋjudgeᚑplatformᚋjudgeᚑapiᚋentᚐNoder(ctx, field.Selections, res)
+	return ec.marshalNNode2ᚕgithubᚗcomᚋtestifysecᚋjudgeᚋjudgeᚑapiᚋentᚐNoder(ctx, field.Selections, res)
 }
 
 func (ec *executionContext) fieldContext_Query_nodes(ctx context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
@@ -1252,7 +1252,7 @@ func (ec *executionContext) _Query_projects(ctx context.Context, field graphql.C
 	}
 	res := resTmp.([]*ent.Project)
 	fc.Result = res
-	return ec.marshalNProject2ᚕᚖgitlabᚗcomᚋtestifysecᚋjudgeᚑplatformᚋjudgeᚑapiᚋentᚐProjectᚄ(ctx, field.Selections, res)
+	return ec.marshalNProject2ᚕᚖgithubᚗcomᚋtestifysecᚋjudgeᚋjudgeᚑapiᚋentᚐProjectᚄ(ctx, field.Selections, res)
 }
 
 func (ec *executionContext) fieldContext_Query_projects(ctx context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
@@ -1665,7 +1665,7 @@ func (ec *executionContext) _Tenant_type(ctx context.Context, field graphql.Coll
 	}
 	res := resTmp.(tenant.Type)
 	fc.Result = res
-	return ec.marshalNTenantType2gitlabᚗcomᚋtestifysecᚋjudgeᚑplatformᚋjudgeᚑapiᚋentᚋtenantᚐType(ctx, field.Selections, res)
+	return ec.marshalNTenantType2githubᚗcomᚋtestifysecᚋjudgeᚋjudgeᚑapiᚋentᚋtenantᚐType(ctx, field.Selections, res)
 }
 
 func (ec *executionContext) fieldContext_Tenant_type(ctx context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
@@ -1706,7 +1706,7 @@ func (ec *executionContext) _Tenant_createdBy(ctx context.Context, field graphql
 	}
 	res := resTmp.(*ent.User)
 	fc.Result = res
-	return ec.marshalOUser2ᚖgitlabᚗcomᚋtestifysecᚋjudgeᚑplatformᚋjudgeᚑapiᚋentᚐUser(ctx, field.Selections, res)
+	return ec.marshalOUser2ᚖgithubᚗcomᚋtestifysecᚋjudgeᚋjudgeᚑapiᚋentᚐUser(ctx, field.Selections, res)
 }
 
 func (ec *executionContext) fieldContext_Tenant_createdBy(ctx context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
@@ -1759,7 +1759,7 @@ func (ec *executionContext) _Tenant_modifiedBy(ctx context.Context, field graphq
 	}
 	res := resTmp.(*ent.User)
 	fc.Result = res
-	return ec.marshalOUser2ᚖgitlabᚗcomᚋtestifysecᚋjudgeᚑplatformᚋjudgeᚑapiᚋentᚐUser(ctx, field.Selections, res)
+	return ec.marshalOUser2ᚖgithubᚗcomᚋtestifysecᚋjudgeᚋjudgeᚑapiᚋentᚐUser(ctx, field.Selections, res)
 }
 
 func (ec *executionContext) fieldContext_Tenant_modifiedBy(ctx context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
@@ -1812,7 +1812,7 @@ func (ec *executionContext) _Tenant_users(ctx context.Context, field graphql.Col
 	}
 	res := resTmp.([]*ent.User)
 	fc.Result = res
-	return ec.marshalOUser2ᚕᚖgitlabᚗcomᚋtestifysecᚋjudgeᚑplatformᚋjudgeᚑapiᚋentᚐUserᚄ(ctx, field.Selections, res)
+	return ec.marshalOUser2ᚕᚖgithubᚗcomᚋtestifysecᚋjudgeᚋjudgeᚑapiᚋentᚐUserᚄ(ctx, field.Selections, res)
 }
 
 func (ec *executionContext) fieldContext_Tenant_users(ctx context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
@@ -1865,7 +1865,7 @@ func (ec *executionContext) _Tenant_parent(ctx context.Context, field graphql.Co
 	}
 	res := resTmp.(*ent.Tenant)
 	fc.Result = res
-	return ec.marshalOTenant2ᚖgitlabᚗcomᚋtestifysecᚋjudgeᚑplatformᚋjudgeᚑapiᚋentᚐTenant(ctx, field.Selections, res)
+	return ec.marshalOTenant2ᚖgithubᚗcomᚋtestifysecᚋjudgeᚋjudgeᚑapiᚋentᚐTenant(ctx, field.Selections, res)
 }
 
 func (ec *executionContext) fieldContext_Tenant_parent(ctx context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
@@ -1930,7 +1930,7 @@ func (ec *executionContext) _Tenant_children(ctx context.Context, field graphql.
 	}
 	res := resTmp.([]*ent.Tenant)
 	fc.Result = res
-	return ec.marshalOTenant2ᚕᚖgitlabᚗcomᚋtestifysecᚋjudgeᚑplatformᚋjudgeᚑapiᚋentᚐTenantᚄ(ctx, field.Selections, res)
+	return ec.marshalOTenant2ᚕᚖgithubᚗcomᚋtestifysecᚋjudgeᚋjudgeᚑapiᚋentᚐTenantᚄ(ctx, field.Selections, res)
 }
 
 func (ec *executionContext) fieldContext_Tenant_children(ctx context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
@@ -2171,7 +2171,7 @@ func (ec *executionContext) _User_tenant(ctx context.Context, field graphql.Coll
 	}
 	res := resTmp.([]*ent.Tenant)
 	fc.Result = res
-	return ec.marshalOTenant2ᚕᚖgitlabᚗcomᚋtestifysecᚋjudgeᚑplatformᚋjudgeᚑapiᚋentᚐTenantᚄ(ctx, field.Selections, res)
+	return ec.marshalOTenant2ᚕᚖgithubᚗcomᚋtestifysecᚋjudgeᚋjudgeᚑapiᚋentᚐTenantᚄ(ctx, field.Selections, res)
 }
 
 func (ec *executionContext) fieldContext_User_tenant(ctx context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
@@ -4002,7 +4002,7 @@ func (ec *executionContext) unmarshalInputProjectWhereInput(ctx context.Context,
 			var err error
 
 			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("not"))
-			it.Not, err = ec.unmarshalOProjectWhereInput2ᚖgitlabᚗcomᚋtestifysecᚋjudgeᚑplatformᚋjudgeᚑapiᚋentᚐProjectWhereInput(ctx, v)
+			it.Not, err = ec.unmarshalOProjectWhereInput2ᚖgithubᚗcomᚋtestifysecᚋjudgeᚋjudgeᚑapiᚋentᚐProjectWhereInput(ctx, v)
 			if err != nil {
 				return it, err
 			}
@@ -4010,7 +4010,7 @@ func (ec *executionContext) unmarshalInputProjectWhereInput(ctx context.Context,
 			var err error
 
 			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("and"))
-			it.And, err = ec.unmarshalOProjectWhereInput2ᚕᚖgitlabᚗcomᚋtestifysecᚋjudgeᚑplatformᚋjudgeᚑapiᚋentᚐProjectWhereInputᚄ(ctx, v)
+			it.And, err = ec.unmarshalOProjectWhereInput2ᚕᚖgithubᚗcomᚋtestifysecᚋjudgeᚋjudgeᚑapiᚋentᚐProjectWhereInputᚄ(ctx, v)
 			if err != nil {
 				return it, err
 			}
@@ -4018,7 +4018,7 @@ func (ec *executionContext) unmarshalInputProjectWhereInput(ctx context.Context,
 			var err error
 
 			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("or"))
-			it.Or, err = ec.unmarshalOProjectWhereInput2ᚕᚖgitlabᚗcomᚋtestifysecᚋjudgeᚑplatformᚋjudgeᚑapiᚋentᚐProjectWhereInputᚄ(ctx, v)
+			it.Or, err = ec.unmarshalOProjectWhereInput2ᚕᚖgithubᚗcomᚋtestifysecᚋjudgeᚋjudgeᚑapiᚋentᚐProjectWhereInputᚄ(ctx, v)
 			if err != nil {
 				return it, err
 			}
@@ -4538,7 +4538,7 @@ func (ec *executionContext) unmarshalInputProjectWhereInput(ctx context.Context,
 			var err error
 
 			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("hasTenantWith"))
-			it.HasTenantWith, err = ec.unmarshalOTenantWhereInput2ᚕᚖgitlabᚗcomᚋtestifysecᚋjudgeᚑplatformᚋjudgeᚑapiᚋentᚐTenantWhereInputᚄ(ctx, v)
+			it.HasTenantWith, err = ec.unmarshalOTenantWhereInput2ᚕᚖgithubᚗcomᚋtestifysecᚋjudgeᚋjudgeᚑapiᚋentᚐTenantWhereInputᚄ(ctx, v)
 			if err != nil {
 				return it, err
 			}
@@ -4554,7 +4554,7 @@ func (ec *executionContext) unmarshalInputProjectWhereInput(ctx context.Context,
 			var err error
 
 			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("hasCreatedByWith"))
-			it.HasCreatedByWith, err = ec.unmarshalOUserWhereInput2ᚕᚖgitlabᚗcomᚋtestifysecᚋjudgeᚑplatformᚋjudgeᚑapiᚋentᚐUserWhereInputᚄ(ctx, v)
+			it.HasCreatedByWith, err = ec.unmarshalOUserWhereInput2ᚕᚖgithubᚗcomᚋtestifysecᚋjudgeᚋjudgeᚑapiᚋentᚐUserWhereInputᚄ(ctx, v)
 			if err != nil {
 				return it, err
 			}
@@ -4570,7 +4570,7 @@ func (ec *executionContext) unmarshalInputProjectWhereInput(ctx context.Context,
 			var err error
 
 			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("hasModifiedByWith"))
-			it.HasModifiedByWith, err = ec.unmarshalOUserWhereInput2ᚕᚖgitlabᚗcomᚋtestifysecᚋjudgeᚑplatformᚋjudgeᚑapiᚋentᚐUserWhereInputᚄ(ctx, v)
+			it.HasModifiedByWith, err = ec.unmarshalOUserWhereInput2ᚕᚖgithubᚗcomᚋtestifysecᚋjudgeᚋjudgeᚑapiᚋentᚐUserWhereInputᚄ(ctx, v)
 			if err != nil {
 				return it, err
 			}
@@ -4598,7 +4598,7 @@ func (ec *executionContext) unmarshalInputTenantWhereInput(ctx context.Context, 
 			var err error
 
 			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("not"))
-			it.Not, err = ec.unmarshalOTenantWhereInput2ᚖgitlabᚗcomᚋtestifysecᚋjudgeᚑplatformᚋjudgeᚑapiᚋentᚐTenantWhereInput(ctx, v)
+			it.Not, err = ec.unmarshalOTenantWhereInput2ᚖgithubᚗcomᚋtestifysecᚋjudgeᚋjudgeᚑapiᚋentᚐTenantWhereInput(ctx, v)
 			if err != nil {
 				return it, err
 			}
@@ -4606,7 +4606,7 @@ func (ec *executionContext) unmarshalInputTenantWhereInput(ctx context.Context, 
 			var err error
 
 			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("and"))
-			it.And, err = ec.unmarshalOTenantWhereInput2ᚕᚖgitlabᚗcomᚋtestifysecᚋjudgeᚑplatformᚋjudgeᚑapiᚋentᚐTenantWhereInputᚄ(ctx, v)
+			it.And, err = ec.unmarshalOTenantWhereInput2ᚕᚖgithubᚗcomᚋtestifysecᚋjudgeᚋjudgeᚑapiᚋentᚐTenantWhereInputᚄ(ctx, v)
 			if err != nil {
 				return it, err
 			}
@@ -4614,7 +4614,7 @@ func (ec *executionContext) unmarshalInputTenantWhereInput(ctx context.Context, 
 			var err error
 
 			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("or"))
-			it.Or, err = ec.unmarshalOTenantWhereInput2ᚕᚖgitlabᚗcomᚋtestifysecᚋjudgeᚑplatformᚋjudgeᚑapiᚋentᚐTenantWhereInputᚄ(ctx, v)
+			it.Or, err = ec.unmarshalOTenantWhereInput2ᚕᚖgithubᚗcomᚋtestifysecᚋjudgeᚋjudgeᚑapiᚋentᚐTenantWhereInputᚄ(ctx, v)
 			if err != nil {
 				return it, err
 			}
@@ -5022,7 +5022,7 @@ func (ec *executionContext) unmarshalInputTenantWhereInput(ctx context.Context, 
 			var err error
 
 			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("type"))
-			it.Type, err = ec.unmarshalOTenantType2ᚖgitlabᚗcomᚋtestifysecᚋjudgeᚑplatformᚋjudgeᚑapiᚋentᚋtenantᚐType(ctx, v)
+			it.Type, err = ec.unmarshalOTenantType2ᚖgithubᚗcomᚋtestifysecᚋjudgeᚋjudgeᚑapiᚋentᚋtenantᚐType(ctx, v)
 			if err != nil {
 				return it, err
 			}
@@ -5030,7 +5030,7 @@ func (ec *executionContext) unmarshalInputTenantWhereInput(ctx context.Context, 
 			var err error
 
 			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("typeNEQ"))
-			it.TypeNEQ, err = ec.unmarshalOTenantType2ᚖgitlabᚗcomᚋtestifysecᚋjudgeᚑplatformᚋjudgeᚑapiᚋentᚋtenantᚐType(ctx, v)
+			it.TypeNEQ, err = ec.unmarshalOTenantType2ᚖgithubᚗcomᚋtestifysecᚋjudgeᚋjudgeᚑapiᚋentᚋtenantᚐType(ctx, v)
 			if err != nil {
 				return it, err
 			}
@@ -5038,7 +5038,7 @@ func (ec *executionContext) unmarshalInputTenantWhereInput(ctx context.Context, 
 			var err error
 
 			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("typeIn"))
-			it.TypeIn, err = ec.unmarshalOTenantType2ᚕgitlabᚗcomᚋtestifysecᚋjudgeᚑplatformᚋjudgeᚑapiᚋentᚋtenantᚐTypeᚄ(ctx, v)
+			it.TypeIn, err = ec.unmarshalOTenantType2ᚕgithubᚗcomᚋtestifysecᚋjudgeᚋjudgeᚑapiᚋentᚋtenantᚐTypeᚄ(ctx, v)
 			if err != nil {
 				return it, err
 			}
@@ -5046,7 +5046,7 @@ func (ec *executionContext) unmarshalInputTenantWhereInput(ctx context.Context, 
 			var err error
 
 			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("typeNotIn"))
-			it.TypeNotIn, err = ec.unmarshalOTenantType2ᚕgitlabᚗcomᚋtestifysecᚋjudgeᚑplatformᚋjudgeᚑapiᚋentᚋtenantᚐTypeᚄ(ctx, v)
+			it.TypeNotIn, err = ec.unmarshalOTenantType2ᚕgithubᚗcomᚋtestifysecᚋjudgeᚋjudgeᚑapiᚋentᚋtenantᚐTypeᚄ(ctx, v)
 			if err != nil {
 				return it, err
 			}
@@ -5062,7 +5062,7 @@ func (ec *executionContext) unmarshalInputTenantWhereInput(ctx context.Context, 
 			var err error
 
 			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("hasCreatedByWith"))
-			it.HasCreatedByWith, err = ec.unmarshalOUserWhereInput2ᚕᚖgitlabᚗcomᚋtestifysecᚋjudgeᚑplatformᚋjudgeᚑapiᚋentᚐUserWhereInputᚄ(ctx, v)
+			it.HasCreatedByWith, err = ec.unmarshalOUserWhereInput2ᚕᚖgithubᚗcomᚋtestifysecᚋjudgeᚋjudgeᚑapiᚋentᚐUserWhereInputᚄ(ctx, v)
 			if err != nil {
 				return it, err
 			}
@@ -5078,7 +5078,7 @@ func (ec *executionContext) unmarshalInputTenantWhereInput(ctx context.Context, 
 			var err error
 
 			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("hasModifiedByWith"))
-			it.HasModifiedByWith, err = ec.unmarshalOUserWhereInput2ᚕᚖgitlabᚗcomᚋtestifysecᚋjudgeᚑplatformᚋjudgeᚑapiᚋentᚐUserWhereInputᚄ(ctx, v)
+			it.HasModifiedByWith, err = ec.unmarshalOUserWhereInput2ᚕᚖgithubᚗcomᚋtestifysecᚋjudgeᚋjudgeᚑapiᚋentᚐUserWhereInputᚄ(ctx, v)
 			if err != nil {
 				return it, err
 			}
@@ -5094,7 +5094,7 @@ func (ec *executionContext) unmarshalInputTenantWhereInput(ctx context.Context, 
 			var err error
 
 			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("hasUsersWith"))
-			it.HasUsersWith, err = ec.unmarshalOUserWhereInput2ᚕᚖgitlabᚗcomᚋtestifysecᚋjudgeᚑplatformᚋjudgeᚑapiᚋentᚐUserWhereInputᚄ(ctx, v)
+			it.HasUsersWith, err = ec.unmarshalOUserWhereInput2ᚕᚖgithubᚗcomᚋtestifysecᚋjudgeᚋjudgeᚑapiᚋentᚐUserWhereInputᚄ(ctx, v)
 			if err != nil {
 				return it, err
 			}
@@ -5110,7 +5110,7 @@ func (ec *executionContext) unmarshalInputTenantWhereInput(ctx context.Context, 
 			var err error
 
 			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("hasParentWith"))
-			it.HasParentWith, err = ec.unmarshalOTenantWhereInput2ᚕᚖgitlabᚗcomᚋtestifysecᚋjudgeᚑplatformᚋjudgeᚑapiᚋentᚐTenantWhereInputᚄ(ctx, v)
+			it.HasParentWith, err = ec.unmarshalOTenantWhereInput2ᚕᚖgithubᚗcomᚋtestifysecᚋjudgeᚋjudgeᚑapiᚋentᚐTenantWhereInputᚄ(ctx, v)
 			if err != nil {
 				return it, err
 			}
@@ -5126,7 +5126,7 @@ func (ec *executionContext) unmarshalInputTenantWhereInput(ctx context.Context, 
 			var err error
 
 			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("hasChildrenWith"))
-			it.HasChildrenWith, err = ec.unmarshalOTenantWhereInput2ᚕᚖgitlabᚗcomᚋtestifysecᚋjudgeᚑplatformᚋjudgeᚑapiᚋentᚐTenantWhereInputᚄ(ctx, v)
+			it.HasChildrenWith, err = ec.unmarshalOTenantWhereInput2ᚕᚖgithubᚗcomᚋtestifysecᚋjudgeᚋjudgeᚑapiᚋentᚐTenantWhereInputᚄ(ctx, v)
 			if err != nil {
 				return it, err
 			}
@@ -5154,7 +5154,7 @@ func (ec *executionContext) unmarshalInputUserWhereInput(ctx context.Context, ob
 			var err error
 
 			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("not"))
-			it.Not, err = ec.unmarshalOUserWhereInput2ᚖgitlabᚗcomᚋtestifysecᚋjudgeᚑplatformᚋjudgeᚑapiᚋentᚐUserWhereInput(ctx, v)
+			it.Not, err = ec.unmarshalOUserWhereInput2ᚖgithubᚗcomᚋtestifysecᚋjudgeᚋjudgeᚑapiᚋentᚐUserWhereInput(ctx, v)
 			if err != nil {
 				return it, err
 			}
@@ -5162,7 +5162,7 @@ func (ec *executionContext) unmarshalInputUserWhereInput(ctx context.Context, ob
 			var err error
 
 			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("and"))
-			it.And, err = ec.unmarshalOUserWhereInput2ᚕᚖgitlabᚗcomᚋtestifysecᚋjudgeᚑplatformᚋjudgeᚑapiᚋentᚐUserWhereInputᚄ(ctx, v)
+			it.And, err = ec.unmarshalOUserWhereInput2ᚕᚖgithubᚗcomᚋtestifysecᚋjudgeᚋjudgeᚑapiᚋentᚐUserWhereInputᚄ(ctx, v)
 			if err != nil {
 				return it, err
 			}
@@ -5170,7 +5170,7 @@ func (ec *executionContext) unmarshalInputUserWhereInput(ctx context.Context, ob
 			var err error
 
 			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("or"))
-			it.Or, err = ec.unmarshalOUserWhereInput2ᚕᚖgitlabᚗcomᚋtestifysecᚋjudgeᚑplatformᚋjudgeᚑapiᚋentᚐUserWhereInputᚄ(ctx, v)
+			it.Or, err = ec.unmarshalOUserWhereInput2ᚕᚖgithubᚗcomᚋtestifysecᚋjudgeᚋjudgeᚑapiᚋentᚐUserWhereInputᚄ(ctx, v)
 			if err != nil {
 				return it, err
 			}
@@ -5482,7 +5482,7 @@ func (ec *executionContext) unmarshalInputUserWhereInput(ctx context.Context, ob
 			var err error
 
 			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("hasTenantWith"))
-			it.HasTenantWith, err = ec.unmarshalOTenantWhereInput2ᚕᚖgitlabᚗcomᚋtestifysecᚋjudgeᚑplatformᚋjudgeᚑapiᚋentᚐTenantWhereInputᚄ(ctx, v)
+			it.HasTenantWith, err = ec.unmarshalOTenantWhereInput2ᚕᚖgithubᚗcomᚋtestifysecᚋjudgeᚋjudgeᚑapiᚋentᚐTenantWhereInputᚄ(ctx, v)
 			if err != nil {
 				return it, err
 			}
@@ -6386,7 +6386,7 @@ func (ec *executionContext) marshalNID2ᚕgithubᚗcomᚋgoogleᚋuuidᚐUUIDᚄ
 	return ret
 }
 
-func (ec *executionContext) marshalNNode2ᚕgitlabᚗcomᚋtestifysecᚋjudgeᚑplatformᚋjudgeᚑapiᚋentᚐNoder(ctx context.Context, sel ast.SelectionSet, v []ent.Noder) graphql.Marshaler {
+func (ec *executionContext) marshalNNode2ᚕgithubᚗcomᚋtestifysecᚋjudgeᚋjudgeᚑapiᚋentᚐNoder(ctx context.Context, sel ast.SelectionSet, v []ent.Noder) graphql.Marshaler {
 	ret := make(graphql.Array, len(v))
 	var wg sync.WaitGroup
 	isLen1 := len(v) == 1
@@ -6410,7 +6410,7 @@ func (ec *executionContext) marshalNNode2ᚕgitlabᚗcomᚋtestifysecᚋjudgeᚑ
 			if !isLen1 {
 				defer wg.Done()
 			}
-			ret[i] = ec.marshalONode2gitlabᚗcomᚋtestifysecᚋjudgeᚑplatformᚋjudgeᚑapiᚋentᚐNoder(ctx, sel, v[i])
+			ret[i] = ec.marshalONode2githubᚗcomᚋtestifysecᚋjudgeᚋjudgeᚑapiᚋentᚐNoder(ctx, sel, v[i])
 		}
 		if isLen1 {
 			f(i)
@@ -6424,7 +6424,7 @@ func (ec *executionContext) marshalNNode2ᚕgitlabᚗcomᚋtestifysecᚋjudgeᚑ
 	return ret
 }
 
-func (ec *executionContext) marshalNProject2ᚕᚖgitlabᚗcomᚋtestifysecᚋjudgeᚑplatformᚋjudgeᚑapiᚋentᚐProjectᚄ(ctx context.Context, sel ast.SelectionSet, v []*ent.Project) graphql.Marshaler {
+func (ec *executionContext) marshalNProject2ᚕᚖgithubᚗcomᚋtestifysecᚋjudgeᚋjudgeᚑapiᚋentᚐProjectᚄ(ctx context.Context, sel ast.SelectionSet, v []*ent.Project) graphql.Marshaler {
 	ret := make(graphql.Array, len(v))
 	var wg sync.WaitGroup
 	isLen1 := len(v) == 1
@@ -6448,7 +6448,7 @@ func (ec *executionContext) marshalNProject2ᚕᚖgitlabᚗcomᚋtestifysecᚋju
 			if !isLen1 {
 				defer wg.Done()
 			}
-			ret[i] = ec.marshalNProject2ᚖgitlabᚗcomᚋtestifysecᚋjudgeᚑplatformᚋjudgeᚑapiᚋentᚐProject(ctx, sel, v[i])
+			ret[i] = ec.marshalNProject2ᚖgithubᚗcomᚋtestifysecᚋjudgeᚋjudgeᚑapiᚋentᚐProject(ctx, sel, v[i])
 		}
 		if isLen1 {
 			f(i)
@@ -6468,7 +6468,7 @@ func (ec *executionContext) marshalNProject2ᚕᚖgitlabᚗcomᚋtestifysecᚋju
 	return ret
 }
 
-func (ec *executionContext) marshalNProject2ᚖgitlabᚗcomᚋtestifysecᚋjudgeᚑplatformᚋjudgeᚑapiᚋentᚐProject(ctx context.Context, sel ast.SelectionSet, v *ent.Project) graphql.Marshaler {
+func (ec *executionContext) marshalNProject2ᚖgithubᚗcomᚋtestifysecᚋjudgeᚋjudgeᚑapiᚋentᚐProject(ctx context.Context, sel ast.SelectionSet, v *ent.Project) graphql.Marshaler {
 	if v == nil {
 		if !graphql.HasFieldError(ctx, graphql.GetFieldContext(ctx)) {
 			ec.Errorf(ctx, "the requested element is null which the schema does not allow")
@@ -6478,7 +6478,7 @@ func (ec *executionContext) marshalNProject2ᚖgitlabᚗcomᚋtestifysecᚋjudge
 	return ec._Project(ctx, sel, v)
 }
 
-func (ec *executionContext) unmarshalNProjectWhereInput2ᚖgitlabᚗcomᚋtestifysecᚋjudgeᚑplatformᚋjudgeᚑapiᚋentᚐProjectWhereInput(ctx context.Context, v interface{}) (*ent.ProjectWhereInput, error) {
+func (ec *executionContext) unmarshalNProjectWhereInput2ᚖgithubᚗcomᚋtestifysecᚋjudgeᚋjudgeᚑapiᚋentᚐProjectWhereInput(ctx context.Context, v interface{}) (*ent.ProjectWhereInput, error) {
 	res, err := ec.unmarshalInputProjectWhereInput(ctx, v)
 	return &res, graphql.ErrorOnPath(ctx, err)
 }
@@ -6498,7 +6498,7 @@ func (ec *executionContext) marshalNString2string(ctx context.Context, sel ast.S
 	return res
 }
 
-func (ec *executionContext) marshalNTenant2ᚖgitlabᚗcomᚋtestifysecᚋjudgeᚑplatformᚋjudgeᚑapiᚋentᚐTenant(ctx context.Context, sel ast.SelectionSet, v *ent.Tenant) graphql.Marshaler {
+func (ec *executionContext) marshalNTenant2ᚖgithubᚗcomᚋtestifysecᚋjudgeᚋjudgeᚑapiᚋentᚐTenant(ctx context.Context, sel ast.SelectionSet, v *ent.Tenant) graphql.Marshaler {
 	if v == nil {
 		if !graphql.HasFieldError(ctx, graphql.GetFieldContext(ctx)) {
 			ec.Errorf(ctx, "the requested element is null which the schema does not allow")
@@ -6508,17 +6508,17 @@ func (ec *executionContext) marshalNTenant2ᚖgitlabᚗcomᚋtestifysecᚋjudge�
 	return ec._Tenant(ctx, sel, v)
 }
 
-func (ec *executionContext) unmarshalNTenantType2gitlabᚗcomᚋtestifysecᚋjudgeᚑplatformᚋjudgeᚑapiᚋentᚋtenantᚐType(ctx context.Context, v interface{}) (tenant.Type, error) {
+func (ec *executionContext) unmarshalNTenantType2githubᚗcomᚋtestifysecᚋjudgeᚋjudgeᚑapiᚋentᚋtenantᚐType(ctx context.Context, v interface{}) (tenant.Type, error) {
 	var res tenant.Type
 	err := res.UnmarshalGQL(v)
 	return res, graphql.ErrorOnPath(ctx, err)
 }
 
-func (ec *executionContext) marshalNTenantType2gitlabᚗcomᚋtestifysecᚋjudgeᚑplatformᚋjudgeᚑapiᚋentᚋtenantᚐType(ctx context.Context, sel ast.SelectionSet, v tenant.Type) graphql.Marshaler {
+func (ec *executionContext) marshalNTenantType2githubᚗcomᚋtestifysecᚋjudgeᚋjudgeᚑapiᚋentᚋtenantᚐType(ctx context.Context, sel ast.SelectionSet, v tenant.Type) graphql.Marshaler {
 	return v
 }
 
-func (ec *executionContext) unmarshalNTenantWhereInput2ᚖgitlabᚗcomᚋtestifysecᚋjudgeᚑplatformᚋjudgeᚑapiᚋentᚐTenantWhereInput(ctx context.Context, v interface{}) (*ent.TenantWhereInput, error) {
+func (ec *executionContext) unmarshalNTenantWhereInput2ᚖgithubᚗcomᚋtestifysecᚋjudgeᚋjudgeᚑapiᚋentᚐTenantWhereInput(ctx context.Context, v interface{}) (*ent.TenantWhereInput, error) {
 	res, err := ec.unmarshalInputTenantWhereInput(ctx, v)
 	return &res, graphql.ErrorOnPath(ctx, err)
 }
@@ -6538,7 +6538,7 @@ func (ec *executionContext) marshalNTime2timeᚐTime(ctx context.Context, sel as
 	return res
 }
 
-func (ec *executionContext) marshalNUser2ᚖgitlabᚗcomᚋtestifysecᚋjudgeᚑplatformᚋjudgeᚑapiᚋentᚐUser(ctx context.Context, sel ast.SelectionSet, v *ent.User) graphql.Marshaler {
+func (ec *executionContext) marshalNUser2ᚖgithubᚗcomᚋtestifysecᚋjudgeᚋjudgeᚑapiᚋentᚐUser(ctx context.Context, sel ast.SelectionSet, v *ent.User) graphql.Marshaler {
 	if v == nil {
 		if !graphql.HasFieldError(ctx, graphql.GetFieldContext(ctx)) {
 			ec.Errorf(ctx, "the requested element is null which the schema does not allow")
@@ -6548,7 +6548,7 @@ func (ec *executionContext) marshalNUser2ᚖgitlabᚗcomᚋtestifysecᚋjudgeᚑ
 	return ec._User(ctx, sel, v)
 }
 
-func (ec *executionContext) unmarshalNUserWhereInput2ᚖgitlabᚗcomᚋtestifysecᚋjudgeᚑplatformᚋjudgeᚑapiᚋentᚐUserWhereInput(ctx context.Context, v interface{}) (*ent.UserWhereInput, error) {
+func (ec *executionContext) unmarshalNUserWhereInput2ᚖgithubᚗcomᚋtestifysecᚋjudgeᚋjudgeᚑapiᚋentᚐUserWhereInput(ctx context.Context, v interface{}) (*ent.UserWhereInput, error) {
 	res, err := ec.unmarshalInputUserWhereInput(ctx, v)
 	return &res, graphql.ErrorOnPath(ctx, err)
 }
@@ -6832,7 +6832,7 @@ func (ec *executionContext) marshalOBoolean2ᚖbool(ctx context.Context, sel ast
 	return res
 }
 
-func (ec *executionContext) unmarshalOCursor2ᚖgitlabᚗcomᚋtestifysecᚋjudgeᚑplatformᚋjudgeᚑapiᚋentᚐCursor(ctx context.Context, v interface{}) (*ent.Cursor, error) {
+func (ec *executionContext) unmarshalOCursor2ᚖgithubᚗcomᚋtestifysecᚋjudgeᚋjudgeᚑapiᚋentᚐCursor(ctx context.Context, v interface{}) (*ent.Cursor, error) {
 	if v == nil {
 		return nil, nil
 	}
@@ -6841,7 +6841,7 @@ func (ec *executionContext) unmarshalOCursor2ᚖgitlabᚗcomᚋtestifysecᚋjudg
 	return res, graphql.ErrorOnPath(ctx, err)
 }
 
-func (ec *executionContext) marshalOCursor2ᚖgitlabᚗcomᚋtestifysecᚋjudgeᚑplatformᚋjudgeᚑapiᚋentᚐCursor(ctx context.Context, sel ast.SelectionSet, v *ent.Cursor) graphql.Marshaler {
+func (ec *executionContext) marshalOCursor2ᚖgithubᚗcomᚋtestifysecᚋjudgeᚋjudgeᚑapiᚋentᚐCursor(ctx context.Context, sel ast.SelectionSet, v *ent.Cursor) graphql.Marshaler {
 	if v == nil {
 		return graphql.Null
 	}
@@ -6902,14 +6902,14 @@ func (ec *executionContext) marshalOID2ᚖgithubᚗcomᚋgoogleᚋuuidᚐUUID(ct
 	return res
 }
 
-func (ec *executionContext) marshalONode2gitlabᚗcomᚋtestifysecᚋjudgeᚑplatformᚋjudgeᚑapiᚋentᚐNoder(ctx context.Context, sel ast.SelectionSet, v ent.Noder) graphql.Marshaler {
+func (ec *executionContext) marshalONode2githubᚗcomᚋtestifysecᚋjudgeᚋjudgeᚑapiᚋentᚐNoder(ctx context.Context, sel ast.SelectionSet, v ent.Noder) graphql.Marshaler {
 	if v == nil {
 		return graphql.Null
 	}
 	return ec._Node(ctx, sel, v)
 }
 
-func (ec *executionContext) unmarshalOProjectWhereInput2ᚕᚖgitlabᚗcomᚋtestifysecᚋjudgeᚑplatformᚋjudgeᚑapiᚋentᚐProjectWhereInputᚄ(ctx context.Context, v interface{}) ([]*ent.ProjectWhereInput, error) {
+func (ec *executionContext) unmarshalOProjectWhereInput2ᚕᚖgithubᚗcomᚋtestifysecᚋjudgeᚋjudgeᚑapiᚋentᚐProjectWhereInputᚄ(ctx context.Context, v interface{}) ([]*ent.ProjectWhereInput, error) {
 	if v == nil {
 		return nil, nil
 	}
@@ -6921,7 +6921,7 @@ func (ec *executionContext) unmarshalOProjectWhereInput2ᚕᚖgitlabᚗcomᚋtes
 	res := make([]*ent.ProjectWhereInput, len(vSlice))
 	for i := range vSlice {
 		ctx := graphql.WithPathContext(ctx, graphql.NewPathWithIndex(i))
-		res[i], err = ec.unmarshalNProjectWhereInput2ᚖgitlabᚗcomᚋtestifysecᚋjudgeᚑplatformᚋjudgeᚑapiᚋentᚐProjectWhereInput(ctx, vSlice[i])
+		res[i], err = ec.unmarshalNProjectWhereInput2ᚖgithubᚗcomᚋtestifysecᚋjudgeᚋjudgeᚑapiᚋentᚐProjectWhereInput(ctx, vSlice[i])
 		if err != nil {
 			return nil, err
 		}
@@ -6929,7 +6929,7 @@ func (ec *executionContext) unmarshalOProjectWhereInput2ᚕᚖgitlabᚗcomᚋtes
 	return res, nil
 }
 
-func (ec *executionContext) unmarshalOProjectWhereInput2ᚖgitlabᚗcomᚋtestifysecᚋjudgeᚑplatformᚋjudgeᚑapiᚋentᚐProjectWhereInput(ctx context.Context, v interface{}) (*ent.ProjectWhereInput, error) {
+func (ec *executionContext) unmarshalOProjectWhereInput2ᚖgithubᚗcomᚋtestifysecᚋjudgeᚋjudgeᚑapiᚋentᚐProjectWhereInput(ctx context.Context, v interface{}) (*ent.ProjectWhereInput, error) {
 	if v == nil {
 		return nil, nil
 	}
@@ -6991,7 +6991,7 @@ func (ec *executionContext) marshalOString2ᚖstring(ctx context.Context, sel as
 	return res
 }
 
-func (ec *executionContext) marshalOTenant2ᚕᚖgitlabᚗcomᚋtestifysecᚋjudgeᚑplatformᚋjudgeᚑapiᚋentᚐTenantᚄ(ctx context.Context, sel ast.SelectionSet, v []*ent.Tenant) graphql.Marshaler {
+func (ec *executionContext) marshalOTenant2ᚕᚖgithubᚗcomᚋtestifysecᚋjudgeᚋjudgeᚑapiᚋentᚐTenantᚄ(ctx context.Context, sel ast.SelectionSet, v []*ent.Tenant) graphql.Marshaler {
 	if v == nil {
 		return graphql.Null
 	}
@@ -7018,7 +7018,7 @@ func (ec *executionContext) marshalOTenant2ᚕᚖgitlabᚗcomᚋtestifysecᚋjud
 			if !isLen1 {
 				defer wg.Done()
 			}
-			ret[i] = ec.marshalNTenant2ᚖgitlabᚗcomᚋtestifysecᚋjudgeᚑplatformᚋjudgeᚑapiᚋentᚐTenant(ctx, sel, v[i])
+			ret[i] = ec.marshalNTenant2ᚖgithubᚗcomᚋtestifysecᚋjudgeᚋjudgeᚑapiᚋentᚐTenant(ctx, sel, v[i])
 		}
 		if isLen1 {
 			f(i)
@@ -7038,14 +7038,14 @@ func (ec *executionContext) marshalOTenant2ᚕᚖgitlabᚗcomᚋtestifysecᚋjud
 	return ret
 }
 
-func (ec *executionContext) marshalOTenant2ᚖgitlabᚗcomᚋtestifysecᚋjudgeᚑplatformᚋjudgeᚑapiᚋentᚐTenant(ctx context.Context, sel ast.SelectionSet, v *ent.Tenant) graphql.Marshaler {
+func (ec *executionContext) marshalOTenant2ᚖgithubᚗcomᚋtestifysecᚋjudgeᚋjudgeᚑapiᚋentᚐTenant(ctx context.Context, sel ast.SelectionSet, v *ent.Tenant) graphql.Marshaler {
 	if v == nil {
 		return graphql.Null
 	}
 	return ec._Tenant(ctx, sel, v)
 }
 
-func (ec *executionContext) unmarshalOTenantType2ᚕgitlabᚗcomᚋtestifysecᚋjudgeᚑplatformᚋjudgeᚑapiᚋentᚋtenantᚐTypeᚄ(ctx context.Context, v interface{}) ([]tenant.Type, error) {
+func (ec *executionContext) unmarshalOTenantType2ᚕgithubᚗcomᚋtestifysecᚋjudgeᚋjudgeᚑapiᚋentᚋtenantᚐTypeᚄ(ctx context.Context, v interface{}) ([]tenant.Type, error) {
 	if v == nil {
 		return nil, nil
 	}
@@ -7057,7 +7057,7 @@ func (ec *executionContext) unmarshalOTenantType2ᚕgitlabᚗcomᚋtestifysecᚋ
 	res := make([]tenant.Type, len(vSlice))
 	for i := range vSlice {
 		ctx := graphql.WithPathContext(ctx, graphql.NewPathWithIndex(i))
-		res[i], err = ec.unmarshalNTenantType2gitlabᚗcomᚋtestifysecᚋjudgeᚑplatformᚋjudgeᚑapiᚋentᚋtenantᚐType(ctx, vSlice[i])
+		res[i], err = ec.unmarshalNTenantType2githubᚗcomᚋtestifysecᚋjudgeᚋjudgeᚑapiᚋentᚋtenantᚐType(ctx, vSlice[i])
 		if err != nil {
 			return nil, err
 		}
@@ -7065,7 +7065,7 @@ func (ec *executionContext) unmarshalOTenantType2ᚕgitlabᚗcomᚋtestifysecᚋ
 	return res, nil
 }
 
-func (ec *executionContext) marshalOTenantType2ᚕgitlabᚗcomᚋtestifysecᚋjudgeᚑplatformᚋjudgeᚑapiᚋentᚋtenantᚐTypeᚄ(ctx context.Context, sel ast.SelectionSet, v []tenant.Type) graphql.Marshaler {
+func (ec *executionContext) marshalOTenantType2ᚕgithubᚗcomᚋtestifysecᚋjudgeᚋjudgeᚑapiᚋentᚋtenantᚐTypeᚄ(ctx context.Context, sel ast.SelectionSet, v []tenant.Type) graphql.Marshaler {
 	if v == nil {
 		return graphql.Null
 	}
@@ -7092,7 +7092,7 @@ func (ec *executionContext) marshalOTenantType2ᚕgitlabᚗcomᚋtestifysecᚋju
 			if !isLen1 {
 				defer wg.Done()
 			}
-			ret[i] = ec.marshalNTenantType2gitlabᚗcomᚋtestifysecᚋjudgeᚑplatformᚋjudgeᚑapiᚋentᚋtenantᚐType(ctx, sel, v[i])
+			ret[i] = ec.marshalNTenantType2githubᚗcomᚋtestifysecᚋjudgeᚋjudgeᚑapiᚋentᚋtenantᚐType(ctx, sel, v[i])
 		}
 		if isLen1 {
 			f(i)
@@ -7112,7 +7112,7 @@ func (ec *executionContext) marshalOTenantType2ᚕgitlabᚗcomᚋtestifysecᚋju
 	return ret
 }
 
-func (ec *executionContext) unmarshalOTenantType2ᚖgitlabᚗcomᚋtestifysecᚋjudgeᚑplatformᚋjudgeᚑapiᚋentᚋtenantᚐType(ctx context.Context, v interface{}) (*tenant.Type, error) {
+func (ec *executionContext) unmarshalOTenantType2ᚖgithubᚗcomᚋtestifysecᚋjudgeᚋjudgeᚑapiᚋentᚋtenantᚐType(ctx context.Context, v interface{}) (*tenant.Type, error) {
 	if v == nil {
 		return nil, nil
 	}
@@ -7121,14 +7121,14 @@ func (ec *executionContext) unmarshalOTenantType2ᚖgitlabᚗcomᚋtestifysecᚋ
 	return res, graphql.ErrorOnPath(ctx, err)
 }
 
-func (ec *executionContext) marshalOTenantType2ᚖgitlabᚗcomᚋtestifysecᚋjudgeᚑplatformᚋjudgeᚑapiᚋentᚋtenantᚐType(ctx context.Context, sel ast.SelectionSet, v *tenant.Type) graphql.Marshaler {
+func (ec *executionContext) marshalOTenantType2ᚖgithubᚗcomᚋtestifysecᚋjudgeᚋjudgeᚑapiᚋentᚋtenantᚐType(ctx context.Context, sel ast.SelectionSet, v *tenant.Type) graphql.Marshaler {
 	if v == nil {
 		return graphql.Null
 	}
 	return v
 }
 
-func (ec *executionContext) unmarshalOTenantWhereInput2ᚕᚖgitlabᚗcomᚋtestifysecᚋjudgeᚑplatformᚋjudgeᚑapiᚋentᚐTenantWhereInputᚄ(ctx context.Context, v interface{}) ([]*ent.TenantWhereInput, error) {
+func (ec *executionContext) unmarshalOTenantWhereInput2ᚕᚖgithubᚗcomᚋtestifysecᚋjudgeᚋjudgeᚑapiᚋentᚐTenantWhereInputᚄ(ctx context.Context, v interface{}) ([]*ent.TenantWhereInput, error) {
 	if v == nil {
 		return nil, nil
 	}
@@ -7140,7 +7140,7 @@ func (ec *executionContext) unmarshalOTenantWhereInput2ᚕᚖgitlabᚗcomᚋtest
 	res := make([]*ent.TenantWhereInput, len(vSlice))
 	for i := range vSlice {
 		ctx := graphql.WithPathContext(ctx, graphql.NewPathWithIndex(i))
-		res[i], err = ec.unmarshalNTenantWhereInput2ᚖgitlabᚗcomᚋtestifysecᚋjudgeᚑplatformᚋjudgeᚑapiᚋentᚐTenantWhereInput(ctx, vSlice[i])
+		res[i], err = ec.unmarshalNTenantWhereInput2ᚖgithubᚗcomᚋtestifysecᚋjudgeᚋjudgeᚑapiᚋentᚐTenantWhereInput(ctx, vSlice[i])
 		if err != nil {
 			return nil, err
 		}
@@ -7148,7 +7148,7 @@ func (ec *executionContext) unmarshalOTenantWhereInput2ᚕᚖgitlabᚗcomᚋtest
 	return res, nil
 }
 
-func (ec *executionContext) unmarshalOTenantWhereInput2ᚖgitlabᚗcomᚋtestifysecᚋjudgeᚑplatformᚋjudgeᚑapiᚋentᚐTenantWhereInput(ctx context.Context, v interface{}) (*ent.TenantWhereInput, error) {
+func (ec *executionContext) unmarshalOTenantWhereInput2ᚖgithubᚗcomᚋtestifysecᚋjudgeᚋjudgeᚑapiᚋentᚐTenantWhereInput(ctx context.Context, v interface{}) (*ent.TenantWhereInput, error) {
 	if v == nil {
 		return nil, nil
 	}
@@ -7210,7 +7210,7 @@ func (ec *executionContext) marshalOTime2ᚖtimeᚐTime(ctx context.Context, sel
 	return res
 }
 
-func (ec *executionContext) marshalOUser2ᚕᚖgitlabᚗcomᚋtestifysecᚋjudgeᚑplatformᚋjudgeᚑapiᚋentᚐUserᚄ(ctx context.Context, sel ast.SelectionSet, v []*ent.User) graphql.Marshaler {
+func (ec *executionContext) marshalOUser2ᚕᚖgithubᚗcomᚋtestifysecᚋjudgeᚋjudgeᚑapiᚋentᚐUserᚄ(ctx context.Context, sel ast.SelectionSet, v []*ent.User) graphql.Marshaler {
 	if v == nil {
 		return graphql.Null
 	}
@@ -7237,7 +7237,7 @@ func (ec *executionContext) marshalOUser2ᚕᚖgitlabᚗcomᚋtestifysecᚋjudge
 			if !isLen1 {
 				defer wg.Done()
 			}
-			ret[i] = ec.marshalNUser2ᚖgitlabᚗcomᚋtestifysecᚋjudgeᚑplatformᚋjudgeᚑapiᚋentᚐUser(ctx, sel, v[i])
+			ret[i] = ec.marshalNUser2ᚖgithubᚗcomᚋtestifysecᚋjudgeᚋjudgeᚑapiᚋentᚐUser(ctx, sel, v[i])
 		}
 		if isLen1 {
 			f(i)
@@ -7257,14 +7257,14 @@ func (ec *executionContext) marshalOUser2ᚕᚖgitlabᚗcomᚋtestifysecᚋjudge
 	return ret
 }
 
-func (ec *executionContext) marshalOUser2ᚖgitlabᚗcomᚋtestifysecᚋjudgeᚑplatformᚋjudgeᚑapiᚋentᚐUser(ctx context.Context, sel ast.SelectionSet, v *ent.User) graphql.Marshaler {
+func (ec *executionContext) marshalOUser2ᚖgithubᚗcomᚋtestifysecᚋjudgeᚋjudgeᚑapiᚋentᚐUser(ctx context.Context, sel ast.SelectionSet, v *ent.User) graphql.Marshaler {
 	if v == nil {
 		return graphql.Null
 	}
 	return ec._User(ctx, sel, v)
 }
 
-func (ec *executionContext) unmarshalOUserWhereInput2ᚕᚖgitlabᚗcomᚋtestifysecᚋjudgeᚑplatformᚋjudgeᚑapiᚋentᚐUserWhereInputᚄ(ctx context.Context, v interface{}) ([]*ent.UserWhereInput, error) {
+func (ec *executionContext) unmarshalOUserWhereInput2ᚕᚖgithubᚗcomᚋtestifysecᚋjudgeᚋjudgeᚑapiᚋentᚐUserWhereInputᚄ(ctx context.Context, v interface{}) ([]*ent.UserWhereInput, error) {
 	if v == nil {
 		return nil, nil
 	}
@@ -7276,7 +7276,7 @@ func (ec *executionContext) unmarshalOUserWhereInput2ᚕᚖgitlabᚗcomᚋtestif
 	res := make([]*ent.UserWhereInput, len(vSlice))
 	for i := range vSlice {
 		ctx := graphql.WithPathContext(ctx, graphql.NewPathWithIndex(i))
-		res[i], err = ec.unmarshalNUserWhereInput2ᚖgitlabᚗcomᚋtestifysecᚋjudgeᚑplatformᚋjudgeᚑapiᚋentᚐUserWhereInput(ctx, vSlice[i])
+		res[i], err = ec.unmarshalNUserWhereInput2ᚖgithubᚗcomᚋtestifysecᚋjudgeᚋjudgeᚑapiᚋentᚐUserWhereInput(ctx, vSlice[i])
 		if err != nil {
 			return nil, err
 		}
@@ -7284,7 +7284,7 @@ func (ec *executionContext) unmarshalOUserWhereInput2ᚕᚖgitlabᚗcomᚋtestif
 	return res, nil
 }
 
-func (ec *executionContext) unmarshalOUserWhereInput2ᚖgitlabᚗcomᚋtestifysecᚋjudgeᚑplatformᚋjudgeᚑapiᚋentᚐUserWhereInput(ctx context.Context, v interface{}) (*ent.UserWhereInput, error) {
+func (ec *executionContext) unmarshalOUserWhereInput2ᚖgithubᚗcomᚋtestifysecᚋjudgeᚋjudgeᚑapiᚋentᚐUserWhereInput(ctx context.Context, v interface{}) (*ent.UserWhereInput, error) {
 	if v == nil {
 		return nil, nil
 	}

@@ -3,7 +3,7 @@ package auth
 import (
 	"net/http"
 
-	"gitlab.com/testifysec/judge-platform/judge-api/viewer"
+	"github.com/testifysec/judge/judge-api/viewer"
 )
 
 func Middleware(authProvider AuthProvider) func(http.Handler) http.Handler {

@@ -15,9 +15,9 @@ import (
 	"github.com/google/uuid"
 	kratos "github.com/ory/kratos-client-go"
 	"github.com/sirupsen/logrus"
-	"gitlab.com/testifysec/judge-platform/judge-api/ent"
-	"gitlab.com/testifysec/judge-platform/judge-api/internal/resolvers"
-	"gitlab.com/testifysec/judge-platform/judge-api/viewer"
+	"github.com/testifysec/judge/judge-api/ent"
+	"github.com/testifysec/judge/judge-api/internal/resolvers"
+	"github.com/testifysec/judge/judge-api/viewer"
 )
 
 // Node is the resolver for the node field.

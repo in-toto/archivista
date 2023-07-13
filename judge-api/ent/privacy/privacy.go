@@ -6,7 +6,7 @@ import (
 	"context"
 	"fmt"
 
-	"gitlab.com/testifysec/judge-platform/judge-api/ent"
+	"github.com/testifysec/judge/judge-api/ent"
 
 	"entgo.io/ent/privacy"
 )

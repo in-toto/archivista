@@ -1,7 +1,7 @@
 package main
 
 import (
-	"gitlab.com/testifysec/judge-platform/judge-api/cmd/server/cmd"
+	"github.com/testifysec/judge/judge-api/cmd/server/cmd"
 )
 
 func main() {

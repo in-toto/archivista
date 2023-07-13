@@ -9,7 +9,7 @@ import (
 	"github.com/google/uuid"
 	kratos "github.com/ory/kratos-client-go"
 	"github.com/sirupsen/logrus"
-	"gitlab.com/testifysec/judge-platform/judge-api/viewer"
+	"github.com/testifysec/judge/judge-api/viewer"
 )
 
 type AuthProvider interface {

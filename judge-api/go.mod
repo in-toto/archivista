@@ -1,6 +1,6 @@
-module gitlab.com/testifysec/judge-platform/judge-api
+module github.com/testifysec/judge/judge-api
 
-go 1.19
+go 1.20
 
 require (
 	ariga.io/sqlcomment v0.1.0

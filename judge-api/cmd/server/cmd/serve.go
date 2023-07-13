@@ -10,9 +10,6 @@ import (
 	"syscall"
 	"time"
 
-	"gitlab.com/testifysec/judge-platform/judge-api/internal/auth"
-	"gitlab.com/testifysec/judge-platform/judge-api/internal/configuration"
-
 	"entgo.io/contrib/entgql"
 	"github.com/99designs/gqlgen/graphql/handler"
 	"github.com/99designs/gqlgen/graphql/playground"
@@ -21,8 +18,10 @@ import (
 	"github.com/gorilla/mux"
 	"github.com/sirupsen/logrus"
 	"github.com/spf13/cobra"
-	judgeapi "gitlab.com/testifysec/judge-platform/judge-api"
-	"gitlab.com/testifysec/judge-platform/judge-api/internal/database/mysqlstore"
+	judgeapi "github.com/testifysec/judge/judge-api"
+	"github.com/testifysec/judge/judge-api/internal/auth"
+	"github.com/testifysec/judge/judge-api/internal/configuration"
+	"github.com/testifysec/judge/judge-api/internal/database/mysqlstore"
 )
 
 var (

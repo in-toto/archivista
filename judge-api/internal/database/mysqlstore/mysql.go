@@ -9,8 +9,8 @@ import (
 	"entgo.io/ent/dialect/sql"
 	"github.com/go-sql-driver/mysql"
 	"github.com/sirupsen/logrus"
-	"gitlab.com/testifysec/judge-platform/judge-api/ent"
-	"gitlab.com/testifysec/judge-platform/judge-api/internal/configuration"
+	"github.com/testifysec/judge/judge-api/ent"
+	"github.com/testifysec/judge/judge-api/internal/configuration"
 )
 
 const subjectBatchSize = 30000

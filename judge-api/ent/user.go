@@ -9,7 +9,7 @@ import (
 
 	"entgo.io/ent/dialect/sql"
 	"github.com/google/uuid"
-	"gitlab.com/testifysec/judge-platform/judge-api/ent/user"
+	"github.com/testifysec/judge/judge-api/ent/user"
 )
 
 // User is the model entity for the User schema.

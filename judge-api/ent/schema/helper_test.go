@@ -9,12 +9,12 @@ import (
 
 	"github.com/google/uuid"
 	"github.com/stretchr/testify/require"
-	"gitlab.com/testifysec/judge-platform/judge-api/ent"
-	"gitlab.com/testifysec/judge-platform/judge-api/ent/enttest"
-	"gitlab.com/testifysec/judge-platform/judge-api/ent/privacy"
-	"gitlab.com/testifysec/judge-platform/judge-api/ent/tenant"
-	"gitlab.com/testifysec/judge-platform/judge-api/ent/user"
-	"gitlab.com/testifysec/judge-platform/judge-api/viewer"
+	"github.com/testifysec/judge/judge-api/ent"
+	"github.com/testifysec/judge/judge-api/ent/enttest"
+	"github.com/testifysec/judge/judge-api/ent/privacy"
+	"github.com/testifysec/judge/judge-api/ent/tenant"
+	"github.com/testifysec/judge/judge-api/ent/user"
+	"github.com/testifysec/judge/judge-api/viewer"
 )
 
 type AuthStub struct {

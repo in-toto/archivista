@@ -28,7 +28,7 @@ func main() {
 			entc.DependencyName("Config"),
 			entc.DependencyTypeInfo(&field.TypeInfo{
 				Ident:   "configuration.Config",
-				PkgPath: "gitlab.com/testifysec/judge-platform/judge-api/internal/configuration",
+				PkgPath: "github.com/testifysec/judge/judge-api/internal/configuration",
 			}),
 		),
 	}

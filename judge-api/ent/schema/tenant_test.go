@@ -6,10 +6,10 @@ import (
 	"testing"
 
 	"github.com/stretchr/testify/require"
-	"gitlab.com/testifysec/judge-platform/judge-api/ent"
-	"gitlab.com/testifysec/judge-platform/judge-api/ent/privacy"
-	"gitlab.com/testifysec/judge-platform/judge-api/ent/user"
-	"gitlab.com/testifysec/judge-platform/judge-api/viewer"
+	"github.com/testifysec/judge/judge-api/ent"
+	"github.com/testifysec/judge/judge-api/ent/privacy"
+	"github.com/testifysec/judge/judge-api/ent/user"
+	"github.com/testifysec/judge/judge-api/viewer"
 
 	_ "github.com/mattn/go-sqlite3"
 )

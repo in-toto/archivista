@@ -9,7 +9,7 @@ scalar Cursor
 An object with an ID.
 Follows the [Relay Global Object Identification Specification](https://relay.dev/graphql/objectidentification.htm)
 """
-interface Node @goModel(model: "gitlab.com/testifysec/judge-platform/judge-api/ent.Noder") {
+interface Node @goModel(model: "github.com/testifysec/judge/judge-api/ent.Noder") {
   """The id of the object."""
   id: ID!
 }
@@ -159,7 +159,7 @@ type Tenant implements Node {
   children: [Tenant!]
 }
 """TenantType is enum for the field type"""
-enum TenantType @goModel(model: "gitlab.com/testifysec/judge-platform/judge-api/ent/tenant.Type") {
+enum TenantType @goModel(model: "github.com/testifysec/judge/judge-api/ent/tenant.Type") {
   ROOT
   ORG
   TEAM

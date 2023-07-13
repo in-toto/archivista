@@ -10,9 +10,9 @@ import (
 	"github.com/99designs/gqlgen/graphql"
 	"github.com/google/uuid"
 	"github.com/hashicorp/go-multierror"
-	"gitlab.com/testifysec/judge-platform/judge-api/ent/project"
-	"gitlab.com/testifysec/judge-platform/judge-api/ent/tenant"
-	"gitlab.com/testifysec/judge-platform/judge-api/ent/user"
+	"github.com/testifysec/judge/judge-api/ent/project"
+	"github.com/testifysec/judge/judge-api/ent/tenant"
+	"github.com/testifysec/judge/judge-api/ent/user"
 )
 
 // Noder wraps the basic Node method.

@@ -8,8 +8,8 @@ import (
 	"entgo.io/ent/dialect/sql"
 	"entgo.io/ent/dialect/sql/sqlgraph"
 	"entgo.io/ent/schema/field"
-	"gitlab.com/testifysec/judge-platform/judge-api/ent/predicate"
-	"gitlab.com/testifysec/judge-platform/judge-api/ent/user"
+	"github.com/testifysec/judge/judge-api/ent/predicate"
+	"github.com/testifysec/judge/judge-api/ent/user"
 )
 
 // UserDelete is the builder for deleting a User entity.
