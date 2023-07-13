@@ -178,7 +178,7 @@ func (s *Store) Store(ctx context.Context, gitoid string, obj []byte) error {
 		}
 
 		for hashFn, digest := range payloadDigestSet {
-			hashName, err := cryptoutil.HashToString(hashFn)
+			hashName, err := cryptoutil.HashToString(hashFn.Hash)
 			if err != nil {
 				return err
 			}
