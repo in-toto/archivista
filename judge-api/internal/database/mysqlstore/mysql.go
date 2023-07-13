@@ -3,14 +3,14 @@ package mysqlstore
 import (
 	"context"
 	"fmt"
-	"gitlab.com/testifysec/judge-platform/judge-api/internal/configuration"
 	"time"
 
 	"ariga.io/sqlcomment"
 	"entgo.io/ent/dialect/sql"
 	"github.com/go-sql-driver/mysql"
-	"github.com/networkservicemesh/sdk/pkg/tools/log"
+	"github.com/sirupsen/logrus"
 	"gitlab.com/testifysec/judge-platform/judge-api/ent"
+	"gitlab.com/testifysec/judge-platform/judge-api/internal/configuration"
 )
 
 const subjectBatchSize = 30000
@@ -57,13 +57,13 @@ func New(ctx context.Context, cfg configuration.Config) (*Store, <-chan error, e
 		<-ctx.Done()
 		err := client.Close()
 		if err != nil {
-			log.FromContext(ctx).Errorf("error closing database: %+v", err)
+			logrus.Errorf("error closing database: %+v", err)
 		}
 		close(errCh)
 	}()
 
 	if err := client.Schema.Create(ctx); err != nil {
-		log.FromContext(ctx).Fatalf("failed creating schema resources: %v", err)
+		logrus.Fatalf("failed creating schema resources: %v", err)
 	}
 
 	return &Store{

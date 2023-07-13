@@ -21,11 +21,6 @@ import (
 	"github.com/gorilla/mux"
 	"github.com/sirupsen/logrus"
 	"github.com/spf13/cobra"
-
-	"github.com/networkservicemesh/sdk/pkg/tools/debug"
-	"github.com/networkservicemesh/sdk/pkg/tools/log"
-	"github.com/networkservicemesh/sdk/pkg/tools/log/logruslogger"
-
 	judgeapi "gitlab.com/testifysec/judge-platform/judge-api"
 	"gitlab.com/testifysec/judge-platform/judge-api/internal/database/mysqlstore"
 )
@@ -46,6 +41,7 @@ func init() {
 	serveCmd.PersistentFlags().BoolVar(&Config.GraphqlWebClientEnable, "graphql-web-client", true, "Enable the GraphQL web client")
 	serveCmd.PersistentFlags().StringSliceVar(&Config.CORSAllowOrigins, "cors-origins", []string{}, "Allowed CORS origins")
 	serveCmd.PersistentFlags().StringVar(&Config.KratosAdminUrl, "kratos-admin-url", "https://kratos-admin.testifysec.localhost", "Kratos admin url")
+	logrus.SetFormatter(&nested.Formatter{})
 }
 
 func Run(cmd *cobra.Command, args []string) {
@@ -59,18 +55,10 @@ func Run(cmd *cobra.Command, args []string) {
 	)
 	defer cancel()
 
-	logrus.SetFormatter(&nested.Formatter{})
-	log.EnableTracing(true)
-	ctx = log.WithLog(ctx, logruslogger.New(ctx))
-
-	if err := debug.Self(); err != nil {
-		log.FromContext(ctx).Infof("%s", err)
-	}
-
-	log.FromContext(ctx).Infof("Starting...")
+	logrus.Infof("Starting...")
 	mysqlStore, mysqlStoreCh, err := mysqlstore.New(ctx, Config)
 	if err != nil {
-		log.FromContext(ctx).Fatalf("failed to create mysql store: %v", err)
+		logrus.Fatalf("failed to create mysql store: %v", err)
 	}
 
 	client := mysqlStore.GetClient()
@@ -94,7 +82,7 @@ func Run(cmd *cobra.Command, args []string) {
 	webhookSubrouter := router.PathPrefix("/webhook").Subrouter()
 	webhookSubrouter.Handle("/defaulttenant", http.HandlerFunc(authProvider.UpdateAssignedTenantsWithIdentityId)).Methods(http.MethodPost)
 
-	log.FromContext(ctx).Infof("Serving on %s", Config.ListenOn)
+	logrus.Infof("Serving on %s", Config.ListenOn)
 
 	listenAddress := Config.ListenOn
 	listenAddress = strings.TrimSpace(listenAddress)
@@ -110,7 +98,7 @@ func Run(cmd *cobra.Command, args []string) {
 
 	listener, err := net.Listen(proto, listenAddress)
 	if err != nil {
-		log.FromContext(ctx).Fatalf("unable to start http listener: %+v", err)
+		logrus.Fatalf("unable to start http listener: %+v", err)
 	}
 
 	server := &http.Server{
@@ -124,7 +112,7 @@ func Run(cmd *cobra.Command, args []string) {
 
 	go func() {
 		if err := server.Serve(listener); err != nil && err != http.ErrServerClosed {
-			log.FromContext(ctx).Fatalf("unable to start http server: %+v", err)
+			logrus.Fatalf("unable to start http server: %+v", err)
 		}
 	}()
 
@@ -133,15 +121,12 @@ func Run(cmd *cobra.Command, args []string) {
 		ctxShutdown, cancelShutdown := context.WithTimeout(context.Background(), 5*time.Second)
 		defer cancelShutdown()
 		if err := server.Shutdown(ctxShutdown); err != nil {
-			log.FromContext(ctx).Errorf("server shutdown failed: %+v", err)
+			logrus.Errorf("server shutdown failed: %+v", err)
 		}
 	}()
 
-	log.FromContext(ctx).Infof("startup complete (time since start: %s)", time.Since(startTime))
-
+	logrus.Infof("startup complete (time since start: %s)", time.Since(startTime))
 	<-ctx.Done()
 	<-mysqlStoreCh
-
-	log.FromContext(ctx).Infof("exiting, uptime: %v", time.Since(startTime))
-
+	logrus.Infof("exiting, uptime: %v", time.Since(startTime))
 }

@@ -4,10 +4,9 @@ import (
 	"context"
 	"crypto/tls"
 	"encoding/json"
-	"github.com/google/uuid"
-	"github.com/networkservicemesh/sdk/pkg/tools/log"
 	"net/http"
 
+	"github.com/google/uuid"
 	kratos "github.com/ory/kratos-client-go"
 	"github.com/sirupsen/logrus"
 	"gitlab.com/testifysec/judge-platform/judge-api/viewer"
@@ -99,7 +98,7 @@ func (k *KratosAuthProvider) UpdateAssignedTenantsWithIdentityId(w http.Response
 	var metadataWebhookRequest MetadataWebhookRequest
 	err := json.NewDecoder(r.Body).Decode(&metadataWebhookRequest)
 	if err != nil {
-		log.FromContext(r.Context()).Errorf("Error reading request body: %v", err)
+		logrus.Errorf("Error reading request body: %v", err)
 		w.WriteHeader(http.StatusBadRequest)
 		w.Write([]byte("Error reading webhook request body"))
 		return
@@ -112,6 +111,6 @@ func (k *KratosAuthProvider) UpdateAssignedTenantsWithIdentityId(w http.Response
 		MetadataPublic: metadata,
 	}).Execute()
 	if err != nil {
-		log.FromContext(r.Context()).Errorf("Error updating identity: %v", err)
+		logrus.Errorf("Error updating identity: %v", err)
 	}
 }
