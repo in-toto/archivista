@@ -30,7 +30,7 @@ jobs:
         cache: 'npm'
 
     - name: witness install
-      uses: testifysec/witness-run-action@v0.1.2
+      uses: testifysec/witness-run-action@40aa4ef36fc431a37de7c3faebcb66513c03b934
       with:
         step: install
         enable-archivista: true
@@ -40,21 +40,21 @@ jobs:
 
     # TODO: it would be really nice if below the repeated configs could just be defined once?
     - name: witness build
-      uses: testifysec/witness-run-action@v0.1.2
+      uses: testifysec/witness-run-action@40aa4ef36fc431a37de7c3faebcb66513c03b934
       with:
         step: build
         enable-archivista: true
         enable-sigstore: true
         command: npm run build:web
     - name: witness lint
-      uses: testifysec/witness-run-action@v0.1.2
+      uses: testifysec/witness-run-action@40aa4ef36fc431a37de7c3faebcb66513c03b934
       with:
         step: lint
         enable-archivista: true
         enable-sigstore: true
         command: npm run lint:web
     - name: witness test
-      uses: testifysec/witness-run-action@v0.1.2
+      uses: testifysec/witness-run-action@40aa4ef36fc431a37de7c3faebcb66513c03b934
       with:
         step: test
         enable-archivista: true
