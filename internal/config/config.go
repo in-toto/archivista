@@ -19,9 +19,8 @@ import (
 	"os"
 	"strings"
 
-	"github.com/networkservicemesh/sdk/pkg/tools/log"
-
 	"github.com/kelseyhightower/envconfig"
+	"github.com/sirupsen/logrus"
 )
 
 type Config struct {
@@ -60,7 +59,7 @@ func (c *Config) Process() error {
 	for _, e := range os.Environ() {
 		if strings.HasPrefix(e, "ARCHIVIST_") {
 			usingDeprecatedEnv = true
-			log.Default().Warnf("Using deprecated environment variable %s. Please use ARCHIVISTA_ instead.", e)
+			logrus.Warnf("Using deprecated environment variable %s. Please use ARCHIVISTA_ instead.", e)
 		}
 		if strings.HasPrefix(e, "ARCHIVISTA_") {
 			usingNewEnv = true

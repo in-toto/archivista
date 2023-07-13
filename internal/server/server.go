@@ -26,7 +26,7 @@ import (
 
 	"github.com/edwarnicke/gitoid"
 	"github.com/gorilla/mux"
-	"github.com/networkservicemesh/sdk/pkg/tools/log"
+	"github.com/sirupsen/logrus"
 	archivistaapi "github.com/testifysec/archivista-api"
 )
 
@@ -60,18 +60,18 @@ func (s *Server) Store(ctx context.Context, r io.Reader) (archivistaapi.StoreRes
 
 	gid, err := gitoid.New(bytes.NewReader(payload), gitoid.WithContentLength(int64(len(payload))), gitoid.WithSha256())
 	if err != nil {
-		log.FromContext(ctx).Errorf("failed to generate gitoid: %v", err)
+		logrus.Errorf("failed to generate gitoid: %v", err)
 		return archivistaapi.StoreResponse{}, err
 	}
 
 	if err := s.metadataStore.Store(ctx, gid.String(), payload); err != nil {
-		log.FromContext(ctx).Errorf("received error from metadata store: %+v", err)
+		logrus.Errorf("received error from metadata store: %+v", err)
 		return archivistaapi.StoreResponse{}, err
 	}
 
 	if s.objectStore != nil {
 		if err := s.objectStore.Store(ctx, gid.String(), payload); err != nil {
-			log.FromContext(ctx).Errorf("received error from object store: %+v", err)
+			logrus.Errorf("received error from object store: %+v", err)
 			return archivistaapi.StoreResponse{}, err
 		}
 	}
@@ -94,7 +94,7 @@ func (s *Server) StoreHandler(w http.ResponseWriter, r *http.Request) {
 
 	encoder := json.NewEncoder(w)
 	if err := encoder.Encode(resp); err != nil {
-		log.FromContext(r.Context()).Errorf("failed to copy storeresponse to response: %+v", err)
+		logrus.Errorf("failed to copy storeresponse to response: %+v", err)
 		w.WriteHeader(http.StatusInternalServerError)
 		return
 	}
@@ -113,7 +113,7 @@ func (s *Server) Get(ctx context.Context, gitoid string) (io.ReadCloser, error) 
 
 	objReader, err := s.objectStore.Get(ctx, gitoid)
 	if err != nil {
-		log.FromContext(ctx).Errorf("failed to get object: %+v", err)
+		logrus.Errorf("failed to get object: %+v", err)
 	}
 
 	return objReader, err
@@ -134,7 +134,7 @@ func (s *Server) GetHandler(w http.ResponseWriter, r *http.Request) {
 
 	defer attestationReader.Close()
 	if _, err := io.Copy(w, attestationReader); err != nil {
-		log.FromContext(r.Context()).Errorf("failed to copy attestation to response: %+v", err)
+		logrus.Errorf("failed to copy attestation to response: %+v", err)
 		w.WriteHeader(http.StatusBadRequest)
 		return
 	}

@@ -26,7 +26,7 @@ import (
 	"entgo.io/ent/dialect/sql"
 	"github.com/digitorus/timestamp"
 	"github.com/go-sql-driver/mysql"
-	"github.com/networkservicemesh/sdk/pkg/tools/log"
+	"github.com/sirupsen/logrus"
 	"github.com/testifysec/archivista/ent"
 	"github.com/testifysec/archivista/internal/metadatastorage"
 	"github.com/testifysec/archivista/internal/metadatastorage/parserregistry"
@@ -81,13 +81,13 @@ func New(ctx context.Context, connectionstring string) (*Store, <-chan error, er
 		<-ctx.Done()
 		err := client.Close()
 		if err != nil {
-			log.FromContext(ctx).Errorf("error closing database: %+v", err)
+			logrus.Errorf("error closing database: %+v", err)
 		}
 		close(errCh)
 	}()
 
 	if err := client.Schema.Create(ctx); err != nil {
-		log.FromContext(ctx).Fatalf("failed creating schema resources: %v", err)
+		logrus.Fatalf("failed creating schema resources: %v", err)
 	}
 
 	return &Store{
@@ -244,7 +244,7 @@ func (s *Store) Store(ctx context.Context, gitoid string, obj []byte) error {
 	})
 
 	if err != nil {
-		log.FromContext(ctx).Errorf("unable to store metadata: %+v", err)
+		logrus.Errorf("unable to store metadata: %+v", err)
 		return err
 	}
 
