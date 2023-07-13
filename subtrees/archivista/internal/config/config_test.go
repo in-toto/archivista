@@ -16,10 +16,10 @@ package config
 
 import (
 	"bytes"
-	"log"
 	"os"
 	"testing"
 
+	"github.com/sirupsen/logrus"
 	"github.com/stretchr/testify/require"
 )
 
@@ -83,8 +83,8 @@ func TestConfig_DeprecationAndPrecedence(t *testing.T) {
 
 	// Set up log output capturing
 	var output bytes.Buffer
-	log.SetOutput(&output)
-	defer func() { log.SetOutput(os.Stderr) }()
+	logrus.SetOutput(&output)
+	defer func() { logrus.SetOutput(os.Stderr) }()
 
 	// Create a Config struct and call Process()
 	c := &Config{}
