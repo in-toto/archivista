@@ -141,7 +141,7 @@ up:
 		./scripts/docker-mount.sh; \
 	fi
 
-	skaffold dev --tail=false
+	skaffold dev --module base --tail=false
 
 port-forward:
 	sudo -E kubectl -n ingress-nginx port-forward service/ingress-nginx-controller 443:443 80:80

@@ -1,0 +1,38 @@
+apiVersion: skaffold/v3alpha1
+kind: Config
+metadata:
+  name: observability
+deploy:
+  kubectl: {}
+  helm:
+    releases:
+      - name: grafana
+        namespace: observability
+        skipBuildDependencies: true
+        createNamespace: true
+        repo: https://prometheus-community.github.io/helm-charts
+        remoteChart: kube-prometheus-stack
+        version:
+        setValues:
+          installCRDs: true
+          grafana:
+            additionalDataSources:
+              - name: Loki
+                type: loki
+                url: http://loki.observability.svc.cluster.local:3100
+      - name: loki
+        namespace: observability
+        skipBuildDependencies: true
+        createNamespace: true
+        repo: https://grafana.github.io/helm-charts
+        remoteChart: loki-stack
+        version:
+        setValues:
+          installCRDs: true
+          grafana:
+            sidecar:
+              datasources:
+                enabled: false
+manifests:
+  rawYaml:
+    - ../k8s/grafana-loki/*.yaml

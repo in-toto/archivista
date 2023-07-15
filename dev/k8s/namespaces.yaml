@@ -21,7 +21,7 @@ metadata:
 apiVersion: v1
 kind: Namespace
 metadata:
-  name:  kratos-selfservice-ui-node
+  name: kratos-selfservice-ui-node
 ---
 apiVersion: v1
 kind: Namespace

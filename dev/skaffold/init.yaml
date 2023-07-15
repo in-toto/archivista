@@ -1,0 +1,13 @@
+apiVersion: skaffold/v3alpha1
+kind: Config
+metadata:
+  name: init
+
+deploy:
+  kubectl: {}
+
+manifests:
+  rawYaml:
+    - ../k8s/namespaces.yaml
+
+
