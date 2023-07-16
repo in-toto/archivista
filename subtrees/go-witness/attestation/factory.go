@@ -18,80 +18,14 @@ import (
 	"fmt"
 
 	"github.com/testifysec/go-witness/cryptoutil"
+	"github.com/testifysec/go-witness/registry"
 )
 
 var (
-	attestationsByName = map[string]AttestorRegistration{}
-	attestationsByType = map[string]AttestorRegistration{}
-	attestationsByRun  = map[RunType]AttestorRegistration{}
+	attestorRegistry   = registry.New[Attestor]()
+	attestationsByType = map[string]registry.Entry[Attestor]{}
+	attestationsByRun  = map[RunType]registry.Entry[Attestor]{}
 )
-
-type Configurer interface {
-	Description() string
-	Name() string
-}
-
-type Configurable interface {
-	int | string | []string
-}
-
-type ConfigOption[T Configurable] struct {
-	name        string
-	description string
-	defaultVal  T
-	setter      func(Attestor, T) (Attestor, error)
-}
-
-func (co ConfigOption[T]) Name() string {
-	return co.name
-}
-
-func (co ConfigOption[T]) DefaultVal() T {
-	return co.defaultVal
-}
-
-func (co ConfigOption[T]) Description() string {
-	return co.description
-}
-
-func (co ConfigOption[T]) Setter() func(Attestor, T) (Attestor, error) {
-	return co.setter
-}
-
-func IntConfigOption(name, description string, defaultVal int, setter func(Attestor, int) (Attestor, error)) ConfigOption[int] {
-	return ConfigOption[int]{
-		name,
-		description,
-		defaultVal,
-		setter,
-	}
-}
-
-func StringConfigOption(name, description string, defaultVal string, setter func(Attestor, string) (Attestor, error)) ConfigOption[string] {
-	return ConfigOption[string]{
-		name,
-		description,
-		defaultVal,
-		setter,
-	}
-}
-
-func StringSliceConfigOption(name, description string, defaultVal []string, setter func(Attestor, []string) (Attestor, error)) ConfigOption[[]string] {
-	return ConfigOption[[]string]{
-		name,
-		description,
-		defaultVal,
-		setter,
-	}
-}
-
-type AttestorRegistration struct {
-	Factory AttestorFactory
-	Name    string
-	Type    string
-	RunType RunType
-	Options []Configurer
-}
 
 type Attestor interface {
 	Name() string
@@ -130,35 +64,25 @@ type BackReffer interface {
 	BackRefs() map[string]cryptoutil.DigestSet
 }
 
-type AttestorFactory func() Attestor
-
 type ErrAttestationNotFound string
 
 func (e ErrAttestationNotFound) Error() string {
 	return fmt.Sprintf("attestation not found: %v", string(e))
 }
 
-func RegisterAttestation(name, predicateType string, run RunType, factoryFunc AttestorFactory, opts ...Configurer) {
-	registrationEntry := AttestorRegistration{
-		Name:    name,
-		Type:    predicateType,
-		Factory: factoryFunc,
-		RunType: run,
-		Options: opts,
-	}
-
-	attestationsByName[name] = registrationEntry
+func RegisterAttestation(name, predicateType string, run RunType, factoryFunc registry.FactoryFunc[Attestor], opts ...registry.Configurer) {
+	registrationEntry := attestorRegistry.Register(name, factoryFunc, opts...)
 	attestationsByType[predicateType] = registrationEntry
 	attestationsByRun[run] = registrationEntry
 }
 
-func FactoryByType(uri string) (AttestorFactory, bool) {
+func FactoryByType(uri string) (registry.FactoryFunc[Attestor], bool) {
 	registrationEntry, ok := attestationsByType[uri]
 	return registrationEntry.Factory, ok
 }
 
-func FactoryByName(name string) (AttestorFactory, bool) {
-	registrationEntry, ok := attestationsByName[name]
+func FactoryByName(name string) (registry.FactoryFunc[Attestor], bool) {
+	registrationEntry, ok := attestorRegistry.Entry(name)
 	return registrationEntry.Factory, ok
 }
 
@@ -175,7 +99,7 @@ func Attestors(nameOrTypes []string) ([]Attestor, error) {
 
 		attestor := factory()
 		opts := AttestorOptions(nameOrType)
-		attestor, err := setDefaultVals(attestor, opts)
+		attestor, err := attestorRegistry.SetDefaultVals(attestor, opts)
 		if err != nil {
 			return nil, err
 		}
@@ -186,8 +110,8 @@ func Attestors(nameOrTypes []string) ([]Attestor, error) {
 	return attestors, nil
 }
 
-func AttestorOptions(nameOrType string) []Configurer {
-	entry, ok := attestationsByName[nameOrType]
+func AttestorOptions(nameOrType string) []registry.Configurer {
+	entry, ok := attestorRegistry.Entry(nameOrType)
 	if !ok {
 		entry = attestationsByType[nameOrType]
 	}
@@ -195,32 +119,6 @@ func AttestorOptions(nameOrType string) []Configurer {
 	return entry.Options
 }
 
-func RegistrationEntries() []AttestorRegistration {
-	results := make([]AttestorRegistration, 0, len(attestationsByName))
-	for _, registration := range attestationsByName {
-		results = append(results, registration)
-	}
-
-	return results
-}
-
-func setDefaultVals(attestor Attestor, opts []Configurer) (Attestor, error) {
-	var err error
-
-	for _, opt := range opts {
-		switch o := opt.(type) {
-		case ConfigOption[int]:
-			attestor, err = o.Setter()(attestor, o.DefaultVal())
-		case ConfigOption[string]:
-			attestor, err = o.Setter()(attestor, o.DefaultVal())
-		case ConfigOption[[]string]:
-			attestor, err = o.Setter()(attestor, o.DefaultVal())
-		}
-
-		if err != nil {
-			return attestor, err
-		}
-	}
-
-	return attestor, nil
+func RegistrationEntries() []registry.Entry[Attestor] {
+	return attestorRegistry.AllEntries()
 }

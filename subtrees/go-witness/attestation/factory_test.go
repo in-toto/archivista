@@ -15,7 +15,6 @@
 package attestation
 
 import (
-	"errors"
 	"testing"
 
 	"github.com/stretchr/testify/assert"
@@ -51,65 +50,6 @@ func TestRegistry(t *testing.T) {
 		require.True(t, ok)
 		assert.Equal(t, factory(), otherFactory())
 	}
-}
-
-func TestConfigOptions(t *testing.T) {
-	defaultIntVal := 50
-	defaultStrVal := "default string"
-	defaultStrSliceVal := []string{"d", "e", "f"}
-	attestorOpts := []Configurer{
-		IntConfigOption("someint", "some int", defaultIntVal, func(a Attestor, v int) (Attestor, error) {
-			da := a.(*dummyAttestor)
-			da.intOpt = v
-			return da, nil
-		}),
-		StringConfigOption("somestring", "some string", defaultStrVal, func(a Attestor, v string) (Attestor, error) {
-			da := a.(*dummyAttestor)
-			da.strOpt = v
-			return da, nil
-		}),
-		StringSliceConfigOption("someslice", "some slice", defaultStrSliceVal, func(a Attestor, v []string) (Attestor, error) {
-			da := a.(*dummyAttestor)
-			da.strSliceOpt = v
-			return da, nil
-		}),
-	}
-
-	RegisterAttestation("optionTest", "optionTest", PreMaterialRunType, func() Attestor { return &dummyAttestor{} }, attestorOpts...)
-	opts := AttestorOptions("optionTest")
-	attestors, err := Attestors([]string{"optionTest"})
-	require.NoError(t, err)
-	require.Len(t, attestors, 1)
-	optAttestor := attestors[0]
-	assert.Equal(t, optAttestor, &dummyAttestor{
-		intOpt:      defaultIntVal,
-		strOpt:      defaultStrVal,
-		strSliceOpt: defaultStrSliceVal,
-	})
-
-	intVal := 100
-	strVal := "test string"
-	strSliceVal := []string{"a", "b", "c"}
-	for _, opt := range opts {
-		switch o := opt.(type) {
-		case ConfigOption[int]:
-			_, err = o.Setter()(optAttestor, intVal)
-		case ConfigOption[string]:
-			_, err = o.Setter()(optAttestor, strVal)
-		case ConfigOption[[]string]:
-			_, err = o.Setter()(optAttestor, strSliceVal)
-		default:
-			err = errors.New("unknown config option")
-		}
-
-		require.NoError(t, err)
-	}
-
-	assert.Equal(t, optAttestor, &dummyAttestor{
-		intOpt:      intVal,
-		strOpt:      strVal,
-		strSliceOpt: strSliceVal,
-	})
 }
 
 type dummyAttestor struct {

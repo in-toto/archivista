@@ -27,6 +27,7 @@ import (
 	"github.com/testifysec/go-witness/attestation"
 	"github.com/testifysec/go-witness/attestation/file"
 	"github.com/testifysec/go-witness/cryptoutil"
+	"github.com/testifysec/go-witness/registry"
 )
 
 const (
@@ -48,8 +49,8 @@ var (
 
 func init() {
 	attestation.RegisterAttestation(Name, Type, RunType, func() attestation.Attestor { return New() },
-		attestation.StringConfigOption(
-			"includeGlob",
+		registry.StringConfigOption(
+			"include-glob",
 			"Pattern to use when recording products. Files that match this pattern will be included as subjects on the attestation.",
 			defaultIncludeGlob,
 			func(a attestation.Attestor, includeGlob string) (attestation.Attestor, error) {
@@ -62,8 +63,8 @@ func init() {
 				return prodAttestor, nil
 			},
 		),
-		attestation.StringConfigOption(
-			"excludeGlob",
+		registry.StringConfigOption(
+			"exclude-glob",
 			"Pattern to use when recording products. Files that match this pattern will be excluded as subjects on the attestation.",
 			defaultExcludeGlob,
 			func(a attestation.Attestor, excludeGlob string) (attestation.Attestor, error) {
