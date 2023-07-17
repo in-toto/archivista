@@ -39,15 +39,120 @@ import (
 	sigo "github.com/sigstore/sigstore/pkg/signature/options"
 	"github.com/testifysec/go-witness/cryptoutil"
 	"github.com/testifysec/go-witness/log"
+	"github.com/testifysec/go-witness/registry"
+	"github.com/testifysec/go-witness/signer"
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/credentials"
 	"google.golang.org/grpc/credentials/insecure"
 	"gopkg.in/square/go-jose.v2/jwt"
 )
 
-func Signer(ctx context.Context, fulcioURL string, oidcIssuer string, oidcClientID string, tokenOption string) (cryptoutil.Signer, error) {
+func init() {
+	signer.Register("fulcio", func() signer.SignerProvider { return New() },
+		registry.StringConfigOption(
+			"url",
+			"Fulcio address to sign with",
+			"",
+			func(sp signer.SignerProvider, fulcioUrl string) (signer.SignerProvider, error) {
+				fsp, ok := sp.(FulcioSignerProvider)
+				if !ok {
+					return sp, fmt.Errorf("provided signer provider is not a fulcio signer provider")
+				}
+
+				WithFulcioURL(fulcioUrl)(&fsp)
+				return fsp, nil
+			},
+		),
+		registry.StringConfigOption(
+			"oidc-issuer",
+			"OIDC issuer to use for authentication",
+			"",
+			func(sp signer.SignerProvider, oidcIssuer string) (signer.SignerProvider, error) {
+				fsp, ok := sp.(FulcioSignerProvider)
+				if !ok {
+					return sp, fmt.Errorf("provided signer provider is not a fulcio signer provider")
+				}
+
+				WithOidcIssuer(oidcIssuer)(&fsp)
+				return fsp, nil
+			},
+		),
+		registry.StringConfigOption(
+			"client-id",
+			"OIDC client ID to use for authentication",
+			"",
+			func(sp signer.SignerProvider, oidcClientID string) (signer.SignerProvider, error) {
+				fsp, ok := sp.(FulcioSignerProvider)
+				if !ok {
+					return sp, fmt.Errorf("provided signer provider is not a fulcio signer provider")
+				}
+
+				WithOidcClientID(oidcClientID)(&fsp)
+				return fsp, nil
+			},
+		),
+		registry.StringConfigOption(
+			"token",
+			"Raw token to use for authentication",
+			"",
+			func(sp signer.SignerProvider, token string) (signer.SignerProvider, error) {
+				fsp, ok := sp.(FulcioSignerProvider)
+				if !ok {
+					return sp, fmt.Errorf("provided signer provider is not a fulcio signer provider")
+				}
+
+				WithToken(token)(&fsp)
+				return fsp, nil
+			},
+		),
+	)
+}
+
+type FulcioSignerProvider struct {
+	FulcioURL    string
+	OidcIssuer   string
+	OidcClientID string
+	Token        string
+}
+
+type Option func(*FulcioSignerProvider)
+
+func WithFulcioURL(url string) Option {
+	return func(fsp *FulcioSignerProvider) {
+		fsp.FulcioURL = url
+	}
+}
+
+func WithOidcIssuer(oidcIssuer string) Option {
+	return func(fsp *FulcioSignerProvider) {
+		fsp.OidcIssuer = oidcIssuer
+	}
+}
+
+func WithOidcClientID(oidcClientID string) Option {
+	return func(fsp *FulcioSignerProvider) {
+		fsp.OidcClientID = oidcClientID
+	}
+}
+
+func WithToken(tokenOption string) Option {
+	return func(fsp *FulcioSignerProvider) {
+		fsp.Token = tokenOption
+	}
+}
+
+func New(opts ...Option) FulcioSignerProvider {
+	fsp := FulcioSignerProvider{}
+	for _, opt := range opts {
+		opt(&fsp)
+	}
+
+	return fsp
+}
+
+func (fsp FulcioSignerProvider) Signer(ctx context.Context) (cryptoutil.Signer, error) {
 	// Parse the Fulcio URL to extract its components
-	u, err := url.Parse(fulcioURL)
+	u, err := url.Parse(fsp.FulcioURL)
 	if err != nil {
 		return nil, err
 	}
@@ -76,7 +181,7 @@ func Signer(ctx context.Context, fulcioURL string, oidcIssuer string, oidcClient
 	// Make insecure true only if the scheme is HTTP
 	insecure := scheme == "http"
 
-	fClient, err := NewClient(ctx, scheme+"://"+u.Host, port, insecure)
+	fClient, err := newClient(ctx, scheme+"://"+u.Host, port, insecure)
 	if err != nil {
 		return nil, err
 	}
@@ -89,7 +194,7 @@ func Signer(ctx context.Context, fulcioURL string, oidcIssuer string, oidcClient
 	var raw string
 
 	switch {
-	case tokenOption == "" && os.Getenv("GITHUB_ACTIONS") == "true":
+	case fsp.Token == "" && os.Getenv("GITHUB_ACTIONS") == "true":
 		tokenURL := os.Getenv("ACTIONS_ID_TOKEN_REQUEST_URL")
 		if tokenURL == "" {
 			return nil, errors.New("ACTIONS_ID_TOKEN_REQUEST_URL is not set")
@@ -105,11 +210,11 @@ func Signer(ctx context.Context, fulcioURL string, oidcIssuer string, oidcClient
 			return nil, err
 		}
 
-	case tokenOption != "":
-		raw = tokenOption
+	case fsp.Token != "":
+		raw = fsp.Token
 
-	case tokenOption == "" && isatty.IsTerminal(os.Stdin.Fd()):
-		tok, err := oauthflow.OIDConnect(oidcIssuer, oidcClientID, "", "", oauthflow.DefaultIDTokenGetter)
+	case fsp.Token == "" && isatty.IsTerminal(os.Stdin.Fd()):
+		tok, err := oauthflow.OIDConnect(fsp.OidcIssuer, fsp.OidcClientID, "", "", oauthflow.DefaultIDTokenGetter)
 		if err != nil {
 			return nil, err
 		}
@@ -248,7 +353,7 @@ func getCert(ctx context.Context, key *rsa.PrivateKey, fc fulciopb.CAClient, tok
 	return sc, nil
 }
 
-func NewClient(ctx context.Context, fulcioURL string, fulcioPort int, isInsecure bool) (fulciopb.CAClient, error) {
+func newClient(ctx context.Context, fulcioURL string, fulcioPort int, isInsecure bool) (fulciopb.CAClient, error) {
 	if isInsecure {
 		log.Infof("Fulcio client is running in insecure mode")
 	}

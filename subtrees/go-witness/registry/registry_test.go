@@ -46,33 +46,3 @@ func TestNewEntity(t *testing.T) {
 	assert.Error(t, err)
 	assert.Nil(t, te)
 }
-
-func TestOptionPrefix(t *testing.T) {
-	entryName := "test-entity"
-	optName := "test-option"
-	optPrefix := "prefix"
-	testReg := New[*testEntity](WithOptionPrefix[*testEntity](optPrefix))
-	testReg.Register(entryName, func() *testEntity { return &testEntity{} },
-		StringConfigOption(optName, "prefix test", "", func(te *testEntity, v string) (*testEntity, error) { return te, nil }),
-	)
-
-	expectedOptName := fmt.Sprintf("%v-%v", optPrefix, optName)
-	opts, ok := testReg.Options(entryName)
-	require.True(t, ok)
-	require.Len(t, opts, 1)
-	assert.Equal(t, opts[0].Name(), expectedOptName)
-}
-
-func TestNoOptionPrefix(t *testing.T) {
-	entryName := "test-entity"
-	optName := "test-option"
-	testReg := New[*testEntity]()
-	testReg.Register(entryName, func() *testEntity { return &testEntity{} },
-		StringConfigOption(optName, "prefix test", "", func(te *testEntity, v string) (*testEntity, error) { return te, nil }),
-	)
-
-	opts, ok := testReg.Options(entryName)
-	require.True(t, ok)
-	require.Len(t, opts, 1)
-	assert.Equal(t, opts[0].Name(), optName)
-}

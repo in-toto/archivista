@@ -20,7 +20,32 @@ import (
 
 	"github.com/spiffe/go-spiffe/v2/workloadapi"
 	"github.com/testifysec/go-witness/cryptoutil"
+	"github.com/testifysec/go-witness/registry"
+	"github.com/testifysec/go-witness/signer"
 )
+
+func init() {
+	signer.Register("spiffe", func() signer.SignerProvider { return New() },
+		registry.StringConfigOption(
+			"socket-path",
+			"Path to the SPIFFE Workload API Socket",
+			"",
+			func(sp signer.SignerProvider, socketPath string) (signer.SignerProvider, error) {
+				ssp, ok := sp.(SpiffeSignerProvider)
+				if !ok {
+					return sp, fmt.Errorf("provided signer provider is not a spiffe signer provider")
+				}
+
+				WithSocketPath(socketPath)(&ssp)
+				return ssp, nil
+			},
+		),
+	)
+}
+
+type SpiffeSignerProvider struct {
+	SocketPath string
+}
 
 type ErrInvalidSVID string
 
@@ -28,8 +53,29 @@ func (e ErrInvalidSVID) Error() string {
 	return fmt.Sprintf("invalid svid: %v", string(e))
 }
 
-func Signer(ctx context.Context, socketPath string) (cryptoutil.Signer, error) {
-	svidCtx, err := workloadapi.FetchX509Context(ctx, workloadapi.WithAddr(socketPath))
+type Option func(*SpiffeSignerProvider)
+
+func WithSocketPath(socketPath string) Option {
+	return func(ssp *SpiffeSignerProvider) {
+		ssp.SocketPath = socketPath
+	}
+}
+
+func New(opts ...Option) SpiffeSignerProvider {
+	ssp := SpiffeSignerProvider{}
+	for _, opt := range opts {
+		opt(&ssp)
+	}
+
+	return ssp
+}
+
+func (ssp SpiffeSignerProvider) Signer(ctx context.Context) (cryptoutil.Signer, error) {
+	if len(ssp.SocketPath) == 0 {
+		return nil, fmt.Errorf("socker path cannot be empty")
+	}
+
+	svidCtx, err := workloadapi.FetchX509Context(ctx, workloadapi.WithAddr(ssp.SocketPath))
 	if err != nil {
 		return nil, err
 	}

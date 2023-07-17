@@ -21,7 +21,6 @@ import "fmt"
 // configuration options to Witness CLI. This lets the CLI create flags for all the available
 // options at run time.
 type Registry[T any] struct {
-	optionPrefix  string
 	entriesByName map[string]Entry[T]
 }
 
@@ -36,22 +35,10 @@ type Entry[T any] struct {
 	Options []Configurer
 }
 
-type RegistryOption[T any] func(reg *Registry[T])
-
-func WithOptionPrefix[T any](prefix string) RegistryOption[T] {
-	return func(reg *Registry[T]) {
-		reg.optionPrefix = prefix
-	}
-}
-
 // New returns a new instance of a Registry
-func New[T any](opts ...RegistryOption[T]) Registry[T] {
+func New[T any]() Registry[T] {
 	reg := Registry[T]{
 		entriesByName: make(map[string]Entry[T]),
-	}
-
-	for _, opt := range opts {
-		opt(&reg)
 	}
 
 	return reg
@@ -59,12 +46,6 @@ func New[T any](opts ...RegistryOption[T]) Registry[T] {
 
 // Register adds an Entry to the Registry for an Entity
 func (r Registry[T]) Register(name string, factoryFunc FactoryFunc[T], opts ...Configurer) Entry[T] {
-	if len(r.optionPrefix) > 0 {
-		for _, opt := range opts {
-			opt.SetPrefix(r.optionPrefix)
-		}
-	}
-
 	entry := Entry[T]{
 		Name:    name,
 		Factory: factoryFunc,

@@ -46,7 +46,7 @@ func setupFulcioTestService(t *testing.T) (*dummyCAClientService, string) {
 	if err != nil {
 		t.Fatalf("failed to listen: %v", err)
 	}
-	client, err := NewClient(context.Background(), "https://localhost", lis.Addr().(*net.TCPAddr).Port, true)
+	client, err := newClient(context.Background(), "https://localhost", lis.Addr().(*net.TCPAddr).Port, true)
 	if err != nil {
 		t.Fatalf("failed to create client: %v", err)
 	}
@@ -63,15 +63,15 @@ func TestNewClient(t *testing.T) {
 	ctx := context.Background()
 
 	// test when fulcioURL is empty
-	_, err := NewClient(ctx, "", 0, false)
+	_, err := newClient(ctx, "", 0, false)
 	require.Error(t, err)
 
 	// test when fulcioURL is invalid
-	_, err = NewClient(ctx, "://", 0, false)
+	_, err = newClient(ctx, "://", 0, false)
 	require.Error(t, err)
 
 	// test when connection to Fulcio succeeds
-	client, err := NewClient(ctx, "https://fulcio.url", 0, false)
+	client, err := newClient(ctx, "https://fulcio.url", 0, false)
 	require.NoError(t, err)
 	require.NotNil(t, client)
 }
@@ -188,13 +188,14 @@ func TestSigner(t *testing.T) {
 	port := strings.Split(url, ":")[1]
 
 	// Call Signer to generate a signer
-	signer, err := Signer(ctx, "http://"+hostname+":"+port, "", "", token)
+	provider := New(WithFulcioURL(fmt.Sprintf("http://%v:%v", hostname, port)), WithToken(token))
+	signer, err := provider.Signer(ctx)
 	require.NoError(t, err)
 
 	// Ensure signer is not nil
 	require.NotNil(t, signer)
-
-	_, err = Signer(ctx, "https://"+"test", "", "", token)
+	provider = New(WithFulcioURL("https://test"), WithToken(token))
+	_, err = provider.Signer(ctx)
 	//this should be a tranport err since we cant actually test on 443 which is the default
 	require.ErrorContains(t, err, "lookup test")
 }

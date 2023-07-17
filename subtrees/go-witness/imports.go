@@ -14,8 +14,9 @@
 
 package witness
 
+// all of the following imports are here so that each of the package's init functions run appropriately
 import (
-	// imported so their init functions run
+	// attestors
 	_ "github.com/testifysec/go-witness/attestation/aws-iid"
 	_ "github.com/testifysec/go-witness/attestation/commandrun"
 	_ "github.com/testifysec/go-witness/attestation/environment"
@@ -27,4 +28,9 @@ import (
 	_ "github.com/testifysec/go-witness/attestation/maven"
 	_ "github.com/testifysec/go-witness/attestation/oci"
 	_ "github.com/testifysec/go-witness/attestation/sarif"
+
+	// signer providers
+	_ "github.com/testifysec/go-witness/signer/file"
+	_ "github.com/testifysec/go-witness/signer/fulcio"
+	_ "github.com/testifysec/go-witness/signer/spiffe"
 )
