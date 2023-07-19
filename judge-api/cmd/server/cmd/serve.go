@@ -11,18 +11,32 @@ import (
 	"time"
 
 	"entgo.io/contrib/entgql"
+	"entgo.io/ent/dialect/sql"
 	"github.com/99designs/gqlgen/graphql/handler"
 	"github.com/99designs/gqlgen/graphql/playground"
 	nested "github.com/antonfisher/nested-logrus-formatter"
+	"github.com/go-sql-driver/mysql"
 	"github.com/gorilla/handlers"
 	"github.com/gorilla/mux"
 	"github.com/sirupsen/logrus"
 	"github.com/spf13/cobra"
 	judgeapi "github.com/testifysec/judge/judge-api"
+	"github.com/testifysec/judge/judge-api/ent"
 	"github.com/testifysec/judge/judge-api/internal/auth"
 	"github.com/testifysec/judge/judge-api/internal/configuration"
 	"github.com/testifysec/judge/judge-api/internal/database/mysqlstore"
 )
+
+// This struct represents our JudgeApiServer that we create from ent.
+// it is helpful in our code structure for test harnessing
+type JudgeApiServer struct {
+	authProvider   *auth.KratosAuthProvider
+	authMiddleware mux.MiddlewareFunc
+	srv            http.Handler
+	database       *ent.Client
+	mysqlStoreCh   <-chan error
+	err            error
+}
 
 var (
 	Config configuration.Config
@@ -43,19 +57,13 @@ func init() {
 	logrus.SetFormatter(&nested.Formatter{})
 }
 
-func Run(cmd *cobra.Command, args []string) {
-	startTime := time.Now()
-	ctx, cancel := signal.NotifyContext(
-		context.Background(),
-		os.Interrupt,
-		syscall.SIGHUP,
-		syscall.SIGQUIT,
-		syscall.SIGTERM,
-	)
-	defer cancel()
+// This func let's us set up our database independent from our judgeapiserver,
+// this is crucial in testing so that we can use an in-memory db in place of a full-blown sql instance
+func SetupDb(ctx context.Context, drv *sql.Driver) JudgeApiServer {
 
 	logrus.Infof("Starting...")
-	mysqlStore, mysqlStoreCh, err := mysqlstore.New(ctx, Config)
+
+	mysqlStore, mysqlStoreCh, err := mysqlstore.New(ctx, Config, drv)
 	if err != nil {
 		logrus.Fatalf("failed to create mysql store: %v", err)
 	}
@@ -67,19 +75,46 @@ func Run(cmd *cobra.Command, args []string) {
 	srv := handler.NewDefaultServer(judgeapi.NewSchema(client))
 	srv.Use(entgql.Transactioner{TxOpener: client})
 
-	router := mux.NewRouter()
-	authSubrouter := router.PathPrefix("/").Subrouter()
-	authSubrouter.Use(authMiddleware)
-	authSubrouter.Handle("/query", srv)
-	if Config.GraphqlWebClientEnable {
-		authSubrouter.Handle("/",
-			playground.Handler("Judge", "/query"),
-		)
+	return JudgeApiServer{
+		authProvider:   authProvider,
+		authMiddleware: authMiddleware,
+		srv:            srv,
+		database:       client,
+		mysqlStoreCh:   mysqlStoreCh,
+	}
+}
+
+// This runs the Judge server
+func Run(cmd *cobra.Command, args []string) {
+	ctx, cancel := signal.NotifyContext(
+		cmd.Context(),
+		os.Interrupt,
+		syscall.SIGHUP,
+		syscall.SIGQUIT,
+		syscall.SIGTERM,
+	)
+	defer cancel()
+	startTime := time.Now()
+
+	dbConfig, err := mysql.ParseDSN(Config.SQLStoreConnectionString)
+	if err != nil {
+		return
 	}
 
-	// WebhookSubrouter does not have cookie auth middleware
-	webhookSubrouter := router.PathPrefix("/webhook").Subrouter()
-	webhookSubrouter.Handle("/defaulttenant", http.HandlerFunc(authProvider.UpdateAssignedTenantsWithIdentityId)).Methods(http.MethodPost)
+	dbConfig.ParseTime = true
+	Config.SQLStoreConnectionString = dbConfig.FormatDSN()
+	drv, err := sql.Open("mysql", Config.SQLStoreConnectionString)
+	if err != nil {
+		return
+	}
+
+	judge := SetupDb(ctx, drv)
+	authProvider := judge.authProvider
+	authMiddleware := judge.authMiddleware
+	mysqlStoreCh := judge.mysqlStoreCh
+	srv := judge.srv
+	client := judge.database
+	router := SetupRouting(authProvider, authMiddleware, srv, client, Config)
 
 	logrus.Infof("Serving on %s", Config.ListenOn)
 
@@ -127,5 +162,27 @@ func Run(cmd *cobra.Command, args []string) {
 	logrus.Infof("startup complete (time since start: %s)", time.Since(startTime))
 	<-ctx.Done()
 	<-mysqlStoreCh
-	logrus.Infof("exiting, uptime: %v", time.Since(startTime))
+}
+
+// This sets up the Routing for the Judge Server
+func SetupRouting(authProvider *auth.KratosAuthProvider, authMiddleware mux.MiddlewareFunc, srv http.Handler, database *ent.Client, config configuration.Config) *mux.Router {
+	router := mux.NewRouter()
+
+	// Move your routes configuration here from Run()
+	// ...
+	authSubrouter := router.PathPrefix("/").Subrouter()
+	authSubrouter.Use(authMiddleware)
+
+	authSubrouter.Handle("/query", srv)
+	if config.GraphqlWebClientEnable {
+		authSubrouter.Handle("/",
+			playground.Handler("Judge", "/query"),
+		)
+	}
+
+	// WebhookSubrouter does not have cookie auth middleware
+	webhookSubrouter := router.PathPrefix("/webhook").Subrouter()
+	webhookSubrouter.Handle("/defaulttenant", http.HandlerFunc(authProvider.UpdateAssignedTenantsWithIdentityId)).Methods(http.MethodPost)
+
+	return router
 }

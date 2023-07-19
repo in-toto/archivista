@@ -7,7 +7,6 @@ import (
 
 	"ariga.io/sqlcomment"
 	"entgo.io/ent/dialect/sql"
-	"github.com/go-sql-driver/mysql"
 	"github.com/sirupsen/logrus"
 	"github.com/testifysec/judge/judge-api/ent"
 	"github.com/testifysec/judge/judge-api/internal/configuration"
@@ -23,18 +22,7 @@ type Store struct {
 	client *ent.Client
 }
 
-func New(ctx context.Context, cfg configuration.Config) (*Store, <-chan error, error) {
-	dbConfig, err := mysql.ParseDSN(cfg.SQLStoreConnectionString)
-	if err != nil {
-		return nil, nil, err
-	}
-
-	dbConfig.ParseTime = true
-	cfg.SQLStoreConnectionString = dbConfig.FormatDSN()
-	drv, err := sql.Open("mysql", cfg.SQLStoreConnectionString)
-	if err != nil {
-		return nil, nil, err
-	}
+func New(ctx context.Context, cfg configuration.Config, drv *sql.Driver) (*Store, <-chan error, error) {
 	sqlcommentDrv := sqlcomment.NewDriver(drv,
 		sqlcomment.WithDriverVerTag(),
 		sqlcomment.WithTags(sqlcomment.Tags{
@@ -43,7 +31,6 @@ func New(ctx context.Context, cfg configuration.Config) (*Store, <-chan error, e
 		}),
 	)
 
-	// TODO make sure these take affect in sqlcommentDrv
 	db := drv.DB()
 	db.SetMaxIdleConns(10)
 	db.SetMaxOpenConns(100)
