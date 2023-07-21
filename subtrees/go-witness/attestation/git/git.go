@@ -17,6 +17,7 @@ package git
 import (
 	"crypto"
 	"fmt"
+	"strings"
 	"time"
 
 	"github.com/go-git/go-git/v5"
@@ -106,6 +107,9 @@ func (a *Attestor) Attest(ctx *attestation.AttestationContext) error {
 
 	head, err := repo.Head()
 	if err != nil {
+		if strings.Contains(err.Error(), "reference not found") {
+			return nil
+		}
 		return err
 	}
 

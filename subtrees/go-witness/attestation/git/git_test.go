@@ -43,10 +43,10 @@ func TestNameTypeRunType(t *testing.T) {
 	require.Equal(t, RunType, attestor.RunType(), "Expected the attestor's run type")
 }
 
-func TestRun(t *testing.T) {
+func TestRunWorksWithCommits(t *testing.T) {
 	attestor := New()
 
-	_, dir, cleanup := createTestRepo(t)
+	_, dir, cleanup := createTestRepo(t, true)
 	defer cleanup()
 
 	ctx, err := attestation.NewContext([]attestation.Attestor{attestor}, attestation.WithWorkingDir(dir))
@@ -140,7 +140,23 @@ func TestRun(t *testing.T) {
 
 }
 
-func createTestRepo(t *testing.T) (*git.Repository, string, func()) {
+func TestRunWorksWithoutCommits(t *testing.T) {
+	attestor := New()
+
+	_, dir, cleanup := createTestRepo(t, false)
+	defer cleanup()
+
+	ctx, err := attestation.NewContext([]attestation.Attestor{attestor}, attestation.WithWorkingDir(dir))
+	require.NoError(t, err, "Expected no error from NewContext")
+
+	err = ctx.RunAttestors()
+	require.NoError(t, err, "Expected no error from RunAttestors")
+
+	require.Empty(t, attestor.ParentHashes, "Expected the parent hashes to be set")
+}
+
+// Creates an ephemeral repo for your testing
+func createTestRepo(t *testing.T, withCommit bool) (*git.Repository, string, func()) {
 	// Create a temporary directory for the test repository
 	tmpDir, err := os.MkdirTemp("", "test-repo")
 	require.NoError(t, err)
@@ -149,7 +165,21 @@ func createTestRepo(t *testing.T) (*git.Repository, string, func()) {
 	repo, err := git.PlainInit(tmpDir, false)
 	require.NoError(t, err)
 
-	// Create a new file in the repository
+	if withCommit {
+		addCommit(tmpDir, t, repo)
+	}
+
+	// Return the test repository, the path to the test repository, and a cleanup function
+	return repo, tmpDir, func() {
+		err := os.RemoveAll(tmpDir)
+		require.NoError(t, err)
+	}
+}
+
+// Create a new file in the repository
+// Add the new file to the repository
+// Commit the new file to the repository
+func addCommit(tmpDir string, t *testing.T, repo *git.Repository) {
 	filePath := filepath.Join(tmpDir, "test.txt")
 	file, err := os.Create(filePath)
 	require.NoError(t, err)
@@ -158,13 +188,11 @@ func createTestRepo(t *testing.T) (*git.Repository, string, func()) {
 	err = file.Close()
 	require.NoError(t, err)
 
-	// Add the new file to the repository
 	worktree, err := repo.Worktree()
 	require.NoError(t, err)
 	_, err = worktree.Add("test.txt")
 	require.NoError(t, err)
 
-	// Commit the new file to the repository
 	_, err = worktree.Commit("Initial commit", &git.CommitOptions{
 		Author: &object.Signature{
 			Name:  "Test User",
@@ -173,12 +201,6 @@ func createTestRepo(t *testing.T) (*git.Repository, string, func()) {
 		},
 	})
 	require.NoError(t, err)
-
-	// Return the test repository, the path to the test repository, and a cleanup function
-	return repo, tmpDir, func() {
-		err := os.RemoveAll(tmpDir)
-		require.NoError(t, err)
-	}
 }
 func createTestCommit(t *testing.T, repoPath string, message string) {
 	// Open the Git repository
