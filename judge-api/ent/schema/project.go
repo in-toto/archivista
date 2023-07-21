@@ -4,6 +4,7 @@ import (
 	"entgo.io/contrib/entgql"
 	"entgo.io/ent"
 	"entgo.io/ent/schema"
+	"entgo.io/ent/schema/edge"
 	"entgo.io/ent/schema/field"
 )
 
@@ -27,7 +28,11 @@ func (Project) Fields() []ent.Field {
 }
 
 func (Project) Edges() []ent.Edge {
-	return []ent.Edge{}
+	return []ent.Edge{
+		edge.To("policy_decisions", PolicyDecision.Type),
+		edge.To("children", Project.Type).
+			From("parent").Unique(),
+	}
 }
 
 func (Project) Annotations() []schema.Annotation {

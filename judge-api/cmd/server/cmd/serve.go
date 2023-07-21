@@ -25,6 +25,7 @@ import (
 	"github.com/testifysec/judge/judge-api/internal/auth"
 	"github.com/testifysec/judge/judge-api/internal/configuration"
 	"github.com/testifysec/judge/judge-api/internal/database/mysqlstore"
+	policy_decision "github.com/testifysec/judge/judge-api/policy/policy_decision"
 )
 
 // This struct represents our JudgeApiServer that we create from ent.
@@ -66,6 +67,7 @@ func SetupDb(ctx context.Context, drv *sql.Driver) JudgeApiServer {
 	mysqlStore, mysqlStoreCh, err := mysqlstore.New(ctx, Config, drv)
 	if err != nil {
 		logrus.Fatalf("failed to create mysql store: %v", err)
+		return JudgeApiServer{err: err}
 	}
 
 	client := mysqlStore.GetClient()
@@ -168,8 +170,6 @@ func Run(cmd *cobra.Command, args []string) {
 func SetupRouting(authProvider *auth.KratosAuthProvider, authMiddleware mux.MiddlewareFunc, srv http.Handler, database *ent.Client, config configuration.Config) *mux.Router {
 	router := mux.NewRouter()
 
-	// Move your routes configuration here from Run()
-	// ...
 	authSubrouter := router.PathPrefix("/").Subrouter()
 	authSubrouter.Use(authMiddleware)
 
@@ -183,6 +183,10 @@ func SetupRouting(authProvider *auth.KratosAuthProvider, authMiddleware mux.Midd
 	// WebhookSubrouter does not have cookie auth middleware
 	webhookSubrouter := router.PathPrefix("/webhook").Subrouter()
 	webhookSubrouter.Handle("/defaulttenant", http.HandlerFunc(authProvider.UpdateAssignedTenantsWithIdentityId)).Methods(http.MethodPost)
+
+	router.HandleFunc("/policy-decision", func(w http.ResponseWriter, r *http.Request) {
+		policy_decision.PostPolicy(w, r, database)
+	})
 
 	return router
 }

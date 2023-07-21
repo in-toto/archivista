@@ -11,6 +11,7 @@ import (
 	"entgo.io/ent"
 	"entgo.io/ent/dialect/sql"
 	"entgo.io/ent/dialect/sql/sqlgraph"
+	"github.com/testifysec/judge/judge-api/ent/policydecision"
 	"github.com/testifysec/judge/judge-api/ent/project"
 	"github.com/testifysec/judge/judge-api/ent/tenant"
 	"github.com/testifysec/judge/judge-api/ent/user"
@@ -67,9 +68,10 @@ type OrderFunc func(*sql.Selector)
 // columnChecker returns a function indicates if the column exists in the given column.
 func columnChecker(table string) func(string) error {
 	checks := map[string]func(string) bool{
-		project.Table: project.ValidColumn,
-		tenant.Table:  tenant.ValidColumn,
-		user.Table:    user.ValidColumn,
+		policydecision.Table: policydecision.ValidColumn,
+		project.Table:        project.ValidColumn,
+		tenant.Table:         tenant.ValidColumn,
+		user.Table:           user.ValidColumn,
 	}
 	check, ok := checks[table]
 	if !ok {

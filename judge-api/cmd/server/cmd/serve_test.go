@@ -7,6 +7,8 @@ import (
 	"entgo.io/ent/dialect/sql"
 	_ "github.com/mattn/go-sqlite3"
 	"github.com/stretchr/testify/require"
+
+	_ "github.com/mattn/go-sqlite3"
 )
 
 // This test just makes sure our sqllite3 in-memory db works for our tests

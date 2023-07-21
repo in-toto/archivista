@@ -8,6 +8,19 @@ import (
 )
 
 var (
+	// PolicyDecisionsColumns holds the columns for the "policy_decisions" table.
+	PolicyDecisionsColumns = []*schema.Column{
+		{Name: "id", Type: field.TypeUUID},
+		{Name: "subject_name", Type: field.TypeString},
+		{Name: "digest_id", Type: field.TypeString},
+		{Name: "decision", Type: field.TypeEnum, Enums: []string{"allowed", "denied", "skipped"}, Default: "denied"},
+	}
+	// PolicyDecisionsTable holds the schema information for the "policy_decisions" table.
+	PolicyDecisionsTable = &schema.Table{
+		Name:       "policy_decisions",
+		Columns:    PolicyDecisionsColumns,
+		PrimaryKey: []*schema.Column{PolicyDecisionsColumns[0]},
+	}
 	// ProjectsColumns holds the columns for the "projects" table.
 	ProjectsColumns = []*schema.Column{
 		{Name: "oid", Type: field.TypeUUID},
@@ -19,6 +32,7 @@ var (
 		{Name: "project_tenant", Type: field.TypeUUID},
 		{Name: "project_created_by", Type: field.TypeUUID, Nullable: true},
 		{Name: "project_modified_by", Type: field.TypeUUID, Nullable: true},
+		{Name: "project_children", Type: field.TypeUUID, Nullable: true},
 	}
 	// ProjectsTable holds the schema information for the "projects" table.
 	ProjectsTable = &schema.Table{
@@ -42,6 +56,12 @@ var (
 				Symbol:     "projects_users_modified_by",
 				Columns:    []*schema.Column{ProjectsColumns[8]},
 				RefColumns: []*schema.Column{UsersColumns[0]},
+				OnDelete:   schema.SetNull,
+			},
+			{
+				Symbol:     "projects_projects_children",
+				Columns:    []*schema.Column{ProjectsColumns[9]},
+				RefColumns: []*schema.Column{ProjectsColumns[0]},
 				OnDelete:   schema.SetNull,
 			},
 		},
@@ -97,6 +117,31 @@ var (
 		Columns:    UsersColumns,
 		PrimaryKey: []*schema.Column{UsersColumns[0]},
 	}
+	// ProjectPolicyDecisionsColumns holds the columns for the "project_policy_decisions" table.
+	ProjectPolicyDecisionsColumns = []*schema.Column{
+		{Name: "project_id", Type: field.TypeUUID},
+		{Name: "policy_decision_id", Type: field.TypeUUID},
+	}
+	// ProjectPolicyDecisionsTable holds the schema information for the "project_policy_decisions" table.
+	ProjectPolicyDecisionsTable = &schema.Table{
+		Name:       "project_policy_decisions",
+		Columns:    ProjectPolicyDecisionsColumns,
+		PrimaryKey: []*schema.Column{ProjectPolicyDecisionsColumns[0], ProjectPolicyDecisionsColumns[1]},
+		ForeignKeys: []*schema.ForeignKey{
+			{
+				Symbol:     "project_policy_decisions_project_id",
+				Columns:    []*schema.Column{ProjectPolicyDecisionsColumns[0]},
+				RefColumns: []*schema.Column{ProjectsColumns[0]},
+				OnDelete:   schema.Cascade,
+			},
+			{
+				Symbol:     "project_policy_decisions_policy_decision_id",
+				Columns:    []*schema.Column{ProjectPolicyDecisionsColumns[1]},
+				RefColumns: []*schema.Column{PolicyDecisionsColumns[0]},
+				OnDelete:   schema.Cascade,
+			},
+		},
+	}
 	// TenantUsersColumns holds the columns for the "tenant_users" table.
 	TenantUsersColumns = []*schema.Column{
 		{Name: "tenant_id", Type: field.TypeUUID},
@@ -124,9 +169,11 @@ var (
 	}
 	// Tables holds all the tables in the schema.
 	Tables = []*schema.Table{
+		PolicyDecisionsTable,
 		ProjectsTable,
 		TenantsTable,
 		UsersTable,
+		ProjectPolicyDecisionsTable,
 		TenantUsersTable,
 	}
 )
@@ -135,9 +182,12 @@ func init() {
 	ProjectsTable.ForeignKeys[0].RefTable = TenantsTable
 	ProjectsTable.ForeignKeys[1].RefTable = UsersTable
 	ProjectsTable.ForeignKeys[2].RefTable = UsersTable
+	ProjectsTable.ForeignKeys[3].RefTable = ProjectsTable
 	TenantsTable.ForeignKeys[0].RefTable = UsersTable
 	TenantsTable.ForeignKeys[1].RefTable = UsersTable
 	TenantsTable.ForeignKeys[2].RefTable = TenantsTable
+	ProjectPolicyDecisionsTable.ForeignKeys[0].RefTable = ProjectsTable
+	ProjectPolicyDecisionsTable.ForeignKeys[1].RefTable = PolicyDecisionsTable
 	TenantUsersTable.ForeignKeys[0].RefTable = TenantsTable
 	TenantUsersTable.ForeignKeys[1].RefTable = UsersTable
 }

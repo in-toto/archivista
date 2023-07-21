@@ -12,6 +12,7 @@ import (
 	"entgo.io/ent"
 	"entgo.io/ent/dialect/sql"
 	"github.com/google/uuid"
+	"github.com/testifysec/judge/judge-api/ent/policydecision"
 	"github.com/testifysec/judge/judge-api/ent/predicate"
 	"github.com/testifysec/judge/judge-api/ent/project"
 	"github.com/testifysec/judge/judge-api/ent/tenant"
@@ -27,32 +28,574 @@ const (
 	OpUpdateOne = ent.OpUpdateOne
 
 	// Node types.
-	TypeProject = "Project"
-	TypeTenant  = "Tenant"
-	TypeUser    = "User"
+	TypePolicyDecision = "PolicyDecision"
+	TypeProject        = "Project"
+	TypeTenant         = "Tenant"
+	TypeUser           = "User"
 )
+
+// PolicyDecisionMutation represents an operation that mutates the PolicyDecision nodes in the graph.
+type PolicyDecisionMutation struct {
+	config
+	op             Op
+	typ            string
+	id             *uuid.UUID
+	subject_name   *string
+	digest_id      *string
+	decision       *policydecision.Decision
+	clearedFields  map[string]struct{}
+	project        map[uuid.UUID]struct{}
+	removedproject map[uuid.UUID]struct{}
+	clearedproject bool
+	done           bool
+	oldValue       func(context.Context) (*PolicyDecision, error)
+	predicates     []predicate.PolicyDecision
+}
+
+var _ ent.Mutation = (*PolicyDecisionMutation)(nil)
+
+// policydecisionOption allows management of the mutation configuration using functional options.
+type policydecisionOption func(*PolicyDecisionMutation)
+
+// newPolicyDecisionMutation creates new mutation for the PolicyDecision entity.
+func newPolicyDecisionMutation(c config, op Op, opts ...policydecisionOption) *PolicyDecisionMutation {
+	m := &PolicyDecisionMutation{
+		config:        c,
+		op:            op,
+		typ:           TypePolicyDecision,
+		clearedFields: make(map[string]struct{}),
+	}
+	for _, opt := range opts {
+		opt(m)
+	}
+	return m
+}
+
+// withPolicyDecisionID sets the ID field of the mutation.
+func withPolicyDecisionID(id uuid.UUID) policydecisionOption {
+	return func(m *PolicyDecisionMutation) {
+		var (
+			err   error
+			once  sync.Once
+			value *PolicyDecision
+		)
+		m.oldValue = func(ctx context.Context) (*PolicyDecision, error) {
+			once.Do(func() {
+				if m.done {
+					err = errors.New("querying old values post mutation is not allowed")
+				} else {
+					value, err = m.Client().PolicyDecision.Get(ctx, id)
+				}
+			})
+			return value, err
+		}
+		m.id = &id
+	}
+}
+
+// withPolicyDecision sets the old PolicyDecision of the mutation.
+func withPolicyDecision(node *PolicyDecision) policydecisionOption {
+	return func(m *PolicyDecisionMutation) {
+		m.oldValue = func(context.Context) (*PolicyDecision, error) {
+			return node, nil
+		}
+		m.id = &node.ID
+	}
+}
+
+// Client returns a new `ent.Client` from the mutation. If the mutation was
+// executed in a transaction (ent.Tx), a transactional client is returned.
+func (m PolicyDecisionMutation) Client() *Client {
+	client := &Client{config: m.config}
+	client.init()
+	return client
+}
+
+// Tx returns an `ent.Tx` for mutations that were executed in transactions;
+// it returns an error otherwise.
+func (m PolicyDecisionMutation) Tx() (*Tx, error) {
+	if _, ok := m.driver.(*txDriver); !ok {
+		return nil, errors.New("ent: mutation is not running in a transaction")
+	}
+	tx := &Tx{config: m.config}
+	tx.init()
+	return tx, nil
+}
+
+// SetID sets the value of the id field. Note that this
+// operation is only accepted on creation of PolicyDecision entities.
+func (m *PolicyDecisionMutation) SetID(id uuid.UUID) {
+	m.id = &id
+}
+
+// ID returns the ID value in the mutation. Note that the ID is only available
+// if it was provided to the builder or after it was returned from the database.
+func (m *PolicyDecisionMutation) ID() (id uuid.UUID, exists bool) {
+	if m.id == nil {
+		return
+	}
+	return *m.id, true
+}
+
+// IDs queries the database and returns the entity ids that match the mutation's predicate.
+// That means, if the mutation is applied within a transaction with an isolation level such
+// as sql.LevelSerializable, the returned ids match the ids of the rows that will be updated
+// or updated by the mutation.
+func (m *PolicyDecisionMutation) IDs(ctx context.Context) ([]uuid.UUID, error) {
+	switch {
+	case m.op.Is(OpUpdateOne | OpDeleteOne):
+		id, exists := m.ID()
+		if exists {
+			return []uuid.UUID{id}, nil
+		}
+		fallthrough
+	case m.op.Is(OpUpdate | OpDelete):
+		return m.Client().PolicyDecision.Query().Where(m.predicates...).IDs(ctx)
+	default:
+		return nil, fmt.Errorf("IDs is not allowed on %s operations", m.op)
+	}
+}
+
+// SetSubjectName sets the "subject_name" field.
+func (m *PolicyDecisionMutation) SetSubjectName(s string) {
+	m.subject_name = &s
+}
+
+// SubjectName returns the value of the "subject_name" field in the mutation.
+func (m *PolicyDecisionMutation) SubjectName() (r string, exists bool) {
+	v := m.subject_name
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// OldSubjectName returns the old "subject_name" field's value of the PolicyDecision entity.
+// If the PolicyDecision object wasn't provided to the builder, the object is fetched from the database.
+// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
+func (m *PolicyDecisionMutation) OldSubjectName(ctx context.Context) (v string, err error) {
+	if !m.op.Is(OpUpdateOne) {
+		return v, errors.New("OldSubjectName is only allowed on UpdateOne operations")
+	}
+	if m.id == nil || m.oldValue == nil {
+		return v, errors.New("OldSubjectName requires an ID field in the mutation")
+	}
+	oldValue, err := m.oldValue(ctx)
+	if err != nil {
+		return v, fmt.Errorf("querying old value for OldSubjectName: %w", err)
+	}
+	return oldValue.SubjectName, nil
+}
+
+// ResetSubjectName resets all changes to the "subject_name" field.
+func (m *PolicyDecisionMutation) ResetSubjectName() {
+	m.subject_name = nil
+}
+
+// SetDigestID sets the "digest_id" field.
+func (m *PolicyDecisionMutation) SetDigestID(s string) {
+	m.digest_id = &s
+}
+
+// DigestID returns the value of the "digest_id" field in the mutation.
+func (m *PolicyDecisionMutation) DigestID() (r string, exists bool) {
+	v := m.digest_id
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// OldDigestID returns the old "digest_id" field's value of the PolicyDecision entity.
+// If the PolicyDecision object wasn't provided to the builder, the object is fetched from the database.
+// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
+func (m *PolicyDecisionMutation) OldDigestID(ctx context.Context) (v string, err error) {
+	if !m.op.Is(OpUpdateOne) {
+		return v, errors.New("OldDigestID is only allowed on UpdateOne operations")
+	}
+	if m.id == nil || m.oldValue == nil {
+		return v, errors.New("OldDigestID requires an ID field in the mutation")
+	}
+	oldValue, err := m.oldValue(ctx)
+	if err != nil {
+		return v, fmt.Errorf("querying old value for OldDigestID: %w", err)
+	}
+	return oldValue.DigestID, nil
+}
+
+// ResetDigestID resets all changes to the "digest_id" field.
+func (m *PolicyDecisionMutation) ResetDigestID() {
+	m.digest_id = nil
+}
+
+// SetDecision sets the "decision" field.
+func (m *PolicyDecisionMutation) SetDecision(po policydecision.Decision) {
+	m.decision = &po
+}
+
+// Decision returns the value of the "decision" field in the mutation.
+func (m *PolicyDecisionMutation) Decision() (r policydecision.Decision, exists bool) {
+	v := m.decision
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// OldDecision returns the old "decision" field's value of the PolicyDecision entity.
+// If the PolicyDecision object wasn't provided to the builder, the object is fetched from the database.
+// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
+func (m *PolicyDecisionMutation) OldDecision(ctx context.Context) (v policydecision.Decision, err error) {
+	if !m.op.Is(OpUpdateOne) {
+		return v, errors.New("OldDecision is only allowed on UpdateOne operations")
+	}
+	if m.id == nil || m.oldValue == nil {
+		return v, errors.New("OldDecision requires an ID field in the mutation")
+	}
+	oldValue, err := m.oldValue(ctx)
+	if err != nil {
+		return v, fmt.Errorf("querying old value for OldDecision: %w", err)
+	}
+	return oldValue.Decision, nil
+}
+
+// ResetDecision resets all changes to the "decision" field.
+func (m *PolicyDecisionMutation) ResetDecision() {
+	m.decision = nil
+}
+
+// AddProjectIDs adds the "project" edge to the Project entity by ids.
+func (m *PolicyDecisionMutation) AddProjectIDs(ids ...uuid.UUID) {
+	if m.project == nil {
+		m.project = make(map[uuid.UUID]struct{})
+	}
+	for i := range ids {
+		m.project[ids[i]] = struct{}{}
+	}
+}
+
+// ClearProject clears the "project" edge to the Project entity.
+func (m *PolicyDecisionMutation) ClearProject() {
+	m.clearedproject = true
+}
+
+// ProjectCleared reports if the "project" edge to the Project entity was cleared.
+func (m *PolicyDecisionMutation) ProjectCleared() bool {
+	return m.clearedproject
+}
+
+// RemoveProjectIDs removes the "project" edge to the Project entity by IDs.
+func (m *PolicyDecisionMutation) RemoveProjectIDs(ids ...uuid.UUID) {
+	if m.removedproject == nil {
+		m.removedproject = make(map[uuid.UUID]struct{})
+	}
+	for i := range ids {
+		delete(m.project, ids[i])
+		m.removedproject[ids[i]] = struct{}{}
+	}
+}
+
+// RemovedProject returns the removed IDs of the "project" edge to the Project entity.
+func (m *PolicyDecisionMutation) RemovedProjectIDs() (ids []uuid.UUID) {
+	for id := range m.removedproject {
+		ids = append(ids, id)
+	}
+	return
+}
+
+// ProjectIDs returns the "project" edge IDs in the mutation.
+func (m *PolicyDecisionMutation) ProjectIDs() (ids []uuid.UUID) {
+	for id := range m.project {
+		ids = append(ids, id)
+	}
+	return
+}
+
+// ResetProject resets all changes to the "project" edge.
+func (m *PolicyDecisionMutation) ResetProject() {
+	m.project = nil
+	m.clearedproject = false
+	m.removedproject = nil
+}
+
+// Where appends a list predicates to the PolicyDecisionMutation builder.
+func (m *PolicyDecisionMutation) Where(ps ...predicate.PolicyDecision) {
+	m.predicates = append(m.predicates, ps...)
+}
+
+// WhereP appends storage-level predicates to the PolicyDecisionMutation builder. Using this method,
+// users can use type-assertion to append predicates that do not depend on any generated package.
+func (m *PolicyDecisionMutation) WhereP(ps ...func(*sql.Selector)) {
+	p := make([]predicate.PolicyDecision, len(ps))
+	for i := range ps {
+		p[i] = ps[i]
+	}
+	m.Where(p...)
+}
+
+// Op returns the operation name.
+func (m *PolicyDecisionMutation) Op() Op {
+	return m.op
+}
+
+// SetOp allows setting the mutation operation.
+func (m *PolicyDecisionMutation) SetOp(op Op) {
+	m.op = op
+}
+
+// Type returns the node type of this mutation (PolicyDecision).
+func (m *PolicyDecisionMutation) Type() string {
+	return m.typ
+}
+
+// Fields returns all fields that were changed during this mutation. Note that in
+// order to get all numeric fields that were incremented/decremented, call
+// AddedFields().
+func (m *PolicyDecisionMutation) Fields() []string {
+	fields := make([]string, 0, 3)
+	if m.subject_name != nil {
+		fields = append(fields, policydecision.FieldSubjectName)
+	}
+	if m.digest_id != nil {
+		fields = append(fields, policydecision.FieldDigestID)
+	}
+	if m.decision != nil {
+		fields = append(fields, policydecision.FieldDecision)
+	}
+	return fields
+}
+
+// Field returns the value of a field with the given name. The second boolean
+// return value indicates that this field was not set, or was not defined in the
+// schema.
+func (m *PolicyDecisionMutation) Field(name string) (ent.Value, bool) {
+	switch name {
+	case policydecision.FieldSubjectName:
+		return m.SubjectName()
+	case policydecision.FieldDigestID:
+		return m.DigestID()
+	case policydecision.FieldDecision:
+		return m.Decision()
+	}
+	return nil, false
+}
+
+// OldField returns the old value of the field from the database. An error is
+// returned if the mutation operation is not UpdateOne, or the query to the
+// database failed.
+func (m *PolicyDecisionMutation) OldField(ctx context.Context, name string) (ent.Value, error) {
+	switch name {
+	case policydecision.FieldSubjectName:
+		return m.OldSubjectName(ctx)
+	case policydecision.FieldDigestID:
+		return m.OldDigestID(ctx)
+	case policydecision.FieldDecision:
+		return m.OldDecision(ctx)
+	}
+	return nil, fmt.Errorf("unknown PolicyDecision field %s", name)
+}
+
+// SetField sets the value of a field with the given name. It returns an error if
+// the field is not defined in the schema, or if the type mismatched the field
+// type.
+func (m *PolicyDecisionMutation) SetField(name string, value ent.Value) error {
+	switch name {
+	case policydecision.FieldSubjectName:
+		v, ok := value.(string)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.SetSubjectName(v)
+		return nil
+	case policydecision.FieldDigestID:
+		v, ok := value.(string)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.SetDigestID(v)
+		return nil
+	case policydecision.FieldDecision:
+		v, ok := value.(policydecision.Decision)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.SetDecision(v)
+		return nil
+	}
+	return fmt.Errorf("unknown PolicyDecision field %s", name)
+}
+
+// AddedFields returns all numeric fields that were incremented/decremented during
+// this mutation.
+func (m *PolicyDecisionMutation) AddedFields() []string {
+	return nil
+}
+
+// AddedField returns the numeric value that was incremented/decremented on a field
+// with the given name. The second boolean return value indicates that this field
+// was not set, or was not defined in the schema.
+func (m *PolicyDecisionMutation) AddedField(name string) (ent.Value, bool) {
+	return nil, false
+}
+
+// AddField adds the value to the field with the given name. It returns an error if
+// the field is not defined in the schema, or if the type mismatched the field
+// type.
+func (m *PolicyDecisionMutation) AddField(name string, value ent.Value) error {
+	switch name {
+	}
+	return fmt.Errorf("unknown PolicyDecision numeric field %s", name)
+}
+
+// ClearedFields returns all nullable fields that were cleared during this
+// mutation.
+func (m *PolicyDecisionMutation) ClearedFields() []string {
+	return nil
+}
+
+// FieldCleared returns a boolean indicating if a field with the given name was
+// cleared in this mutation.
+func (m *PolicyDecisionMutation) FieldCleared(name string) bool {
+	_, ok := m.clearedFields[name]
+	return ok
+}
+
+// ClearField clears the value of the field with the given name. It returns an
+// error if the field is not defined in the schema.
+func (m *PolicyDecisionMutation) ClearField(name string) error {
+	return fmt.Errorf("unknown PolicyDecision nullable field %s", name)
+}
+
+// ResetField resets all changes in the mutation for the field with the given name.
+// It returns an error if the field is not defined in the schema.
+func (m *PolicyDecisionMutation) ResetField(name string) error {
+	switch name {
+	case policydecision.FieldSubjectName:
+		m.ResetSubjectName()
+		return nil
+	case policydecision.FieldDigestID:
+		m.ResetDigestID()
+		return nil
+	case policydecision.FieldDecision:
+		m.ResetDecision()
+		return nil
+	}
+	return fmt.Errorf("unknown PolicyDecision field %s", name)
+}
+
+// AddedEdges returns all edge names that were set/added in this mutation.
+func (m *PolicyDecisionMutation) AddedEdges() []string {
+	edges := make([]string, 0, 1)
+	if m.project != nil {
+		edges = append(edges, policydecision.EdgeProject)
+	}
+	return edges
+}
+
+// AddedIDs returns all IDs (to other nodes) that were added for the given edge
+// name in this mutation.
+func (m *PolicyDecisionMutation) AddedIDs(name string) []ent.Value {
+	switch name {
+	case policydecision.EdgeProject:
+		ids := make([]ent.Value, 0, len(m.project))
+		for id := range m.project {
+			ids = append(ids, id)
+		}
+		return ids
+	}
+	return nil
+}
+
+// RemovedEdges returns all edge names that were removed in this mutation.
+func (m *PolicyDecisionMutation) RemovedEdges() []string {
+	edges := make([]string, 0, 1)
+	if m.removedproject != nil {
+		edges = append(edges, policydecision.EdgeProject)
+	}
+	return edges
+}
+
+// RemovedIDs returns all IDs (to other nodes) that were removed for the edge with
+// the given name in this mutation.
+func (m *PolicyDecisionMutation) RemovedIDs(name string) []ent.Value {
+	switch name {
+	case policydecision.EdgeProject:
+		ids := make([]ent.Value, 0, len(m.removedproject))
+		for id := range m.removedproject {
+			ids = append(ids, id)
+		}
+		return ids
+	}
+	return nil
+}
+
+// ClearedEdges returns all edge names that were cleared in this mutation.
+func (m *PolicyDecisionMutation) ClearedEdges() []string {
+	edges := make([]string, 0, 1)
+	if m.clearedproject {
+		edges = append(edges, policydecision.EdgeProject)
+	}
+	return edges
+}
+
+// EdgeCleared returns a boolean which indicates if the edge with the given name
+// was cleared in this mutation.
+func (m *PolicyDecisionMutation) EdgeCleared(name string) bool {
+	switch name {
+	case policydecision.EdgeProject:
+		return m.clearedproject
+	}
+	return false
+}
+
+// ClearEdge clears the value of the edge with the given name. It returns an error
+// if that edge is not defined in the schema.
+func (m *PolicyDecisionMutation) ClearEdge(name string) error {
+	switch name {
+	}
+	return fmt.Errorf("unknown PolicyDecision unique edge %s", name)
+}
+
+// ResetEdge resets all changes to the edge with the given name in this mutation.
+// It returns an error if the edge is not defined in the schema.
+func (m *PolicyDecisionMutation) ResetEdge(name string) error {
+	switch name {
+	case policydecision.EdgeProject:
+		m.ResetProject()
+		return nil
+	}
+	return fmt.Errorf("unknown PolicyDecision edge %s", name)
+}
 
 // ProjectMutation represents an operation that mutates the Project nodes in the graph.
 type ProjectMutation struct {
 	config
-	op                 Op
-	typ                string
-	id                 *uuid.UUID
-	created_at         *time.Time
-	updated_at         *time.Time
-	repo_id            *string
-	name               *string
-	projecturl         *string
-	clearedFields      map[string]struct{}
-	tenant             *uuid.UUID
-	clearedtenant      bool
-	created_by         *uuid.UUID
-	clearedcreated_by  bool
-	modified_by        *uuid.UUID
-	clearedmodified_by bool
-	done               bool
-	oldValue           func(context.Context) (*Project, error)
-	predicates         []predicate.Project
+	op                      Op
+	typ                     string
+	id                      *uuid.UUID
+	created_at              *time.Time
+	updated_at              *time.Time
+	repo_id                 *string
+	name                    *string
+	projecturl              *string
+	clearedFields           map[string]struct{}
+	tenant                  *uuid.UUID
+	clearedtenant           bool
+	created_by              *uuid.UUID
+	clearedcreated_by       bool
+	modified_by             *uuid.UUID
+	clearedmodified_by      bool
+	policy_decisions        map[uuid.UUID]struct{}
+	removedpolicy_decisions map[uuid.UUID]struct{}
+	clearedpolicy_decisions bool
+	parent                  *uuid.UUID
+	clearedparent           bool
+	children                map[uuid.UUID]struct{}
+	removedchildren         map[uuid.UUID]struct{}
+	clearedchildren         bool
+	done                    bool
+	oldValue                func(context.Context) (*Project, error)
+	predicates              []predicate.Project
 }
 
 var _ ent.Mutation = (*ProjectMutation)(nil)
@@ -456,6 +999,153 @@ func (m *ProjectMutation) ResetModifiedBy() {
 	m.clearedmodified_by = false
 }
 
+// AddPolicyDecisionIDs adds the "policy_decisions" edge to the PolicyDecision entity by ids.
+func (m *ProjectMutation) AddPolicyDecisionIDs(ids ...uuid.UUID) {
+	if m.policy_decisions == nil {
+		m.policy_decisions = make(map[uuid.UUID]struct{})
+	}
+	for i := range ids {
+		m.policy_decisions[ids[i]] = struct{}{}
+	}
+}
+
+// ClearPolicyDecisions clears the "policy_decisions" edge to the PolicyDecision entity.
+func (m *ProjectMutation) ClearPolicyDecisions() {
+	m.clearedpolicy_decisions = true
+}
+
+// PolicyDecisionsCleared reports if the "policy_decisions" edge to the PolicyDecision entity was cleared.
+func (m *ProjectMutation) PolicyDecisionsCleared() bool {
+	return m.clearedpolicy_decisions
+}
+
+// RemovePolicyDecisionIDs removes the "policy_decisions" edge to the PolicyDecision entity by IDs.
+func (m *ProjectMutation) RemovePolicyDecisionIDs(ids ...uuid.UUID) {
+	if m.removedpolicy_decisions == nil {
+		m.removedpolicy_decisions = make(map[uuid.UUID]struct{})
+	}
+	for i := range ids {
+		delete(m.policy_decisions, ids[i])
+		m.removedpolicy_decisions[ids[i]] = struct{}{}
+	}
+}
+
+// RemovedPolicyDecisions returns the removed IDs of the "policy_decisions" edge to the PolicyDecision entity.
+func (m *ProjectMutation) RemovedPolicyDecisionsIDs() (ids []uuid.UUID) {
+	for id := range m.removedpolicy_decisions {
+		ids = append(ids, id)
+	}
+	return
+}
+
+// PolicyDecisionsIDs returns the "policy_decisions" edge IDs in the mutation.
+func (m *ProjectMutation) PolicyDecisionsIDs() (ids []uuid.UUID) {
+	for id := range m.policy_decisions {
+		ids = append(ids, id)
+	}
+	return
+}
+
+// ResetPolicyDecisions resets all changes to the "policy_decisions" edge.
+func (m *ProjectMutation) ResetPolicyDecisions() {
+	m.policy_decisions = nil
+	m.clearedpolicy_decisions = false
+	m.removedpolicy_decisions = nil
+}
+
+// SetParentID sets the "parent" edge to the Project entity by id.
+func (m *ProjectMutation) SetParentID(id uuid.UUID) {
+	m.parent = &id
+}
+
+// ClearParent clears the "parent" edge to the Project entity.
+func (m *ProjectMutation) ClearParent() {
+	m.clearedparent = true
+}
+
+// ParentCleared reports if the "parent" edge to the Project entity was cleared.
+func (m *ProjectMutation) ParentCleared() bool {
+	return m.clearedparent
+}
+
+// ParentID returns the "parent" edge ID in the mutation.
+func (m *ProjectMutation) ParentID() (id uuid.UUID, exists bool) {
+	if m.parent != nil {
+		return *m.parent, true
+	}
+	return
+}
+
+// ParentIDs returns the "parent" edge IDs in the mutation.
+// Note that IDs always returns len(IDs) <= 1 for unique edges, and you should use
+// ParentID instead. It exists only for internal usage by the builders.
+func (m *ProjectMutation) ParentIDs() (ids []uuid.UUID) {
+	if id := m.parent; id != nil {
+		ids = append(ids, *id)
+	}
+	return
+}
+
+// ResetParent resets all changes to the "parent" edge.
+func (m *ProjectMutation) ResetParent() {
+	m.parent = nil
+	m.clearedparent = false
+}
+
+// AddChildIDs adds the "children" edge to the Project entity by ids.
+func (m *ProjectMutation) AddChildIDs(ids ...uuid.UUID) {
+	if m.children == nil {
+		m.children = make(map[uuid.UUID]struct{})
+	}
+	for i := range ids {
+		m.children[ids[i]] = struct{}{}
+	}
+}
+
+// ClearChildren clears the "children" edge to the Project entity.
+func (m *ProjectMutation) ClearChildren() {
+	m.clearedchildren = true
+}
+
+// ChildrenCleared reports if the "children" edge to the Project entity was cleared.
+func (m *ProjectMutation) ChildrenCleared() bool {
+	return m.clearedchildren
+}
+
+// RemoveChildIDs removes the "children" edge to the Project entity by IDs.
+func (m *ProjectMutation) RemoveChildIDs(ids ...uuid.UUID) {
+	if m.removedchildren == nil {
+		m.removedchildren = make(map[uuid.UUID]struct{})
+	}
+	for i := range ids {
+		delete(m.children, ids[i])
+		m.removedchildren[ids[i]] = struct{}{}
+	}
+}
+
+// RemovedChildren returns the removed IDs of the "children" edge to the Project entity.
+func (m *ProjectMutation) RemovedChildrenIDs() (ids []uuid.UUID) {
+	for id := range m.removedchildren {
+		ids = append(ids, id)
+	}
+	return
+}
+
+// ChildrenIDs returns the "children" edge IDs in the mutation.
+func (m *ProjectMutation) ChildrenIDs() (ids []uuid.UUID) {
+	for id := range m.children {
+		ids = append(ids, id)
+	}
+	return
+}
+
+// ResetChildren resets all changes to the "children" edge.
+func (m *ProjectMutation) ResetChildren() {
+	m.children = nil
+	m.clearedchildren = false
+	m.removedchildren = nil
+}
+
 // Where appends a list predicates to the ProjectMutation builder.
 func (m *ProjectMutation) Where(ps ...predicate.Project) {
 	m.predicates = append(m.predicates, ps...)
@@ -657,7 +1347,7 @@ func (m *ProjectMutation) ResetField(name string) error {
 
 // AddedEdges returns all edge names that were set/added in this mutation.
 func (m *ProjectMutation) AddedEdges() []string {
-	edges := make([]string, 0, 3)
+	edges := make([]string, 0, 6)
 	if m.tenant != nil {
 		edges = append(edges, project.EdgeTenant)
 	}
@@ -666,6 +1356,15 @@ func (m *ProjectMutation) AddedEdges() []string {
 	}
 	if m.modified_by != nil {
 		edges = append(edges, project.EdgeModifiedBy)
+	}
+	if m.policy_decisions != nil {
+		edges = append(edges, project.EdgePolicyDecisions)
+	}
+	if m.parent != nil {
+		edges = append(edges, project.EdgeParent)
+	}
+	if m.children != nil {
+		edges = append(edges, project.EdgeChildren)
 	}
 	return edges
 }
@@ -686,25 +1385,61 @@ func (m *ProjectMutation) AddedIDs(name string) []ent.Value {
 		if id := m.modified_by; id != nil {
 			return []ent.Value{*id}
 		}
+	case project.EdgePolicyDecisions:
+		ids := make([]ent.Value, 0, len(m.policy_decisions))
+		for id := range m.policy_decisions {
+			ids = append(ids, id)
+		}
+		return ids
+	case project.EdgeParent:
+		if id := m.parent; id != nil {
+			return []ent.Value{*id}
+		}
+	case project.EdgeChildren:
+		ids := make([]ent.Value, 0, len(m.children))
+		for id := range m.children {
+			ids = append(ids, id)
+		}
+		return ids
 	}
 	return nil
 }
 
 // RemovedEdges returns all edge names that were removed in this mutation.
 func (m *ProjectMutation) RemovedEdges() []string {
-	edges := make([]string, 0, 3)
+	edges := make([]string, 0, 6)
+	if m.removedpolicy_decisions != nil {
+		edges = append(edges, project.EdgePolicyDecisions)
+	}
+	if m.removedchildren != nil {
+		edges = append(edges, project.EdgeChildren)
+	}
 	return edges
 }
 
 // RemovedIDs returns all IDs (to other nodes) that were removed for the edge with
 // the given name in this mutation.
 func (m *ProjectMutation) RemovedIDs(name string) []ent.Value {
+	switch name {
+	case project.EdgePolicyDecisions:
+		ids := make([]ent.Value, 0, len(m.removedpolicy_decisions))
+		for id := range m.removedpolicy_decisions {
+			ids = append(ids, id)
+		}
+		return ids
+	case project.EdgeChildren:
+		ids := make([]ent.Value, 0, len(m.removedchildren))
+		for id := range m.removedchildren {
+			ids = append(ids, id)
+		}
+		return ids
+	}
 	return nil
 }
 
 // ClearedEdges returns all edge names that were cleared in this mutation.
 func (m *ProjectMutation) ClearedEdges() []string {
-	edges := make([]string, 0, 3)
+	edges := make([]string, 0, 6)
 	if m.clearedtenant {
 		edges = append(edges, project.EdgeTenant)
 	}
@@ -713,6 +1448,15 @@ func (m *ProjectMutation) ClearedEdges() []string {
 	}
 	if m.clearedmodified_by {
 		edges = append(edges, project.EdgeModifiedBy)
+	}
+	if m.clearedpolicy_decisions {
+		edges = append(edges, project.EdgePolicyDecisions)
+	}
+	if m.clearedparent {
+		edges = append(edges, project.EdgeParent)
+	}
+	if m.clearedchildren {
+		edges = append(edges, project.EdgeChildren)
 	}
 	return edges
 }
@@ -727,6 +1471,12 @@ func (m *ProjectMutation) EdgeCleared(name string) bool {
 		return m.clearedcreated_by
 	case project.EdgeModifiedBy:
 		return m.clearedmodified_by
+	case project.EdgePolicyDecisions:
+		return m.clearedpolicy_decisions
+	case project.EdgeParent:
+		return m.clearedparent
+	case project.EdgeChildren:
+		return m.clearedchildren
 	}
 	return false
 }
@@ -744,6 +1494,9 @@ func (m *ProjectMutation) ClearEdge(name string) error {
 	case project.EdgeModifiedBy:
 		m.ClearModifiedBy()
 		return nil
+	case project.EdgeParent:
+		m.ClearParent()
+		return nil
 	}
 	return fmt.Errorf("unknown Project unique edge %s", name)
 }
@@ -760,6 +1513,15 @@ func (m *ProjectMutation) ResetEdge(name string) error {
 		return nil
 	case project.EdgeModifiedBy:
 		m.ResetModifiedBy()
+		return nil
+	case project.EdgePolicyDecisions:
+		m.ResetPolicyDecisions()
+		return nil
+	case project.EdgeParent:
+		m.ResetParent()
+		return nil
+	case project.EdgeChildren:
+		m.ResetChildren()
 		return nil
 	}
 	return fmt.Errorf("unknown Project edge %s", name)

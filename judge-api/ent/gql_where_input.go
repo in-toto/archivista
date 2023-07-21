@@ -8,11 +8,284 @@ import (
 	"time"
 
 	"github.com/google/uuid"
+	"github.com/testifysec/judge/judge-api/ent/policydecision"
 	"github.com/testifysec/judge/judge-api/ent/predicate"
 	"github.com/testifysec/judge/judge-api/ent/project"
 	"github.com/testifysec/judge/judge-api/ent/tenant"
 	"github.com/testifysec/judge/judge-api/ent/user"
 )
+
+// PolicyDecisionWhereInput represents a where input for filtering PolicyDecision queries.
+type PolicyDecisionWhereInput struct {
+	Predicates []predicate.PolicyDecision  `json:"-"`
+	Not        *PolicyDecisionWhereInput   `json:"not,omitempty"`
+	Or         []*PolicyDecisionWhereInput `json:"or,omitempty"`
+	And        []*PolicyDecisionWhereInput `json:"and,omitempty"`
+
+	// "id" field predicates.
+	ID      *uuid.UUID  `json:"id,omitempty"`
+	IDNEQ   *uuid.UUID  `json:"idNEQ,omitempty"`
+	IDIn    []uuid.UUID `json:"idIn,omitempty"`
+	IDNotIn []uuid.UUID `json:"idNotIn,omitempty"`
+	IDGT    *uuid.UUID  `json:"idGT,omitempty"`
+	IDGTE   *uuid.UUID  `json:"idGTE,omitempty"`
+	IDLT    *uuid.UUID  `json:"idLT,omitempty"`
+	IDLTE   *uuid.UUID  `json:"idLTE,omitempty"`
+
+	// "subject_name" field predicates.
+	SubjectName             *string  `json:"subjectName,omitempty"`
+	SubjectNameNEQ          *string  `json:"subjectNameNEQ,omitempty"`
+	SubjectNameIn           []string `json:"subjectNameIn,omitempty"`
+	SubjectNameNotIn        []string `json:"subjectNameNotIn,omitempty"`
+	SubjectNameGT           *string  `json:"subjectNameGT,omitempty"`
+	SubjectNameGTE          *string  `json:"subjectNameGTE,omitempty"`
+	SubjectNameLT           *string  `json:"subjectNameLT,omitempty"`
+	SubjectNameLTE          *string  `json:"subjectNameLTE,omitempty"`
+	SubjectNameContains     *string  `json:"subjectNameContains,omitempty"`
+	SubjectNameHasPrefix    *string  `json:"subjectNameHasPrefix,omitempty"`
+	SubjectNameHasSuffix    *string  `json:"subjectNameHasSuffix,omitempty"`
+	SubjectNameEqualFold    *string  `json:"subjectNameEqualFold,omitempty"`
+	SubjectNameContainsFold *string  `json:"subjectNameContainsFold,omitempty"`
+
+	// "digest_id" field predicates.
+	DigestID             *string  `json:"digestID,omitempty"`
+	DigestIDNEQ          *string  `json:"digestIDNEQ,omitempty"`
+	DigestIDIn           []string `json:"digestIDIn,omitempty"`
+	DigestIDNotIn        []string `json:"digestIDNotIn,omitempty"`
+	DigestIDGT           *string  `json:"digestIDGT,omitempty"`
+	DigestIDGTE          *string  `json:"digestIDGTE,omitempty"`
+	DigestIDLT           *string  `json:"digestIDLT,omitempty"`
+	DigestIDLTE          *string  `json:"digestIDLTE,omitempty"`
+	DigestIDContains     *string  `json:"digestIDContains,omitempty"`
+	DigestIDHasPrefix    *string  `json:"digestIDHasPrefix,omitempty"`
+	DigestIDHasSuffix    *string  `json:"digestIDHasSuffix,omitempty"`
+	DigestIDEqualFold    *string  `json:"digestIDEqualFold,omitempty"`
+	DigestIDContainsFold *string  `json:"digestIDContainsFold,omitempty"`
+
+	// "decision" field predicates.
+	Decision      *policydecision.Decision  `json:"decision,omitempty"`
+	DecisionNEQ   *policydecision.Decision  `json:"decisionNEQ,omitempty"`
+	DecisionIn    []policydecision.Decision `json:"decisionIn,omitempty"`
+	DecisionNotIn []policydecision.Decision `json:"decisionNotIn,omitempty"`
+
+	// "project" edge predicates.
+	HasProject     *bool                `json:"hasProject,omitempty"`
+	HasProjectWith []*ProjectWhereInput `json:"hasProjectWith,omitempty"`
+}
+
+// AddPredicates adds custom predicates to the where input to be used during the filtering phase.
+func (i *PolicyDecisionWhereInput) AddPredicates(predicates ...predicate.PolicyDecision) {
+	i.Predicates = append(i.Predicates, predicates...)
+}
+
+// Filter applies the PolicyDecisionWhereInput filter on the PolicyDecisionQuery builder.
+func (i *PolicyDecisionWhereInput) Filter(q *PolicyDecisionQuery) (*PolicyDecisionQuery, error) {
+	if i == nil {
+		return q, nil
+	}
+	p, err := i.P()
+	if err != nil {
+		if err == ErrEmptyPolicyDecisionWhereInput {
+			return q, nil
+		}
+		return nil, err
+	}
+	return q.Where(p), nil
+}
+
+// ErrEmptyPolicyDecisionWhereInput is returned in case the PolicyDecisionWhereInput is empty.
+var ErrEmptyPolicyDecisionWhereInput = errors.New("ent: empty predicate PolicyDecisionWhereInput")
+
+// P returns a predicate for filtering policydecisions.
+// An error is returned if the input is empty or invalid.
+func (i *PolicyDecisionWhereInput) P() (predicate.PolicyDecision, error) {
+	var predicates []predicate.PolicyDecision
+	if i.Not != nil {
+		p, err := i.Not.P()
+		if err != nil {
+			return nil, fmt.Errorf("%w: field 'not'", err)
+		}
+		predicates = append(predicates, policydecision.Not(p))
+	}
+	switch n := len(i.Or); {
+	case n == 1:
+		p, err := i.Or[0].P()
+		if err != nil {
+			return nil, fmt.Errorf("%w: field 'or'", err)
+		}
+		predicates = append(predicates, p)
+	case n > 1:
+		or := make([]predicate.PolicyDecision, 0, n)
+		for _, w := range i.Or {
+			p, err := w.P()
+			if err != nil {
+				return nil, fmt.Errorf("%w: field 'or'", err)
+			}
+			or = append(or, p)
+		}
+		predicates = append(predicates, policydecision.Or(or...))
+	}
+	switch n := len(i.And); {
+	case n == 1:
+		p, err := i.And[0].P()
+		if err != nil {
+			return nil, fmt.Errorf("%w: field 'and'", err)
+		}
+		predicates = append(predicates, p)
+	case n > 1:
+		and := make([]predicate.PolicyDecision, 0, n)
+		for _, w := range i.And {
+			p, err := w.P()
+			if err != nil {
+				return nil, fmt.Errorf("%w: field 'and'", err)
+			}
+			and = append(and, p)
+		}
+		predicates = append(predicates, policydecision.And(and...))
+	}
+	predicates = append(predicates, i.Predicates...)
+	if i.ID != nil {
+		predicates = append(predicates, policydecision.IDEQ(*i.ID))
+	}
+	if i.IDNEQ != nil {
+		predicates = append(predicates, policydecision.IDNEQ(*i.IDNEQ))
+	}
+	if len(i.IDIn) > 0 {
+		predicates = append(predicates, policydecision.IDIn(i.IDIn...))
+	}
+	if len(i.IDNotIn) > 0 {
+		predicates = append(predicates, policydecision.IDNotIn(i.IDNotIn...))
+	}
+	if i.IDGT != nil {
+		predicates = append(predicates, policydecision.IDGT(*i.IDGT))
+	}
+	if i.IDGTE != nil {
+		predicates = append(predicates, policydecision.IDGTE(*i.IDGTE))
+	}
+	if i.IDLT != nil {
+		predicates = append(predicates, policydecision.IDLT(*i.IDLT))
+	}
+	if i.IDLTE != nil {
+		predicates = append(predicates, policydecision.IDLTE(*i.IDLTE))
+	}
+	if i.SubjectName != nil {
+		predicates = append(predicates, policydecision.SubjectNameEQ(*i.SubjectName))
+	}
+	if i.SubjectNameNEQ != nil {
+		predicates = append(predicates, policydecision.SubjectNameNEQ(*i.SubjectNameNEQ))
+	}
+	if len(i.SubjectNameIn) > 0 {
+		predicates = append(predicates, policydecision.SubjectNameIn(i.SubjectNameIn...))
+	}
+	if len(i.SubjectNameNotIn) > 0 {
+		predicates = append(predicates, policydecision.SubjectNameNotIn(i.SubjectNameNotIn...))
+	}
+	if i.SubjectNameGT != nil {
+		predicates = append(predicates, policydecision.SubjectNameGT(*i.SubjectNameGT))
+	}
+	if i.SubjectNameGTE != nil {
+		predicates = append(predicates, policydecision.SubjectNameGTE(*i.SubjectNameGTE))
+	}
+	if i.SubjectNameLT != nil {
+		predicates = append(predicates, policydecision.SubjectNameLT(*i.SubjectNameLT))
+	}
+	if i.SubjectNameLTE != nil {
+		predicates = append(predicates, policydecision.SubjectNameLTE(*i.SubjectNameLTE))
+	}
+	if i.SubjectNameContains != nil {
+		predicates = append(predicates, policydecision.SubjectNameContains(*i.SubjectNameContains))
+	}
+	if i.SubjectNameHasPrefix != nil {
+		predicates = append(predicates, policydecision.SubjectNameHasPrefix(*i.SubjectNameHasPrefix))
+	}
+	if i.SubjectNameHasSuffix != nil {
+		predicates = append(predicates, policydecision.SubjectNameHasSuffix(*i.SubjectNameHasSuffix))
+	}
+	if i.SubjectNameEqualFold != nil {
+		predicates = append(predicates, policydecision.SubjectNameEqualFold(*i.SubjectNameEqualFold))
+	}
+	if i.SubjectNameContainsFold != nil {
+		predicates = append(predicates, policydecision.SubjectNameContainsFold(*i.SubjectNameContainsFold))
+	}
+	if i.DigestID != nil {
+		predicates = append(predicates, policydecision.DigestIDEQ(*i.DigestID))
+	}
+	if i.DigestIDNEQ != nil {
+		predicates = append(predicates, policydecision.DigestIDNEQ(*i.DigestIDNEQ))
+	}
+	if len(i.DigestIDIn) > 0 {
+		predicates = append(predicates, policydecision.DigestIDIn(i.DigestIDIn...))
+	}
+	if len(i.DigestIDNotIn) > 0 {
+		predicates = append(predicates, policydecision.DigestIDNotIn(i.DigestIDNotIn...))
+	}
+	if i.DigestIDGT != nil {
+		predicates = append(predicates, policydecision.DigestIDGT(*i.DigestIDGT))
+	}
+	if i.DigestIDGTE != nil {
+		predicates = append(predicates, policydecision.DigestIDGTE(*i.DigestIDGTE))
+	}
+	if i.DigestIDLT != nil {
+		predicates = append(predicates, policydecision.DigestIDLT(*i.DigestIDLT))
+	}
+	if i.DigestIDLTE != nil {
+		predicates = append(predicates, policydecision.DigestIDLTE(*i.DigestIDLTE))
+	}
+	if i.DigestIDContains != nil {
+		predicates = append(predicates, policydecision.DigestIDContains(*i.DigestIDContains))
+	}
+	if i.DigestIDHasPrefix != nil {
+		predicates = append(predicates, policydecision.DigestIDHasPrefix(*i.DigestIDHasPrefix))
+	}
+	if i.DigestIDHasSuffix != nil {
+		predicates = append(predicates, policydecision.DigestIDHasSuffix(*i.DigestIDHasSuffix))
+	}
+	if i.DigestIDEqualFold != nil {
+		predicates = append(predicates, policydecision.DigestIDEqualFold(*i.DigestIDEqualFold))
+	}
+	if i.DigestIDContainsFold != nil {
+		predicates = append(predicates, policydecision.DigestIDContainsFold(*i.DigestIDContainsFold))
+	}
+	if i.Decision != nil {
+		predicates = append(predicates, policydecision.DecisionEQ(*i.Decision))
+	}
+	if i.DecisionNEQ != nil {
+		predicates = append(predicates, policydecision.DecisionNEQ(*i.DecisionNEQ))
+	}
+	if len(i.DecisionIn) > 0 {
+		predicates = append(predicates, policydecision.DecisionIn(i.DecisionIn...))
+	}
+	if len(i.DecisionNotIn) > 0 {
+		predicates = append(predicates, policydecision.DecisionNotIn(i.DecisionNotIn...))
+	}
+
+	if i.HasProject != nil {
+		p := policydecision.HasProject()
+		if !*i.HasProject {
+			p = policydecision.Not(p)
+		}
+		predicates = append(predicates, p)
+	}
+	if len(i.HasProjectWith) > 0 {
+		with := make([]predicate.Project, 0, len(i.HasProjectWith))
+		for _, w := range i.HasProjectWith {
+			p, err := w.P()
+			if err != nil {
+				return nil, fmt.Errorf("%w: field 'HasProjectWith'", err)
+			}
+			with = append(with, p)
+		}
+		predicates = append(predicates, policydecision.HasProjectWith(with...))
+	}
+	switch len(predicates) {
+	case 0:
+		return nil, ErrEmptyPolicyDecisionWhereInput
+	case 1:
+		return predicates[0], nil
+	default:
+		return policydecision.And(predicates...), nil
+	}
+}
 
 // ProjectWhereInput represents a where input for filtering Project queries.
 type ProjectWhereInput struct {
@@ -107,6 +380,18 @@ type ProjectWhereInput struct {
 	// "modified_by" edge predicates.
 	HasModifiedBy     *bool             `json:"hasModifiedBy,omitempty"`
 	HasModifiedByWith []*UserWhereInput `json:"hasModifiedByWith,omitempty"`
+
+	// "policy_decisions" edge predicates.
+	HasPolicyDecisions     *bool                       `json:"hasPolicyDecisions,omitempty"`
+	HasPolicyDecisionsWith []*PolicyDecisionWhereInput `json:"hasPolicyDecisionsWith,omitempty"`
+
+	// "parent" edge predicates.
+	HasParent     *bool                `json:"hasParent,omitempty"`
+	HasParentWith []*ProjectWhereInput `json:"hasParentWith,omitempty"`
+
+	// "children" edge predicates.
+	HasChildren     *bool                `json:"hasChildren,omitempty"`
+	HasChildrenWith []*ProjectWhereInput `json:"hasChildrenWith,omitempty"`
 }
 
 // AddPredicates adds custom predicates to the where input to be used during the filtering phase.
@@ -423,6 +708,60 @@ func (i *ProjectWhereInput) P() (predicate.Project, error) {
 			with = append(with, p)
 		}
 		predicates = append(predicates, project.HasModifiedByWith(with...))
+	}
+	if i.HasPolicyDecisions != nil {
+		p := project.HasPolicyDecisions()
+		if !*i.HasPolicyDecisions {
+			p = project.Not(p)
+		}
+		predicates = append(predicates, p)
+	}
+	if len(i.HasPolicyDecisionsWith) > 0 {
+		with := make([]predicate.PolicyDecision, 0, len(i.HasPolicyDecisionsWith))
+		for _, w := range i.HasPolicyDecisionsWith {
+			p, err := w.P()
+			if err != nil {
+				return nil, fmt.Errorf("%w: field 'HasPolicyDecisionsWith'", err)
+			}
+			with = append(with, p)
+		}
+		predicates = append(predicates, project.HasPolicyDecisionsWith(with...))
+	}
+	if i.HasParent != nil {
+		p := project.HasParent()
+		if !*i.HasParent {
+			p = project.Not(p)
+		}
+		predicates = append(predicates, p)
+	}
+	if len(i.HasParentWith) > 0 {
+		with := make([]predicate.Project, 0, len(i.HasParentWith))
+		for _, w := range i.HasParentWith {
+			p, err := w.P()
+			if err != nil {
+				return nil, fmt.Errorf("%w: field 'HasParentWith'", err)
+			}
+			with = append(with, p)
+		}
+		predicates = append(predicates, project.HasParentWith(with...))
+	}
+	if i.HasChildren != nil {
+		p := project.HasChildren()
+		if !*i.HasChildren {
+			p = project.Not(p)
+		}
+		predicates = append(predicates, p)
+	}
+	if len(i.HasChildrenWith) > 0 {
+		with := make([]predicate.Project, 0, len(i.HasChildrenWith))
+		for _, w := range i.HasChildrenWith {
+			p, err := w.P()
+			if err != nil {
+				return nil, fmt.Errorf("%w: field 'HasChildrenWith'", err)
+			}
+			with = append(with, p)
+		}
+		predicates = append(predicates, project.HasChildrenWith(with...))
 	}
 	switch len(predicates) {
 	case 0:

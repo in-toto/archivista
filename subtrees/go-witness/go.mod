@@ -8,6 +8,7 @@ require (
 	github.com/digitorus/timestamp v0.0.0-20230220124323-d542479a2425
 	github.com/edwarnicke/gitoid v0.0.0-20220710194850-1be5bfda1f9d
 	github.com/go-git/go-git/v5 v5.5.2
+	github.com/google/uuid v1.3.0
 	github.com/mattn/go-isatty v0.0.17
 	github.com/open-policy-agent/opa v0.49.1
 	github.com/owenrumney/go-sarif v1.1.1

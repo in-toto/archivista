@@ -15,6 +15,7 @@ import (
 	"github.com/99designs/gqlgen/graphql"
 	"github.com/99designs/gqlgen/graphql/errcode"
 	"github.com/google/uuid"
+	"github.com/testifysec/judge/judge-api/ent/policydecision"
 	"github.com/testifysec/judge/judge-api/ent/project"
 	"github.com/testifysec/judge/judge-api/ent/tenant"
 	"github.com/testifysec/judge/judge-api/ent/user"
@@ -242,6 +243,237 @@ func paginateLimit(first, last *int) int {
 		limit = *last + 1
 	}
 	return limit
+}
+
+// PolicyDecisionEdge is the edge representation of PolicyDecision.
+type PolicyDecisionEdge struct {
+	Node   *PolicyDecision `json:"node"`
+	Cursor Cursor          `json:"cursor"`
+}
+
+// PolicyDecisionConnection is the connection containing edges to PolicyDecision.
+type PolicyDecisionConnection struct {
+	Edges      []*PolicyDecisionEdge `json:"edges"`
+	PageInfo   PageInfo              `json:"pageInfo"`
+	TotalCount int                   `json:"totalCount"`
+}
+
+func (c *PolicyDecisionConnection) build(nodes []*PolicyDecision, pager *policydecisionPager, after *Cursor, first *int, before *Cursor, last *int) {
+	c.PageInfo.HasNextPage = before != nil
+	c.PageInfo.HasPreviousPage = after != nil
+	if first != nil && *first+1 == len(nodes) {
+		c.PageInfo.HasNextPage = true
+		nodes = nodes[:len(nodes)-1]
+	} else if last != nil && *last+1 == len(nodes) {
+		c.PageInfo.HasPreviousPage = true
+		nodes = nodes[:len(nodes)-1]
+	}
+	var nodeAt func(int) *PolicyDecision
+	if last != nil {
+		n := len(nodes) - 1
+		nodeAt = func(i int) *PolicyDecision {
+			return nodes[n-i]
+		}
+	} else {
+		nodeAt = func(i int) *PolicyDecision {
+			return nodes[i]
+		}
+	}
+	c.Edges = make([]*PolicyDecisionEdge, len(nodes))
+	for i := range nodes {
+		node := nodeAt(i)
+		c.Edges[i] = &PolicyDecisionEdge{
+			Node:   node,
+			Cursor: pager.toCursor(node),
+		}
+	}
+	if l := len(c.Edges); l > 0 {
+		c.PageInfo.StartCursor = &c.Edges[0].Cursor
+		c.PageInfo.EndCursor = &c.Edges[l-1].Cursor
+	}
+	if c.TotalCount == 0 {
+		c.TotalCount = len(nodes)
+	}
+}
+
+// PolicyDecisionPaginateOption enables pagination customization.
+type PolicyDecisionPaginateOption func(*policydecisionPager) error
+
+// WithPolicyDecisionOrder configures pagination ordering.
+func WithPolicyDecisionOrder(order *PolicyDecisionOrder) PolicyDecisionPaginateOption {
+	if order == nil {
+		order = DefaultPolicyDecisionOrder
+	}
+	o := *order
+	return func(pager *policydecisionPager) error {
+		if err := o.Direction.Validate(); err != nil {
+			return err
+		}
+		if o.Field == nil {
+			o.Field = DefaultPolicyDecisionOrder.Field
+		}
+		pager.order = &o
+		return nil
+	}
+}
+
+// WithPolicyDecisionFilter configures pagination filter.
+func WithPolicyDecisionFilter(filter func(*PolicyDecisionQuery) (*PolicyDecisionQuery, error)) PolicyDecisionPaginateOption {
+	return func(pager *policydecisionPager) error {
+		if filter == nil {
+			return errors.New("PolicyDecisionQuery filter cannot be nil")
+		}
+		pager.filter = filter
+		return nil
+	}
+}
+
+type policydecisionPager struct {
+	order  *PolicyDecisionOrder
+	filter func(*PolicyDecisionQuery) (*PolicyDecisionQuery, error)
+}
+
+func newPolicyDecisionPager(opts []PolicyDecisionPaginateOption) (*policydecisionPager, error) {
+	pager := &policydecisionPager{}
+	for _, opt := range opts {
+		if err := opt(pager); err != nil {
+			return nil, err
+		}
+	}
+	if pager.order == nil {
+		pager.order = DefaultPolicyDecisionOrder
+	}
+	return pager, nil
+}
+
+func (p *policydecisionPager) applyFilter(query *PolicyDecisionQuery) (*PolicyDecisionQuery, error) {
+	if p.filter != nil {
+		return p.filter(query)
+	}
+	return query, nil
+}
+
+func (p *policydecisionPager) toCursor(pd *PolicyDecision) Cursor {
+	return p.order.Field.toCursor(pd)
+}
+
+func (p *policydecisionPager) applyCursors(query *PolicyDecisionQuery, after, before *Cursor) *PolicyDecisionQuery {
+	for _, predicate := range cursorsToPredicates(
+		p.order.Direction, after, before,
+		p.order.Field.field, DefaultPolicyDecisionOrder.Field.field,
+	) {
+		query = query.Where(predicate)
+	}
+	return query
+}
+
+func (p *policydecisionPager) applyOrder(query *PolicyDecisionQuery, reverse bool) *PolicyDecisionQuery {
+	direction := p.order.Direction
+	if reverse {
+		direction = direction.reverse()
+	}
+	query = query.Order(direction.orderFunc(p.order.Field.field))
+	if p.order.Field != DefaultPolicyDecisionOrder.Field {
+		query = query.Order(direction.orderFunc(DefaultPolicyDecisionOrder.Field.field))
+	}
+	return query
+}
+
+func (p *policydecisionPager) orderExpr(reverse bool) sql.Querier {
+	direction := p.order.Direction
+	if reverse {
+		direction = direction.reverse()
+	}
+	return sql.ExprFunc(func(b *sql.Builder) {
+		b.Ident(p.order.Field.field).Pad().WriteString(string(direction))
+		if p.order.Field != DefaultPolicyDecisionOrder.Field {
+			b.Comma().Ident(DefaultPolicyDecisionOrder.Field.field).Pad().WriteString(string(direction))
+		}
+	})
+}
+
+// Paginate executes the query and returns a relay based cursor connection to PolicyDecision.
+func (pd *PolicyDecisionQuery) Paginate(
+	ctx context.Context, after *Cursor, first *int,
+	before *Cursor, last *int, opts ...PolicyDecisionPaginateOption,
+) (*PolicyDecisionConnection, error) {
+	if err := validateFirstLast(first, last); err != nil {
+		return nil, err
+	}
+	pager, err := newPolicyDecisionPager(opts)
+	if err != nil {
+		return nil, err
+	}
+	if pd, err = pager.applyFilter(pd); err != nil {
+		return nil, err
+	}
+	conn := &PolicyDecisionConnection{Edges: []*PolicyDecisionEdge{}}
+	ignoredEdges := !hasCollectedField(ctx, edgesField)
+	if hasCollectedField(ctx, totalCountField) || hasCollectedField(ctx, pageInfoField) {
+		hasPagination := after != nil || first != nil || before != nil || last != nil
+		if hasPagination || ignoredEdges {
+			if conn.TotalCount, err = pd.Clone().Count(ctx); err != nil {
+				return nil, err
+			}
+			conn.PageInfo.HasNextPage = first != nil && conn.TotalCount > 0
+			conn.PageInfo.HasPreviousPage = last != nil && conn.TotalCount > 0
+		}
+	}
+	if ignoredEdges || (first != nil && *first == 0) || (last != nil && *last == 0) {
+		return conn, nil
+	}
+
+	pd = pager.applyCursors(pd, after, before)
+	pd = pager.applyOrder(pd, last != nil)
+	if limit := paginateLimit(first, last); limit != 0 {
+		pd.Limit(limit)
+	}
+	if field := collectedField(ctx, edgesField, nodeField); field != nil {
+		if err := pd.collectField(ctx, graphql.GetOperationContext(ctx), *field, []string{edgesField, nodeField}); err != nil {
+			return nil, err
+		}
+	}
+
+	nodes, err := pd.All(ctx)
+	if err != nil {
+		return nil, err
+	}
+	conn.build(nodes, pager, after, first, before, last)
+	return conn, nil
+}
+
+// PolicyDecisionOrderField defines the ordering field of PolicyDecision.
+type PolicyDecisionOrderField struct {
+	field    string
+	toCursor func(*PolicyDecision) Cursor
+}
+
+// PolicyDecisionOrder defines the ordering of PolicyDecision.
+type PolicyDecisionOrder struct {
+	Direction OrderDirection            `json:"direction"`
+	Field     *PolicyDecisionOrderField `json:"field"`
+}
+
+// DefaultPolicyDecisionOrder is the default ordering of PolicyDecision.
+var DefaultPolicyDecisionOrder = &PolicyDecisionOrder{
+	Direction: OrderDirectionAsc,
+	Field: &PolicyDecisionOrderField{
+		field: policydecision.FieldID,
+		toCursor: func(pd *PolicyDecision) Cursor {
+			return Cursor{ID: pd.ID}
+		},
+	},
+}
+
+// ToEdge converts PolicyDecision into PolicyDecisionEdge.
+func (pd *PolicyDecision) ToEdge(order *PolicyDecisionOrder) *PolicyDecisionEdge {
+	if order == nil {
+		order = DefaultPolicyDecisionOrder
+	}
+	return &PolicyDecisionEdge{
+		Node:   pd,
+		Cursor: order.Field.toCursor(pd),
+	}
 }
 
 // ProjectEdge is the edge representation of Project.

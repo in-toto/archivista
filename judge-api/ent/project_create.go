@@ -11,6 +11,7 @@ import (
 	"entgo.io/ent/dialect/sql/sqlgraph"
 	"entgo.io/ent/schema/field"
 	"github.com/google/uuid"
+	"github.com/testifysec/judge/judge-api/ent/policydecision"
 	"github.com/testifysec/judge/judge-api/ent/project"
 	"github.com/testifysec/judge/judge-api/ent/tenant"
 	"github.com/testifysec/judge/judge-api/ent/user"
@@ -130,6 +131,55 @@ func (pc *ProjectCreate) SetNillableModifiedByID(id *uuid.UUID) *ProjectCreate {
 // SetModifiedBy sets the "modified_by" edge to the User entity.
 func (pc *ProjectCreate) SetModifiedBy(u *User) *ProjectCreate {
 	return pc.SetModifiedByID(u.ID)
+}
+
+// AddPolicyDecisionIDs adds the "policy_decisions" edge to the PolicyDecision entity by IDs.
+func (pc *ProjectCreate) AddPolicyDecisionIDs(ids ...uuid.UUID) *ProjectCreate {
+	pc.mutation.AddPolicyDecisionIDs(ids...)
+	return pc
+}
+
+// AddPolicyDecisions adds the "policy_decisions" edges to the PolicyDecision entity.
+func (pc *ProjectCreate) AddPolicyDecisions(p ...*PolicyDecision) *ProjectCreate {
+	ids := make([]uuid.UUID, len(p))
+	for i := range p {
+		ids[i] = p[i].ID
+	}
+	return pc.AddPolicyDecisionIDs(ids...)
+}
+
+// SetParentID sets the "parent" edge to the Project entity by ID.
+func (pc *ProjectCreate) SetParentID(id uuid.UUID) *ProjectCreate {
+	pc.mutation.SetParentID(id)
+	return pc
+}
+
+// SetNillableParentID sets the "parent" edge to the Project entity by ID if the given value is not nil.
+func (pc *ProjectCreate) SetNillableParentID(id *uuid.UUID) *ProjectCreate {
+	if id != nil {
+		pc = pc.SetParentID(*id)
+	}
+	return pc
+}
+
+// SetParent sets the "parent" edge to the Project entity.
+func (pc *ProjectCreate) SetParent(p *Project) *ProjectCreate {
+	return pc.SetParentID(p.ID)
+}
+
+// AddChildIDs adds the "children" edge to the Project entity by IDs.
+func (pc *ProjectCreate) AddChildIDs(ids ...uuid.UUID) *ProjectCreate {
+	pc.mutation.AddChildIDs(ids...)
+	return pc
+}
+
+// AddChildren adds the "children" edges to the Project entity.
+func (pc *ProjectCreate) AddChildren(p ...*Project) *ProjectCreate {
+	ids := make([]uuid.UUID, len(p))
+	for i := range p {
+		ids[i] = p[i].ID
+	}
+	return pc.AddChildIDs(ids...)
 }
 
 // Mutation returns the ProjectMutation object of the builder.
@@ -332,6 +382,55 @@ func (pc *ProjectCreate) createSpec() (*Project, *sqlgraph.CreateSpec) {
 			edge.Target.Nodes = append(edge.Target.Nodes, k)
 		}
 		_node.project_modified_by = &nodes[0]
+		_spec.Edges = append(_spec.Edges, edge)
+	}
+	if nodes := pc.mutation.PolicyDecisionsIDs(); len(nodes) > 0 {
+		edge := &sqlgraph.EdgeSpec{
+			Rel:     sqlgraph.M2M,
+			Inverse: false,
+			Table:   project.PolicyDecisionsTable,
+			Columns: project.PolicyDecisionsPrimaryKey,
+			Bidi:    false,
+			Target: &sqlgraph.EdgeTarget{
+				IDSpec: sqlgraph.NewFieldSpec(policydecision.FieldID, field.TypeUUID),
+			},
+		}
+		for _, k := range nodes {
+			edge.Target.Nodes = append(edge.Target.Nodes, k)
+		}
+		_spec.Edges = append(_spec.Edges, edge)
+	}
+	if nodes := pc.mutation.ParentIDs(); len(nodes) > 0 {
+		edge := &sqlgraph.EdgeSpec{
+			Rel:     sqlgraph.M2O,
+			Inverse: true,
+			Table:   project.ParentTable,
+			Columns: []string{project.ParentColumn},
+			Bidi:    false,
+			Target: &sqlgraph.EdgeTarget{
+				IDSpec: sqlgraph.NewFieldSpec(project.FieldID, field.TypeUUID),
+			},
+		}
+		for _, k := range nodes {
+			edge.Target.Nodes = append(edge.Target.Nodes, k)
+		}
+		_node.project_children = &nodes[0]
+		_spec.Edges = append(_spec.Edges, edge)
+	}
+	if nodes := pc.mutation.ChildrenIDs(); len(nodes) > 0 {
+		edge := &sqlgraph.EdgeSpec{
+			Rel:     sqlgraph.O2M,
+			Inverse: false,
+			Table:   project.ChildrenTable,
+			Columns: []string{project.ChildrenColumn},
+			Bidi:    false,
+			Target: &sqlgraph.EdgeTarget{
+				IDSpec: sqlgraph.NewFieldSpec(project.FieldID, field.TypeUUID),
+			},
+		}
+		for _, k := range nodes {
+			edge.Target.Nodes = append(edge.Target.Nodes, k)
+		}
 		_spec.Edges = append(_spec.Edges, edge)
 	}
 	return _node, _spec

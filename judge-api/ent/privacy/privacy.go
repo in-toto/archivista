@@ -149,6 +149,30 @@ func DenyMutationOperationRule(op ent.Op) MutationRule {
 	return OnMutationOperation(rule, op)
 }
 
+// The PolicyDecisionQueryRuleFunc type is an adapter to allow the use of ordinary
+// functions as a query rule.
+type PolicyDecisionQueryRuleFunc func(context.Context, *ent.PolicyDecisionQuery) error
+
+// EvalQuery return f(ctx, q).
+func (f PolicyDecisionQueryRuleFunc) EvalQuery(ctx context.Context, q ent.Query) error {
+	if q, ok := q.(*ent.PolicyDecisionQuery); ok {
+		return f(ctx, q)
+	}
+	return Denyf("ent/privacy: unexpected query type %T, expect *ent.PolicyDecisionQuery", q)
+}
+
+// The PolicyDecisionMutationRuleFunc type is an adapter to allow the use of ordinary
+// functions as a mutation rule.
+type PolicyDecisionMutationRuleFunc func(context.Context, *ent.PolicyDecisionMutation) error
+
+// EvalMutation calls f(ctx, m).
+func (f PolicyDecisionMutationRuleFunc) EvalMutation(ctx context.Context, m ent.Mutation) error {
+	if m, ok := m.(*ent.PolicyDecisionMutation); ok {
+		return f(ctx, m)
+	}
+	return Denyf("ent/privacy: unexpected mutation type %T, expect *ent.PolicyDecisionMutation", m)
+}
+
 // The ProjectQueryRuleFunc type is an adapter to allow the use of ordinary
 // functions as a query rule.
 type ProjectQueryRuleFunc func(context.Context, *ent.ProjectQuery) error

@@ -17,6 +17,7 @@ import (
 	"github.com/99designs/gqlgen/graphql/introspection"
 	"github.com/google/uuid"
 	"github.com/testifysec/judge/judge-api/ent"
+	"github.com/testifysec/judge/judge-api/ent/policydecision"
 	"github.com/testifysec/judge/judge-api/ent/schema/uuidgql"
 	"github.com/testifysec/judge/judge-api/ent/tenant"
 	gqlparser "github.com/vektah/gqlparser/v2"
@@ -55,16 +56,27 @@ type ComplexityRoot struct {
 		StartCursor     func(childComplexity int) int
 	}
 
+	PolicyDecision struct {
+		Decision    func(childComplexity int) int
+		DigestID    func(childComplexity int) int
+		ID          func(childComplexity int) int
+		Project     func(childComplexity int) int
+		SubjectName func(childComplexity int) int
+	}
+
 	Project struct {
-		CreatedAt  func(childComplexity int) int
-		CreatedBy  func(childComplexity int) int
-		ID         func(childComplexity int) int
-		ModifiedBy func(childComplexity int) int
-		Name       func(childComplexity int) int
-		Projecturl func(childComplexity int) int
-		RepoID     func(childComplexity int) int
-		Tenant     func(childComplexity int) int
-		UpdatedAt  func(childComplexity int) int
+		Children        func(childComplexity int) int
+		CreatedAt       func(childComplexity int) int
+		CreatedBy       func(childComplexity int) int
+		ID              func(childComplexity int) int
+		ModifiedBy      func(childComplexity int) int
+		Name            func(childComplexity int) int
+		Parent          func(childComplexity int) int
+		PolicyDecisions func(childComplexity int) int
+		Projecturl      func(childComplexity int) int
+		RepoID          func(childComplexity int) int
+		Tenant          func(childComplexity int) int
+		UpdatedAt       func(childComplexity int) int
 	}
 
 	Query struct {
@@ -145,6 +157,48 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 
 		return e.complexity.PageInfo.StartCursor(childComplexity), true
 
+	case "PolicyDecision.decision":
+		if e.complexity.PolicyDecision.Decision == nil {
+			break
+		}
+
+		return e.complexity.PolicyDecision.Decision(childComplexity), true
+
+	case "PolicyDecision.digestID":
+		if e.complexity.PolicyDecision.DigestID == nil {
+			break
+		}
+
+		return e.complexity.PolicyDecision.DigestID(childComplexity), true
+
+	case "PolicyDecision.id":
+		if e.complexity.PolicyDecision.ID == nil {
+			break
+		}
+
+		return e.complexity.PolicyDecision.ID(childComplexity), true
+
+	case "PolicyDecision.project":
+		if e.complexity.PolicyDecision.Project == nil {
+			break
+		}
+
+		return e.complexity.PolicyDecision.Project(childComplexity), true
+
+	case "PolicyDecision.subjectName":
+		if e.complexity.PolicyDecision.SubjectName == nil {
+			break
+		}
+
+		return e.complexity.PolicyDecision.SubjectName(childComplexity), true
+
+	case "Project.children":
+		if e.complexity.Project.Children == nil {
+			break
+		}
+
+		return e.complexity.Project.Children(childComplexity), true
+
 	case "Project.createdAt":
 		if e.complexity.Project.CreatedAt == nil {
 			break
@@ -179,6 +233,20 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 		}
 
 		return e.complexity.Project.Name(childComplexity), true
+
+	case "Project.parent":
+		if e.complexity.Project.Parent == nil {
+			break
+		}
+
+		return e.complexity.Project.Parent(childComplexity), true
+
+	case "Project.policyDecisions":
+		if e.complexity.Project.PolicyDecisions == nil {
+			break
+		}
+
+		return e.complexity.Project.PolicyDecisions(childComplexity), true
 
 	case "Project.projecturl":
 		if e.complexity.Project.Projecturl == nil {
@@ -359,6 +427,7 @@ func (e *executableSchema) Exec(ctx context.Context) graphql.ResponseHandler {
 	rc := graphql.GetOperationContext(ctx)
 	ec := executionContext{rc, e}
 	inputUnmarshalMap := graphql.BuildUnmarshalerMap(
+		ec.unmarshalInputPolicyDecisionWhereInput,
 		ec.unmarshalInputProjectWhereInput,
 		ec.unmarshalInputTenantWhereInput,
 		ec.unmarshalInputUserWhereInput,
@@ -674,6 +743,249 @@ func (ec *executionContext) fieldContext_PageInfo_endCursor(ctx context.Context,
 		IsResolver: false,
 		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
 			return nil, errors.New("field of type Cursor does not have child fields")
+		},
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _PolicyDecision_id(ctx context.Context, field graphql.CollectedField, obj *ent.PolicyDecision) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_PolicyDecision_id(ctx, field)
+	if err != nil {
+		return graphql.Null
+	}
+	ctx = graphql.WithFieldContext(ctx, fc)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.ID, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.(uuid.UUID)
+	fc.Result = res
+	return ec.marshalNID2githubᚗcomᚋgoogleᚋuuidᚐUUID(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) fieldContext_PolicyDecision_id(ctx context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "PolicyDecision",
+		Field:      field,
+		IsMethod:   false,
+		IsResolver: false,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return nil, errors.New("field of type ID does not have child fields")
+		},
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _PolicyDecision_subjectName(ctx context.Context, field graphql.CollectedField, obj *ent.PolicyDecision) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_PolicyDecision_subjectName(ctx, field)
+	if err != nil {
+		return graphql.Null
+	}
+	ctx = graphql.WithFieldContext(ctx, fc)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.SubjectName, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.(string)
+	fc.Result = res
+	return ec.marshalNString2string(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) fieldContext_PolicyDecision_subjectName(ctx context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "PolicyDecision",
+		Field:      field,
+		IsMethod:   false,
+		IsResolver: false,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return nil, errors.New("field of type String does not have child fields")
+		},
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _PolicyDecision_digestID(ctx context.Context, field graphql.CollectedField, obj *ent.PolicyDecision) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_PolicyDecision_digestID(ctx, field)
+	if err != nil {
+		return graphql.Null
+	}
+	ctx = graphql.WithFieldContext(ctx, fc)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.DigestID, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.(string)
+	fc.Result = res
+	return ec.marshalNString2string(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) fieldContext_PolicyDecision_digestID(ctx context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "PolicyDecision",
+		Field:      field,
+		IsMethod:   false,
+		IsResolver: false,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return nil, errors.New("field of type String does not have child fields")
+		},
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _PolicyDecision_decision(ctx context.Context, field graphql.CollectedField, obj *ent.PolicyDecision) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_PolicyDecision_decision(ctx, field)
+	if err != nil {
+		return graphql.Null
+	}
+	ctx = graphql.WithFieldContext(ctx, fc)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.Decision, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.(policydecision.Decision)
+	fc.Result = res
+	return ec.marshalNPolicyDecisionDecision2githubᚗcomᚋtestifysecᚋjudgeᚋjudgeᚑapiᚋentᚋpolicydecisionᚐDecision(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) fieldContext_PolicyDecision_decision(ctx context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "PolicyDecision",
+		Field:      field,
+		IsMethod:   false,
+		IsResolver: false,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return nil, errors.New("field of type PolicyDecisionDecision does not have child fields")
+		},
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _PolicyDecision_project(ctx context.Context, field graphql.CollectedField, obj *ent.PolicyDecision) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_PolicyDecision_project(ctx, field)
+	if err != nil {
+		return graphql.Null
+	}
+	ctx = graphql.WithFieldContext(ctx, fc)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.Project(ctx)
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		return graphql.Null
+	}
+	res := resTmp.([]*ent.Project)
+	fc.Result = res
+	return ec.marshalOProject2ᚕᚖgithubᚗcomᚋtestifysecᚋjudgeᚋjudgeᚑapiᚋentᚐProjectᚄ(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) fieldContext_PolicyDecision_project(ctx context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "PolicyDecision",
+		Field:      field,
+		IsMethod:   true,
+		IsResolver: false,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			switch field.Name {
+			case "id":
+				return ec.fieldContext_Project_id(ctx, field)
+			case "createdAt":
+				return ec.fieldContext_Project_createdAt(ctx, field)
+			case "updatedAt":
+				return ec.fieldContext_Project_updatedAt(ctx, field)
+			case "repoID":
+				return ec.fieldContext_Project_repoID(ctx, field)
+			case "name":
+				return ec.fieldContext_Project_name(ctx, field)
+			case "projecturl":
+				return ec.fieldContext_Project_projecturl(ctx, field)
+			case "tenant":
+				return ec.fieldContext_Project_tenant(ctx, field)
+			case "createdBy":
+				return ec.fieldContext_Project_createdBy(ctx, field)
+			case "modifiedBy":
+				return ec.fieldContext_Project_modifiedBy(ctx, field)
+			case "policyDecisions":
+				return ec.fieldContext_Project_policyDecisions(ctx, field)
+			case "parent":
+				return ec.fieldContext_Project_parent(ctx, field)
+			case "children":
+				return ec.fieldContext_Project_children(ctx, field)
+			}
+			return nil, fmt.Errorf("no field named %q was found under type Project", field.Name)
 		},
 	}
 	return fc, nil
@@ -1117,6 +1429,193 @@ func (ec *executionContext) fieldContext_Project_modifiedBy(ctx context.Context,
 	return fc, nil
 }
 
+func (ec *executionContext) _Project_policyDecisions(ctx context.Context, field graphql.CollectedField, obj *ent.Project) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_Project_policyDecisions(ctx, field)
+	if err != nil {
+		return graphql.Null
+	}
+	ctx = graphql.WithFieldContext(ctx, fc)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.PolicyDecisions(ctx)
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		return graphql.Null
+	}
+	res := resTmp.([]*ent.PolicyDecision)
+	fc.Result = res
+	return ec.marshalOPolicyDecision2ᚕᚖgithubᚗcomᚋtestifysecᚋjudgeᚋjudgeᚑapiᚋentᚐPolicyDecisionᚄ(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) fieldContext_Project_policyDecisions(ctx context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "Project",
+		Field:      field,
+		IsMethod:   true,
+		IsResolver: false,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			switch field.Name {
+			case "id":
+				return ec.fieldContext_PolicyDecision_id(ctx, field)
+			case "subjectName":
+				return ec.fieldContext_PolicyDecision_subjectName(ctx, field)
+			case "digestID":
+				return ec.fieldContext_PolicyDecision_digestID(ctx, field)
+			case "decision":
+				return ec.fieldContext_PolicyDecision_decision(ctx, field)
+			case "project":
+				return ec.fieldContext_PolicyDecision_project(ctx, field)
+			}
+			return nil, fmt.Errorf("no field named %q was found under type PolicyDecision", field.Name)
+		},
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _Project_parent(ctx context.Context, field graphql.CollectedField, obj *ent.Project) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_Project_parent(ctx, field)
+	if err != nil {
+		return graphql.Null
+	}
+	ctx = graphql.WithFieldContext(ctx, fc)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.Parent(ctx)
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		return graphql.Null
+	}
+	res := resTmp.(*ent.Project)
+	fc.Result = res
+	return ec.marshalOProject2ᚖgithubᚗcomᚋtestifysecᚋjudgeᚋjudgeᚑapiᚋentᚐProject(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) fieldContext_Project_parent(ctx context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "Project",
+		Field:      field,
+		IsMethod:   true,
+		IsResolver: false,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			switch field.Name {
+			case "id":
+				return ec.fieldContext_Project_id(ctx, field)
+			case "createdAt":
+				return ec.fieldContext_Project_createdAt(ctx, field)
+			case "updatedAt":
+				return ec.fieldContext_Project_updatedAt(ctx, field)
+			case "repoID":
+				return ec.fieldContext_Project_repoID(ctx, field)
+			case "name":
+				return ec.fieldContext_Project_name(ctx, field)
+			case "projecturl":
+				return ec.fieldContext_Project_projecturl(ctx, field)
+			case "tenant":
+				return ec.fieldContext_Project_tenant(ctx, field)
+			case "createdBy":
+				return ec.fieldContext_Project_createdBy(ctx, field)
+			case "modifiedBy":
+				return ec.fieldContext_Project_modifiedBy(ctx, field)
+			case "policyDecisions":
+				return ec.fieldContext_Project_policyDecisions(ctx, field)
+			case "parent":
+				return ec.fieldContext_Project_parent(ctx, field)
+			case "children":
+				return ec.fieldContext_Project_children(ctx, field)
+			}
+			return nil, fmt.Errorf("no field named %q was found under type Project", field.Name)
+		},
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _Project_children(ctx context.Context, field graphql.CollectedField, obj *ent.Project) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_Project_children(ctx, field)
+	if err != nil {
+		return graphql.Null
+	}
+	ctx = graphql.WithFieldContext(ctx, fc)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.Children(ctx)
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		return graphql.Null
+	}
+	res := resTmp.([]*ent.Project)
+	fc.Result = res
+	return ec.marshalOProject2ᚕᚖgithubᚗcomᚋtestifysecᚋjudgeᚋjudgeᚑapiᚋentᚐProjectᚄ(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) fieldContext_Project_children(ctx context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "Project",
+		Field:      field,
+		IsMethod:   true,
+		IsResolver: false,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			switch field.Name {
+			case "id":
+				return ec.fieldContext_Project_id(ctx, field)
+			case "createdAt":
+				return ec.fieldContext_Project_createdAt(ctx, field)
+			case "updatedAt":
+				return ec.fieldContext_Project_updatedAt(ctx, field)
+			case "repoID":
+				return ec.fieldContext_Project_repoID(ctx, field)
+			case "name":
+				return ec.fieldContext_Project_name(ctx, field)
+			case "projecturl":
+				return ec.fieldContext_Project_projecturl(ctx, field)
+			case "tenant":
+				return ec.fieldContext_Project_tenant(ctx, field)
+			case "createdBy":
+				return ec.fieldContext_Project_createdBy(ctx, field)
+			case "modifiedBy":
+				return ec.fieldContext_Project_modifiedBy(ctx, field)
+			case "policyDecisions":
+				return ec.fieldContext_Project_policyDecisions(ctx, field)
+			case "parent":
+				return ec.fieldContext_Project_parent(ctx, field)
+			case "children":
+				return ec.fieldContext_Project_children(ctx, field)
+			}
+			return nil, fmt.Errorf("no field named %q was found under type Project", field.Name)
+		},
+	}
+	return fc, nil
+}
+
 func (ec *executionContext) _Query_node(ctx context.Context, field graphql.CollectedField) (ret graphql.Marshaler) {
 	fc, err := ec.fieldContext_Query_node(ctx, field)
 	if err != nil {
@@ -1281,6 +1780,12 @@ func (ec *executionContext) fieldContext_Query_projects(ctx context.Context, fie
 				return ec.fieldContext_Project_createdBy(ctx, field)
 			case "modifiedBy":
 				return ec.fieldContext_Project_modifiedBy(ctx, field)
+			case "policyDecisions":
+				return ec.fieldContext_Project_policyDecisions(ctx, field)
+			case "parent":
+				return ec.fieldContext_Project_parent(ctx, field)
+			case "children":
+				return ec.fieldContext_Project_children(ctx, field)
 			}
 			return nil, fmt.Errorf("no field named %q was found under type Project", field.Name)
 		},
@@ -3984,6 +4489,370 @@ func (ec *executionContext) fieldContext___Type_specifiedByURL(ctx context.Conte
 
 // region    **************************** input.gotpl *****************************
 
+func (ec *executionContext) unmarshalInputPolicyDecisionWhereInput(ctx context.Context, obj interface{}) (ent.PolicyDecisionWhereInput, error) {
+	var it ent.PolicyDecisionWhereInput
+	asMap := map[string]interface{}{}
+	for k, v := range obj.(map[string]interface{}) {
+		asMap[k] = v
+	}
+
+	fieldsInOrder := [...]string{"not", "and", "or", "id", "idNEQ", "idIn", "idNotIn", "idGT", "idGTE", "idLT", "idLTE", "subjectName", "subjectNameNEQ", "subjectNameIn", "subjectNameNotIn", "subjectNameGT", "subjectNameGTE", "subjectNameLT", "subjectNameLTE", "subjectNameContains", "subjectNameHasPrefix", "subjectNameHasSuffix", "subjectNameEqualFold", "subjectNameContainsFold", "digestID", "digestIDNEQ", "digestIDIn", "digestIDNotIn", "digestIDGT", "digestIDGTE", "digestIDLT", "digestIDLTE", "digestIDContains", "digestIDHasPrefix", "digestIDHasSuffix", "digestIDEqualFold", "digestIDContainsFold", "decision", "decisionNEQ", "decisionIn", "decisionNotIn", "hasProject", "hasProjectWith"}
+	for _, k := range fieldsInOrder {
+		v, ok := asMap[k]
+		if !ok {
+			continue
+		}
+		switch k {
+		case "not":
+			var err error
+
+			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("not"))
+			it.Not, err = ec.unmarshalOPolicyDecisionWhereInput2ᚖgithubᚗcomᚋtestifysecᚋjudgeᚋjudgeᚑapiᚋentᚐPolicyDecisionWhereInput(ctx, v)
+			if err != nil {
+				return it, err
+			}
+		case "and":
+			var err error
+
+			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("and"))
+			it.And, err = ec.unmarshalOPolicyDecisionWhereInput2ᚕᚖgithubᚗcomᚋtestifysecᚋjudgeᚋjudgeᚑapiᚋentᚐPolicyDecisionWhereInputᚄ(ctx, v)
+			if err != nil {
+				return it, err
+			}
+		case "or":
+			var err error
+
+			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("or"))
+			it.Or, err = ec.unmarshalOPolicyDecisionWhereInput2ᚕᚖgithubᚗcomᚋtestifysecᚋjudgeᚋjudgeᚑapiᚋentᚐPolicyDecisionWhereInputᚄ(ctx, v)
+			if err != nil {
+				return it, err
+			}
+		case "id":
+			var err error
+
+			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("id"))
+			it.ID, err = ec.unmarshalOID2ᚖgithubᚗcomᚋgoogleᚋuuidᚐUUID(ctx, v)
+			if err != nil {
+				return it, err
+			}
+		case "idNEQ":
+			var err error
+
+			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("idNEQ"))
+			it.IDNEQ, err = ec.unmarshalOID2ᚖgithubᚗcomᚋgoogleᚋuuidᚐUUID(ctx, v)
+			if err != nil {
+				return it, err
+			}
+		case "idIn":
+			var err error
+
+			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("idIn"))
+			it.IDIn, err = ec.unmarshalOID2ᚕgithubᚗcomᚋgoogleᚋuuidᚐUUIDᚄ(ctx, v)
+			if err != nil {
+				return it, err
+			}
+		case "idNotIn":
+			var err error
+
+			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("idNotIn"))
+			it.IDNotIn, err = ec.unmarshalOID2ᚕgithubᚗcomᚋgoogleᚋuuidᚐUUIDᚄ(ctx, v)
+			if err != nil {
+				return it, err
+			}
+		case "idGT":
+			var err error
+
+			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("idGT"))
+			it.IDGT, err = ec.unmarshalOID2ᚖgithubᚗcomᚋgoogleᚋuuidᚐUUID(ctx, v)
+			if err != nil {
+				return it, err
+			}
+		case "idGTE":
+			var err error
+
+			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("idGTE"))
+			it.IDGTE, err = ec.unmarshalOID2ᚖgithubᚗcomᚋgoogleᚋuuidᚐUUID(ctx, v)
+			if err != nil {
+				return it, err
+			}
+		case "idLT":
+			var err error
+
+			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("idLT"))
+			it.IDLT, err = ec.unmarshalOID2ᚖgithubᚗcomᚋgoogleᚋuuidᚐUUID(ctx, v)
+			if err != nil {
+				return it, err
+			}
+		case "idLTE":
+			var err error
+
+			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("idLTE"))
+			it.IDLTE, err = ec.unmarshalOID2ᚖgithubᚗcomᚋgoogleᚋuuidᚐUUID(ctx, v)
+			if err != nil {
+				return it, err
+			}
+		case "subjectName":
+			var err error
+
+			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("subjectName"))
+			it.SubjectName, err = ec.unmarshalOString2ᚖstring(ctx, v)
+			if err != nil {
+				return it, err
+			}
+		case "subjectNameNEQ":
+			var err error
+
+			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("subjectNameNEQ"))
+			it.SubjectNameNEQ, err = ec.unmarshalOString2ᚖstring(ctx, v)
+			if err != nil {
+				return it, err
+			}
+		case "subjectNameIn":
+			var err error
+
+			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("subjectNameIn"))
+			it.SubjectNameIn, err = ec.unmarshalOString2ᚕstringᚄ(ctx, v)
+			if err != nil {
+				return it, err
+			}
+		case "subjectNameNotIn":
+			var err error
+
+			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("subjectNameNotIn"))
+			it.SubjectNameNotIn, err = ec.unmarshalOString2ᚕstringᚄ(ctx, v)
+			if err != nil {
+				return it, err
+			}
+		case "subjectNameGT":
+			var err error
+
+			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("subjectNameGT"))
+			it.SubjectNameGT, err = ec.unmarshalOString2ᚖstring(ctx, v)
+			if err != nil {
+				return it, err
+			}
+		case "subjectNameGTE":
+			var err error
+
+			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("subjectNameGTE"))
+			it.SubjectNameGTE, err = ec.unmarshalOString2ᚖstring(ctx, v)
+			if err != nil {
+				return it, err
+			}
+		case "subjectNameLT":
+			var err error
+
+			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("subjectNameLT"))
+			it.SubjectNameLT, err = ec.unmarshalOString2ᚖstring(ctx, v)
+			if err != nil {
+				return it, err
+			}
+		case "subjectNameLTE":
+			var err error
+
+			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("subjectNameLTE"))
+			it.SubjectNameLTE, err = ec.unmarshalOString2ᚖstring(ctx, v)
+			if err != nil {
+				return it, err
+			}
+		case "subjectNameContains":
+			var err error
+
+			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("subjectNameContains"))
+			it.SubjectNameContains, err = ec.unmarshalOString2ᚖstring(ctx, v)
+			if err != nil {
+				return it, err
+			}
+		case "subjectNameHasPrefix":
+			var err error
+
+			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("subjectNameHasPrefix"))
+			it.SubjectNameHasPrefix, err = ec.unmarshalOString2ᚖstring(ctx, v)
+			if err != nil {
+				return it, err
+			}
+		case "subjectNameHasSuffix":
+			var err error
+
+			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("subjectNameHasSuffix"))
+			it.SubjectNameHasSuffix, err = ec.unmarshalOString2ᚖstring(ctx, v)
+			if err != nil {
+				return it, err
+			}
+		case "subjectNameEqualFold":
+			var err error
+
+			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("subjectNameEqualFold"))
+			it.SubjectNameEqualFold, err = ec.unmarshalOString2ᚖstring(ctx, v)
+			if err != nil {
+				return it, err
+			}
+		case "subjectNameContainsFold":
+			var err error
+
+			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("subjectNameContainsFold"))
+			it.SubjectNameContainsFold, err = ec.unmarshalOString2ᚖstring(ctx, v)
+			if err != nil {
+				return it, err
+			}
+		case "digestID":
+			var err error
+
+			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("digestID"))
+			it.DigestID, err = ec.unmarshalOString2ᚖstring(ctx, v)
+			if err != nil {
+				return it, err
+			}
+		case "digestIDNEQ":
+			var err error
+
+			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("digestIDNEQ"))
+			it.DigestIDNEQ, err = ec.unmarshalOString2ᚖstring(ctx, v)
+			if err != nil {
+				return it, err
+			}
+		case "digestIDIn":
+			var err error
+
+			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("digestIDIn"))
+			it.DigestIDIn, err = ec.unmarshalOString2ᚕstringᚄ(ctx, v)
+			if err != nil {
+				return it, err
+			}
+		case "digestIDNotIn":
+			var err error
+
+			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("digestIDNotIn"))
+			it.DigestIDNotIn, err = ec.unmarshalOString2ᚕstringᚄ(ctx, v)
+			if err != nil {
+				return it, err
+			}
+		case "digestIDGT":
+			var err error
+
+			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("digestIDGT"))
+			it.DigestIDGT, err = ec.unmarshalOString2ᚖstring(ctx, v)
+			if err != nil {
+				return it, err
+			}
+		case "digestIDGTE":
+			var err error
+
+			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("digestIDGTE"))
+			it.DigestIDGTE, err = ec.unmarshalOString2ᚖstring(ctx, v)
+			if err != nil {
+				return it, err
+			}
+		case "digestIDLT":
+			var err error
+
+			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("digestIDLT"))
+			it.DigestIDLT, err = ec.unmarshalOString2ᚖstring(ctx, v)
+			if err != nil {
+				return it, err
+			}
+		case "digestIDLTE":
+			var err error
+
+			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("digestIDLTE"))
+			it.DigestIDLTE, err = ec.unmarshalOString2ᚖstring(ctx, v)
+			if err != nil {
+				return it, err
+			}
+		case "digestIDContains":
+			var err error
+
+			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("digestIDContains"))
+			it.DigestIDContains, err = ec.unmarshalOString2ᚖstring(ctx, v)
+			if err != nil {
+				return it, err
+			}
+		case "digestIDHasPrefix":
+			var err error
+
+			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("digestIDHasPrefix"))
+			it.DigestIDHasPrefix, err = ec.unmarshalOString2ᚖstring(ctx, v)
+			if err != nil {
+				return it, err
+			}
+		case "digestIDHasSuffix":
+			var err error
+
+			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("digestIDHasSuffix"))
+			it.DigestIDHasSuffix, err = ec.unmarshalOString2ᚖstring(ctx, v)
+			if err != nil {
+				return it, err
+			}
+		case "digestIDEqualFold":
+			var err error
+
+			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("digestIDEqualFold"))
+			it.DigestIDEqualFold, err = ec.unmarshalOString2ᚖstring(ctx, v)
+			if err != nil {
+				return it, err
+			}
+		case "digestIDContainsFold":
+			var err error
+
+			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("digestIDContainsFold"))
+			it.DigestIDContainsFold, err = ec.unmarshalOString2ᚖstring(ctx, v)
+			if err != nil {
+				return it, err
+			}
+		case "decision":
+			var err error
+
+			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("decision"))
+			it.Decision, err = ec.unmarshalOPolicyDecisionDecision2ᚖgithubᚗcomᚋtestifysecᚋjudgeᚋjudgeᚑapiᚋentᚋpolicydecisionᚐDecision(ctx, v)
+			if err != nil {
+				return it, err
+			}
+		case "decisionNEQ":
+			var err error
+
+			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("decisionNEQ"))
+			it.DecisionNEQ, err = ec.unmarshalOPolicyDecisionDecision2ᚖgithubᚗcomᚋtestifysecᚋjudgeᚋjudgeᚑapiᚋentᚋpolicydecisionᚐDecision(ctx, v)
+			if err != nil {
+				return it, err
+			}
+		case "decisionIn":
+			var err error
+
+			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("decisionIn"))
+			it.DecisionIn, err = ec.unmarshalOPolicyDecisionDecision2ᚕgithubᚗcomᚋtestifysecᚋjudgeᚋjudgeᚑapiᚋentᚋpolicydecisionᚐDecisionᚄ(ctx, v)
+			if err != nil {
+				return it, err
+			}
+		case "decisionNotIn":
+			var err error
+
+			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("decisionNotIn"))
+			it.DecisionNotIn, err = ec.unmarshalOPolicyDecisionDecision2ᚕgithubᚗcomᚋtestifysecᚋjudgeᚋjudgeᚑapiᚋentᚋpolicydecisionᚐDecisionᚄ(ctx, v)
+			if err != nil {
+				return it, err
+			}
+		case "hasProject":
+			var err error
+
+			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("hasProject"))
+			it.HasProject, err = ec.unmarshalOBoolean2ᚖbool(ctx, v)
+			if err != nil {
+				return it, err
+			}
+		case "hasProjectWith":
+			var err error
+
+			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("hasProjectWith"))
+			it.HasProjectWith, err = ec.unmarshalOProjectWhereInput2ᚕᚖgithubᚗcomᚋtestifysecᚋjudgeᚋjudgeᚑapiᚋentᚐProjectWhereInputᚄ(ctx, v)
+			if err != nil {
+				return it, err
+			}
+		}
+	}
+
+	return it, nil
+}
+
 func (ec *executionContext) unmarshalInputProjectWhereInput(ctx context.Context, obj interface{}) (ent.ProjectWhereInput, error) {
 	var it ent.ProjectWhereInput
 	asMap := map[string]interface{}{}
@@ -3991,7 +4860,7 @@ func (ec *executionContext) unmarshalInputProjectWhereInput(ctx context.Context,
 		asMap[k] = v
 	}
 
-	fieldsInOrder := [...]string{"not", "and", "or", "id", "idNEQ", "idIn", "idNotIn", "idGT", "idGTE", "idLT", "idLTE", "createdAt", "createdAtNEQ", "createdAtIn", "createdAtNotIn", "createdAtGT", "createdAtGTE", "createdAtLT", "createdAtLTE", "updatedAt", "updatedAtNEQ", "updatedAtIn", "updatedAtNotIn", "updatedAtGT", "updatedAtGTE", "updatedAtLT", "updatedAtLTE", "repoID", "repoIDNEQ", "repoIDIn", "repoIDNotIn", "repoIDGT", "repoIDGTE", "repoIDLT", "repoIDLTE", "repoIDContains", "repoIDHasPrefix", "repoIDHasSuffix", "repoIDEqualFold", "repoIDContainsFold", "name", "nameNEQ", "nameIn", "nameNotIn", "nameGT", "nameGTE", "nameLT", "nameLTE", "nameContains", "nameHasPrefix", "nameHasSuffix", "nameEqualFold", "nameContainsFold", "projecturl", "projecturlNEQ", "projecturlIn", "projecturlNotIn", "projecturlGT", "projecturlGTE", "projecturlLT", "projecturlLTE", "projecturlContains", "projecturlHasPrefix", "projecturlHasSuffix", "projecturlEqualFold", "projecturlContainsFold", "hasTenant", "hasTenantWith", "hasCreatedBy", "hasCreatedByWith", "hasModifiedBy", "hasModifiedByWith"}
+	fieldsInOrder := [...]string{"not", "and", "or", "id", "idNEQ", "idIn", "idNotIn", "idGT", "idGTE", "idLT", "idLTE", "createdAt", "createdAtNEQ", "createdAtIn", "createdAtNotIn", "createdAtGT", "createdAtGTE", "createdAtLT", "createdAtLTE", "updatedAt", "updatedAtNEQ", "updatedAtIn", "updatedAtNotIn", "updatedAtGT", "updatedAtGTE", "updatedAtLT", "updatedAtLTE", "repoID", "repoIDNEQ", "repoIDIn", "repoIDNotIn", "repoIDGT", "repoIDGTE", "repoIDLT", "repoIDLTE", "repoIDContains", "repoIDHasPrefix", "repoIDHasSuffix", "repoIDEqualFold", "repoIDContainsFold", "name", "nameNEQ", "nameIn", "nameNotIn", "nameGT", "nameGTE", "nameLT", "nameLTE", "nameContains", "nameHasPrefix", "nameHasSuffix", "nameEqualFold", "nameContainsFold", "projecturl", "projecturlNEQ", "projecturlIn", "projecturlNotIn", "projecturlGT", "projecturlGTE", "projecturlLT", "projecturlLTE", "projecturlContains", "projecturlHasPrefix", "projecturlHasSuffix", "projecturlEqualFold", "projecturlContainsFold", "hasTenant", "hasTenantWith", "hasCreatedBy", "hasCreatedByWith", "hasModifiedBy", "hasModifiedByWith", "hasPolicyDecisions", "hasPolicyDecisionsWith", "hasParent", "hasParentWith", "hasChildren", "hasChildrenWith"}
 	for _, k := range fieldsInOrder {
 		v, ok := asMap[k]
 		if !ok {
@@ -4571,6 +5440,54 @@ func (ec *executionContext) unmarshalInputProjectWhereInput(ctx context.Context,
 
 			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("hasModifiedByWith"))
 			it.HasModifiedByWith, err = ec.unmarshalOUserWhereInput2ᚕᚖgithubᚗcomᚋtestifysecᚋjudgeᚋjudgeᚑapiᚋentᚐUserWhereInputᚄ(ctx, v)
+			if err != nil {
+				return it, err
+			}
+		case "hasPolicyDecisions":
+			var err error
+
+			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("hasPolicyDecisions"))
+			it.HasPolicyDecisions, err = ec.unmarshalOBoolean2ᚖbool(ctx, v)
+			if err != nil {
+				return it, err
+			}
+		case "hasPolicyDecisionsWith":
+			var err error
+
+			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("hasPolicyDecisionsWith"))
+			it.HasPolicyDecisionsWith, err = ec.unmarshalOPolicyDecisionWhereInput2ᚕᚖgithubᚗcomᚋtestifysecᚋjudgeᚋjudgeᚑapiᚋentᚐPolicyDecisionWhereInputᚄ(ctx, v)
+			if err != nil {
+				return it, err
+			}
+		case "hasParent":
+			var err error
+
+			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("hasParent"))
+			it.HasParent, err = ec.unmarshalOBoolean2ᚖbool(ctx, v)
+			if err != nil {
+				return it, err
+			}
+		case "hasParentWith":
+			var err error
+
+			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("hasParentWith"))
+			it.HasParentWith, err = ec.unmarshalOProjectWhereInput2ᚕᚖgithubᚗcomᚋtestifysecᚋjudgeᚋjudgeᚑapiᚋentᚐProjectWhereInputᚄ(ctx, v)
+			if err != nil {
+				return it, err
+			}
+		case "hasChildren":
+			var err error
+
+			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("hasChildren"))
+			it.HasChildren, err = ec.unmarshalOBoolean2ᚖbool(ctx, v)
+			if err != nil {
+				return it, err
+			}
+		case "hasChildrenWith":
+			var err error
+
+			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("hasChildrenWith"))
+			it.HasChildrenWith, err = ec.unmarshalOProjectWhereInput2ᚕᚖgithubᚗcomᚋtestifysecᚋjudgeᚋjudgeᚑapiᚋentᚐProjectWhereInputᚄ(ctx, v)
 			if err != nil {
 				return it, err
 			}
@@ -5500,6 +6417,11 @@ func (ec *executionContext) _Node(ctx context.Context, sel ast.SelectionSet, obj
 	switch obj := (obj).(type) {
 	case nil:
 		return graphql.Null
+	case *ent.PolicyDecision:
+		if obj == nil {
+			return graphql.Null
+		}
+		return ec._PolicyDecision(ctx, sel, obj)
 	case *ent.Project:
 		if obj == nil {
 			return graphql.Null
@@ -5556,6 +6478,72 @@ func (ec *executionContext) _PageInfo(ctx context.Context, sel ast.SelectionSet,
 
 			out.Values[i] = ec._PageInfo_endCursor(ctx, field, obj)
 
+		default:
+			panic("unknown field " + strconv.Quote(field.Name))
+		}
+	}
+	out.Dispatch()
+	if invalids > 0 {
+		return graphql.Null
+	}
+	return out
+}
+
+var policyDecisionImplementors = []string{"PolicyDecision", "Node"}
+
+func (ec *executionContext) _PolicyDecision(ctx context.Context, sel ast.SelectionSet, obj *ent.PolicyDecision) graphql.Marshaler {
+	fields := graphql.CollectFields(ec.OperationContext, sel, policyDecisionImplementors)
+	out := graphql.NewFieldSet(fields)
+	var invalids uint32
+	for i, field := range fields {
+		switch field.Name {
+		case "__typename":
+			out.Values[i] = graphql.MarshalString("PolicyDecision")
+		case "id":
+
+			out.Values[i] = ec._PolicyDecision_id(ctx, field, obj)
+
+			if out.Values[i] == graphql.Null {
+				atomic.AddUint32(&invalids, 1)
+			}
+		case "subjectName":
+
+			out.Values[i] = ec._PolicyDecision_subjectName(ctx, field, obj)
+
+			if out.Values[i] == graphql.Null {
+				atomic.AddUint32(&invalids, 1)
+			}
+		case "digestID":
+
+			out.Values[i] = ec._PolicyDecision_digestID(ctx, field, obj)
+
+			if out.Values[i] == graphql.Null {
+				atomic.AddUint32(&invalids, 1)
+			}
+		case "decision":
+
+			out.Values[i] = ec._PolicyDecision_decision(ctx, field, obj)
+
+			if out.Values[i] == graphql.Null {
+				atomic.AddUint32(&invalids, 1)
+			}
+		case "project":
+			field := field
+
+			innerFunc := func(ctx context.Context) (res graphql.Marshaler) {
+				defer func() {
+					if r := recover(); r != nil {
+						ec.Error(ctx, ec.Recover(ctx, r))
+					}
+				}()
+				res = ec._PolicyDecision_project(ctx, field, obj)
+				return res
+			}
+
+			out.Concurrently(i, func() graphql.Marshaler {
+				return innerFunc(ctx)
+
+			})
 		default:
 			panic("unknown field " + strconv.Quote(field.Name))
 		}
@@ -5666,6 +6654,57 @@ func (ec *executionContext) _Project(ctx context.Context, sel ast.SelectionSet, 
 					}
 				}()
 				res = ec._Project_modifiedBy(ctx, field, obj)
+				return res
+			}
+
+			out.Concurrently(i, func() graphql.Marshaler {
+				return innerFunc(ctx)
+
+			})
+		case "policyDecisions":
+			field := field
+
+			innerFunc := func(ctx context.Context) (res graphql.Marshaler) {
+				defer func() {
+					if r := recover(); r != nil {
+						ec.Error(ctx, ec.Recover(ctx, r))
+					}
+				}()
+				res = ec._Project_policyDecisions(ctx, field, obj)
+				return res
+			}
+
+			out.Concurrently(i, func() graphql.Marshaler {
+				return innerFunc(ctx)
+
+			})
+		case "parent":
+			field := field
+
+			innerFunc := func(ctx context.Context) (res graphql.Marshaler) {
+				defer func() {
+					if r := recover(); r != nil {
+						ec.Error(ctx, ec.Recover(ctx, r))
+					}
+				}()
+				res = ec._Project_parent(ctx, field, obj)
+				return res
+			}
+
+			out.Concurrently(i, func() graphql.Marshaler {
+				return innerFunc(ctx)
+
+			})
+		case "children":
+			field := field
+
+			innerFunc := func(ctx context.Context) (res graphql.Marshaler) {
+				defer func() {
+					if r := recover(); r != nil {
+						ec.Error(ctx, ec.Recover(ctx, r))
+					}
+				}()
+				res = ec._Project_children(ctx, field, obj)
 				return res
 			}
 
@@ -6424,6 +7463,31 @@ func (ec *executionContext) marshalNNode2ᚕgithubᚗcomᚋtestifysecᚋjudgeᚋ
 	return ret
 }
 
+func (ec *executionContext) marshalNPolicyDecision2ᚖgithubᚗcomᚋtestifysecᚋjudgeᚋjudgeᚑapiᚋentᚐPolicyDecision(ctx context.Context, sel ast.SelectionSet, v *ent.PolicyDecision) graphql.Marshaler {
+	if v == nil {
+		if !graphql.HasFieldError(ctx, graphql.GetFieldContext(ctx)) {
+			ec.Errorf(ctx, "the requested element is null which the schema does not allow")
+		}
+		return graphql.Null
+	}
+	return ec._PolicyDecision(ctx, sel, v)
+}
+
+func (ec *executionContext) unmarshalNPolicyDecisionDecision2githubᚗcomᚋtestifysecᚋjudgeᚋjudgeᚑapiᚋentᚋpolicydecisionᚐDecision(ctx context.Context, v interface{}) (policydecision.Decision, error) {
+	var res policydecision.Decision
+	err := res.UnmarshalGQL(v)
+	return res, graphql.ErrorOnPath(ctx, err)
+}
+
+func (ec *executionContext) marshalNPolicyDecisionDecision2githubᚗcomᚋtestifysecᚋjudgeᚋjudgeᚑapiᚋentᚋpolicydecisionᚐDecision(ctx context.Context, sel ast.SelectionSet, v policydecision.Decision) graphql.Marshaler {
+	return v
+}
+
+func (ec *executionContext) unmarshalNPolicyDecisionWhereInput2ᚖgithubᚗcomᚋtestifysecᚋjudgeᚋjudgeᚑapiᚋentᚐPolicyDecisionWhereInput(ctx context.Context, v interface{}) (*ent.PolicyDecisionWhereInput, error) {
+	res, err := ec.unmarshalInputPolicyDecisionWhereInput(ctx, v)
+	return &res, graphql.ErrorOnPath(ctx, err)
+}
+
 func (ec *executionContext) marshalNProject2ᚕᚖgithubᚗcomᚋtestifysecᚋjudgeᚋjudgeᚑapiᚋentᚐProjectᚄ(ctx context.Context, sel ast.SelectionSet, v []*ent.Project) graphql.Marshaler {
 	ret := make(graphql.Array, len(v))
 	var wg sync.WaitGroup
@@ -6907,6 +7971,218 @@ func (ec *executionContext) marshalONode2githubᚗcomᚋtestifysecᚋjudgeᚋjud
 		return graphql.Null
 	}
 	return ec._Node(ctx, sel, v)
+}
+
+func (ec *executionContext) marshalOPolicyDecision2ᚕᚖgithubᚗcomᚋtestifysecᚋjudgeᚋjudgeᚑapiᚋentᚐPolicyDecisionᚄ(ctx context.Context, sel ast.SelectionSet, v []*ent.PolicyDecision) graphql.Marshaler {
+	if v == nil {
+		return graphql.Null
+	}
+	ret := make(graphql.Array, len(v))
+	var wg sync.WaitGroup
+	isLen1 := len(v) == 1
+	if !isLen1 {
+		wg.Add(len(v))
+	}
+	for i := range v {
+		i := i
+		fc := &graphql.FieldContext{
+			Index:  &i,
+			Result: &v[i],
+		}
+		ctx := graphql.WithFieldContext(ctx, fc)
+		f := func(i int) {
+			defer func() {
+				if r := recover(); r != nil {
+					ec.Error(ctx, ec.Recover(ctx, r))
+					ret = nil
+				}
+			}()
+			if !isLen1 {
+				defer wg.Done()
+			}
+			ret[i] = ec.marshalNPolicyDecision2ᚖgithubᚗcomᚋtestifysecᚋjudgeᚋjudgeᚑapiᚋentᚐPolicyDecision(ctx, sel, v[i])
+		}
+		if isLen1 {
+			f(i)
+		} else {
+			go f(i)
+		}
+
+	}
+	wg.Wait()
+
+	for _, e := range ret {
+		if e == graphql.Null {
+			return graphql.Null
+		}
+	}
+
+	return ret
+}
+
+func (ec *executionContext) unmarshalOPolicyDecisionDecision2ᚕgithubᚗcomᚋtestifysecᚋjudgeᚋjudgeᚑapiᚋentᚋpolicydecisionᚐDecisionᚄ(ctx context.Context, v interface{}) ([]policydecision.Decision, error) {
+	if v == nil {
+		return nil, nil
+	}
+	var vSlice []interface{}
+	if v != nil {
+		vSlice = graphql.CoerceList(v)
+	}
+	var err error
+	res := make([]policydecision.Decision, len(vSlice))
+	for i := range vSlice {
+		ctx := graphql.WithPathContext(ctx, graphql.NewPathWithIndex(i))
+		res[i], err = ec.unmarshalNPolicyDecisionDecision2githubᚗcomᚋtestifysecᚋjudgeᚋjudgeᚑapiᚋentᚋpolicydecisionᚐDecision(ctx, vSlice[i])
+		if err != nil {
+			return nil, err
+		}
+	}
+	return res, nil
+}
+
+func (ec *executionContext) marshalOPolicyDecisionDecision2ᚕgithubᚗcomᚋtestifysecᚋjudgeᚋjudgeᚑapiᚋentᚋpolicydecisionᚐDecisionᚄ(ctx context.Context, sel ast.SelectionSet, v []policydecision.Decision) graphql.Marshaler {
+	if v == nil {
+		return graphql.Null
+	}
+	ret := make(graphql.Array, len(v))
+	var wg sync.WaitGroup
+	isLen1 := len(v) == 1
+	if !isLen1 {
+		wg.Add(len(v))
+	}
+	for i := range v {
+		i := i
+		fc := &graphql.FieldContext{
+			Index:  &i,
+			Result: &v[i],
+		}
+		ctx := graphql.WithFieldContext(ctx, fc)
+		f := func(i int) {
+			defer func() {
+				if r := recover(); r != nil {
+					ec.Error(ctx, ec.Recover(ctx, r))
+					ret = nil
+				}
+			}()
+			if !isLen1 {
+				defer wg.Done()
+			}
+			ret[i] = ec.marshalNPolicyDecisionDecision2githubᚗcomᚋtestifysecᚋjudgeᚋjudgeᚑapiᚋentᚋpolicydecisionᚐDecision(ctx, sel, v[i])
+		}
+		if isLen1 {
+			f(i)
+		} else {
+			go f(i)
+		}
+
+	}
+	wg.Wait()
+
+	for _, e := range ret {
+		if e == graphql.Null {
+			return graphql.Null
+		}
+	}
+
+	return ret
+}
+
+func (ec *executionContext) unmarshalOPolicyDecisionDecision2ᚖgithubᚗcomᚋtestifysecᚋjudgeᚋjudgeᚑapiᚋentᚋpolicydecisionᚐDecision(ctx context.Context, v interface{}) (*policydecision.Decision, error) {
+	if v == nil {
+		return nil, nil
+	}
+	var res = new(policydecision.Decision)
+	err := res.UnmarshalGQL(v)
+	return res, graphql.ErrorOnPath(ctx, err)
+}
+
+func (ec *executionContext) marshalOPolicyDecisionDecision2ᚖgithubᚗcomᚋtestifysecᚋjudgeᚋjudgeᚑapiᚋentᚋpolicydecisionᚐDecision(ctx context.Context, sel ast.SelectionSet, v *policydecision.Decision) graphql.Marshaler {
+	if v == nil {
+		return graphql.Null
+	}
+	return v
+}
+
+func (ec *executionContext) unmarshalOPolicyDecisionWhereInput2ᚕᚖgithubᚗcomᚋtestifysecᚋjudgeᚋjudgeᚑapiᚋentᚐPolicyDecisionWhereInputᚄ(ctx context.Context, v interface{}) ([]*ent.PolicyDecisionWhereInput, error) {
+	if v == nil {
+		return nil, nil
+	}
+	var vSlice []interface{}
+	if v != nil {
+		vSlice = graphql.CoerceList(v)
+	}
+	var err error
+	res := make([]*ent.PolicyDecisionWhereInput, len(vSlice))
+	for i := range vSlice {
+		ctx := graphql.WithPathContext(ctx, graphql.NewPathWithIndex(i))
+		res[i], err = ec.unmarshalNPolicyDecisionWhereInput2ᚖgithubᚗcomᚋtestifysecᚋjudgeᚋjudgeᚑapiᚋentᚐPolicyDecisionWhereInput(ctx, vSlice[i])
+		if err != nil {
+			return nil, err
+		}
+	}
+	return res, nil
+}
+
+func (ec *executionContext) unmarshalOPolicyDecisionWhereInput2ᚖgithubᚗcomᚋtestifysecᚋjudgeᚋjudgeᚑapiᚋentᚐPolicyDecisionWhereInput(ctx context.Context, v interface{}) (*ent.PolicyDecisionWhereInput, error) {
+	if v == nil {
+		return nil, nil
+	}
+	res, err := ec.unmarshalInputPolicyDecisionWhereInput(ctx, v)
+	return &res, graphql.ErrorOnPath(ctx, err)
+}
+
+func (ec *executionContext) marshalOProject2ᚕᚖgithubᚗcomᚋtestifysecᚋjudgeᚋjudgeᚑapiᚋentᚐProjectᚄ(ctx context.Context, sel ast.SelectionSet, v []*ent.Project) graphql.Marshaler {
+	if v == nil {
+		return graphql.Null
+	}
+	ret := make(graphql.Array, len(v))
+	var wg sync.WaitGroup
+	isLen1 := len(v) == 1
+	if !isLen1 {
+		wg.Add(len(v))
+	}
+	for i := range v {
+		i := i
+		fc := &graphql.FieldContext{
+			Index:  &i,
+			Result: &v[i],
+		}
+		ctx := graphql.WithFieldContext(ctx, fc)
+		f := func(i int) {
+			defer func() {
+				if r := recover(); r != nil {
+					ec.Error(ctx, ec.Recover(ctx, r))
+					ret = nil
+				}
+			}()
+			if !isLen1 {
+				defer wg.Done()
+			}
+			ret[i] = ec.marshalNProject2ᚖgithubᚗcomᚋtestifysecᚋjudgeᚋjudgeᚑapiᚋentᚐProject(ctx, sel, v[i])
+		}
+		if isLen1 {
+			f(i)
+		} else {
+			go f(i)
+		}
+
+	}
+	wg.Wait()
+
+	for _, e := range ret {
+		if e == graphql.Null {
+			return graphql.Null
+		}
+	}
+
+	return ret
+}
+
+func (ec *executionContext) marshalOProject2ᚖgithubᚗcomᚋtestifysecᚋjudgeᚋjudgeᚑapiᚋentᚐProject(ctx context.Context, sel ast.SelectionSet, v *ent.Project) graphql.Marshaler {
+	if v == nil {
+		return graphql.Null
+	}
+	return ec._Project(ctx, sel, v)
 }
 
 func (ec *executionContext) unmarshalOProjectWhereInput2ᚕᚖgithubᚗcomᚋtestifysecᚋjudgeᚋjudgeᚑapiᚋentᚐProjectWhereInputᚄ(ctx context.Context, v interface{}) ([]*ent.ProjectWhereInput, error) {

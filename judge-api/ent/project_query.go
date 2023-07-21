@@ -4,6 +4,7 @@ package ent
 
 import (
 	"context"
+	"database/sql/driver"
 	"errors"
 	"fmt"
 	"math"
@@ -12,6 +13,7 @@ import (
 	"entgo.io/ent/dialect/sql/sqlgraph"
 	"entgo.io/ent/schema/field"
 	"github.com/google/uuid"
+	"github.com/testifysec/judge/judge-api/ent/policydecision"
 	"github.com/testifysec/judge/judge-api/ent/predicate"
 	"github.com/testifysec/judge/judge-api/ent/project"
 	"github.com/testifysec/judge/judge-api/ent/tenant"
@@ -21,16 +23,21 @@ import (
 // ProjectQuery is the builder for querying Project entities.
 type ProjectQuery struct {
 	config
-	ctx            *QueryContext
-	order          []OrderFunc
-	inters         []Interceptor
-	predicates     []predicate.Project
-	withTenant     *TenantQuery
-	withCreatedBy  *UserQuery
-	withModifiedBy *UserQuery
-	withFKs        bool
-	modifiers      []func(*sql.Selector)
-	loadTotal      []func(context.Context, []*Project) error
+	ctx                      *QueryContext
+	order                    []OrderFunc
+	inters                   []Interceptor
+	predicates               []predicate.Project
+	withTenant               *TenantQuery
+	withCreatedBy            *UserQuery
+	withModifiedBy           *UserQuery
+	withPolicyDecisions      *PolicyDecisionQuery
+	withParent               *ProjectQuery
+	withChildren             *ProjectQuery
+	withFKs                  bool
+	modifiers                []func(*sql.Selector)
+	loadTotal                []func(context.Context, []*Project) error
+	withNamedPolicyDecisions map[string]*PolicyDecisionQuery
+	withNamedChildren        map[string]*ProjectQuery
 	// intermediate query (i.e. traversal path).
 	sql  *sql.Selector
 	path func(context.Context) (*sql.Selector, error)
@@ -126,6 +133,72 @@ func (pq *ProjectQuery) QueryModifiedBy() *UserQuery {
 			sqlgraph.From(project.Table, project.FieldID, selector),
 			sqlgraph.To(user.Table, user.FieldID),
 			sqlgraph.Edge(sqlgraph.M2O, false, project.ModifiedByTable, project.ModifiedByColumn),
+		)
+		fromU = sqlgraph.SetNeighbors(pq.driver.Dialect(), step)
+		return fromU, nil
+	}
+	return query
+}
+
+// QueryPolicyDecisions chains the current query on the "policy_decisions" edge.
+func (pq *ProjectQuery) QueryPolicyDecisions() *PolicyDecisionQuery {
+	query := (&PolicyDecisionClient{config: pq.config}).Query()
+	query.path = func(ctx context.Context) (fromU *sql.Selector, err error) {
+		if err := pq.prepareQuery(ctx); err != nil {
+			return nil, err
+		}
+		selector := pq.sqlQuery(ctx)
+		if err := selector.Err(); err != nil {
+			return nil, err
+		}
+		step := sqlgraph.NewStep(
+			sqlgraph.From(project.Table, project.FieldID, selector),
+			sqlgraph.To(policydecision.Table, policydecision.FieldID),
+			sqlgraph.Edge(sqlgraph.M2M, false, project.PolicyDecisionsTable, project.PolicyDecisionsPrimaryKey...),
+		)
+		fromU = sqlgraph.SetNeighbors(pq.driver.Dialect(), step)
+		return fromU, nil
+	}
+	return query
+}
+
+// QueryParent chains the current query on the "parent" edge.
+func (pq *ProjectQuery) QueryParent() *ProjectQuery {
+	query := (&ProjectClient{config: pq.config}).Query()
+	query.path = func(ctx context.Context) (fromU *sql.Selector, err error) {
+		if err := pq.prepareQuery(ctx); err != nil {
+			return nil, err
+		}
+		selector := pq.sqlQuery(ctx)
+		if err := selector.Err(); err != nil {
+			return nil, err
+		}
+		step := sqlgraph.NewStep(
+			sqlgraph.From(project.Table, project.FieldID, selector),
+			sqlgraph.To(project.Table, project.FieldID),
+			sqlgraph.Edge(sqlgraph.M2O, true, project.ParentTable, project.ParentColumn),
+		)
+		fromU = sqlgraph.SetNeighbors(pq.driver.Dialect(), step)
+		return fromU, nil
+	}
+	return query
+}
+
+// QueryChildren chains the current query on the "children" edge.
+func (pq *ProjectQuery) QueryChildren() *ProjectQuery {
+	query := (&ProjectClient{config: pq.config}).Query()
+	query.path = func(ctx context.Context) (fromU *sql.Selector, err error) {
+		if err := pq.prepareQuery(ctx); err != nil {
+			return nil, err
+		}
+		selector := pq.sqlQuery(ctx)
+		if err := selector.Err(); err != nil {
+			return nil, err
+		}
+		step := sqlgraph.NewStep(
+			sqlgraph.From(project.Table, project.FieldID, selector),
+			sqlgraph.To(project.Table, project.FieldID),
+			sqlgraph.Edge(sqlgraph.O2M, false, project.ChildrenTable, project.ChildrenColumn),
 		)
 		fromU = sqlgraph.SetNeighbors(pq.driver.Dialect(), step)
 		return fromU, nil
@@ -320,14 +393,17 @@ func (pq *ProjectQuery) Clone() *ProjectQuery {
 		return nil
 	}
 	return &ProjectQuery{
-		config:         pq.config,
-		ctx:            pq.ctx.Clone(),
-		order:          append([]OrderFunc{}, pq.order...),
-		inters:         append([]Interceptor{}, pq.inters...),
-		predicates:     append([]predicate.Project{}, pq.predicates...),
-		withTenant:     pq.withTenant.Clone(),
-		withCreatedBy:  pq.withCreatedBy.Clone(),
-		withModifiedBy: pq.withModifiedBy.Clone(),
+		config:              pq.config,
+		ctx:                 pq.ctx.Clone(),
+		order:               append([]OrderFunc{}, pq.order...),
+		inters:              append([]Interceptor{}, pq.inters...),
+		predicates:          append([]predicate.Project{}, pq.predicates...),
+		withTenant:          pq.withTenant.Clone(),
+		withCreatedBy:       pq.withCreatedBy.Clone(),
+		withModifiedBy:      pq.withModifiedBy.Clone(),
+		withPolicyDecisions: pq.withPolicyDecisions.Clone(),
+		withParent:          pq.withParent.Clone(),
+		withChildren:        pq.withChildren.Clone(),
 		// clone intermediate query.
 		sql:  pq.sql.Clone(),
 		path: pq.path,
@@ -364,6 +440,39 @@ func (pq *ProjectQuery) WithModifiedBy(opts ...func(*UserQuery)) *ProjectQuery {
 		opt(query)
 	}
 	pq.withModifiedBy = query
+	return pq
+}
+
+// WithPolicyDecisions tells the query-builder to eager-load the nodes that are connected to
+// the "policy_decisions" edge. The optional arguments are used to configure the query builder of the edge.
+func (pq *ProjectQuery) WithPolicyDecisions(opts ...func(*PolicyDecisionQuery)) *ProjectQuery {
+	query := (&PolicyDecisionClient{config: pq.config}).Query()
+	for _, opt := range opts {
+		opt(query)
+	}
+	pq.withPolicyDecisions = query
+	return pq
+}
+
+// WithParent tells the query-builder to eager-load the nodes that are connected to
+// the "parent" edge. The optional arguments are used to configure the query builder of the edge.
+func (pq *ProjectQuery) WithParent(opts ...func(*ProjectQuery)) *ProjectQuery {
+	query := (&ProjectClient{config: pq.config}).Query()
+	for _, opt := range opts {
+		opt(query)
+	}
+	pq.withParent = query
+	return pq
+}
+
+// WithChildren tells the query-builder to eager-load the nodes that are connected to
+// the "children" edge. The optional arguments are used to configure the query builder of the edge.
+func (pq *ProjectQuery) WithChildren(opts ...func(*ProjectQuery)) *ProjectQuery {
+	query := (&ProjectClient{config: pq.config}).Query()
+	for _, opt := range opts {
+		opt(query)
+	}
+	pq.withChildren = query
 	return pq
 }
 
@@ -452,13 +561,16 @@ func (pq *ProjectQuery) sqlAll(ctx context.Context, hooks ...queryHook) ([]*Proj
 		nodes       = []*Project{}
 		withFKs     = pq.withFKs
 		_spec       = pq.querySpec()
-		loadedTypes = [3]bool{
+		loadedTypes = [6]bool{
 			pq.withTenant != nil,
 			pq.withCreatedBy != nil,
 			pq.withModifiedBy != nil,
+			pq.withPolicyDecisions != nil,
+			pq.withParent != nil,
+			pq.withChildren != nil,
 		}
 	)
-	if pq.withTenant != nil || pq.withCreatedBy != nil || pq.withModifiedBy != nil {
+	if pq.withTenant != nil || pq.withCreatedBy != nil || pq.withModifiedBy != nil || pq.withParent != nil {
 		withFKs = true
 	}
 	if withFKs {
@@ -500,6 +612,40 @@ func (pq *ProjectQuery) sqlAll(ctx context.Context, hooks ...queryHook) ([]*Proj
 	if query := pq.withModifiedBy; query != nil {
 		if err := pq.loadModifiedBy(ctx, query, nodes, nil,
 			func(n *Project, e *User) { n.Edges.ModifiedBy = e }); err != nil {
+			return nil, err
+		}
+	}
+	if query := pq.withPolicyDecisions; query != nil {
+		if err := pq.loadPolicyDecisions(ctx, query, nodes,
+			func(n *Project) { n.Edges.PolicyDecisions = []*PolicyDecision{} },
+			func(n *Project, e *PolicyDecision) { n.Edges.PolicyDecisions = append(n.Edges.PolicyDecisions, e) }); err != nil {
+			return nil, err
+		}
+	}
+	if query := pq.withParent; query != nil {
+		if err := pq.loadParent(ctx, query, nodes, nil,
+			func(n *Project, e *Project) { n.Edges.Parent = e }); err != nil {
+			return nil, err
+		}
+	}
+	if query := pq.withChildren; query != nil {
+		if err := pq.loadChildren(ctx, query, nodes,
+			func(n *Project) { n.Edges.Children = []*Project{} },
+			func(n *Project, e *Project) { n.Edges.Children = append(n.Edges.Children, e) }); err != nil {
+			return nil, err
+		}
+	}
+	for name, query := range pq.withNamedPolicyDecisions {
+		if err := pq.loadPolicyDecisions(ctx, query, nodes,
+			func(n *Project) { n.appendNamedPolicyDecisions(name) },
+			func(n *Project, e *PolicyDecision) { n.appendNamedPolicyDecisions(name, e) }); err != nil {
+			return nil, err
+		}
+	}
+	for name, query := range pq.withNamedChildren {
+		if err := pq.loadChildren(ctx, query, nodes,
+			func(n *Project) { n.appendNamedChildren(name) },
+			func(n *Project, e *Project) { n.appendNamedChildren(name, e) }); err != nil {
 			return nil, err
 		}
 	}
@@ -607,6 +753,130 @@ func (pq *ProjectQuery) loadModifiedBy(ctx context.Context, query *UserQuery, no
 	}
 	return nil
 }
+func (pq *ProjectQuery) loadPolicyDecisions(ctx context.Context, query *PolicyDecisionQuery, nodes []*Project, init func(*Project), assign func(*Project, *PolicyDecision)) error {
+	edgeIDs := make([]driver.Value, len(nodes))
+	byID := make(map[uuid.UUID]*Project)
+	nids := make(map[uuid.UUID]map[*Project]struct{})
+	for i, node := range nodes {
+		edgeIDs[i] = node.ID
+		byID[node.ID] = node
+		if init != nil {
+			init(node)
+		}
+	}
+	query.Where(func(s *sql.Selector) {
+		joinT := sql.Table(project.PolicyDecisionsTable)
+		s.Join(joinT).On(s.C(policydecision.FieldID), joinT.C(project.PolicyDecisionsPrimaryKey[1]))
+		s.Where(sql.InValues(joinT.C(project.PolicyDecisionsPrimaryKey[0]), edgeIDs...))
+		columns := s.SelectedColumns()
+		s.Select(joinT.C(project.PolicyDecisionsPrimaryKey[0]))
+		s.AppendSelect(columns...)
+		s.SetDistinct(false)
+	})
+	if err := query.prepareQuery(ctx); err != nil {
+		return err
+	}
+	qr := QuerierFunc(func(ctx context.Context, q Query) (Value, error) {
+		return query.sqlAll(ctx, func(_ context.Context, spec *sqlgraph.QuerySpec) {
+			assign := spec.Assign
+			values := spec.ScanValues
+			spec.ScanValues = func(columns []string) ([]any, error) {
+				values, err := values(columns[1:])
+				if err != nil {
+					return nil, err
+				}
+				return append([]any{new(uuid.UUID)}, values...), nil
+			}
+			spec.Assign = func(columns []string, values []any) error {
+				outValue := *values[0].(*uuid.UUID)
+				inValue := *values[1].(*uuid.UUID)
+				if nids[inValue] == nil {
+					nids[inValue] = map[*Project]struct{}{byID[outValue]: {}}
+					return assign(columns[1:], values[1:])
+				}
+				nids[inValue][byID[outValue]] = struct{}{}
+				return nil
+			}
+		})
+	})
+	neighbors, err := withInterceptors[[]*PolicyDecision](ctx, query, qr, query.inters)
+	if err != nil {
+		return err
+	}
+	for _, n := range neighbors {
+		nodes, ok := nids[n.ID]
+		if !ok {
+			return fmt.Errorf(`unexpected "policy_decisions" node returned %v`, n.ID)
+		}
+		for kn := range nodes {
+			assign(kn, n)
+		}
+	}
+	return nil
+}
+func (pq *ProjectQuery) loadParent(ctx context.Context, query *ProjectQuery, nodes []*Project, init func(*Project), assign func(*Project, *Project)) error {
+	ids := make([]uuid.UUID, 0, len(nodes))
+	nodeids := make(map[uuid.UUID][]*Project)
+	for i := range nodes {
+		if nodes[i].project_children == nil {
+			continue
+		}
+		fk := *nodes[i].project_children
+		if _, ok := nodeids[fk]; !ok {
+			ids = append(ids, fk)
+		}
+		nodeids[fk] = append(nodeids[fk], nodes[i])
+	}
+	if len(ids) == 0 {
+		return nil
+	}
+	query.Where(project.IDIn(ids...))
+	neighbors, err := query.All(ctx)
+	if err != nil {
+		return err
+	}
+	for _, n := range neighbors {
+		nodes, ok := nodeids[n.ID]
+		if !ok {
+			return fmt.Errorf(`unexpected foreign-key "project_children" returned %v`, n.ID)
+		}
+		for i := range nodes {
+			assign(nodes[i], n)
+		}
+	}
+	return nil
+}
+func (pq *ProjectQuery) loadChildren(ctx context.Context, query *ProjectQuery, nodes []*Project, init func(*Project), assign func(*Project, *Project)) error {
+	fks := make([]driver.Value, 0, len(nodes))
+	nodeids := make(map[uuid.UUID]*Project)
+	for i := range nodes {
+		fks = append(fks, nodes[i].ID)
+		nodeids[nodes[i].ID] = nodes[i]
+		if init != nil {
+			init(nodes[i])
+		}
+	}
+	query.withFKs = true
+	query.Where(predicate.Project(func(s *sql.Selector) {
+		s.Where(sql.InValues(project.ChildrenColumn, fks...))
+	}))
+	neighbors, err := query.All(ctx)
+	if err != nil {
+		return err
+	}
+	for _, n := range neighbors {
+		fk := n.project_children
+		if fk == nil {
+			return fmt.Errorf(`foreign-key "project_children" is nil for node %v`, n.ID)
+		}
+		node, ok := nodeids[*fk]
+		if !ok {
+			return fmt.Errorf(`unexpected foreign-key "project_children" returned %v for node %v`, *fk, n.ID)
+		}
+		assign(node, n)
+	}
+	return nil
+}
 
 func (pq *ProjectQuery) sqlCount(ctx context.Context) (int, error) {
 	_spec := pq.querySpec()
@@ -690,6 +960,34 @@ func (pq *ProjectQuery) sqlQuery(ctx context.Context) *sql.Selector {
 		selector.Limit(*limit)
 	}
 	return selector
+}
+
+// WithNamedPolicyDecisions tells the query-builder to eager-load the nodes that are connected to the "policy_decisions"
+// edge with the given name. The optional arguments are used to configure the query builder of the edge.
+func (pq *ProjectQuery) WithNamedPolicyDecisions(name string, opts ...func(*PolicyDecisionQuery)) *ProjectQuery {
+	query := (&PolicyDecisionClient{config: pq.config}).Query()
+	for _, opt := range opts {
+		opt(query)
+	}
+	if pq.withNamedPolicyDecisions == nil {
+		pq.withNamedPolicyDecisions = make(map[string]*PolicyDecisionQuery)
+	}
+	pq.withNamedPolicyDecisions[name] = query
+	return pq
+}
+
+// WithNamedChildren tells the query-builder to eager-load the nodes that are connected to the "children"
+// edge with the given name. The optional arguments are used to configure the query builder of the edge.
+func (pq *ProjectQuery) WithNamedChildren(name string, opts ...func(*ProjectQuery)) *ProjectQuery {
+	query := (&ProjectClient{config: pq.config}).Query()
+	for _, opt := range opts {
+		opt(query)
+	}
+	if pq.withNamedChildren == nil {
+		pq.withNamedChildren = make(map[string]*ProjectQuery)
+	}
+	pq.withNamedChildren[name] = query
+	return pq
 }
 
 // ProjectGroupBy is the group-by builder for Project entities.

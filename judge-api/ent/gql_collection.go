@@ -10,6 +10,68 @@ import (
 )
 
 // CollectFields tells the query-builder to eagerly load connected nodes by resolver context.
+func (pd *PolicyDecisionQuery) CollectFields(ctx context.Context, satisfies ...string) (*PolicyDecisionQuery, error) {
+	fc := graphql.GetFieldContext(ctx)
+	if fc == nil {
+		return pd, nil
+	}
+	if err := pd.collectField(ctx, graphql.GetOperationContext(ctx), fc.Field, nil, satisfies...); err != nil {
+		return nil, err
+	}
+	return pd, nil
+}
+
+func (pd *PolicyDecisionQuery) collectField(ctx context.Context, op *graphql.OperationContext, field graphql.CollectedField, path []string, satisfies ...string) error {
+	path = append([]string(nil), path...)
+	for _, field := range graphql.CollectFields(op, field.Selections, satisfies) {
+		switch field.Name {
+		case "project":
+			var (
+				alias = field.Alias
+				path  = append(path, alias)
+				query = (&ProjectClient{config: pd.config}).Query()
+			)
+			if err := query.collectField(ctx, op, field, path, satisfies...); err != nil {
+				return err
+			}
+			pd.WithNamedProject(alias, func(wq *ProjectQuery) {
+				*wq = *query
+			})
+		}
+	}
+	return nil
+}
+
+type policydecisionPaginateArgs struct {
+	first, last   *int
+	after, before *Cursor
+	opts          []PolicyDecisionPaginateOption
+}
+
+func newPolicyDecisionPaginateArgs(rv map[string]interface{}) *policydecisionPaginateArgs {
+	args := &policydecisionPaginateArgs{}
+	if rv == nil {
+		return args
+	}
+	if v := rv[firstField]; v != nil {
+		args.first = v.(*int)
+	}
+	if v := rv[lastField]; v != nil {
+		args.last = v.(*int)
+	}
+	if v := rv[afterField]; v != nil {
+		args.after = v.(*Cursor)
+	}
+	if v := rv[beforeField]; v != nil {
+		args.before = v.(*Cursor)
+	}
+	if v, ok := rv[whereField].(*PolicyDecisionWhereInput); ok {
+		args.opts = append(args.opts, WithPolicyDecisionFilter(v.Filter))
+	}
+	return args
+}
+
+// CollectFields tells the query-builder to eagerly load connected nodes by resolver context.
 func (pr *ProjectQuery) CollectFields(ctx context.Context, satisfies ...string) (*ProjectQuery, error) {
 	fc := graphql.GetFieldContext(ctx)
 	if fc == nil {
@@ -55,6 +117,40 @@ func (pr *ProjectQuery) collectField(ctx context.Context, op *graphql.OperationC
 				return err
 			}
 			pr.withModifiedBy = query
+		case "policyDecisions":
+			var (
+				alias = field.Alias
+				path  = append(path, alias)
+				query = (&PolicyDecisionClient{config: pr.config}).Query()
+			)
+			if err := query.collectField(ctx, op, field, path, satisfies...); err != nil {
+				return err
+			}
+			pr.WithNamedPolicyDecisions(alias, func(wq *PolicyDecisionQuery) {
+				*wq = *query
+			})
+		case "parent":
+			var (
+				alias = field.Alias
+				path  = append(path, alias)
+				query = (&ProjectClient{config: pr.config}).Query()
+			)
+			if err := query.collectField(ctx, op, field, path, satisfies...); err != nil {
+				return err
+			}
+			pr.withParent = query
+		case "children":
+			var (
+				alias = field.Alias
+				path  = append(path, alias)
+				query = (&ProjectClient{config: pr.config}).Query()
+			)
+			if err := query.collectField(ctx, op, field, path, satisfies...); err != nil {
+				return err
+			}
+			pr.WithNamedChildren(alias, func(wq *ProjectQuery) {
+				*wq = *query
+			})
 		}
 	}
 	return nil

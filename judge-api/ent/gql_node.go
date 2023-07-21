@@ -10,6 +10,7 @@ import (
 	"github.com/99designs/gqlgen/graphql"
 	"github.com/google/uuid"
 	"github.com/hashicorp/go-multierror"
+	"github.com/testifysec/judge/judge-api/ent/policydecision"
 	"github.com/testifysec/judge/judge-api/ent/project"
 	"github.com/testifysec/judge/judge-api/ent/tenant"
 	"github.com/testifysec/judge/judge-api/ent/user"
@@ -19,6 +20,9 @@ import (
 type Noder interface {
 	IsNode()
 }
+
+// IsNode implements the Node interface check for GQLGen.
+func (n *PolicyDecision) IsNode() {}
 
 // IsNode implements the Node interface check for GQLGen.
 func (n *Project) IsNode() {}
@@ -87,6 +91,18 @@ func (c *Client) Noder(ctx context.Context, id uuid.UUID, opts ...NodeOption) (_
 
 func (c *Client) noder(ctx context.Context, table string, id uuid.UUID) (Noder, error) {
 	switch table {
+	case policydecision.Table:
+		query := c.PolicyDecision.Query().
+			Where(policydecision.ID(id))
+		query, err := query.CollectFields(ctx, "PolicyDecision")
+		if err != nil {
+			return nil, err
+		}
+		n, err := query.Only(ctx)
+		if err != nil {
+			return nil, err
+		}
+		return n, nil
 	case project.Table:
 		query := c.Project.Query().
 			Where(project.ID(id))
@@ -196,6 +212,22 @@ func (c *Client) noders(ctx context.Context, table string, ids []uuid.UUID) ([]N
 		idmap[id] = append(idmap[id], &noders[i])
 	}
 	switch table {
+	case policydecision.Table:
+		query := c.PolicyDecision.Query().
+			Where(policydecision.IDIn(ids...))
+		query, err := query.CollectFields(ctx, "PolicyDecision")
+		if err != nil {
+			return nil, err
+		}
+		nodes, err := query.All(ctx)
+		if err != nil {
+			return nil, err
+		}
+		for _, node := range nodes {
+			for _, noder := range idmap[node.ID] {
+				*noder = node
+			}
+		}
 	case project.Table:
 		query := c.Project.Query().
 			Where(project.IDIn(ids...))

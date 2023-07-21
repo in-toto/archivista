@@ -15,6 +15,7 @@ import (
 	"entgo.io/ent/dialect"
 	"entgo.io/ent/dialect/sql"
 	"entgo.io/ent/dialect/sql/sqlgraph"
+	"github.com/testifysec/judge/judge-api/ent/policydecision"
 	"github.com/testifysec/judge/judge-api/ent/project"
 	"github.com/testifysec/judge/judge-api/ent/tenant"
 	"github.com/testifysec/judge/judge-api/ent/user"
@@ -26,6 +27,8 @@ type Client struct {
 	config
 	// Schema is the client for creating, migrating and dropping schema.
 	Schema *migrate.Schema
+	// PolicyDecision is the client for interacting with the PolicyDecision builders.
+	PolicyDecision *PolicyDecisionClient
 	// Project is the client for interacting with the Project builders.
 	Project *ProjectClient
 	// Tenant is the client for interacting with the Tenant builders.
@@ -45,6 +48,7 @@ func NewClient(opts ...Option) *Client {
 
 func (c *Client) init() {
 	c.Schema = migrate.NewSchema(c.driver)
+	c.PolicyDecision = NewPolicyDecisionClient(c.config)
 	c.Project = NewProjectClient(c.config)
 	c.Tenant = NewTenantClient(c.config)
 	c.User = NewUserClient(c.config)
@@ -136,11 +140,12 @@ func (c *Client) Tx(ctx context.Context) (*Tx, error) {
 	cfg := c.config
 	cfg.driver = tx
 	return &Tx{
-		ctx:     ctx,
-		config:  cfg,
-		Project: NewProjectClient(cfg),
-		Tenant:  NewTenantClient(cfg),
-		User:    NewUserClient(cfg),
+		ctx:            ctx,
+		config:         cfg,
+		PolicyDecision: NewPolicyDecisionClient(cfg),
+		Project:        NewProjectClient(cfg),
+		Tenant:         NewTenantClient(cfg),
+		User:           NewUserClient(cfg),
 	}, nil
 }
 
@@ -158,18 +163,19 @@ func (c *Client) BeginTx(ctx context.Context, opts *sql.TxOptions) (*Tx, error) 
 	cfg := c.config
 	cfg.driver = &txDriver{tx: tx, drv: c.driver}
 	return &Tx{
-		ctx:     ctx,
-		config:  cfg,
-		Project: NewProjectClient(cfg),
-		Tenant:  NewTenantClient(cfg),
-		User:    NewUserClient(cfg),
+		ctx:            ctx,
+		config:         cfg,
+		PolicyDecision: NewPolicyDecisionClient(cfg),
+		Project:        NewProjectClient(cfg),
+		Tenant:         NewTenantClient(cfg),
+		User:           NewUserClient(cfg),
 	}, nil
 }
 
 // Debug returns a new debug-client. It's used to get verbose logging on specific operations.
 //
 //	client.Debug().
-//		Project.
+//		PolicyDecision.
 //		Query().
 //		Count(ctx)
 func (c *Client) Debug() *Client {
@@ -191,6 +197,7 @@ func (c *Client) Close() error {
 // Use adds the mutation hooks to all the entity clients.
 // In order to add hooks to a specific client, call: `client.Node.Use(...)`.
 func (c *Client) Use(hooks ...Hook) {
+	c.PolicyDecision.Use(hooks...)
 	c.Project.Use(hooks...)
 	c.Tenant.Use(hooks...)
 	c.User.Use(hooks...)
@@ -199,6 +206,7 @@ func (c *Client) Use(hooks ...Hook) {
 // Intercept adds the query interceptors to all the entity clients.
 // In order to add interceptors to a specific client, call: `client.Node.Intercept(...)`.
 func (c *Client) Intercept(interceptors ...Interceptor) {
+	c.PolicyDecision.Intercept(interceptors...)
 	c.Project.Intercept(interceptors...)
 	c.Tenant.Intercept(interceptors...)
 	c.User.Intercept(interceptors...)
@@ -207,6 +215,8 @@ func (c *Client) Intercept(interceptors ...Interceptor) {
 // Mutate implements the ent.Mutator interface.
 func (c *Client) Mutate(ctx context.Context, m Mutation) (Value, error) {
 	switch m := m.(type) {
+	case *PolicyDecisionMutation:
+		return c.PolicyDecision.mutate(ctx, m)
 	case *ProjectMutation:
 		return c.Project.mutate(ctx, m)
 	case *TenantMutation:
@@ -215,6 +225,140 @@ func (c *Client) Mutate(ctx context.Context, m Mutation) (Value, error) {
 		return c.User.mutate(ctx, m)
 	default:
 		return nil, fmt.Errorf("ent: unknown mutation type %T", m)
+	}
+}
+
+// PolicyDecisionClient is a client for the PolicyDecision schema.
+type PolicyDecisionClient struct {
+	config
+}
+
+// NewPolicyDecisionClient returns a client for the PolicyDecision from the given config.
+func NewPolicyDecisionClient(c config) *PolicyDecisionClient {
+	return &PolicyDecisionClient{config: c}
+}
+
+// Use adds a list of mutation hooks to the hooks stack.
+// A call to `Use(f, g, h)` equals to `policydecision.Hooks(f(g(h())))`.
+func (c *PolicyDecisionClient) Use(hooks ...Hook) {
+	c.hooks.PolicyDecision = append(c.hooks.PolicyDecision, hooks...)
+}
+
+// Intercept adds a list of query interceptors to the interceptors stack.
+// A call to `Intercept(f, g, h)` equals to `policydecision.Intercept(f(g(h())))`.
+func (c *PolicyDecisionClient) Intercept(interceptors ...Interceptor) {
+	c.inters.PolicyDecision = append(c.inters.PolicyDecision, interceptors...)
+}
+
+// Create returns a builder for creating a PolicyDecision entity.
+func (c *PolicyDecisionClient) Create() *PolicyDecisionCreate {
+	mutation := newPolicyDecisionMutation(c.config, OpCreate)
+	return &PolicyDecisionCreate{config: c.config, hooks: c.Hooks(), mutation: mutation}
+}
+
+// CreateBulk returns a builder for creating a bulk of PolicyDecision entities.
+func (c *PolicyDecisionClient) CreateBulk(builders ...*PolicyDecisionCreate) *PolicyDecisionCreateBulk {
+	return &PolicyDecisionCreateBulk{config: c.config, builders: builders}
+}
+
+// Update returns an update builder for PolicyDecision.
+func (c *PolicyDecisionClient) Update() *PolicyDecisionUpdate {
+	mutation := newPolicyDecisionMutation(c.config, OpUpdate)
+	return &PolicyDecisionUpdate{config: c.config, hooks: c.Hooks(), mutation: mutation}
+}
+
+// UpdateOne returns an update builder for the given entity.
+func (c *PolicyDecisionClient) UpdateOne(pd *PolicyDecision) *PolicyDecisionUpdateOne {
+	mutation := newPolicyDecisionMutation(c.config, OpUpdateOne, withPolicyDecision(pd))
+	return &PolicyDecisionUpdateOne{config: c.config, hooks: c.Hooks(), mutation: mutation}
+}
+
+// UpdateOneID returns an update builder for the given id.
+func (c *PolicyDecisionClient) UpdateOneID(id uuid.UUID) *PolicyDecisionUpdateOne {
+	mutation := newPolicyDecisionMutation(c.config, OpUpdateOne, withPolicyDecisionID(id))
+	return &PolicyDecisionUpdateOne{config: c.config, hooks: c.Hooks(), mutation: mutation}
+}
+
+// Delete returns a delete builder for PolicyDecision.
+func (c *PolicyDecisionClient) Delete() *PolicyDecisionDelete {
+	mutation := newPolicyDecisionMutation(c.config, OpDelete)
+	return &PolicyDecisionDelete{config: c.config, hooks: c.Hooks(), mutation: mutation}
+}
+
+// DeleteOne returns a builder for deleting the given entity.
+func (c *PolicyDecisionClient) DeleteOne(pd *PolicyDecision) *PolicyDecisionDeleteOne {
+	return c.DeleteOneID(pd.ID)
+}
+
+// DeleteOneID returns a builder for deleting the given entity by its id.
+func (c *PolicyDecisionClient) DeleteOneID(id uuid.UUID) *PolicyDecisionDeleteOne {
+	builder := c.Delete().Where(policydecision.ID(id))
+	builder.mutation.id = &id
+	builder.mutation.op = OpDeleteOne
+	return &PolicyDecisionDeleteOne{builder}
+}
+
+// Query returns a query builder for PolicyDecision.
+func (c *PolicyDecisionClient) Query() *PolicyDecisionQuery {
+	return &PolicyDecisionQuery{
+		config: c.config,
+		ctx:    &QueryContext{Type: TypePolicyDecision},
+		inters: c.Interceptors(),
+	}
+}
+
+// Get returns a PolicyDecision entity by its id.
+func (c *PolicyDecisionClient) Get(ctx context.Context, id uuid.UUID) (*PolicyDecision, error) {
+	return c.Query().Where(policydecision.ID(id)).Only(ctx)
+}
+
+// GetX is like Get, but panics if an error occurs.
+func (c *PolicyDecisionClient) GetX(ctx context.Context, id uuid.UUID) *PolicyDecision {
+	obj, err := c.Get(ctx, id)
+	if err != nil {
+		panic(err)
+	}
+	return obj
+}
+
+// QueryProject queries the project edge of a PolicyDecision.
+func (c *PolicyDecisionClient) QueryProject(pd *PolicyDecision) *ProjectQuery {
+	query := (&ProjectClient{config: c.config}).Query()
+	query.path = func(context.Context) (fromV *sql.Selector, _ error) {
+		id := pd.ID
+		step := sqlgraph.NewStep(
+			sqlgraph.From(policydecision.Table, policydecision.FieldID, id),
+			sqlgraph.To(project.Table, project.FieldID),
+			sqlgraph.Edge(sqlgraph.M2M, true, policydecision.ProjectTable, policydecision.ProjectPrimaryKey...),
+		)
+		fromV = sqlgraph.Neighbors(pd.driver.Dialect(), step)
+		return fromV, nil
+	}
+	return query
+}
+
+// Hooks returns the client hooks.
+func (c *PolicyDecisionClient) Hooks() []Hook {
+	return c.hooks.PolicyDecision
+}
+
+// Interceptors returns the client interceptors.
+func (c *PolicyDecisionClient) Interceptors() []Interceptor {
+	return c.inters.PolicyDecision
+}
+
+func (c *PolicyDecisionClient) mutate(ctx context.Context, m *PolicyDecisionMutation) (Value, error) {
+	switch m.Op() {
+	case OpCreate:
+		return (&PolicyDecisionCreate{config: c.config, hooks: c.Hooks(), mutation: m}).Save(ctx)
+	case OpUpdate:
+		return (&PolicyDecisionUpdate{config: c.config, hooks: c.Hooks(), mutation: m}).Save(ctx)
+	case OpUpdateOne:
+		return (&PolicyDecisionUpdateOne{config: c.config, hooks: c.Hooks(), mutation: m}).Save(ctx)
+	case OpDelete, OpDeleteOne:
+		return (&PolicyDecisionDelete{config: c.config, hooks: c.Hooks(), mutation: m}).Exec(ctx)
+	default:
+		return nil, fmt.Errorf("ent: unknown PolicyDecision mutation op: %q", m.Op())
 	}
 }
 
@@ -352,6 +496,54 @@ func (c *ProjectClient) QueryModifiedBy(pr *Project) *UserQuery {
 			sqlgraph.From(project.Table, project.FieldID, id),
 			sqlgraph.To(user.Table, user.FieldID),
 			sqlgraph.Edge(sqlgraph.M2O, false, project.ModifiedByTable, project.ModifiedByColumn),
+		)
+		fromV = sqlgraph.Neighbors(pr.driver.Dialect(), step)
+		return fromV, nil
+	}
+	return query
+}
+
+// QueryPolicyDecisions queries the policy_decisions edge of a Project.
+func (c *ProjectClient) QueryPolicyDecisions(pr *Project) *PolicyDecisionQuery {
+	query := (&PolicyDecisionClient{config: c.config}).Query()
+	query.path = func(context.Context) (fromV *sql.Selector, _ error) {
+		id := pr.ID
+		step := sqlgraph.NewStep(
+			sqlgraph.From(project.Table, project.FieldID, id),
+			sqlgraph.To(policydecision.Table, policydecision.FieldID),
+			sqlgraph.Edge(sqlgraph.M2M, false, project.PolicyDecisionsTable, project.PolicyDecisionsPrimaryKey...),
+		)
+		fromV = sqlgraph.Neighbors(pr.driver.Dialect(), step)
+		return fromV, nil
+	}
+	return query
+}
+
+// QueryParent queries the parent edge of a Project.
+func (c *ProjectClient) QueryParent(pr *Project) *ProjectQuery {
+	query := (&ProjectClient{config: c.config}).Query()
+	query.path = func(context.Context) (fromV *sql.Selector, _ error) {
+		id := pr.ID
+		step := sqlgraph.NewStep(
+			sqlgraph.From(project.Table, project.FieldID, id),
+			sqlgraph.To(project.Table, project.FieldID),
+			sqlgraph.Edge(sqlgraph.M2O, true, project.ParentTable, project.ParentColumn),
+		)
+		fromV = sqlgraph.Neighbors(pr.driver.Dialect(), step)
+		return fromV, nil
+	}
+	return query
+}
+
+// QueryChildren queries the children edge of a Project.
+func (c *ProjectClient) QueryChildren(pr *Project) *ProjectQuery {
+	query := (&ProjectClient{config: c.config}).Query()
+	query.path = func(context.Context) (fromV *sql.Selector, _ error) {
+		id := pr.ID
+		step := sqlgraph.NewStep(
+			sqlgraph.From(project.Table, project.FieldID, id),
+			sqlgraph.To(project.Table, project.FieldID),
+			sqlgraph.Edge(sqlgraph.O2M, false, project.ChildrenTable, project.ChildrenColumn),
 		)
 		fromV = sqlgraph.Neighbors(pr.driver.Dialect(), step)
 		return fromV, nil
@@ -721,9 +913,9 @@ func (c *UserClient) mutate(ctx context.Context, m *UserMutation) (Value, error)
 // hooks and interceptors per client, for fast access.
 type (
 	hooks struct {
-		Project, Tenant, User []ent.Hook
+		PolicyDecision, Project, Tenant, User []ent.Hook
 	}
 	inters struct {
-		Project, Tenant, User []ent.Interceptor
+		PolicyDecision, Project, Tenant, User []ent.Interceptor
 	}
 )

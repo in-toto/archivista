@@ -8,6 +8,18 @@ import (
 	"github.com/99designs/gqlgen/graphql"
 )
 
+func (pd *PolicyDecision) Project(ctx context.Context) (result []*Project, err error) {
+	if fc := graphql.GetFieldContext(ctx); fc != nil && fc.Field.Alias != "" {
+		result, err = pd.NamedProject(graphql.GetFieldContext(ctx).Field.Alias)
+	} else {
+		result, err = pd.Edges.ProjectOrErr()
+	}
+	if IsNotLoaded(err) {
+		result, err = pd.QueryProject().All(ctx)
+	}
+	return result, err
+}
+
 func (pr *Project) Tenant(ctx context.Context) (*Tenant, error) {
 	result, err := pr.Edges.TenantOrErr()
 	if IsNotLoaded(err) {
@@ -30,6 +42,38 @@ func (pr *Project) ModifiedBy(ctx context.Context) (*User, error) {
 		result, err = pr.QueryModifiedBy().Only(ctx)
 	}
 	return result, MaskNotFound(err)
+}
+
+func (pr *Project) PolicyDecisions(ctx context.Context) (result []*PolicyDecision, err error) {
+	if fc := graphql.GetFieldContext(ctx); fc != nil && fc.Field.Alias != "" {
+		result, err = pr.NamedPolicyDecisions(graphql.GetFieldContext(ctx).Field.Alias)
+	} else {
+		result, err = pr.Edges.PolicyDecisionsOrErr()
+	}
+	if IsNotLoaded(err) {
+		result, err = pr.QueryPolicyDecisions().All(ctx)
+	}
+	return result, err
+}
+
+func (pr *Project) Parent(ctx context.Context) (*Project, error) {
+	result, err := pr.Edges.ParentOrErr()
+	if IsNotLoaded(err) {
+		result, err = pr.QueryParent().Only(ctx)
+	}
+	return result, MaskNotFound(err)
+}
+
+func (pr *Project) Children(ctx context.Context) (result []*Project, err error) {
+	if fc := graphql.GetFieldContext(ctx); fc != nil && fc.Field.Alias != "" {
+		result, err = pr.NamedChildren(graphql.GetFieldContext(ctx).Field.Alias)
+	} else {
+		result, err = pr.Edges.ChildrenOrErr()
+	}
+	if IsNotLoaded(err) {
+		result, err = pr.QueryChildren().All(ctx)
+	}
+	return result, err
 }
 
 func (t *Tenant) CreatedBy(ctx context.Context) (*User, error) {

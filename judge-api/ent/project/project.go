@@ -30,8 +30,16 @@ const (
 	EdgeCreatedBy = "created_by"
 	// EdgeModifiedBy holds the string denoting the modified_by edge name in mutations.
 	EdgeModifiedBy = "modified_by"
+	// EdgePolicyDecisions holds the string denoting the policy_decisions edge name in mutations.
+	EdgePolicyDecisions = "policy_decisions"
+	// EdgeParent holds the string denoting the parent edge name in mutations.
+	EdgeParent = "parent"
+	// EdgeChildren holds the string denoting the children edge name in mutations.
+	EdgeChildren = "children"
 	// UserFieldID holds the string denoting the ID field of the User.
 	UserFieldID = "id"
+	// PolicyDecisionFieldID holds the string denoting the ID field of the PolicyDecision.
+	PolicyDecisionFieldID = "id"
 	// Table holds the table name of the project in the database.
 	Table = "projects"
 	// TenantTable is the table that holds the tenant relation/edge.
@@ -55,6 +63,19 @@ const (
 	ModifiedByInverseTable = "users"
 	// ModifiedByColumn is the table column denoting the modified_by relation/edge.
 	ModifiedByColumn = "project_modified_by"
+	// PolicyDecisionsTable is the table that holds the policy_decisions relation/edge. The primary key declared below.
+	PolicyDecisionsTable = "project_policy_decisions"
+	// PolicyDecisionsInverseTable is the table name for the PolicyDecision entity.
+	// It exists in this package in order to avoid circular dependency with the "policydecision" package.
+	PolicyDecisionsInverseTable = "policy_decisions"
+	// ParentTable is the table that holds the parent relation/edge.
+	ParentTable = "projects"
+	// ParentColumn is the table column denoting the parent relation/edge.
+	ParentColumn = "project_children"
+	// ChildrenTable is the table that holds the children relation/edge.
+	ChildrenTable = "projects"
+	// ChildrenColumn is the table column denoting the children relation/edge.
+	ChildrenColumn = "project_children"
 )
 
 // Columns holds all SQL columns for project fields.
@@ -73,7 +94,14 @@ var ForeignKeys = []string{
 	"project_tenant",
 	"project_created_by",
 	"project_modified_by",
+	"project_children",
 }
+
+var (
+	// PolicyDecisionsPrimaryKey and PolicyDecisionsColumn2 are the table columns denoting the
+	// primary key for the policy_decisions relation (M2M).
+	PolicyDecisionsPrimaryKey = []string{"project_id", "policy_decision_id"}
+)
 
 // ValidColumn reports if the column name is valid (part of the table columns).
 func ValidColumn(column string) bool {

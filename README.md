@@ -21,7 +21,7 @@ Before you can fully contribute, make sure you have completed the following prer
 1. Have the necessary roles to access the attestations via gcloud in the `load attestations` command.
 1. Have your TestifySec physical security key provisioned.
 1. Strongly encouraged to have [nvm](https://github.com/nvm-sh/nvm) installed and configured on your machine to synchronize with the entire team on the Node.js version. You can try installing it with `brew install nvm` and following the setup instructions. Once you have `nvm`, run `nvm use` and `nvm install` to get in sync with the team's specified Node.js version.
-1. Run `npm i` from the root of this repository to install all dependencies.
+1. Run `npm i` from the root of this repository to install all dependencies. This should also `go get` all go dependencies for all of our go projects.
 1. Run `make hosts` from the `dev/` folder at least once to set up the hosts file for local development.
 
 ## Getting Started
@@ -64,3 +64,12 @@ Note: This may require reintroducing Hydra with Kratos to allow for multiple dom
 To run the web project connected to production data, use the following commands:
 
 1. Run `npm run start:web:remote-proxy` to start the web project in HMR mode, connected to the production APIs as remote proxies.
+
+### How to generate code changes to our sub projects
+
+Some of our projects utilize code generation to assist in abstracting away boilerplate. Namely, we have some go projects that use Ent and gqlgen. 
+
+You can generate what you need from inside those project folders running the `go generate ./... -v` command, but we have also provided shortcuts in the root folder for you. 
+
+- `npm run gen:archivista` will `go generate` all the archivista things
+- `npm run gen:judge-api` will `go generate` all the judge-api things

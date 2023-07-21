@@ -12,6 +12,8 @@ import (
 // Tx is a transactional client that is created by calling Client.Tx().
 type Tx struct {
 	config
+	// PolicyDecision is the client for interacting with the PolicyDecision builders.
+	PolicyDecision *PolicyDecisionClient
 	// Project is the client for interacting with the Project builders.
 	Project *ProjectClient
 	// Tenant is the client for interacting with the Tenant builders.
@@ -149,6 +151,7 @@ func (tx *Tx) Client() *Client {
 }
 
 func (tx *Tx) init() {
+	tx.PolicyDecision = NewPolicyDecisionClient(tx.config)
 	tx.Project = NewProjectClient(tx.config)
 	tx.Tenant = NewTenantClient(tx.config)
 	tx.User = NewUserClient(tx.config)
@@ -161,7 +164,7 @@ func (tx *Tx) init() {
 // of them in order to commit or rollback the transaction.
 //
 // If a closed transaction is embedded in one of the generated entities, and the entity
-// applies a query, for example: Project.QueryXXX(), the query will be executed
+// applies a query, for example: PolicyDecision.QueryXXX(), the query will be executed
 // through the driver which created this transaction.
 //
 // Note that txDriver is not goroutine safe.

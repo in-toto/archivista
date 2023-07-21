@@ -7,6 +7,7 @@ import (
 	"time"
 
 	"github.com/google/uuid"
+	"github.com/testifysec/judge/judge-api/ent/policydecision"
 	"github.com/testifysec/judge/judge-api/ent/project"
 	"github.com/testifysec/judge/judge-api/ent/schema"
 	"github.com/testifysec/judge/judge-api/ent/tenant"
@@ -20,6 +21,20 @@ import (
 // (default values, validators, hooks and policies) and stitches it
 // to their package variables.
 func init() {
+	policydecisionFields := schema.PolicyDecision{}.Fields()
+	_ = policydecisionFields
+	// policydecisionDescSubjectName is the schema descriptor for subject_name field.
+	policydecisionDescSubjectName := policydecisionFields[1].Descriptor()
+	// policydecision.SubjectNameValidator is a validator for the "subject_name" field. It is called by the builders before save.
+	policydecision.SubjectNameValidator = policydecisionDescSubjectName.Validators[0].(func(string) error)
+	// policydecisionDescDigestID is the schema descriptor for digest_id field.
+	policydecisionDescDigestID := policydecisionFields[2].Descriptor()
+	// policydecision.DigestIDValidator is a validator for the "digest_id" field. It is called by the builders before save.
+	policydecision.DigestIDValidator = policydecisionDescDigestID.Validators[0].(func(string) error)
+	// policydecisionDescID is the schema descriptor for id field.
+	policydecisionDescID := policydecisionFields[0].Descriptor()
+	// policydecision.DefaultID holds the default value on creation for the id field.
+	policydecision.DefaultID = policydecisionDescID.Default.(func() uuid.UUID)
 	projectMixin := schema.Project{}.Mixin()
 	project.Policy = privacy.NewPolicies(projectMixin[0], schema.Project{})
 	project.Hooks[0] = func(next ent.Mutator) ent.Mutator {

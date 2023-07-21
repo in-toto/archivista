@@ -12,6 +12,7 @@ import (
 	"entgo.io/ent/dialect/sql/sqlgraph"
 	"entgo.io/ent/schema/field"
 	"github.com/google/uuid"
+	"github.com/testifysec/judge/judge-api/ent/policydecision"
 	"github.com/testifysec/judge/judge-api/ent/predicate"
 	"github.com/testifysec/judge/judge-api/ent/project"
 	"github.com/testifysec/judge/judge-api/ent/user"
@@ -73,6 +74,55 @@ func (pu *ProjectUpdate) SetModifiedBy(u *User) *ProjectUpdate {
 	return pu.SetModifiedByID(u.ID)
 }
 
+// AddPolicyDecisionIDs adds the "policy_decisions" edge to the PolicyDecision entity by IDs.
+func (pu *ProjectUpdate) AddPolicyDecisionIDs(ids ...uuid.UUID) *ProjectUpdate {
+	pu.mutation.AddPolicyDecisionIDs(ids...)
+	return pu
+}
+
+// AddPolicyDecisions adds the "policy_decisions" edges to the PolicyDecision entity.
+func (pu *ProjectUpdate) AddPolicyDecisions(p ...*PolicyDecision) *ProjectUpdate {
+	ids := make([]uuid.UUID, len(p))
+	for i := range p {
+		ids[i] = p[i].ID
+	}
+	return pu.AddPolicyDecisionIDs(ids...)
+}
+
+// SetParentID sets the "parent" edge to the Project entity by ID.
+func (pu *ProjectUpdate) SetParentID(id uuid.UUID) *ProjectUpdate {
+	pu.mutation.SetParentID(id)
+	return pu
+}
+
+// SetNillableParentID sets the "parent" edge to the Project entity by ID if the given value is not nil.
+func (pu *ProjectUpdate) SetNillableParentID(id *uuid.UUID) *ProjectUpdate {
+	if id != nil {
+		pu = pu.SetParentID(*id)
+	}
+	return pu
+}
+
+// SetParent sets the "parent" edge to the Project entity.
+func (pu *ProjectUpdate) SetParent(p *Project) *ProjectUpdate {
+	return pu.SetParentID(p.ID)
+}
+
+// AddChildIDs adds the "children" edge to the Project entity by IDs.
+func (pu *ProjectUpdate) AddChildIDs(ids ...uuid.UUID) *ProjectUpdate {
+	pu.mutation.AddChildIDs(ids...)
+	return pu
+}
+
+// AddChildren adds the "children" edges to the Project entity.
+func (pu *ProjectUpdate) AddChildren(p ...*Project) *ProjectUpdate {
+	ids := make([]uuid.UUID, len(p))
+	for i := range p {
+		ids[i] = p[i].ID
+	}
+	return pu.AddChildIDs(ids...)
+}
+
 // Mutation returns the ProjectMutation object of the builder.
 func (pu *ProjectUpdate) Mutation() *ProjectMutation {
 	return pu.mutation
@@ -82,6 +132,54 @@ func (pu *ProjectUpdate) Mutation() *ProjectMutation {
 func (pu *ProjectUpdate) ClearModifiedBy() *ProjectUpdate {
 	pu.mutation.ClearModifiedBy()
 	return pu
+}
+
+// ClearPolicyDecisions clears all "policy_decisions" edges to the PolicyDecision entity.
+func (pu *ProjectUpdate) ClearPolicyDecisions() *ProjectUpdate {
+	pu.mutation.ClearPolicyDecisions()
+	return pu
+}
+
+// RemovePolicyDecisionIDs removes the "policy_decisions" edge to PolicyDecision entities by IDs.
+func (pu *ProjectUpdate) RemovePolicyDecisionIDs(ids ...uuid.UUID) *ProjectUpdate {
+	pu.mutation.RemovePolicyDecisionIDs(ids...)
+	return pu
+}
+
+// RemovePolicyDecisions removes "policy_decisions" edges to PolicyDecision entities.
+func (pu *ProjectUpdate) RemovePolicyDecisions(p ...*PolicyDecision) *ProjectUpdate {
+	ids := make([]uuid.UUID, len(p))
+	for i := range p {
+		ids[i] = p[i].ID
+	}
+	return pu.RemovePolicyDecisionIDs(ids...)
+}
+
+// ClearParent clears the "parent" edge to the Project entity.
+func (pu *ProjectUpdate) ClearParent() *ProjectUpdate {
+	pu.mutation.ClearParent()
+	return pu
+}
+
+// ClearChildren clears all "children" edges to the Project entity.
+func (pu *ProjectUpdate) ClearChildren() *ProjectUpdate {
+	pu.mutation.ClearChildren()
+	return pu
+}
+
+// RemoveChildIDs removes the "children" edge to Project entities by IDs.
+func (pu *ProjectUpdate) RemoveChildIDs(ids ...uuid.UUID) *ProjectUpdate {
+	pu.mutation.RemoveChildIDs(ids...)
+	return pu
+}
+
+// RemoveChildren removes "children" edges to Project entities.
+func (pu *ProjectUpdate) RemoveChildren(p ...*Project) *ProjectUpdate {
+	ids := make([]uuid.UUID, len(p))
+	for i := range p {
+		ids[i] = p[i].ID
+	}
+	return pu.RemoveChildIDs(ids...)
 }
 
 // Save executes the query and returns the number of nodes affected by the update operation.
@@ -202,6 +300,125 @@ func (pu *ProjectUpdate) sqlSave(ctx context.Context) (n int, err error) {
 		}
 		_spec.Edges.Add = append(_spec.Edges.Add, edge)
 	}
+	if pu.mutation.PolicyDecisionsCleared() {
+		edge := &sqlgraph.EdgeSpec{
+			Rel:     sqlgraph.M2M,
+			Inverse: false,
+			Table:   project.PolicyDecisionsTable,
+			Columns: project.PolicyDecisionsPrimaryKey,
+			Bidi:    false,
+			Target: &sqlgraph.EdgeTarget{
+				IDSpec: sqlgraph.NewFieldSpec(policydecision.FieldID, field.TypeUUID),
+			},
+		}
+		_spec.Edges.Clear = append(_spec.Edges.Clear, edge)
+	}
+	if nodes := pu.mutation.RemovedPolicyDecisionsIDs(); len(nodes) > 0 && !pu.mutation.PolicyDecisionsCleared() {
+		edge := &sqlgraph.EdgeSpec{
+			Rel:     sqlgraph.M2M,
+			Inverse: false,
+			Table:   project.PolicyDecisionsTable,
+			Columns: project.PolicyDecisionsPrimaryKey,
+			Bidi:    false,
+			Target: &sqlgraph.EdgeTarget{
+				IDSpec: sqlgraph.NewFieldSpec(policydecision.FieldID, field.TypeUUID),
+			},
+		}
+		for _, k := range nodes {
+			edge.Target.Nodes = append(edge.Target.Nodes, k)
+		}
+		_spec.Edges.Clear = append(_spec.Edges.Clear, edge)
+	}
+	if nodes := pu.mutation.PolicyDecisionsIDs(); len(nodes) > 0 {
+		edge := &sqlgraph.EdgeSpec{
+			Rel:     sqlgraph.M2M,
+			Inverse: false,
+			Table:   project.PolicyDecisionsTable,
+			Columns: project.PolicyDecisionsPrimaryKey,
+			Bidi:    false,
+			Target: &sqlgraph.EdgeTarget{
+				IDSpec: sqlgraph.NewFieldSpec(policydecision.FieldID, field.TypeUUID),
+			},
+		}
+		for _, k := range nodes {
+			edge.Target.Nodes = append(edge.Target.Nodes, k)
+		}
+		_spec.Edges.Add = append(_spec.Edges.Add, edge)
+	}
+	if pu.mutation.ParentCleared() {
+		edge := &sqlgraph.EdgeSpec{
+			Rel:     sqlgraph.M2O,
+			Inverse: true,
+			Table:   project.ParentTable,
+			Columns: []string{project.ParentColumn},
+			Bidi:    false,
+			Target: &sqlgraph.EdgeTarget{
+				IDSpec: sqlgraph.NewFieldSpec(project.FieldID, field.TypeUUID),
+			},
+		}
+		_spec.Edges.Clear = append(_spec.Edges.Clear, edge)
+	}
+	if nodes := pu.mutation.ParentIDs(); len(nodes) > 0 {
+		edge := &sqlgraph.EdgeSpec{
+			Rel:     sqlgraph.M2O,
+			Inverse: true,
+			Table:   project.ParentTable,
+			Columns: []string{project.ParentColumn},
+			Bidi:    false,
+			Target: &sqlgraph.EdgeTarget{
+				IDSpec: sqlgraph.NewFieldSpec(project.FieldID, field.TypeUUID),
+			},
+		}
+		for _, k := range nodes {
+			edge.Target.Nodes = append(edge.Target.Nodes, k)
+		}
+		_spec.Edges.Add = append(_spec.Edges.Add, edge)
+	}
+	if pu.mutation.ChildrenCleared() {
+		edge := &sqlgraph.EdgeSpec{
+			Rel:     sqlgraph.O2M,
+			Inverse: false,
+			Table:   project.ChildrenTable,
+			Columns: []string{project.ChildrenColumn},
+			Bidi:    false,
+			Target: &sqlgraph.EdgeTarget{
+				IDSpec: sqlgraph.NewFieldSpec(project.FieldID, field.TypeUUID),
+			},
+		}
+		_spec.Edges.Clear = append(_spec.Edges.Clear, edge)
+	}
+	if nodes := pu.mutation.RemovedChildrenIDs(); len(nodes) > 0 && !pu.mutation.ChildrenCleared() {
+		edge := &sqlgraph.EdgeSpec{
+			Rel:     sqlgraph.O2M,
+			Inverse: false,
+			Table:   project.ChildrenTable,
+			Columns: []string{project.ChildrenColumn},
+			Bidi:    false,
+			Target: &sqlgraph.EdgeTarget{
+				IDSpec: sqlgraph.NewFieldSpec(project.FieldID, field.TypeUUID),
+			},
+		}
+		for _, k := range nodes {
+			edge.Target.Nodes = append(edge.Target.Nodes, k)
+		}
+		_spec.Edges.Clear = append(_spec.Edges.Clear, edge)
+	}
+	if nodes := pu.mutation.ChildrenIDs(); len(nodes) > 0 {
+		edge := &sqlgraph.EdgeSpec{
+			Rel:     sqlgraph.O2M,
+			Inverse: false,
+			Table:   project.ChildrenTable,
+			Columns: []string{project.ChildrenColumn},
+			Bidi:    false,
+			Target: &sqlgraph.EdgeTarget{
+				IDSpec: sqlgraph.NewFieldSpec(project.FieldID, field.TypeUUID),
+			},
+		}
+		for _, k := range nodes {
+			edge.Target.Nodes = append(edge.Target.Nodes, k)
+		}
+		_spec.Edges.Add = append(_spec.Edges.Add, edge)
+	}
 	if n, err = sqlgraph.UpdateNodes(ctx, pu.driver, _spec); err != nil {
 		if _, ok := err.(*sqlgraph.NotFoundError); ok {
 			err = &NotFoundError{project.Label}
@@ -265,6 +482,55 @@ func (puo *ProjectUpdateOne) SetModifiedBy(u *User) *ProjectUpdateOne {
 	return puo.SetModifiedByID(u.ID)
 }
 
+// AddPolicyDecisionIDs adds the "policy_decisions" edge to the PolicyDecision entity by IDs.
+func (puo *ProjectUpdateOne) AddPolicyDecisionIDs(ids ...uuid.UUID) *ProjectUpdateOne {
+	puo.mutation.AddPolicyDecisionIDs(ids...)
+	return puo
+}
+
+// AddPolicyDecisions adds the "policy_decisions" edges to the PolicyDecision entity.
+func (puo *ProjectUpdateOne) AddPolicyDecisions(p ...*PolicyDecision) *ProjectUpdateOne {
+	ids := make([]uuid.UUID, len(p))
+	for i := range p {
+		ids[i] = p[i].ID
+	}
+	return puo.AddPolicyDecisionIDs(ids...)
+}
+
+// SetParentID sets the "parent" edge to the Project entity by ID.
+func (puo *ProjectUpdateOne) SetParentID(id uuid.UUID) *ProjectUpdateOne {
+	puo.mutation.SetParentID(id)
+	return puo
+}
+
+// SetNillableParentID sets the "parent" edge to the Project entity by ID if the given value is not nil.
+func (puo *ProjectUpdateOne) SetNillableParentID(id *uuid.UUID) *ProjectUpdateOne {
+	if id != nil {
+		puo = puo.SetParentID(*id)
+	}
+	return puo
+}
+
+// SetParent sets the "parent" edge to the Project entity.
+func (puo *ProjectUpdateOne) SetParent(p *Project) *ProjectUpdateOne {
+	return puo.SetParentID(p.ID)
+}
+
+// AddChildIDs adds the "children" edge to the Project entity by IDs.
+func (puo *ProjectUpdateOne) AddChildIDs(ids ...uuid.UUID) *ProjectUpdateOne {
+	puo.mutation.AddChildIDs(ids...)
+	return puo
+}
+
+// AddChildren adds the "children" edges to the Project entity.
+func (puo *ProjectUpdateOne) AddChildren(p ...*Project) *ProjectUpdateOne {
+	ids := make([]uuid.UUID, len(p))
+	for i := range p {
+		ids[i] = p[i].ID
+	}
+	return puo.AddChildIDs(ids...)
+}
+
 // Mutation returns the ProjectMutation object of the builder.
 func (puo *ProjectUpdateOne) Mutation() *ProjectMutation {
 	return puo.mutation
@@ -274,6 +540,54 @@ func (puo *ProjectUpdateOne) Mutation() *ProjectMutation {
 func (puo *ProjectUpdateOne) ClearModifiedBy() *ProjectUpdateOne {
 	puo.mutation.ClearModifiedBy()
 	return puo
+}
+
+// ClearPolicyDecisions clears all "policy_decisions" edges to the PolicyDecision entity.
+func (puo *ProjectUpdateOne) ClearPolicyDecisions() *ProjectUpdateOne {
+	puo.mutation.ClearPolicyDecisions()
+	return puo
+}
+
+// RemovePolicyDecisionIDs removes the "policy_decisions" edge to PolicyDecision entities by IDs.
+func (puo *ProjectUpdateOne) RemovePolicyDecisionIDs(ids ...uuid.UUID) *ProjectUpdateOne {
+	puo.mutation.RemovePolicyDecisionIDs(ids...)
+	return puo
+}
+
+// RemovePolicyDecisions removes "policy_decisions" edges to PolicyDecision entities.
+func (puo *ProjectUpdateOne) RemovePolicyDecisions(p ...*PolicyDecision) *ProjectUpdateOne {
+	ids := make([]uuid.UUID, len(p))
+	for i := range p {
+		ids[i] = p[i].ID
+	}
+	return puo.RemovePolicyDecisionIDs(ids...)
+}
+
+// ClearParent clears the "parent" edge to the Project entity.
+func (puo *ProjectUpdateOne) ClearParent() *ProjectUpdateOne {
+	puo.mutation.ClearParent()
+	return puo
+}
+
+// ClearChildren clears all "children" edges to the Project entity.
+func (puo *ProjectUpdateOne) ClearChildren() *ProjectUpdateOne {
+	puo.mutation.ClearChildren()
+	return puo
+}
+
+// RemoveChildIDs removes the "children" edge to Project entities by IDs.
+func (puo *ProjectUpdateOne) RemoveChildIDs(ids ...uuid.UUID) *ProjectUpdateOne {
+	puo.mutation.RemoveChildIDs(ids...)
+	return puo
+}
+
+// RemoveChildren removes "children" edges to Project entities.
+func (puo *ProjectUpdateOne) RemoveChildren(p ...*Project) *ProjectUpdateOne {
+	ids := make([]uuid.UUID, len(p))
+	for i := range p {
+		ids[i] = p[i].ID
+	}
+	return puo.RemoveChildIDs(ids...)
 }
 
 // Where appends a list predicates to the ProjectUpdate builder.
@@ -417,6 +731,125 @@ func (puo *ProjectUpdateOne) sqlSave(ctx context.Context) (_node *Project, err e
 			Bidi:    false,
 			Target: &sqlgraph.EdgeTarget{
 				IDSpec: sqlgraph.NewFieldSpec(user.FieldID, field.TypeUUID),
+			},
+		}
+		for _, k := range nodes {
+			edge.Target.Nodes = append(edge.Target.Nodes, k)
+		}
+		_spec.Edges.Add = append(_spec.Edges.Add, edge)
+	}
+	if puo.mutation.PolicyDecisionsCleared() {
+		edge := &sqlgraph.EdgeSpec{
+			Rel:     sqlgraph.M2M,
+			Inverse: false,
+			Table:   project.PolicyDecisionsTable,
+			Columns: project.PolicyDecisionsPrimaryKey,
+			Bidi:    false,
+			Target: &sqlgraph.EdgeTarget{
+				IDSpec: sqlgraph.NewFieldSpec(policydecision.FieldID, field.TypeUUID),
+			},
+		}
+		_spec.Edges.Clear = append(_spec.Edges.Clear, edge)
+	}
+	if nodes := puo.mutation.RemovedPolicyDecisionsIDs(); len(nodes) > 0 && !puo.mutation.PolicyDecisionsCleared() {
+		edge := &sqlgraph.EdgeSpec{
+			Rel:     sqlgraph.M2M,
+			Inverse: false,
+			Table:   project.PolicyDecisionsTable,
+			Columns: project.PolicyDecisionsPrimaryKey,
+			Bidi:    false,
+			Target: &sqlgraph.EdgeTarget{
+				IDSpec: sqlgraph.NewFieldSpec(policydecision.FieldID, field.TypeUUID),
+			},
+		}
+		for _, k := range nodes {
+			edge.Target.Nodes = append(edge.Target.Nodes, k)
+		}
+		_spec.Edges.Clear = append(_spec.Edges.Clear, edge)
+	}
+	if nodes := puo.mutation.PolicyDecisionsIDs(); len(nodes) > 0 {
+		edge := &sqlgraph.EdgeSpec{
+			Rel:     sqlgraph.M2M,
+			Inverse: false,
+			Table:   project.PolicyDecisionsTable,
+			Columns: project.PolicyDecisionsPrimaryKey,
+			Bidi:    false,
+			Target: &sqlgraph.EdgeTarget{
+				IDSpec: sqlgraph.NewFieldSpec(policydecision.FieldID, field.TypeUUID),
+			},
+		}
+		for _, k := range nodes {
+			edge.Target.Nodes = append(edge.Target.Nodes, k)
+		}
+		_spec.Edges.Add = append(_spec.Edges.Add, edge)
+	}
+	if puo.mutation.ParentCleared() {
+		edge := &sqlgraph.EdgeSpec{
+			Rel:     sqlgraph.M2O,
+			Inverse: true,
+			Table:   project.ParentTable,
+			Columns: []string{project.ParentColumn},
+			Bidi:    false,
+			Target: &sqlgraph.EdgeTarget{
+				IDSpec: sqlgraph.NewFieldSpec(project.FieldID, field.TypeUUID),
+			},
+		}
+		_spec.Edges.Clear = append(_spec.Edges.Clear, edge)
+	}
+	if nodes := puo.mutation.ParentIDs(); len(nodes) > 0 {
+		edge := &sqlgraph.EdgeSpec{
+			Rel:     sqlgraph.M2O,
+			Inverse: true,
+			Table:   project.ParentTable,
+			Columns: []string{project.ParentColumn},
+			Bidi:    false,
+			Target: &sqlgraph.EdgeTarget{
+				IDSpec: sqlgraph.NewFieldSpec(project.FieldID, field.TypeUUID),
+			},
+		}
+		for _, k := range nodes {
+			edge.Target.Nodes = append(edge.Target.Nodes, k)
+		}
+		_spec.Edges.Add = append(_spec.Edges.Add, edge)
+	}
+	if puo.mutation.ChildrenCleared() {
+		edge := &sqlgraph.EdgeSpec{
+			Rel:     sqlgraph.O2M,
+			Inverse: false,
+			Table:   project.ChildrenTable,
+			Columns: []string{project.ChildrenColumn},
+			Bidi:    false,
+			Target: &sqlgraph.EdgeTarget{
+				IDSpec: sqlgraph.NewFieldSpec(project.FieldID, field.TypeUUID),
+			},
+		}
+		_spec.Edges.Clear = append(_spec.Edges.Clear, edge)
+	}
+	if nodes := puo.mutation.RemovedChildrenIDs(); len(nodes) > 0 && !puo.mutation.ChildrenCleared() {
+		edge := &sqlgraph.EdgeSpec{
+			Rel:     sqlgraph.O2M,
+			Inverse: false,
+			Table:   project.ChildrenTable,
+			Columns: []string{project.ChildrenColumn},
+			Bidi:    false,
+			Target: &sqlgraph.EdgeTarget{
+				IDSpec: sqlgraph.NewFieldSpec(project.FieldID, field.TypeUUID),
+			},
+		}
+		for _, k := range nodes {
+			edge.Target.Nodes = append(edge.Target.Nodes, k)
+		}
+		_spec.Edges.Clear = append(_spec.Edges.Clear, edge)
+	}
+	if nodes := puo.mutation.ChildrenIDs(); len(nodes) > 0 {
+		edge := &sqlgraph.EdgeSpec{
+			Rel:     sqlgraph.O2M,
+			Inverse: false,
+			Table:   project.ChildrenTable,
+			Columns: []string{project.ChildrenColumn},
+			Bidi:    false,
+			Target: &sqlgraph.EdgeTarget{
+				IDSpec: sqlgraph.NewFieldSpec(project.FieldID, field.TypeUUID),
 			},
 		}
 		for _, k := range nodes {

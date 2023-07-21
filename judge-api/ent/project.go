@@ -35,6 +35,7 @@ type Project struct {
 	project_tenant      *uuid.UUID
 	project_created_by  *uuid.UUID
 	project_modified_by *uuid.UUID
+	project_children    *uuid.UUID
 }
 
 // ProjectEdges holds the relations/edges for other nodes in the graph.
@@ -45,11 +46,20 @@ type ProjectEdges struct {
 	CreatedBy *User `json:"created_by,omitempty"`
 	// ModifiedBy holds the value of the modified_by edge.
 	ModifiedBy *User `json:"modified_by,omitempty"`
+	// PolicyDecisions holds the value of the policy_decisions edge.
+	PolicyDecisions []*PolicyDecision `json:"policy_decisions,omitempty"`
+	// Parent holds the value of the parent edge.
+	Parent *Project `json:"parent,omitempty"`
+	// Children holds the value of the children edge.
+	Children []*Project `json:"children,omitempty"`
 	// loadedTypes holds the information for reporting if a
 	// type was loaded (or requested) in eager-loading or not.
-	loadedTypes [3]bool
+	loadedTypes [6]bool
 	// totalCount holds the count of the edges above.
-	totalCount [3]map[string]int
+	totalCount [6]map[string]int
+
+	namedPolicyDecisions map[string][]*PolicyDecision
+	namedChildren        map[string][]*Project
 }
 
 // TenantOrErr returns the Tenant value or an error if the edge
@@ -91,6 +101,37 @@ func (e ProjectEdges) ModifiedByOrErr() (*User, error) {
 	return nil, &NotLoadedError{edge: "modified_by"}
 }
 
+// PolicyDecisionsOrErr returns the PolicyDecisions value or an error if the edge
+// was not loaded in eager-loading.
+func (e ProjectEdges) PolicyDecisionsOrErr() ([]*PolicyDecision, error) {
+	if e.loadedTypes[3] {
+		return e.PolicyDecisions, nil
+	}
+	return nil, &NotLoadedError{edge: "policy_decisions"}
+}
+
+// ParentOrErr returns the Parent value or an error if the edge
+// was not loaded in eager-loading, or loaded but was not found.
+func (e ProjectEdges) ParentOrErr() (*Project, error) {
+	if e.loadedTypes[4] {
+		if e.Parent == nil {
+			// Edge was loaded but was not found.
+			return nil, &NotFoundError{label: project.Label}
+		}
+		return e.Parent, nil
+	}
+	return nil, &NotLoadedError{edge: "parent"}
+}
+
+// ChildrenOrErr returns the Children value or an error if the edge
+// was not loaded in eager-loading.
+func (e ProjectEdges) ChildrenOrErr() ([]*Project, error) {
+	if e.loadedTypes[5] {
+		return e.Children, nil
+	}
+	return nil, &NotLoadedError{edge: "children"}
+}
+
 // scanValues returns the types for scanning values from sql.Rows.
 func (*Project) scanValues(columns []string) ([]any, error) {
 	values := make([]any, len(columns))
@@ -107,6 +148,8 @@ func (*Project) scanValues(columns []string) ([]any, error) {
 		case project.ForeignKeys[1]: // project_created_by
 			values[i] = &sql.NullScanner{S: new(uuid.UUID)}
 		case project.ForeignKeys[2]: // project_modified_by
+			values[i] = &sql.NullScanner{S: new(uuid.UUID)}
+		case project.ForeignKeys[3]: // project_children
 			values[i] = &sql.NullScanner{S: new(uuid.UUID)}
 		default:
 			return nil, fmt.Errorf("unexpected column %q for type Project", columns[i])
@@ -180,6 +223,13 @@ func (pr *Project) assignValues(columns []string, values []any) error {
 				pr.project_modified_by = new(uuid.UUID)
 				*pr.project_modified_by = *value.S.(*uuid.UUID)
 			}
+		case project.ForeignKeys[3]:
+			if value, ok := values[i].(*sql.NullScanner); !ok {
+				return fmt.Errorf("unexpected type %T for field project_children", values[i])
+			} else if value.Valid {
+				pr.project_children = new(uuid.UUID)
+				*pr.project_children = *value.S.(*uuid.UUID)
+			}
 		}
 	}
 	return nil
@@ -198,6 +248,21 @@ func (pr *Project) QueryCreatedBy() *UserQuery {
 // QueryModifiedBy queries the "modified_by" edge of the Project entity.
 func (pr *Project) QueryModifiedBy() *UserQuery {
 	return NewProjectClient(pr.config).QueryModifiedBy(pr)
+}
+
+// QueryPolicyDecisions queries the "policy_decisions" edge of the Project entity.
+func (pr *Project) QueryPolicyDecisions() *PolicyDecisionQuery {
+	return NewProjectClient(pr.config).QueryPolicyDecisions(pr)
+}
+
+// QueryParent queries the "parent" edge of the Project entity.
+func (pr *Project) QueryParent() *ProjectQuery {
+	return NewProjectClient(pr.config).QueryParent(pr)
+}
+
+// QueryChildren queries the "children" edge of the Project entity.
+func (pr *Project) QueryChildren() *ProjectQuery {
+	return NewProjectClient(pr.config).QueryChildren(pr)
 }
 
 // Update returns a builder for updating this Project.
@@ -239,6 +304,54 @@ func (pr *Project) String() string {
 	builder.WriteString(pr.Projecturl)
 	builder.WriteByte(')')
 	return builder.String()
+}
+
+// NamedPolicyDecisions returns the PolicyDecisions named value or an error if the edge was not
+// loaded in eager-loading with this name.
+func (pr *Project) NamedPolicyDecisions(name string) ([]*PolicyDecision, error) {
+	if pr.Edges.namedPolicyDecisions == nil {
+		return nil, &NotLoadedError{edge: name}
+	}
+	nodes, ok := pr.Edges.namedPolicyDecisions[name]
+	if !ok {
+		return nil, &NotLoadedError{edge: name}
+	}
+	return nodes, nil
+}
+
+func (pr *Project) appendNamedPolicyDecisions(name string, edges ...*PolicyDecision) {
+	if pr.Edges.namedPolicyDecisions == nil {
+		pr.Edges.namedPolicyDecisions = make(map[string][]*PolicyDecision)
+	}
+	if len(edges) == 0 {
+		pr.Edges.namedPolicyDecisions[name] = []*PolicyDecision{}
+	} else {
+		pr.Edges.namedPolicyDecisions[name] = append(pr.Edges.namedPolicyDecisions[name], edges...)
+	}
+}
+
+// NamedChildren returns the Children named value or an error if the edge was not
+// loaded in eager-loading with this name.
+func (pr *Project) NamedChildren(name string) ([]*Project, error) {
+	if pr.Edges.namedChildren == nil {
+		return nil, &NotLoadedError{edge: name}
+	}
+	nodes, ok := pr.Edges.namedChildren[name]
+	if !ok {
+		return nil, &NotLoadedError{edge: name}
+	}
+	return nodes, nil
+}
+
+func (pr *Project) appendNamedChildren(name string, edges ...*Project) {
+	if pr.Edges.namedChildren == nil {
+		pr.Edges.namedChildren = make(map[string][]*Project)
+	}
+	if len(edges) == 0 {
+		pr.Edges.namedChildren[name] = []*Project{}
+	} else {
+		pr.Edges.namedChildren[name] = append(pr.Edges.namedChildren[name], edges...)
+	}
 }
 
 // Projects is a parsable slice of Project.
