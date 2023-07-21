@@ -20,6 +20,7 @@ import (
 	"crypto/x509"
 	"time"
 
+	"github.com/google/uuid"
 	"github.com/testifysec/go-witness/attestation"
 	"github.com/testifysec/go-witness/cryptoutil"
 	"github.com/testifysec/go-witness/log"
@@ -45,6 +46,27 @@ type PublicKey struct {
 	KeyID string `json:"keyid"`
 	Key   []byte `json:"key"`
 }
+
+type PolicyDecision struct {
+	id          uuid.UUID
+	SubjectName string
+	DigestID    string
+	Timestamp   time.Time
+	Decision    Decision
+}
+
+// Decision defines the type for the "decision" enum field.
+type Decision string
+
+// DecisionDenied is the default value of the Decision enum.
+const DefaultDecision = DecisionDenied
+
+// Decision values.
+const (
+	DecisionAllowed Decision = "allowed"
+	DecisionDenied  Decision = "denied"
+	DecisionSkipped Decision = "skipped"
+)
 
 // PublicKeyVerifiers returns verifiers for each of the policy's embedded public keys grouped by the key's ID
 func (p Policy) PublicKeyVerifiers() (map[string]cryptoutil.Verifier, error) {
