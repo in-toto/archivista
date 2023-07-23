@@ -36,3 +36,7 @@ func Register(name string, factory func() SignerProvider, opts ...registry.Confi
 func RegistryEntries() []registry.Entry[SignerProvider] {
 	return signerRegistry.AllEntries()
 }
+
+func NewSignerProvider(name string, opts ...func(SignerProvider) (SignerProvider, error)) (SignerProvider, error) {
+	return signerRegistry.NewEntity(name, opts...)
+}

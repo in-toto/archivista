@@ -39,10 +39,25 @@ func TestNewEntity(t *testing.T) {
 	testReg := New[*testEntity]()
 	entityName := "test"
 	testReg.Register(entityName, func() *testEntity { return &testEntity{} })
-	te, err := testReg.NewEntity(entityName)
-	require.NoError(t, err)
-	assert.Equal(t, te, &testEntity{})
-	te, err = testReg.NewEntity("this doesn't exist")
-	assert.Error(t, err)
-	assert.Nil(t, te)
+
+	t.Run("successful new entity", func(t *testing.T) {
+		te, err := testReg.NewEntity(entityName)
+		require.NoError(t, err)
+		assert.Equal(t, te, &testEntity{})
+	})
+
+	t.Run("unsuccessful new entity", func(t *testing.T) {
+		te, err := testReg.NewEntity("this doesn't exist")
+		assert.Error(t, err)
+		assert.Nil(t, te)
+	})
+
+	t.Run("new entity with options", func(t *testing.T) {
+		te, err := testReg.NewEntity(entityName, func(te *testEntity) (*testEntity, error) {
+			te.intOpt = 5
+			return te, nil
+		})
+		require.NoError(t, err)
+		assert.Equal(t, 5, te.intOpt)
+	})
 }

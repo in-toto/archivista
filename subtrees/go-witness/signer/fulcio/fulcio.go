@@ -78,7 +78,7 @@ func init() {
 			},
 		),
 		registry.StringConfigOption(
-			"client-id",
+			"oidc-client-id",
 			"OIDC client ID to use for authentication",
 			"",
 			func(sp signer.SignerProvider, oidcClientID string) (signer.SignerProvider, error) {

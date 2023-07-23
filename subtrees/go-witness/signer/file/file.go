@@ -34,11 +34,11 @@ func init() {
 			func(sp signer.SignerProvider, keyPath string) (signer.SignerProvider, error) {
 				ksp, ok := sp.(FileSignerProvider)
 				if !ok {
-					return sp, fmt.Errorf("provided signer provider is not a file signer provider")
+					return ksp, fmt.Errorf("provided signer provider is not a file signer provider")
 				}
 
 				WithKeyPath(keyPath)(&ksp)
-				return sp, nil
+				return ksp, nil
 			},
 		),
 		registry.StringConfigOption(
@@ -48,11 +48,11 @@ func init() {
 			func(sp signer.SignerProvider, certPath string) (signer.SignerProvider, error) {
 				ksp, ok := sp.(FileSignerProvider)
 				if !ok {
-					return sp, fmt.Errorf("provided signer provider is not a file signer provider")
+					return ksp, fmt.Errorf("provided signer provider is not a file signer provider")
 				}
 
 				WithCertPath(certPath)(&ksp)
-				return sp, nil
+				return ksp, nil
 			},
 		),
 		registry.StringSliceConfigOption(
@@ -62,7 +62,7 @@ func init() {
 			func(sp signer.SignerProvider, intermediatePaths []string) (signer.SignerProvider, error) {
 				ksp, ok := sp.(FileSignerProvider)
 				if !ok {
-					return sp, fmt.Errorf("provided signer provider is not a file signer provider")
+					return ksp, fmt.Errorf("provided signer provider is not a file signer provider")
 				}
 
 				WithIntermediatePaths(intermediatePaths)(&ksp)

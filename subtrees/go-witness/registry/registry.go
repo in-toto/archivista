@@ -82,14 +82,32 @@ func (r Registry[T]) AllEntries() []Entry[T] {
 }
 
 // NewEntity creates a new entity with the the default options set
-func (r Registry[T]) NewEntity(name string) (T, error) {
+func (r Registry[T]) NewEntity(name string, optSetters ...func(T) (T, error)) (T, error) {
 	var result T
 	entry, ok := r.Entry(name)
 	if !ok {
 		return result, fmt.Errorf("could not find entry with name %v", name)
 	}
 
-	return r.SetDefaultVals(entry.Factory(), entry.Options)
+	result, err := r.SetDefaultVals(entry.Factory(), entry.Options)
+	if err != nil {
+		return result, err
+	}
+
+	return SetOptions(result, optSetters...)
+}
+
+func SetOptions[T any](entity T, optSetters ...func(T) (T, error)) (T, error) {
+	var err error
+	result := entity
+	for _, setter := range optSetters {
+		result, err = setter(result)
+		if err != nil {
+			return result, err
+		}
+	}
+
+	return result, err
 }
 
 // SetDefaultVals will take an Entity and call Setter for every option with that option's defaultVal.
