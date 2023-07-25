@@ -45,17 +45,17 @@ jobs:
         run: go install github.com/praetorian-inc/gokart@latest
 
       - name: Static Analysis
-        uses: testifysec/testify-run-action@main
+        uses: testifysec/witness-run-action@40aa4ef36fc431a37de7c3faebcb66513c03b934
         with:
-          step-name: static-analysis
-          attestors: "github sarif"
+          step: static-analysis
+          attestations: "github sarif"
           command: gokart scan . -o sarif-results.json -s
 
       - name: Test
-        uses: testifysec/testify-run-action@main
+        uses: testifysec/witness-run-action@40aa4ef36fc431a37de7c3faebcb66513c03b934
         with: 
-          step-name: "test"
-          attestors: "github"
+          step: "test"
+          attestations: "github"
           command: go test -v -coverprofile=profile.cov -covermode=atomic ./...
 
       - name: Send coverage
