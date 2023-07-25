@@ -14,7 +14,10 @@
 
 package registry
 
-import "fmt"
+import (
+	"fmt"
+	"time"
+)
 
 // Registry is a way for the library to expose details about available configuration options
 // for a collection of Entities at run time. This is useful to do things such as expose attestor
@@ -123,6 +126,8 @@ func (r Registry[T]) SetDefaultVals(entity T, opts []Configurer) (T, error) {
 		case *ConfigOption[T, []string]:
 			entity, err = o.Setter()(entity, o.DefaultVal())
 		case *ConfigOption[T, bool]:
+			entity, err = o.Setter()(entity, o.DefaultVal())
+		case *ConfigOption[T, time.Duration]:
 			entity, err = o.Setter()(entity, o.DefaultVal())
 		}
 

@@ -14,7 +14,10 @@
 
 package registry
 
-import "fmt"
+import (
+	"fmt"
+	"time"
+)
 
 type Configurer interface {
 	Description() string
@@ -23,7 +26,7 @@ type Configurer interface {
 }
 
 type Option interface {
-	int | string | []string | bool
+	int | string | []string | bool | time.Duration
 }
 
 type ConfigOption[T any, TOption Option] struct {
@@ -87,6 +90,15 @@ func StringSliceConfigOption[T any](name, description string, defaultVal []strin
 
 func BoolConfigOption[T any](name, description string, defaultVal bool, setter func(T, bool) (T, error)) *ConfigOption[T, bool] {
 	return &ConfigOption[T, bool]{
+		name:        name,
+		description: description,
+		defaultVal:  defaultVal,
+		setter:      setter,
+	}
+}
+
+func DurationConfigOption[T any](name, description string, defaultVal time.Duration, setter func(T, time.Duration) (T, error)) *ConfigOption[T, time.Duration] {
+	return &ConfigOption[T, time.Duration]{
 		name:        name,
 		description: description,
 		defaultVal:  defaultVal,
