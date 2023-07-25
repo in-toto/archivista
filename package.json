@@ -23,7 +23,7 @@
     "pre-commit": "npm run pre-commit -w web",
     "pre-push": "npx prepush-if-changed",
     "prepare": "husky install",
-    "remotes:add:all": "npm run remotes:add-archivista & npm run remotes:add-go-witness & npm run remotes:add-witness & npm run remotes:add-witness-run-action",
+    "remotes:add:all": "npm run remotes:add:archivista & npm run remotes:add:go-witness & npm run remotes:add:witness & npm run remotes:add:witness-run-action",
     "remotes:add:archivista": "git remote add -f archivista https://github.com/testifysec/archivista.git",
     "remotes:add:go-witness": "git remote add -f go-witness https://github.com/testifysec/go-witness.git",
     "remotes:add:witness": "git remote add -f witness https://github.com/testifysec/witness.git",
