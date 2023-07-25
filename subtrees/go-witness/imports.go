@@ -33,4 +33,5 @@ import (
 	_ "github.com/testifysec/go-witness/signer/file"
 	_ "github.com/testifysec/go-witness/signer/fulcio"
 	_ "github.com/testifysec/go-witness/signer/spiffe"
+	_ "github.com/testifysec/go-witness/signer/vault"
 )
