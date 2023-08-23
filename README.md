@@ -1,75 +1,299 @@
-# Judge Platform
 
-This is the internal monorepo project for the Judge Platform, a SaaS (Software as a Service) that provides ready-to-use open source software for supply-chain security.
+[![asciicast](https://asciinema.org/a/2DZRRh8uzrzHcUVL8md86Zj4D.svg)](https://asciinema.org/a/2DZRRh8uzrzHcUVL8md86Zj4D)
 
-## Internal Monorepo Structure
+## Witness is a pluggable framework for supply chain security
 
-This monorepo is for internal use only and serves as the source of truth for all TestifySec work on the platform. Development should be done within this monorepo, which acts as our home. You are free to work on any project within the monorepo as you would in a normal project.
+Witness prevents tampering of build materials and verifies the integrity of the build process from source to target. It works by wrapping commands executed in a continuous integration process. Its attestation system is pluggable and offers support out of the box for most major CI and infrastructure providers. Verification of Witness metadata and a secure PKI distribution system will mitigate against many software supply chain attack vectors and can be used as a framework for automated governance.
 
-At the root of the monorepo, we can share configuration files, scripts, and more across the project. However, all subtrees must be self-contained. More details on this will be provided later.
+Witness is an implementation of the in-toto spec including [ITE-5](https://github.com/in-toto/ITE/tree/master/ITE/5), [ITE-6](https://github.com/in-toto/ITE/tree/master/ITE/6), [ITE-7](https://github.com/in-toto/ITE/tree/master/ITE/7) with an [embedded rego policy engine](https://www.openpolicyagent.org/docs/latest/integration/#integrating-with-the-go-api).
 
-### Private Subfolders vs Public Subtrees
+- Does **NOT** require elevated privileges.
+- Can run in a containerized or non-containerized environment
+- Records secure hashes of materials, artifacts, and events occurring during the CI process
+- Integrations with cloud identity services
+- Keyless signing with [SPIFFE/SPIRE](https://spiffe.io/)
+- Support for uploading attestation evidence to rekor server (sigstore)
+- Build policy enforcement with Open Policy Agent.
+- Alpha support for tracing and process tampering prevention
+- Verifies file integrity between CI steps, and across air gap.
+- Experimental Windows and ARM Support
 
-The monorepo is divided into several subfolders at the root. Most subfolders contain internal private code that supports the platform (e.g., `web/`, `dev/`, `judge-api/`). Other subfolders are [Git Subtrees](https://www.atlassian.com/git/tutorials/git-subtree) linked to public repositories. These special subfolders require synchronization between the monorepo and the associated public repositories. When making changes to these subfolders, it's important to be mindful of the synchronization process.
+## Usage
 
-### Prerequisites
+- [Run](docs/witness_run.md) - Runs the provided command and records attestations about the execution.
+- [Sign](docs/witness_sign.md) - Signs the provided file with the provided key.
+- [Verify](docs/witness_verify.md) - Verifies a witness policy.
 
-Before you can fully contribute, make sure you have completed the following prerequisites:
+## TOC
 
-1. Have a GitLab/GitHub account with access to the TestifySec Git repositories.
-1. Set up SSH keys or HTTP login for your GitLab/GitHub accounts. You can try using the 1Password CLI with Google Cloud and GitHub SSH keys for convenience.
-1. Have the necessary roles to access the attestations via gcloud in the `load attestations` command.
-1. Have your TestifySec physical security key provisioned.
-1. Strongly encouraged to have [nvm](https://github.com/nvm-sh/nvm) installed and configured on your machine to synchronize with the entire team on the Node.js version. You can try installing it with `brew install nvm` and following the setup instructions. Once you have `nvm`, run `nvm use` and `nvm install` to get in sync with the team's specified Node.js version.
-1. Run `npm i` from the root of this repository to install all dependencies. This should also `go get` all go dependencies for all of our go projects.
-1. Run `make hosts` from the `dev/` folder at least once to set up the hosts file for local development.
+- [Witness Attestors](#witness-attestors)
+  - [What is a witness attestor?](#what-is-a-witness-attestor)
+  - [Attestor Security Model](#attestor-security-model)
+  - [Attestor Life Cycle](#attestor-life-cycle)
+    - [Attestation Lifecycle](#attestation-lifecycle)
+  - [Attestor Types](#attestor-types)
+    - [Pre Run Attestors](#pre-run-attestors)
+    - [Internal Attestors](#internal-attestors)
+    - [Post Run Attestors](#post-run-attestors)
+    - [AttestationCollection](#attestationcollection)
+    - [Attestor Subjects](#attestor-subjects)
+  - [Witness Policy](#witness-policy)
+    - [What is a witness policy?](#what-is-a-witness-policy)
+  - [Witness Verification](#witness-verification)
+    - [Verification Lifecycle](#verification-lifecycle)
+  - [Using SPIRE for Keyless Signing](#using-spire-for-keyless-signing)
+  - [Witness Examples](#witness-examples)
+  - [Media](#media)
+  - [Roadmap](#roadmap)
+  - [Support](#support)
 
 ## Getting Started
 
-Assuming you have completed all the prerequisites mentioned above, follow these steps to get started:
+### Download the Binary
+[Releases](https://github.com/testifysec/witness/releases)
+```
+curl -LO https://github.com/testifysec/witness/releases/download/${VERSION}/witness_${VERSION}_${ARCH}.tar.gz
+tar -xzf witness_${VERSION}_${ARCH}.tar.gz
+```
 
-1. Run `npm start` to start everything in your development environment using an npm script. This includes running `make deps`, `make up`, and setting up port forwarding.
+### Create a Keypair
 
-   Note: If you use this method, `minikube tunnel` will be used, which may require your password. Be sure not to miss the prompt and press Enter in the minikube tunnel pane if necessary.
+> Witness supports keyless signing with [SPIRE](https://spiffe.io/)!
 
-   If you prefer a more manual process, you can follow these alternative steps:
+```
+openssl genpkey -algorithm ed25519 -outform PEM -out testkey.pem
+openssl pkey -in testkey.pem -pubout > testpub.pem
+```
 
-1. Run `make deps` from the `dev/` subfolder to install dependencies.
-1. You should now have everything you need to start contributing. Follow the instructions in the `dev/readme.md` file for the remaining steps, including running `make up`, `make load-attestations`, and `minikube tunnel`.
+### Create a Witness configuration
 
-Once your local environment is set up, you can make changes to the repository as needed.
+> - This file generally resides in your source code repository along with the public keys generated above.
+> - `.witness yaml` is the default location for the configuration file
+> - `witness help` will show all configuration options
+> - command-line arguments overrides configuration file values.
 
-### Load Attestations
+```
+## .witness.yaml
 
-If you want to use a local Archivista and local Judge API with the web project, you need to load the attestations. This requires using your physical security key to log in and load all the attestation
+run:
+    key: testkey.pem
+    trace: false
+verify:
+    attestations:
+        - "test-att.json"
+    policy: policy-signed.json
+    publickey: testpub.pem
+```
 
- data to your machine.
+### Record attestations for a build step
 
-To load the attestations, run `make load-attestations` from the `dev/` folder.
+> - The `-a {attestor}` flag allows you to define which attestors run
+> - ex. `-a maven -a was -a gitlab` would be used for a maven build running on a GitLab runner on GCP.
+> - Defining step names is important, these will be used in the policy.
+> - This should happen as a part of a CI step
 
-### Getting Started with web/
+```
+witness run --step build -o test-att.json -- go build -o=testapp .
+```
 
-If you have the local Kubernetes environment running as mentioned above, the web project should already be available in a locally deployed production instance at [https://judge.testifysec.localhost/](https://judge.testifysec.localhost/).
+### View the attestation data in the signed DSSE Envelope
 
-To run a development instance locally with HMR (hot module reloading), use the following commands:
+> - This data can be stored and retrieved from rekor!
+> - This is the data that is evaluated against the Rego policy
 
-1. Run `npm run start:web` to start the web project in HMR mode.
+```
+cat test-att.json | jq -r .payload | base64 -d | jq
+```
 
-By default, running the web project this way will use the full local Kubernetes environment, including Archivista and Judge, for comprehensive local development. If you want to connect to the remote proxies, follow the instructions below.
+### Create a Policy File
 
-#### web/ with Remote Proxies
+Look [here](docs/policy.md) for full documentation on Witness Policies.
 
-Note: This may require reintroducing Hydra with Kratos to allow for multiple domains in the login process.
+> - Make sure to replace the keys in this file with the ones from the step above (sed command below).
+> - Rego policies should be base64 encoded
+> - Steps are bound to keys. Policy can be written to check the certificate data. For example, we can require a step is signed by a key with a specific `CN` attribute.
+> - Witness will require all attestations to succeed
+> - Witness will evaluate the rego policy against the JSON object in the corresponding attestor
 
-To run the web project connected to production data, use the following commands:
+```
+## policy.json
 
-1. Run `npm run start:web:remote-proxy` to start the web project in HMR mode, connected to the production APIs as remote proxies.
+{
+  "expires": "2023-12-17T23:57:40-05:00",
+  "steps": {
+    "build": {
+      "name": "build",
+      "attestations": [
+        {
+          "type": "https://witness.dev/attestations/material/v0.1",
+          "regopolicies": []
+        },
+        {
+          "type": "https://witness.dev/attestations/command-run/v0.1",
+          "regopolicies": []
+        },
+        {
+          "type": "https://witness.dev/attestations/product/v0.1",
+          "regopolicies": []
+        }
+      ],
+      "functionaries": [
+        {
+          "publickeyid": "{{PUBLIC_KEY_ID}}"
+        }
+      ]
+    }
+  },
+  "publickeys": {
+    "{{PUBLIC_KEY_ID}}": {
+      "keyid": "{{PUBLIC_KEY_ID}}",
+      "key": "{{B64_PUBLIC_KEY}}"
+    }
+  }
+}
+```
 
-### How to generate code changes to our sub projects
+### Replace the variables in the policy
 
-Some of our projects utilize code generation to assist in abstracting away boilerplate. Namely, we have some go projects that use Ent and gqlgen. 
+```
+id=`sha256sum testpub.pem | awk '{print $1}'` && sed -i "s/{{PUBLIC_KEY_ID}}/$id/g" policy.json
+pubb64=`cat testpub.pem | base64 -w 0` && sed -i "s/{{B64_PUBLIC_KEY}}/$pubb64/g" policy.json
+```
 
-You can generate what you need from inside those project folders running the `go generate ./... -v` command, but we have also provided shortcuts in the root folder for you. 
+### Sign The Policy File
 
-- `npm run gen:archivista` will `go generate` all the archivista things
-- `npm run gen:judge-api` will `go generate` all the judge-api things
+Keep this key safe, its owner will control the policy gates.
+
+```
+witness sign -f policy.json --key testkey.pem --outfile policy-signed.json
+```
+
+### Verify the Binary Meets Policy Requirements
+
+> This process works across air-gap as long as you have the signed policy file, correct binary, and public key or certificate authority corresponding to the private key that signed the policy.
+> `witness verify` will return a `non-zero` exit and reason in the case of failure. Success will be silent with a `0` exit status
+> for policies that require multiple steps, multiple attestations are required.
+
+```
+witness verify -f testapp -a test-att.json -p policy-signed.json -k testpub.pem
+```
+
+# Witness Attestors
+
+## What is a witness attestor?
+
+Witness attestors are pieces of code that assert facts about a system and store those facts in a versioned schema. Each attestor has a `Name`, `Type`, and `RunType`. The `Type` is a versioned string corresponding to the JSON schema of the attestation. For example, the AWS attestor is defined as follows:
+
+```
+  Name    = "aws"
+  Type    = "https://witness.dev/attestations/aws/v0.1"
+  RunType = attestation.PreRunType
+```
+
+The attestation types are used when we evaluate policy against these attestations.
+
+## Attestor Security Model
+
+Attestations are only as secure as the data that feeds them. Where possible cryptographic material should be validated, evidence of validation should be included in the attestation for out-of-band validation.
+
+Examples of cryptographic validation is found in the [GCP](https://github.com/testifysec/witness/tree/main/pkg/attestation/gcp-iit), [AWS](https://github.com/testifysec/witness/blob/main/pkg/attestation/aws-iid/aws-iid.go), and [GitLab](https://github.com/testifysec/witness/tree/main/pkg/attestation/gitlab) attestors.
+
+## Attestor Life Cycle
+
+- **Pre-material:** Pre-material attestors run before any other attestors. These attestors generally collect information about the environment.
+
+- **Material:** Material attestors run after any prematerial attestors and prior to any execute attestors. Generally these collect information about state that may change after any execute attestors, such as file hashes.
+
+- **Execute:**: Execute attestors run after any material attestors and generally record information about some command or process that is to be executed.
+
+- **Product:** Product attestors run after any execute attestors and generally record information about what changed during the execute lifecycle step, such as changed or created files.
+
+- **Post-product:** Post-product attestors run after product attestors and generally record some additional information about specific products, such as OCI image information from a saved image tarball.
+
+### Attestation Lifecycle
+
+![](docs/assets/attestation.png)
+
+## Attestor Types
+
+### Pre-material Attestors
+- [AWS](docs/attestors/aws-iid.md) - Attestor for AWS Instance Metadata
+- [GCP](docs/attestors/gcp-iit.md) - Attestor for GCP Instance Identity Service
+- [GitLab](docs/attestors/gitlab.md) - Attestor for GitLab Pipelines
+- [Git](docs/attestors/git.md) - Attestor for Git Repository
+- [Maven](docs/attestors/maven.md) Attestor for Maven Projects
+- [Environment](docs/attestors/environment.md) - Attestor for environment variables (**_be careful with this - there is no way to mask values yet_**)
+- [JWT](docs/attestors/jwt.md) - Attestor for JWT Tokens
+
+### Material Attestors
+- [Material](docs/attestors/material.md) - Records secure hashes of files in current working directory
+
+### Execute Attestors
+- [CommandRun](docs/attestors/commandrun.md) - Records traces and metadata about the actual process being run
+
+### Product Attestors
+- [Product](docs/attestors/product.md) - Records secure hashes of files produced by commandrun attestor (only detects new files)
+
+### Post-product Attestors
+
+- [OCI](docs/attestors/oci.md) - Attestor for tar'd OCI images
+
+### AttestationCollection
+
+An `attestationCollection` is a collection of attestations that are cryptographically bound together. Because the attestations are bound together, we can trust that they all happened as part of the same attesation life cycle. Witness policy defines which attestations are required.
+
+### Attestor Subjects
+
+Attestors define subjects that act as lookup indexes. The attestationCollection can be looked up by any of the subjects defined by the attestors.
+
+## Witness Policy
+
+### What is a witness policy?
+
+A witness policy is a signed document that encodes the requirements for an artifact to be validated. A witness policy includes public keys for trusted functionaries, which attestations must be found, and rego policy to evaluate against the attestation meta-data.
+
+I witness policy allowers administrators trace the compliance status of an artifact at any point during it's lifecycle.
+
+## Witness Verification
+
+### Verification Lifecycle
+
+![](docs/assets/verification.png)
+
+## Using [SPIRE](https://github.com/spiffe/spire) for Keyless Signing
+
+Witness can consume ephemeral keys from a [SPIRE](https://github.com/spiffe/spire) node agent. Configure witness with the flag `--spiffe-socket` to enable keyless signing.
+
+During the verification process witness will use the [Rekor](https://github.com/sigstore/rekor) integrated time to make a determination on certificate validity. The SPIRE certificate only needs to remain valid long enough for the attestation to be integrated into the Rekor log.
+
+## Witness Examples
+
+- [Using Witness To Prevent SolarWinds Type Attacks](examples/solarwinds/README.md)
+- [Using Witness To Find Artifacts With Hidden Vulnerable Log4j Dependencies](examples/log4shell/README.md)
+
+## Media
+
+- [Blog - What is a supply chain attestation, and why do I need it?](https://www.testifysec.com/blog/what-is-a-supply-chain-attestation/)
+- [Talk - Securing the Software Supply Chain with the in-toto & SPIRE projects](https://www.youtube.com/watch?v=4lFbdkB62QI)
+- [Talk - Securing the Software Supply Chain with SBOM and Attestation](https://www.youtube.com/watch?v=wX6aTZfpJv0)
+
+## Roadmap
+
+- Attestors for all major platforms
+- CaC Card Attestor
+- GovCloud Attestor
+- OIDC Attestor
+- FIDO Attestor
+- Vault Key Provider
+- Cloud KMS Support
+- Kubernetes Admission Controller
+- SIEM Collection Agent 
+- Cosign Signature Validation
+- Notary v2 Signature Validation
+- [Zarf](https://github.com/defenseunicorns/zarf) Integration
+- IronBank Attestor
+
+## Support
+
+[TestifySec](https://testifysec.com) Provides support for witness and other CI security tools.
+[Contact Us](mailto:info@testifysec.com)
