@@ -1,7 +1,0 @@
-dist
-.cache
-public
-*.yml
-*.yaml
-.lighthouseci
-.old

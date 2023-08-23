@@ -1,8 +1,0 @@
-go 1.20
-
-use (
-	./judge-api
-	./subtrees/archivista
-	./subtrees/go-witness
-	./subtrees/witness
-)
