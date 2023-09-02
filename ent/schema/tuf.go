@@ -13,6 +13,7 @@ type Target struct {
 
 func (Target) Fields() []ent.Field {
 	return []ent.Field{
+		//the trget file id
 		field.String("gitoid_sha256").NotEmpty().Unique(),
 		field.Int("length"),
 		field.String("version"),
@@ -23,9 +24,10 @@ func (Target) Fields() []ent.Field {
 func (Target) Edges() []ent.Edge {
 	return []ent.Edge{
 		edge.To("signatures", Signature.Type),
+		//these are the digests of the target files such as a signed-policy.json
 		edge.To("payload_digests", PayloadDigest.Type),
 		edge.To("dsse", Dsse.Type),
-		edge.To("subjects", Subject.Type),
+		//subjects allow us to find policy targets for repos or artifacts
 	}
 }
 
