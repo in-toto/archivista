@@ -39,7 +39,7 @@ import (
 	"github.com/sirupsen/logrus"
 	"github.com/testifysec/archivista"
 	"github.com/testifysec/archivista/internal/config"
-	"github.com/testifysec/archivista/internal/metadatastorage/mysqlstore"
+	"github.com/testifysec/archivista/internal/metadatastorage/sqlstore"
 	"github.com/testifysec/archivista/internal/objectstorage/blobstore"
 	"github.com/testifysec/archivista/internal/objectstorage/filestore"
 	"github.com/testifysec/archivista/internal/server"
@@ -86,7 +86,12 @@ func main() {
 		logrus.Fatalf("error initializing storage clients: %+v", err)
 	}
 
-	mysqlStore, mysqlStoreCh, err := mysqlstore.New(ctx, cfg.SQLStoreConnectionString)
+	entClient, err := sqlstore.NewEntClient(cfg.SQLStoreBackend, cfg.SQLStoreConnectionString)
+	if err != nil {
+		logrus.Fatalf("could not create ent client: %+v", err)
+	}
+
+	mysqlStore, mysqlStoreCh, err := sqlstore.New(ctx, entClient)
 	if err != nil {
 		logrus.Fatalf("error initializing mysql client: %+v", err)
 	}

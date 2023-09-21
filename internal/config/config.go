@@ -32,6 +32,7 @@ type Config struct {
 	SPIFFEAddress            string `default:"unix:///tmp/spire-agent/public/api.sock" desc:"SPIFFE server address" split_words:"true"`
 	SPIFFETrustedServerId    string `default:"" desc:"Trusted SPIFFE server ID; defaults to any" split_words:"true"`
 	SQLStoreConnectionString string `default:"root:example@tcp(db)/testify" desc:"SQL store connection string" split_words:"true"`
+	SQLStoreBackend          string `default:"MYSQL" desc:"SQL backend to use. Options are MYSQL, PSQL" split_words:"true"`
 
 	StorageBackend             string `default:"" desc:"Backend to use for attestation storage. Options are FILE, BLOB, or empty string for disabled." split_words:"true"`
 	FileServeOn                string `default:"" desc:"What address to serve files on. Only valid when using FILE storage backend." split_words:"true"`
