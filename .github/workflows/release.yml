@@ -16,7 +16,13 @@ permissions:
   id-token: write # This is required for requesting the JWT
   contents: read  # This is required for actions/checkout
 name: release
-on: [push, pull_request]
+on:
+  push:
+    tags:
+      - v*
+    branches:
+      - main
+  pull_request:
 jobs:
   test:
     strategy:
@@ -57,6 +63,13 @@ jobs:
           step: "test"
           attestations: "github"
           command: go test -v -coverprofile=profile.cov -covermode=atomic ./...
+
+      - name: E2E Tests
+        uses: testifysec/witness-run-action@40aa4ef36fc431a37de7c3faebcb66513c03b934
+        with:
+          step: "e2e"
+          attestations: "github"
+          command: ./test/test.sh
 
       - name: Send coverage
         env:
