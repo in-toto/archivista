@@ -7,9 +7,14 @@ import (
 	"errors"
 	"fmt"
 	"log"
+	"reflect"
 
 	"github.com/testifysec/archivista/ent/migrate"
 
+	"entgo.io/ent"
+	"entgo.io/ent/dialect"
+	"entgo.io/ent/dialect/sql"
+	"entgo.io/ent/dialect/sql/sqlgraph"
 	"github.com/testifysec/archivista/ent/attestation"
 	"github.com/testifysec/archivista/ent/attestationcollection"
 	"github.com/testifysec/archivista/ent/dsse"
@@ -19,10 +24,6 @@ import (
 	"github.com/testifysec/archivista/ent/subject"
 	"github.com/testifysec/archivista/ent/subjectdigest"
 	"github.com/testifysec/archivista/ent/timestamp"
-
-	"entgo.io/ent/dialect"
-	"entgo.io/ent/dialect/sql"
-	"entgo.io/ent/dialect/sql/sqlgraph"
 )
 
 // Client is the client that holds all ent builders.
@@ -54,7 +55,7 @@ type Client struct {
 
 // NewClient creates a new client configured with the given options.
 func NewClient(opts ...Option) *Client {
-	cfg := config{log: log.Println, hooks: &hooks{}}
+	cfg := config{log: log.Println, hooks: &hooks{}, inters: &inters{}}
 	cfg.options(opts...)
 	client := &Client{config: cfg}
 	client.init()
@@ -74,6 +75,55 @@ func (c *Client) init() {
 	c.Timestamp = NewTimestampClient(c.config)
 }
 
+type (
+	// config is the configuration for the client and its builder.
+	config struct {
+		// driver used for executing database requests.
+		driver dialect.Driver
+		// debug enable a debug logging.
+		debug bool
+		// log used for logging on debug mode.
+		log func(...any)
+		// hooks to execute on mutations.
+		hooks *hooks
+		// interceptors to execute on queries.
+		inters *inters
+	}
+	// Option function to configure the client.
+	Option func(*config)
+)
+
+// options applies the options on the config object.
+func (c *config) options(opts ...Option) {
+	for _, opt := range opts {
+		opt(c)
+	}
+	if c.debug {
+		c.driver = dialect.Debug(c.driver, c.log)
+	}
+}
+
+// Debug enables debug logging on the ent.Driver.
+func Debug() Option {
+	return func(c *config) {
+		c.debug = true
+	}
+}
+
+// Log sets the logging function for debug mode.
+func Log(fn func(...any)) Option {
+	return func(c *config) {
+		c.log = fn
+	}
+}
+
+// Driver configures the client driver.
+func Driver(driver dialect.Driver) Option {
+	return func(c *config) {
+		c.driver = driver
+	}
+}
+
 // Open opens a database/sql.DB specified by the driver name and
 // the data source name, and returns a new client attached to it.
 // Optional parameters can be added for configuring the client.
@@ -90,11 +140,14 @@ func Open(driverName, dataSourceName string, options ...Option) (*Client, error)
 	}
 }
 
+// ErrTxStarted is returned when trying to start a new transaction from a transactional client.
+var ErrTxStarted = errors.New("ent: cannot start a transaction within a transaction")
+
 // Tx returns a new transactional client. The provided context
 // is used until the transaction is committed or rolled back.
 func (c *Client) Tx(ctx context.Context) (*Tx, error) {
 	if _, ok := c.driver.(*txDriver); ok {
-		return nil, errors.New("ent: cannot start a transaction within a transaction")
+		return nil, ErrTxStarted
 	}
 	tx, err := newTx(ctx, c.driver)
 	if err != nil {
@@ -170,15 +223,49 @@ func (c *Client) Close() error {
 // Use adds the mutation hooks to all the entity clients.
 // In order to add hooks to a specific client, call: `client.Node.Use(...)`.
 func (c *Client) Use(hooks ...Hook) {
-	c.Attestation.Use(hooks...)
-	c.AttestationCollection.Use(hooks...)
-	c.Dsse.Use(hooks...)
-	c.PayloadDigest.Use(hooks...)
-	c.Signature.Use(hooks...)
-	c.Statement.Use(hooks...)
-	c.Subject.Use(hooks...)
-	c.SubjectDigest.Use(hooks...)
-	c.Timestamp.Use(hooks...)
+	for _, n := range []interface{ Use(...Hook) }{
+		c.Attestation, c.AttestationCollection, c.Dsse, c.PayloadDigest, c.Signature,
+		c.Statement, c.Subject, c.SubjectDigest, c.Timestamp,
+	} {
+		n.Use(hooks...)
+	}
+}
+
+// Intercept adds the query interceptors to all the entity clients.
+// In order to add interceptors to a specific client, call: `client.Node.Intercept(...)`.
+func (c *Client) Intercept(interceptors ...Interceptor) {
+	for _, n := range []interface{ Intercept(...Interceptor) }{
+		c.Attestation, c.AttestationCollection, c.Dsse, c.PayloadDigest, c.Signature,
+		c.Statement, c.Subject, c.SubjectDigest, c.Timestamp,
+	} {
+		n.Intercept(interceptors...)
+	}
+}
+
+// Mutate implements the ent.Mutator interface.
+func (c *Client) Mutate(ctx context.Context, m Mutation) (Value, error) {
+	switch m := m.(type) {
+	case *AttestationMutation:
+		return c.Attestation.mutate(ctx, m)
+	case *AttestationCollectionMutation:
+		return c.AttestationCollection.mutate(ctx, m)
+	case *DsseMutation:
+		return c.Dsse.mutate(ctx, m)
+	case *PayloadDigestMutation:
+		return c.PayloadDigest.mutate(ctx, m)
+	case *SignatureMutation:
+		return c.Signature.mutate(ctx, m)
+	case *StatementMutation:
+		return c.Statement.mutate(ctx, m)
+	case *SubjectMutation:
+		return c.Subject.mutate(ctx, m)
+	case *SubjectDigestMutation:
+		return c.SubjectDigest.mutate(ctx, m)
+	case *TimestampMutation:
+		return c.Timestamp.mutate(ctx, m)
+	default:
+		return nil, fmt.Errorf("ent: unknown mutation type %T", m)
+	}
 }
 
 // AttestationClient is a client for the Attestation schema.
@@ -197,6 +284,12 @@ func (c *AttestationClient) Use(hooks ...Hook) {
 	c.hooks.Attestation = append(c.hooks.Attestation, hooks...)
 }
 
+// Intercept adds a list of query interceptors to the interceptors stack.
+// A call to `Intercept(f, g, h)` equals to `attestation.Intercept(f(g(h())))`.
+func (c *AttestationClient) Intercept(interceptors ...Interceptor) {
+	c.inters.Attestation = append(c.inters.Attestation, interceptors...)
+}
+
 // Create returns a builder for creating a Attestation entity.
 func (c *AttestationClient) Create() *AttestationCreate {
 	mutation := newAttestationMutation(c.config, OpCreate)
@@ -205,6 +298,21 @@ func (c *AttestationClient) Create() *AttestationCreate {
 
 // CreateBulk returns a builder for creating a bulk of Attestation entities.
 func (c *AttestationClient) CreateBulk(builders ...*AttestationCreate) *AttestationCreateBulk {
+	return &AttestationCreateBulk{config: c.config, builders: builders}
+}
+
+// MapCreateBulk creates a bulk creation builder from the given slice. For each item in the slice, the function creates
+// a builder and applies setFunc on it.
+func (c *AttestationClient) MapCreateBulk(slice any, setFunc func(*AttestationCreate, int)) *AttestationCreateBulk {
+	rv := reflect.ValueOf(slice)
+	if rv.Kind() != reflect.Slice {
+		return &AttestationCreateBulk{err: fmt.Errorf("calling to AttestationClient.MapCreateBulk with wrong type %T, need slice", slice)}
+	}
+	builders := make([]*AttestationCreate, rv.Len())
+	for i := 0; i < rv.Len(); i++ {
+		builders[i] = c.Create()
+		setFunc(builders[i], i)
+	}
 	return &AttestationCreateBulk{config: c.config, builders: builders}
 }
 
@@ -237,7 +345,7 @@ func (c *AttestationClient) DeleteOne(a *Attestation) *AttestationDeleteOne {
 	return c.DeleteOneID(a.ID)
 }
 
-// DeleteOne returns a builder for deleting the given entity by its id.
+// DeleteOneID returns a builder for deleting the given entity by its id.
 func (c *AttestationClient) DeleteOneID(id int) *AttestationDeleteOne {
 	builder := c.Delete().Where(attestation.ID(id))
 	builder.mutation.id = &id
@@ -249,6 +357,8 @@ func (c *AttestationClient) DeleteOneID(id int) *AttestationDeleteOne {
 func (c *AttestationClient) Query() *AttestationQuery {
 	return &AttestationQuery{
 		config: c.config,
+		ctx:    &QueryContext{Type: TypeAttestation},
+		inters: c.Interceptors(),
 	}
 }
 
@@ -268,8 +378,8 @@ func (c *AttestationClient) GetX(ctx context.Context, id int) *Attestation {
 
 // QueryAttestationCollection queries the attestation_collection edge of a Attestation.
 func (c *AttestationClient) QueryAttestationCollection(a *Attestation) *AttestationCollectionQuery {
-	query := &AttestationCollectionQuery{config: c.config}
-	query.path = func(ctx context.Context) (fromV *sql.Selector, _ error) {
+	query := (&AttestationCollectionClient{config: c.config}).Query()
+	query.path = func(context.Context) (fromV *sql.Selector, _ error) {
 		id := a.ID
 		step := sqlgraph.NewStep(
 			sqlgraph.From(attestation.Table, attestation.FieldID, id),
@@ -285,6 +395,26 @@ func (c *AttestationClient) QueryAttestationCollection(a *Attestation) *Attestat
 // Hooks returns the client hooks.
 func (c *AttestationClient) Hooks() []Hook {
 	return c.hooks.Attestation
+}
+
+// Interceptors returns the client interceptors.
+func (c *AttestationClient) Interceptors() []Interceptor {
+	return c.inters.Attestation
+}
+
+func (c *AttestationClient) mutate(ctx context.Context, m *AttestationMutation) (Value, error) {
+	switch m.Op() {
+	case OpCreate:
+		return (&AttestationCreate{config: c.config, hooks: c.Hooks(), mutation: m}).Save(ctx)
+	case OpUpdate:
+		return (&AttestationUpdate{config: c.config, hooks: c.Hooks(), mutation: m}).Save(ctx)
+	case OpUpdateOne:
+		return (&AttestationUpdateOne{config: c.config, hooks: c.Hooks(), mutation: m}).Save(ctx)
+	case OpDelete, OpDeleteOne:
+		return (&AttestationDelete{config: c.config, hooks: c.Hooks(), mutation: m}).Exec(ctx)
+	default:
+		return nil, fmt.Errorf("ent: unknown Attestation mutation op: %q", m.Op())
+	}
 }
 
 // AttestationCollectionClient is a client for the AttestationCollection schema.
@@ -303,6 +433,12 @@ func (c *AttestationCollectionClient) Use(hooks ...Hook) {
 	c.hooks.AttestationCollection = append(c.hooks.AttestationCollection, hooks...)
 }
 
+// Intercept adds a list of query interceptors to the interceptors stack.
+// A call to `Intercept(f, g, h)` equals to `attestationcollection.Intercept(f(g(h())))`.
+func (c *AttestationCollectionClient) Intercept(interceptors ...Interceptor) {
+	c.inters.AttestationCollection = append(c.inters.AttestationCollection, interceptors...)
+}
+
 // Create returns a builder for creating a AttestationCollection entity.
 func (c *AttestationCollectionClient) Create() *AttestationCollectionCreate {
 	mutation := newAttestationCollectionMutation(c.config, OpCreate)
@@ -311,6 +447,21 @@ func (c *AttestationCollectionClient) Create() *AttestationCollectionCreate {
 
 // CreateBulk returns a builder for creating a bulk of AttestationCollection entities.
 func (c *AttestationCollectionClient) CreateBulk(builders ...*AttestationCollectionCreate) *AttestationCollectionCreateBulk {
+	return &AttestationCollectionCreateBulk{config: c.config, builders: builders}
+}
+
+// MapCreateBulk creates a bulk creation builder from the given slice. For each item in the slice, the function creates
+// a builder and applies setFunc on it.
+func (c *AttestationCollectionClient) MapCreateBulk(slice any, setFunc func(*AttestationCollectionCreate, int)) *AttestationCollectionCreateBulk {
+	rv := reflect.ValueOf(slice)
+	if rv.Kind() != reflect.Slice {
+		return &AttestationCollectionCreateBulk{err: fmt.Errorf("calling to AttestationCollectionClient.MapCreateBulk with wrong type %T, need slice", slice)}
+	}
+	builders := make([]*AttestationCollectionCreate, rv.Len())
+	for i := 0; i < rv.Len(); i++ {
+		builders[i] = c.Create()
+		setFunc(builders[i], i)
+	}
 	return &AttestationCollectionCreateBulk{config: c.config, builders: builders}
 }
 
@@ -343,7 +494,7 @@ func (c *AttestationCollectionClient) DeleteOne(ac *AttestationCollection) *Atte
 	return c.DeleteOneID(ac.ID)
 }
 
-// DeleteOne returns a builder for deleting the given entity by its id.
+// DeleteOneID returns a builder for deleting the given entity by its id.
 func (c *AttestationCollectionClient) DeleteOneID(id int) *AttestationCollectionDeleteOne {
 	builder := c.Delete().Where(attestationcollection.ID(id))
 	builder.mutation.id = &id
@@ -355,6 +506,8 @@ func (c *AttestationCollectionClient) DeleteOneID(id int) *AttestationCollection
 func (c *AttestationCollectionClient) Query() *AttestationCollectionQuery {
 	return &AttestationCollectionQuery{
 		config: c.config,
+		ctx:    &QueryContext{Type: TypeAttestationCollection},
+		inters: c.Interceptors(),
 	}
 }
 
@@ -374,8 +527,8 @@ func (c *AttestationCollectionClient) GetX(ctx context.Context, id int) *Attesta
 
 // QueryAttestations queries the attestations edge of a AttestationCollection.
 func (c *AttestationCollectionClient) QueryAttestations(ac *AttestationCollection) *AttestationQuery {
-	query := &AttestationQuery{config: c.config}
-	query.path = func(ctx context.Context) (fromV *sql.Selector, _ error) {
+	query := (&AttestationClient{config: c.config}).Query()
+	query.path = func(context.Context) (fromV *sql.Selector, _ error) {
 		id := ac.ID
 		step := sqlgraph.NewStep(
 			sqlgraph.From(attestationcollection.Table, attestationcollection.FieldID, id),
@@ -390,8 +543,8 @@ func (c *AttestationCollectionClient) QueryAttestations(ac *AttestationCollectio
 
 // QueryStatement queries the statement edge of a AttestationCollection.
 func (c *AttestationCollectionClient) QueryStatement(ac *AttestationCollection) *StatementQuery {
-	query := &StatementQuery{config: c.config}
-	query.path = func(ctx context.Context) (fromV *sql.Selector, _ error) {
+	query := (&StatementClient{config: c.config}).Query()
+	query.path = func(context.Context) (fromV *sql.Selector, _ error) {
 		id := ac.ID
 		step := sqlgraph.NewStep(
 			sqlgraph.From(attestationcollection.Table, attestationcollection.FieldID, id),
@@ -407,6 +560,26 @@ func (c *AttestationCollectionClient) QueryStatement(ac *AttestationCollection) 
 // Hooks returns the client hooks.
 func (c *AttestationCollectionClient) Hooks() []Hook {
 	return c.hooks.AttestationCollection
+}
+
+// Interceptors returns the client interceptors.
+func (c *AttestationCollectionClient) Interceptors() []Interceptor {
+	return c.inters.AttestationCollection
+}
+
+func (c *AttestationCollectionClient) mutate(ctx context.Context, m *AttestationCollectionMutation) (Value, error) {
+	switch m.Op() {
+	case OpCreate:
+		return (&AttestationCollectionCreate{config: c.config, hooks: c.Hooks(), mutation: m}).Save(ctx)
+	case OpUpdate:
+		return (&AttestationCollectionUpdate{config: c.config, hooks: c.Hooks(), mutation: m}).Save(ctx)
+	case OpUpdateOne:
+		return (&AttestationCollectionUpdateOne{config: c.config, hooks: c.Hooks(), mutation: m}).Save(ctx)
+	case OpDelete, OpDeleteOne:
+		return (&AttestationCollectionDelete{config: c.config, hooks: c.Hooks(), mutation: m}).Exec(ctx)
+	default:
+		return nil, fmt.Errorf("ent: unknown AttestationCollection mutation op: %q", m.Op())
+	}
 }
 
 // DsseClient is a client for the Dsse schema.
@@ -425,6 +598,12 @@ func (c *DsseClient) Use(hooks ...Hook) {
 	c.hooks.Dsse = append(c.hooks.Dsse, hooks...)
 }
 
+// Intercept adds a list of query interceptors to the interceptors stack.
+// A call to `Intercept(f, g, h)` equals to `dsse.Intercept(f(g(h())))`.
+func (c *DsseClient) Intercept(interceptors ...Interceptor) {
+	c.inters.Dsse = append(c.inters.Dsse, interceptors...)
+}
+
 // Create returns a builder for creating a Dsse entity.
 func (c *DsseClient) Create() *DsseCreate {
 	mutation := newDsseMutation(c.config, OpCreate)
@@ -433,6 +612,21 @@ func (c *DsseClient) Create() *DsseCreate {
 
 // CreateBulk returns a builder for creating a bulk of Dsse entities.
 func (c *DsseClient) CreateBulk(builders ...*DsseCreate) *DsseCreateBulk {
+	return &DsseCreateBulk{config: c.config, builders: builders}
+}
+
+// MapCreateBulk creates a bulk creation builder from the given slice. For each item in the slice, the function creates
+// a builder and applies setFunc on it.
+func (c *DsseClient) MapCreateBulk(slice any, setFunc func(*DsseCreate, int)) *DsseCreateBulk {
+	rv := reflect.ValueOf(slice)
+	if rv.Kind() != reflect.Slice {
+		return &DsseCreateBulk{err: fmt.Errorf("calling to DsseClient.MapCreateBulk with wrong type %T, need slice", slice)}
+	}
+	builders := make([]*DsseCreate, rv.Len())
+	for i := 0; i < rv.Len(); i++ {
+		builders[i] = c.Create()
+		setFunc(builders[i], i)
+	}
 	return &DsseCreateBulk{config: c.config, builders: builders}
 }
 
@@ -465,7 +659,7 @@ func (c *DsseClient) DeleteOne(d *Dsse) *DsseDeleteOne {
 	return c.DeleteOneID(d.ID)
 }
 
-// DeleteOne returns a builder for deleting the given entity by its id.
+// DeleteOneID returns a builder for deleting the given entity by its id.
 func (c *DsseClient) DeleteOneID(id int) *DsseDeleteOne {
 	builder := c.Delete().Where(dsse.ID(id))
 	builder.mutation.id = &id
@@ -477,6 +671,8 @@ func (c *DsseClient) DeleteOneID(id int) *DsseDeleteOne {
 func (c *DsseClient) Query() *DsseQuery {
 	return &DsseQuery{
 		config: c.config,
+		ctx:    &QueryContext{Type: TypeDsse},
+		inters: c.Interceptors(),
 	}
 }
 
@@ -496,8 +692,8 @@ func (c *DsseClient) GetX(ctx context.Context, id int) *Dsse {
 
 // QueryStatement queries the statement edge of a Dsse.
 func (c *DsseClient) QueryStatement(d *Dsse) *StatementQuery {
-	query := &StatementQuery{config: c.config}
-	query.path = func(ctx context.Context) (fromV *sql.Selector, _ error) {
+	query := (&StatementClient{config: c.config}).Query()
+	query.path = func(context.Context) (fromV *sql.Selector, _ error) {
 		id := d.ID
 		step := sqlgraph.NewStep(
 			sqlgraph.From(dsse.Table, dsse.FieldID, id),
@@ -512,8 +708,8 @@ func (c *DsseClient) QueryStatement(d *Dsse) *StatementQuery {
 
 // QuerySignatures queries the signatures edge of a Dsse.
 func (c *DsseClient) QuerySignatures(d *Dsse) *SignatureQuery {
-	query := &SignatureQuery{config: c.config}
-	query.path = func(ctx context.Context) (fromV *sql.Selector, _ error) {
+	query := (&SignatureClient{config: c.config}).Query()
+	query.path = func(context.Context) (fromV *sql.Selector, _ error) {
 		id := d.ID
 		step := sqlgraph.NewStep(
 			sqlgraph.From(dsse.Table, dsse.FieldID, id),
@@ -528,8 +724,8 @@ func (c *DsseClient) QuerySignatures(d *Dsse) *SignatureQuery {
 
 // QueryPayloadDigests queries the payload_digests edge of a Dsse.
 func (c *DsseClient) QueryPayloadDigests(d *Dsse) *PayloadDigestQuery {
-	query := &PayloadDigestQuery{config: c.config}
-	query.path = func(ctx context.Context) (fromV *sql.Selector, _ error) {
+	query := (&PayloadDigestClient{config: c.config}).Query()
+	query.path = func(context.Context) (fromV *sql.Selector, _ error) {
 		id := d.ID
 		step := sqlgraph.NewStep(
 			sqlgraph.From(dsse.Table, dsse.FieldID, id),
@@ -545,6 +741,26 @@ func (c *DsseClient) QueryPayloadDigests(d *Dsse) *PayloadDigestQuery {
 // Hooks returns the client hooks.
 func (c *DsseClient) Hooks() []Hook {
 	return c.hooks.Dsse
+}
+
+// Interceptors returns the client interceptors.
+func (c *DsseClient) Interceptors() []Interceptor {
+	return c.inters.Dsse
+}
+
+func (c *DsseClient) mutate(ctx context.Context, m *DsseMutation) (Value, error) {
+	switch m.Op() {
+	case OpCreate:
+		return (&DsseCreate{config: c.config, hooks: c.Hooks(), mutation: m}).Save(ctx)
+	case OpUpdate:
+		return (&DsseUpdate{config: c.config, hooks: c.Hooks(), mutation: m}).Save(ctx)
+	case OpUpdateOne:
+		return (&DsseUpdateOne{config: c.config, hooks: c.Hooks(), mutation: m}).Save(ctx)
+	case OpDelete, OpDeleteOne:
+		return (&DsseDelete{config: c.config, hooks: c.Hooks(), mutation: m}).Exec(ctx)
+	default:
+		return nil, fmt.Errorf("ent: unknown Dsse mutation op: %q", m.Op())
+	}
 }
 
 // PayloadDigestClient is a client for the PayloadDigest schema.
@@ -563,6 +779,12 @@ func (c *PayloadDigestClient) Use(hooks ...Hook) {
 	c.hooks.PayloadDigest = append(c.hooks.PayloadDigest, hooks...)
 }
 
+// Intercept adds a list of query interceptors to the interceptors stack.
+// A call to `Intercept(f, g, h)` equals to `payloaddigest.Intercept(f(g(h())))`.
+func (c *PayloadDigestClient) Intercept(interceptors ...Interceptor) {
+	c.inters.PayloadDigest = append(c.inters.PayloadDigest, interceptors...)
+}
+
 // Create returns a builder for creating a PayloadDigest entity.
 func (c *PayloadDigestClient) Create() *PayloadDigestCreate {
 	mutation := newPayloadDigestMutation(c.config, OpCreate)
@@ -571,6 +793,21 @@ func (c *PayloadDigestClient) Create() *PayloadDigestCreate {
 
 // CreateBulk returns a builder for creating a bulk of PayloadDigest entities.
 func (c *PayloadDigestClient) CreateBulk(builders ...*PayloadDigestCreate) *PayloadDigestCreateBulk {
+	return &PayloadDigestCreateBulk{config: c.config, builders: builders}
+}
+
+// MapCreateBulk creates a bulk creation builder from the given slice. For each item in the slice, the function creates
+// a builder and applies setFunc on it.
+func (c *PayloadDigestClient) MapCreateBulk(slice any, setFunc func(*PayloadDigestCreate, int)) *PayloadDigestCreateBulk {
+	rv := reflect.ValueOf(slice)
+	if rv.Kind() != reflect.Slice {
+		return &PayloadDigestCreateBulk{err: fmt.Errorf("calling to PayloadDigestClient.MapCreateBulk with wrong type %T, need slice", slice)}
+	}
+	builders := make([]*PayloadDigestCreate, rv.Len())
+	for i := 0; i < rv.Len(); i++ {
+		builders[i] = c.Create()
+		setFunc(builders[i], i)
+	}
 	return &PayloadDigestCreateBulk{config: c.config, builders: builders}
 }
 
@@ -603,7 +840,7 @@ func (c *PayloadDigestClient) DeleteOne(pd *PayloadDigest) *PayloadDigestDeleteO
 	return c.DeleteOneID(pd.ID)
 }
 
-// DeleteOne returns a builder for deleting the given entity by its id.
+// DeleteOneID returns a builder for deleting the given entity by its id.
 func (c *PayloadDigestClient) DeleteOneID(id int) *PayloadDigestDeleteOne {
 	builder := c.Delete().Where(payloaddigest.ID(id))
 	builder.mutation.id = &id
@@ -615,6 +852,8 @@ func (c *PayloadDigestClient) DeleteOneID(id int) *PayloadDigestDeleteOne {
 func (c *PayloadDigestClient) Query() *PayloadDigestQuery {
 	return &PayloadDigestQuery{
 		config: c.config,
+		ctx:    &QueryContext{Type: TypePayloadDigest},
+		inters: c.Interceptors(),
 	}
 }
 
@@ -634,8 +873,8 @@ func (c *PayloadDigestClient) GetX(ctx context.Context, id int) *PayloadDigest {
 
 // QueryDsse queries the dsse edge of a PayloadDigest.
 func (c *PayloadDigestClient) QueryDsse(pd *PayloadDigest) *DsseQuery {
-	query := &DsseQuery{config: c.config}
-	query.path = func(ctx context.Context) (fromV *sql.Selector, _ error) {
+	query := (&DsseClient{config: c.config}).Query()
+	query.path = func(context.Context) (fromV *sql.Selector, _ error) {
 		id := pd.ID
 		step := sqlgraph.NewStep(
 			sqlgraph.From(payloaddigest.Table, payloaddigest.FieldID, id),
@@ -651,6 +890,26 @@ func (c *PayloadDigestClient) QueryDsse(pd *PayloadDigest) *DsseQuery {
 // Hooks returns the client hooks.
 func (c *PayloadDigestClient) Hooks() []Hook {
 	return c.hooks.PayloadDigest
+}
+
+// Interceptors returns the client interceptors.
+func (c *PayloadDigestClient) Interceptors() []Interceptor {
+	return c.inters.PayloadDigest
+}
+
+func (c *PayloadDigestClient) mutate(ctx context.Context, m *PayloadDigestMutation) (Value, error) {
+	switch m.Op() {
+	case OpCreate:
+		return (&PayloadDigestCreate{config: c.config, hooks: c.Hooks(), mutation: m}).Save(ctx)
+	case OpUpdate:
+		return (&PayloadDigestUpdate{config: c.config, hooks: c.Hooks(), mutation: m}).Save(ctx)
+	case OpUpdateOne:
+		return (&PayloadDigestUpdateOne{config: c.config, hooks: c.Hooks(), mutation: m}).Save(ctx)
+	case OpDelete, OpDeleteOne:
+		return (&PayloadDigestDelete{config: c.config, hooks: c.Hooks(), mutation: m}).Exec(ctx)
+	default:
+		return nil, fmt.Errorf("ent: unknown PayloadDigest mutation op: %q", m.Op())
+	}
 }
 
 // SignatureClient is a client for the Signature schema.
@@ -669,6 +928,12 @@ func (c *SignatureClient) Use(hooks ...Hook) {
 	c.hooks.Signature = append(c.hooks.Signature, hooks...)
 }
 
+// Intercept adds a list of query interceptors to the interceptors stack.
+// A call to `Intercept(f, g, h)` equals to `signature.Intercept(f(g(h())))`.
+func (c *SignatureClient) Intercept(interceptors ...Interceptor) {
+	c.inters.Signature = append(c.inters.Signature, interceptors...)
+}
+
 // Create returns a builder for creating a Signature entity.
 func (c *SignatureClient) Create() *SignatureCreate {
 	mutation := newSignatureMutation(c.config, OpCreate)
@@ -677,6 +942,21 @@ func (c *SignatureClient) Create() *SignatureCreate {
 
 // CreateBulk returns a builder for creating a bulk of Signature entities.
 func (c *SignatureClient) CreateBulk(builders ...*SignatureCreate) *SignatureCreateBulk {
+	return &SignatureCreateBulk{config: c.config, builders: builders}
+}
+
+// MapCreateBulk creates a bulk creation builder from the given slice. For each item in the slice, the function creates
+// a builder and applies setFunc on it.
+func (c *SignatureClient) MapCreateBulk(slice any, setFunc func(*SignatureCreate, int)) *SignatureCreateBulk {
+	rv := reflect.ValueOf(slice)
+	if rv.Kind() != reflect.Slice {
+		return &SignatureCreateBulk{err: fmt.Errorf("calling to SignatureClient.MapCreateBulk with wrong type %T, need slice", slice)}
+	}
+	builders := make([]*SignatureCreate, rv.Len())
+	for i := 0; i < rv.Len(); i++ {
+		builders[i] = c.Create()
+		setFunc(builders[i], i)
+	}
 	return &SignatureCreateBulk{config: c.config, builders: builders}
 }
 
@@ -709,7 +989,7 @@ func (c *SignatureClient) DeleteOne(s *Signature) *SignatureDeleteOne {
 	return c.DeleteOneID(s.ID)
 }
 
-// DeleteOne returns a builder for deleting the given entity by its id.
+// DeleteOneID returns a builder for deleting the given entity by its id.
 func (c *SignatureClient) DeleteOneID(id int) *SignatureDeleteOne {
 	builder := c.Delete().Where(signature.ID(id))
 	builder.mutation.id = &id
@@ -721,6 +1001,8 @@ func (c *SignatureClient) DeleteOneID(id int) *SignatureDeleteOne {
 func (c *SignatureClient) Query() *SignatureQuery {
 	return &SignatureQuery{
 		config: c.config,
+		ctx:    &QueryContext{Type: TypeSignature},
+		inters: c.Interceptors(),
 	}
 }
 
@@ -740,8 +1022,8 @@ func (c *SignatureClient) GetX(ctx context.Context, id int) *Signature {
 
 // QueryDsse queries the dsse edge of a Signature.
 func (c *SignatureClient) QueryDsse(s *Signature) *DsseQuery {
-	query := &DsseQuery{config: c.config}
-	query.path = func(ctx context.Context) (fromV *sql.Selector, _ error) {
+	query := (&DsseClient{config: c.config}).Query()
+	query.path = func(context.Context) (fromV *sql.Selector, _ error) {
 		id := s.ID
 		step := sqlgraph.NewStep(
 			sqlgraph.From(signature.Table, signature.FieldID, id),
@@ -756,8 +1038,8 @@ func (c *SignatureClient) QueryDsse(s *Signature) *DsseQuery {
 
 // QueryTimestamps queries the timestamps edge of a Signature.
 func (c *SignatureClient) QueryTimestamps(s *Signature) *TimestampQuery {
-	query := &TimestampQuery{config: c.config}
-	query.path = func(ctx context.Context) (fromV *sql.Selector, _ error) {
+	query := (&TimestampClient{config: c.config}).Query()
+	query.path = func(context.Context) (fromV *sql.Selector, _ error) {
 		id := s.ID
 		step := sqlgraph.NewStep(
 			sqlgraph.From(signature.Table, signature.FieldID, id),
@@ -773,6 +1055,26 @@ func (c *SignatureClient) QueryTimestamps(s *Signature) *TimestampQuery {
 // Hooks returns the client hooks.
 func (c *SignatureClient) Hooks() []Hook {
 	return c.hooks.Signature
+}
+
+// Interceptors returns the client interceptors.
+func (c *SignatureClient) Interceptors() []Interceptor {
+	return c.inters.Signature
+}
+
+func (c *SignatureClient) mutate(ctx context.Context, m *SignatureMutation) (Value, error) {
+	switch m.Op() {
+	case OpCreate:
+		return (&SignatureCreate{config: c.config, hooks: c.Hooks(), mutation: m}).Save(ctx)
+	case OpUpdate:
+		return (&SignatureUpdate{config: c.config, hooks: c.Hooks(), mutation: m}).Save(ctx)
+	case OpUpdateOne:
+		return (&SignatureUpdateOne{config: c.config, hooks: c.Hooks(), mutation: m}).Save(ctx)
+	case OpDelete, OpDeleteOne:
+		return (&SignatureDelete{config: c.config, hooks: c.Hooks(), mutation: m}).Exec(ctx)
+	default:
+		return nil, fmt.Errorf("ent: unknown Signature mutation op: %q", m.Op())
+	}
 }
 
 // StatementClient is a client for the Statement schema.
@@ -791,6 +1093,12 @@ func (c *StatementClient) Use(hooks ...Hook) {
 	c.hooks.Statement = append(c.hooks.Statement, hooks...)
 }
 
+// Intercept adds a list of query interceptors to the interceptors stack.
+// A call to `Intercept(f, g, h)` equals to `statement.Intercept(f(g(h())))`.
+func (c *StatementClient) Intercept(interceptors ...Interceptor) {
+	c.inters.Statement = append(c.inters.Statement, interceptors...)
+}
+
 // Create returns a builder for creating a Statement entity.
 func (c *StatementClient) Create() *StatementCreate {
 	mutation := newStatementMutation(c.config, OpCreate)
@@ -799,6 +1107,21 @@ func (c *StatementClient) Create() *StatementCreate {
 
 // CreateBulk returns a builder for creating a bulk of Statement entities.
 func (c *StatementClient) CreateBulk(builders ...*StatementCreate) *StatementCreateBulk {
+	return &StatementCreateBulk{config: c.config, builders: builders}
+}
+
+// MapCreateBulk creates a bulk creation builder from the given slice. For each item in the slice, the function creates
+// a builder and applies setFunc on it.
+func (c *StatementClient) MapCreateBulk(slice any, setFunc func(*StatementCreate, int)) *StatementCreateBulk {
+	rv := reflect.ValueOf(slice)
+	if rv.Kind() != reflect.Slice {
+		return &StatementCreateBulk{err: fmt.Errorf("calling to StatementClient.MapCreateBulk with wrong type %T, need slice", slice)}
+	}
+	builders := make([]*StatementCreate, rv.Len())
+	for i := 0; i < rv.Len(); i++ {
+		builders[i] = c.Create()
+		setFunc(builders[i], i)
+	}
 	return &StatementCreateBulk{config: c.config, builders: builders}
 }
 
@@ -831,7 +1154,7 @@ func (c *StatementClient) DeleteOne(s *Statement) *StatementDeleteOne {
 	return c.DeleteOneID(s.ID)
 }
 
-// DeleteOne returns a builder for deleting the given entity by its id.
+// DeleteOneID returns a builder for deleting the given entity by its id.
 func (c *StatementClient) DeleteOneID(id int) *StatementDeleteOne {
 	builder := c.Delete().Where(statement.ID(id))
 	builder.mutation.id = &id
@@ -843,6 +1166,8 @@ func (c *StatementClient) DeleteOneID(id int) *StatementDeleteOne {
 func (c *StatementClient) Query() *StatementQuery {
 	return &StatementQuery{
 		config: c.config,
+		ctx:    &QueryContext{Type: TypeStatement},
+		inters: c.Interceptors(),
 	}
 }
 
@@ -862,8 +1187,8 @@ func (c *StatementClient) GetX(ctx context.Context, id int) *Statement {
 
 // QuerySubjects queries the subjects edge of a Statement.
 func (c *StatementClient) QuerySubjects(s *Statement) *SubjectQuery {
-	query := &SubjectQuery{config: c.config}
-	query.path = func(ctx context.Context) (fromV *sql.Selector, _ error) {
+	query := (&SubjectClient{config: c.config}).Query()
+	query.path = func(context.Context) (fromV *sql.Selector, _ error) {
 		id := s.ID
 		step := sqlgraph.NewStep(
 			sqlgraph.From(statement.Table, statement.FieldID, id),
@@ -878,8 +1203,8 @@ func (c *StatementClient) QuerySubjects(s *Statement) *SubjectQuery {
 
 // QueryAttestationCollections queries the attestation_collections edge of a Statement.
 func (c *StatementClient) QueryAttestationCollections(s *Statement) *AttestationCollectionQuery {
-	query := &AttestationCollectionQuery{config: c.config}
-	query.path = func(ctx context.Context) (fromV *sql.Selector, _ error) {
+	query := (&AttestationCollectionClient{config: c.config}).Query()
+	query.path = func(context.Context) (fromV *sql.Selector, _ error) {
 		id := s.ID
 		step := sqlgraph.NewStep(
 			sqlgraph.From(statement.Table, statement.FieldID, id),
@@ -894,8 +1219,8 @@ func (c *StatementClient) QueryAttestationCollections(s *Statement) *Attestation
 
 // QueryDsse queries the dsse edge of a Statement.
 func (c *StatementClient) QueryDsse(s *Statement) *DsseQuery {
-	query := &DsseQuery{config: c.config}
-	query.path = func(ctx context.Context) (fromV *sql.Selector, _ error) {
+	query := (&DsseClient{config: c.config}).Query()
+	query.path = func(context.Context) (fromV *sql.Selector, _ error) {
 		id := s.ID
 		step := sqlgraph.NewStep(
 			sqlgraph.From(statement.Table, statement.FieldID, id),
@@ -911,6 +1236,26 @@ func (c *StatementClient) QueryDsse(s *Statement) *DsseQuery {
 // Hooks returns the client hooks.
 func (c *StatementClient) Hooks() []Hook {
 	return c.hooks.Statement
+}
+
+// Interceptors returns the client interceptors.
+func (c *StatementClient) Interceptors() []Interceptor {
+	return c.inters.Statement
+}
+
+func (c *StatementClient) mutate(ctx context.Context, m *StatementMutation) (Value, error) {
+	switch m.Op() {
+	case OpCreate:
+		return (&StatementCreate{config: c.config, hooks: c.Hooks(), mutation: m}).Save(ctx)
+	case OpUpdate:
+		return (&StatementUpdate{config: c.config, hooks: c.Hooks(), mutation: m}).Save(ctx)
+	case OpUpdateOne:
+		return (&StatementUpdateOne{config: c.config, hooks: c.Hooks(), mutation: m}).Save(ctx)
+	case OpDelete, OpDeleteOne:
+		return (&StatementDelete{config: c.config, hooks: c.Hooks(), mutation: m}).Exec(ctx)
+	default:
+		return nil, fmt.Errorf("ent: unknown Statement mutation op: %q", m.Op())
+	}
 }
 
 // SubjectClient is a client for the Subject schema.
@@ -929,6 +1274,12 @@ func (c *SubjectClient) Use(hooks ...Hook) {
 	c.hooks.Subject = append(c.hooks.Subject, hooks...)
 }
 
+// Intercept adds a list of query interceptors to the interceptors stack.
+// A call to `Intercept(f, g, h)` equals to `subject.Intercept(f(g(h())))`.
+func (c *SubjectClient) Intercept(interceptors ...Interceptor) {
+	c.inters.Subject = append(c.inters.Subject, interceptors...)
+}
+
 // Create returns a builder for creating a Subject entity.
 func (c *SubjectClient) Create() *SubjectCreate {
 	mutation := newSubjectMutation(c.config, OpCreate)
@@ -937,6 +1288,21 @@ func (c *SubjectClient) Create() *SubjectCreate {
 
 // CreateBulk returns a builder for creating a bulk of Subject entities.
 func (c *SubjectClient) CreateBulk(builders ...*SubjectCreate) *SubjectCreateBulk {
+	return &SubjectCreateBulk{config: c.config, builders: builders}
+}
+
+// MapCreateBulk creates a bulk creation builder from the given slice. For each item in the slice, the function creates
+// a builder and applies setFunc on it.
+func (c *SubjectClient) MapCreateBulk(slice any, setFunc func(*SubjectCreate, int)) *SubjectCreateBulk {
+	rv := reflect.ValueOf(slice)
+	if rv.Kind() != reflect.Slice {
+		return &SubjectCreateBulk{err: fmt.Errorf("calling to SubjectClient.MapCreateBulk with wrong type %T, need slice", slice)}
+	}
+	builders := make([]*SubjectCreate, rv.Len())
+	for i := 0; i < rv.Len(); i++ {
+		builders[i] = c.Create()
+		setFunc(builders[i], i)
+	}
 	return &SubjectCreateBulk{config: c.config, builders: builders}
 }
 
@@ -969,7 +1335,7 @@ func (c *SubjectClient) DeleteOne(s *Subject) *SubjectDeleteOne {
 	return c.DeleteOneID(s.ID)
 }
 
-// DeleteOne returns a builder for deleting the given entity by its id.
+// DeleteOneID returns a builder for deleting the given entity by its id.
 func (c *SubjectClient) DeleteOneID(id int) *SubjectDeleteOne {
 	builder := c.Delete().Where(subject.ID(id))
 	builder.mutation.id = &id
@@ -981,6 +1347,8 @@ func (c *SubjectClient) DeleteOneID(id int) *SubjectDeleteOne {
 func (c *SubjectClient) Query() *SubjectQuery {
 	return &SubjectQuery{
 		config: c.config,
+		ctx:    &QueryContext{Type: TypeSubject},
+		inters: c.Interceptors(),
 	}
 }
 
@@ -1000,8 +1368,8 @@ func (c *SubjectClient) GetX(ctx context.Context, id int) *Subject {
 
 // QuerySubjectDigests queries the subject_digests edge of a Subject.
 func (c *SubjectClient) QuerySubjectDigests(s *Subject) *SubjectDigestQuery {
-	query := &SubjectDigestQuery{config: c.config}
-	query.path = func(ctx context.Context) (fromV *sql.Selector, _ error) {
+	query := (&SubjectDigestClient{config: c.config}).Query()
+	query.path = func(context.Context) (fromV *sql.Selector, _ error) {
 		id := s.ID
 		step := sqlgraph.NewStep(
 			sqlgraph.From(subject.Table, subject.FieldID, id),
@@ -1016,8 +1384,8 @@ func (c *SubjectClient) QuerySubjectDigests(s *Subject) *SubjectDigestQuery {
 
 // QueryStatement queries the statement edge of a Subject.
 func (c *SubjectClient) QueryStatement(s *Subject) *StatementQuery {
-	query := &StatementQuery{config: c.config}
-	query.path = func(ctx context.Context) (fromV *sql.Selector, _ error) {
+	query := (&StatementClient{config: c.config}).Query()
+	query.path = func(context.Context) (fromV *sql.Selector, _ error) {
 		id := s.ID
 		step := sqlgraph.NewStep(
 			sqlgraph.From(subject.Table, subject.FieldID, id),
@@ -1033,6 +1401,26 @@ func (c *SubjectClient) QueryStatement(s *Subject) *StatementQuery {
 // Hooks returns the client hooks.
 func (c *SubjectClient) Hooks() []Hook {
 	return c.hooks.Subject
+}
+
+// Interceptors returns the client interceptors.
+func (c *SubjectClient) Interceptors() []Interceptor {
+	return c.inters.Subject
+}
+
+func (c *SubjectClient) mutate(ctx context.Context, m *SubjectMutation) (Value, error) {
+	switch m.Op() {
+	case OpCreate:
+		return (&SubjectCreate{config: c.config, hooks: c.Hooks(), mutation: m}).Save(ctx)
+	case OpUpdate:
+		return (&SubjectUpdate{config: c.config, hooks: c.Hooks(), mutation: m}).Save(ctx)
+	case OpUpdateOne:
+		return (&SubjectUpdateOne{config: c.config, hooks: c.Hooks(), mutation: m}).Save(ctx)
+	case OpDelete, OpDeleteOne:
+		return (&SubjectDelete{config: c.config, hooks: c.Hooks(), mutation: m}).Exec(ctx)
+	default:
+		return nil, fmt.Errorf("ent: unknown Subject mutation op: %q", m.Op())
+	}
 }
 
 // SubjectDigestClient is a client for the SubjectDigest schema.
@@ -1051,6 +1439,12 @@ func (c *SubjectDigestClient) Use(hooks ...Hook) {
 	c.hooks.SubjectDigest = append(c.hooks.SubjectDigest, hooks...)
 }
 
+// Intercept adds a list of query interceptors to the interceptors stack.
+// A call to `Intercept(f, g, h)` equals to `subjectdigest.Intercept(f(g(h())))`.
+func (c *SubjectDigestClient) Intercept(interceptors ...Interceptor) {
+	c.inters.SubjectDigest = append(c.inters.SubjectDigest, interceptors...)
+}
+
 // Create returns a builder for creating a SubjectDigest entity.
 func (c *SubjectDigestClient) Create() *SubjectDigestCreate {
 	mutation := newSubjectDigestMutation(c.config, OpCreate)
@@ -1059,6 +1453,21 @@ func (c *SubjectDigestClient) Create() *SubjectDigestCreate {
 
 // CreateBulk returns a builder for creating a bulk of SubjectDigest entities.
 func (c *SubjectDigestClient) CreateBulk(builders ...*SubjectDigestCreate) *SubjectDigestCreateBulk {
+	return &SubjectDigestCreateBulk{config: c.config, builders: builders}
+}
+
+// MapCreateBulk creates a bulk creation builder from the given slice. For each item in the slice, the function creates
+// a builder and applies setFunc on it.
+func (c *SubjectDigestClient) MapCreateBulk(slice any, setFunc func(*SubjectDigestCreate, int)) *SubjectDigestCreateBulk {
+	rv := reflect.ValueOf(slice)
+	if rv.Kind() != reflect.Slice {
+		return &SubjectDigestCreateBulk{err: fmt.Errorf("calling to SubjectDigestClient.MapCreateBulk with wrong type %T, need slice", slice)}
+	}
+	builders := make([]*SubjectDigestCreate, rv.Len())
+	for i := 0; i < rv.Len(); i++ {
+		builders[i] = c.Create()
+		setFunc(builders[i], i)
+	}
 	return &SubjectDigestCreateBulk{config: c.config, builders: builders}
 }
 
@@ -1091,7 +1500,7 @@ func (c *SubjectDigestClient) DeleteOne(sd *SubjectDigest) *SubjectDigestDeleteO
 	return c.DeleteOneID(sd.ID)
 }
 
-// DeleteOne returns a builder for deleting the given entity by its id.
+// DeleteOneID returns a builder for deleting the given entity by its id.
 func (c *SubjectDigestClient) DeleteOneID(id int) *SubjectDigestDeleteOne {
 	builder := c.Delete().Where(subjectdigest.ID(id))
 	builder.mutation.id = &id
@@ -1103,6 +1512,8 @@ func (c *SubjectDigestClient) DeleteOneID(id int) *SubjectDigestDeleteOne {
 func (c *SubjectDigestClient) Query() *SubjectDigestQuery {
 	return &SubjectDigestQuery{
 		config: c.config,
+		ctx:    &QueryContext{Type: TypeSubjectDigest},
+		inters: c.Interceptors(),
 	}
 }
 
@@ -1122,8 +1533,8 @@ func (c *SubjectDigestClient) GetX(ctx context.Context, id int) *SubjectDigest {
 
 // QuerySubject queries the subject edge of a SubjectDigest.
 func (c *SubjectDigestClient) QuerySubject(sd *SubjectDigest) *SubjectQuery {
-	query := &SubjectQuery{config: c.config}
-	query.path = func(ctx context.Context) (fromV *sql.Selector, _ error) {
+	query := (&SubjectClient{config: c.config}).Query()
+	query.path = func(context.Context) (fromV *sql.Selector, _ error) {
 		id := sd.ID
 		step := sqlgraph.NewStep(
 			sqlgraph.From(subjectdigest.Table, subjectdigest.FieldID, id),
@@ -1139,6 +1550,26 @@ func (c *SubjectDigestClient) QuerySubject(sd *SubjectDigest) *SubjectQuery {
 // Hooks returns the client hooks.
 func (c *SubjectDigestClient) Hooks() []Hook {
 	return c.hooks.SubjectDigest
+}
+
+// Interceptors returns the client interceptors.
+func (c *SubjectDigestClient) Interceptors() []Interceptor {
+	return c.inters.SubjectDigest
+}
+
+func (c *SubjectDigestClient) mutate(ctx context.Context, m *SubjectDigestMutation) (Value, error) {
+	switch m.Op() {
+	case OpCreate:
+		return (&SubjectDigestCreate{config: c.config, hooks: c.Hooks(), mutation: m}).Save(ctx)
+	case OpUpdate:
+		return (&SubjectDigestUpdate{config: c.config, hooks: c.Hooks(), mutation: m}).Save(ctx)
+	case OpUpdateOne:
+		return (&SubjectDigestUpdateOne{config: c.config, hooks: c.Hooks(), mutation: m}).Save(ctx)
+	case OpDelete, OpDeleteOne:
+		return (&SubjectDigestDelete{config: c.config, hooks: c.Hooks(), mutation: m}).Exec(ctx)
+	default:
+		return nil, fmt.Errorf("ent: unknown SubjectDigest mutation op: %q", m.Op())
+	}
 }
 
 // TimestampClient is a client for the Timestamp schema.
@@ -1157,6 +1588,12 @@ func (c *TimestampClient) Use(hooks ...Hook) {
 	c.hooks.Timestamp = append(c.hooks.Timestamp, hooks...)
 }
 
+// Intercept adds a list of query interceptors to the interceptors stack.
+// A call to `Intercept(f, g, h)` equals to `timestamp.Intercept(f(g(h())))`.
+func (c *TimestampClient) Intercept(interceptors ...Interceptor) {
+	c.inters.Timestamp = append(c.inters.Timestamp, interceptors...)
+}
+
 // Create returns a builder for creating a Timestamp entity.
 func (c *TimestampClient) Create() *TimestampCreate {
 	mutation := newTimestampMutation(c.config, OpCreate)
@@ -1165,6 +1602,21 @@ func (c *TimestampClient) Create() *TimestampCreate {
 
 // CreateBulk returns a builder for creating a bulk of Timestamp entities.
 func (c *TimestampClient) CreateBulk(builders ...*TimestampCreate) *TimestampCreateBulk {
+	return &TimestampCreateBulk{config: c.config, builders: builders}
+}
+
+// MapCreateBulk creates a bulk creation builder from the given slice. For each item in the slice, the function creates
+// a builder and applies setFunc on it.
+func (c *TimestampClient) MapCreateBulk(slice any, setFunc func(*TimestampCreate, int)) *TimestampCreateBulk {
+	rv := reflect.ValueOf(slice)
+	if rv.Kind() != reflect.Slice {
+		return &TimestampCreateBulk{err: fmt.Errorf("calling to TimestampClient.MapCreateBulk with wrong type %T, need slice", slice)}
+	}
+	builders := make([]*TimestampCreate, rv.Len())
+	for i := 0; i < rv.Len(); i++ {
+		builders[i] = c.Create()
+		setFunc(builders[i], i)
+	}
 	return &TimestampCreateBulk{config: c.config, builders: builders}
 }
 
@@ -1197,7 +1649,7 @@ func (c *TimestampClient) DeleteOne(t *Timestamp) *TimestampDeleteOne {
 	return c.DeleteOneID(t.ID)
 }
 
-// DeleteOne returns a builder for deleting the given entity by its id.
+// DeleteOneID returns a builder for deleting the given entity by its id.
 func (c *TimestampClient) DeleteOneID(id int) *TimestampDeleteOne {
 	builder := c.Delete().Where(timestamp.ID(id))
 	builder.mutation.id = &id
@@ -1209,6 +1661,8 @@ func (c *TimestampClient) DeleteOneID(id int) *TimestampDeleteOne {
 func (c *TimestampClient) Query() *TimestampQuery {
 	return &TimestampQuery{
 		config: c.config,
+		ctx:    &QueryContext{Type: TypeTimestamp},
+		inters: c.Interceptors(),
 	}
 }
 
@@ -1228,8 +1682,8 @@ func (c *TimestampClient) GetX(ctx context.Context, id int) *Timestamp {
 
 // QuerySignature queries the signature edge of a Timestamp.
 func (c *TimestampClient) QuerySignature(t *Timestamp) *SignatureQuery {
-	query := &SignatureQuery{config: c.config}
-	query.path = func(ctx context.Context) (fromV *sql.Selector, _ error) {
+	query := (&SignatureClient{config: c.config}).Query()
+	query.path = func(context.Context) (fromV *sql.Selector, _ error) {
 		id := t.ID
 		step := sqlgraph.NewStep(
 			sqlgraph.From(timestamp.Table, timestamp.FieldID, id),
@@ -1246,3 +1700,35 @@ func (c *TimestampClient) QuerySignature(t *Timestamp) *SignatureQuery {
 func (c *TimestampClient) Hooks() []Hook {
 	return c.hooks.Timestamp
 }
+
+// Interceptors returns the client interceptors.
+func (c *TimestampClient) Interceptors() []Interceptor {
+	return c.inters.Timestamp
+}
+
+func (c *TimestampClient) mutate(ctx context.Context, m *TimestampMutation) (Value, error) {
+	switch m.Op() {
+	case OpCreate:
+		return (&TimestampCreate{config: c.config, hooks: c.Hooks(), mutation: m}).Save(ctx)
+	case OpUpdate:
+		return (&TimestampUpdate{config: c.config, hooks: c.Hooks(), mutation: m}).Save(ctx)
+	case OpUpdateOne:
+		return (&TimestampUpdateOne{config: c.config, hooks: c.Hooks(), mutation: m}).Save(ctx)
+	case OpDelete, OpDeleteOne:
+		return (&TimestampDelete{config: c.config, hooks: c.Hooks(), mutation: m}).Exec(ctx)
+	default:
+		return nil, fmt.Errorf("ent: unknown Timestamp mutation op: %q", m.Op())
+	}
+}
+
+// hooks and interceptors per client, for fast access.
+type (
+	hooks struct {
+		Attestation, AttestationCollection, Dsse, PayloadDigest, Signature, Statement,
+		Subject, SubjectDigest, Timestamp []ent.Hook
+	}
+	inters struct {
+		Attestation, AttestationCollection, Dsse, PayloadDigest, Signature, Statement,
+		Subject, SubjectDigest, Timestamp []ent.Interceptor
+	}
+)

@@ -2,6 +2,11 @@
 
 package dsse
 
+import (
+	"entgo.io/ent/dialect/sql"
+	"entgo.io/ent/dialect/sql/sqlgraph"
+)
+
 const (
 	// Label holds the string label denoting the dsse type in the database.
 	Label = "dsse"
@@ -76,3 +81,77 @@ var (
 	// PayloadTypeValidator is a validator for the "payload_type" field. It is called by the builders before save.
 	PayloadTypeValidator func(string) error
 )
+
+// OrderOption defines the ordering options for the Dsse queries.
+type OrderOption func(*sql.Selector)
+
+// ByID orders the results by the id field.
+func ByID(opts ...sql.OrderTermOption) OrderOption {
+	return sql.OrderByField(FieldID, opts...).ToFunc()
+}
+
+// ByGitoidSha256 orders the results by the gitoid_sha256 field.
+func ByGitoidSha256(opts ...sql.OrderTermOption) OrderOption {
+	return sql.OrderByField(FieldGitoidSha256, opts...).ToFunc()
+}
+
+// ByPayloadType orders the results by the payload_type field.
+func ByPayloadType(opts ...sql.OrderTermOption) OrderOption {
+	return sql.OrderByField(FieldPayloadType, opts...).ToFunc()
+}
+
+// ByStatementField orders the results by statement field.
+func ByStatementField(field string, opts ...sql.OrderTermOption) OrderOption {
+	return func(s *sql.Selector) {
+		sqlgraph.OrderByNeighborTerms(s, newStatementStep(), sql.OrderByField(field, opts...))
+	}
+}
+
+// BySignaturesCount orders the results by signatures count.
+func BySignaturesCount(opts ...sql.OrderTermOption) OrderOption {
+	return func(s *sql.Selector) {
+		sqlgraph.OrderByNeighborsCount(s, newSignaturesStep(), opts...)
+	}
+}
+
+// BySignatures orders the results by signatures terms.
+func BySignatures(term sql.OrderTerm, terms ...sql.OrderTerm) OrderOption {
+	return func(s *sql.Selector) {
+		sqlgraph.OrderByNeighborTerms(s, newSignaturesStep(), append([]sql.OrderTerm{term}, terms...)...)
+	}
+}
+
+// ByPayloadDigestsCount orders the results by payload_digests count.
+func ByPayloadDigestsCount(opts ...sql.OrderTermOption) OrderOption {
+	return func(s *sql.Selector) {
+		sqlgraph.OrderByNeighborsCount(s, newPayloadDigestsStep(), opts...)
+	}
+}
+
+// ByPayloadDigests orders the results by payload_digests terms.
+func ByPayloadDigests(term sql.OrderTerm, terms ...sql.OrderTerm) OrderOption {
+	return func(s *sql.Selector) {
+		sqlgraph.OrderByNeighborTerms(s, newPayloadDigestsStep(), append([]sql.OrderTerm{term}, terms...)...)
+	}
+}
+func newStatementStep() *sqlgraph.Step {
+	return sqlgraph.NewStep(
+		sqlgraph.From(Table, FieldID),
+		sqlgraph.To(StatementInverseTable, FieldID),
+		sqlgraph.Edge(sqlgraph.M2O, false, StatementTable, StatementColumn),
+	)
+}
+func newSignaturesStep() *sqlgraph.Step {
+	return sqlgraph.NewStep(
+		sqlgraph.From(Table, FieldID),
+		sqlgraph.To(SignaturesInverseTable, FieldID),
+		sqlgraph.Edge(sqlgraph.O2M, false, SignaturesTable, SignaturesColumn),
+	)
+}
+func newPayloadDigestsStep() *sqlgraph.Step {
+	return sqlgraph.NewStep(
+		sqlgraph.From(Table, FieldID),
+		sqlgraph.To(PayloadDigestsInverseTable, FieldID),
+		sqlgraph.Edge(sqlgraph.O2M, false, PayloadDigestsTable, PayloadDigestsColumn),
+	)
+}

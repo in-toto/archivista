@@ -2,6 +2,11 @@
 
 package timestamp
 
+import (
+	"entgo.io/ent/dialect/sql"
+	"entgo.io/ent/dialect/sql/sqlgraph"
+)
+
 const (
 	// Label holds the string label denoting the timestamp type in the database.
 	Label = "timestamp"
@@ -50,4 +55,36 @@ func ValidColumn(column string) bool {
 		}
 	}
 	return false
+}
+
+// OrderOption defines the ordering options for the Timestamp queries.
+type OrderOption func(*sql.Selector)
+
+// ByID orders the results by the id field.
+func ByID(opts ...sql.OrderTermOption) OrderOption {
+	return sql.OrderByField(FieldID, opts...).ToFunc()
+}
+
+// ByType orders the results by the type field.
+func ByType(opts ...sql.OrderTermOption) OrderOption {
+	return sql.OrderByField(FieldType, opts...).ToFunc()
+}
+
+// ByTimestamp orders the results by the timestamp field.
+func ByTimestamp(opts ...sql.OrderTermOption) OrderOption {
+	return sql.OrderByField(FieldTimestamp, opts...).ToFunc()
+}
+
+// BySignatureField orders the results by signature field.
+func BySignatureField(field string, opts ...sql.OrderTermOption) OrderOption {
+	return func(s *sql.Selector) {
+		sqlgraph.OrderByNeighborTerms(s, newSignatureStep(), sql.OrderByField(field, opts...))
+	}
+}
+func newSignatureStep() *sqlgraph.Step {
+	return sqlgraph.NewStep(
+		sqlgraph.From(Table, FieldID),
+		sqlgraph.To(SignatureInverseTable, FieldID),
+		sqlgraph.Edge(sqlgraph.M2O, true, SignatureTable, SignatureColumn),
+	)
 }

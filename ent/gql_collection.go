@@ -9,7 +9,15 @@ import (
 
 	"entgo.io/ent/dialect/sql"
 	"github.com/99designs/gqlgen/graphql"
+	"github.com/testifysec/archivista/ent/attestation"
+	"github.com/testifysec/archivista/ent/attestationcollection"
+	"github.com/testifysec/archivista/ent/dsse"
+	"github.com/testifysec/archivista/ent/payloaddigest"
+	"github.com/testifysec/archivista/ent/signature"
 	"github.com/testifysec/archivista/ent/statement"
+	"github.com/testifysec/archivista/ent/subject"
+	"github.com/testifysec/archivista/ent/subjectdigest"
+	"github.com/testifysec/archivista/ent/timestamp"
 )
 
 // CollectFields tells the query-builder to eagerly load connected nodes by resolver context.
@@ -24,20 +32,38 @@ func (a *AttestationQuery) CollectFields(ctx context.Context, satisfies ...strin
 	return a, nil
 }
 
-func (a *AttestationQuery) collectField(ctx context.Context, op *graphql.OperationContext, field graphql.CollectedField, path []string, satisfies ...string) error {
+func (a *AttestationQuery) collectField(ctx context.Context, opCtx *graphql.OperationContext, collected graphql.CollectedField, path []string, satisfies ...string) error {
 	path = append([]string(nil), path...)
-	for _, field := range graphql.CollectFields(op, field.Selections, satisfies) {
+	var (
+		unknownSeen    bool
+		fieldSeen      = make(map[string]struct{}, len(attestation.Columns))
+		selectedFields = []string{attestation.FieldID}
+	)
+	for _, field := range graphql.CollectFields(opCtx, collected.Selections, satisfies) {
 		switch field.Name {
-		case "attestationCollection", "attestation_collection":
+		case "attestationCollection":
 			var (
-				path  = append(path, field.Name)
-				query = &AttestationCollectionQuery{config: a.config}
+				alias = field.Alias
+				path  = append(path, alias)
+				query = (&AttestationCollectionClient{config: a.config}).Query()
 			)
-			if err := query.collectField(ctx, op, field, path, satisfies...); err != nil {
+			if err := query.collectField(ctx, opCtx, field, path, satisfies...); err != nil {
 				return err
 			}
 			a.withAttestationCollection = query
+		case "type":
+			if _, ok := fieldSeen[attestation.FieldType]; !ok {
+				selectedFields = append(selectedFields, attestation.FieldType)
+				fieldSeen[attestation.FieldType] = struct{}{}
+			}
+		case "id":
+		case "__typename":
+		default:
+			unknownSeen = true
 		}
+	}
+	if !unknownSeen {
+		a.Select(selectedFields...)
 	}
 	return nil
 }
@@ -48,7 +74,7 @@ type attestationPaginateArgs struct {
 	opts          []AttestationPaginateOption
 }
 
-func newAttestationPaginateArgs(rv map[string]interface{}) *attestationPaginateArgs {
+func newAttestationPaginateArgs(rv map[string]any) *attestationPaginateArgs {
 	args := &attestationPaginateArgs{}
 	if rv == nil {
 		return args
@@ -83,29 +109,50 @@ func (ac *AttestationCollectionQuery) CollectFields(ctx context.Context, satisfi
 	return ac, nil
 }
 
-func (ac *AttestationCollectionQuery) collectField(ctx context.Context, op *graphql.OperationContext, field graphql.CollectedField, path []string, satisfies ...string) error {
+func (ac *AttestationCollectionQuery) collectField(ctx context.Context, opCtx *graphql.OperationContext, collected graphql.CollectedField, path []string, satisfies ...string) error {
 	path = append([]string(nil), path...)
-	for _, field := range graphql.CollectFields(op, field.Selections, satisfies) {
+	var (
+		unknownSeen    bool
+		fieldSeen      = make(map[string]struct{}, len(attestationcollection.Columns))
+		selectedFields = []string{attestationcollection.FieldID}
+	)
+	for _, field := range graphql.CollectFields(opCtx, collected.Selections, satisfies) {
 		switch field.Name {
 		case "attestations":
 			var (
-				path  = append(path, field.Name)
-				query = &AttestationQuery{config: ac.config}
+				alias = field.Alias
+				path  = append(path, alias)
+				query = (&AttestationClient{config: ac.config}).Query()
 			)
-			if err := query.collectField(ctx, op, field, path, satisfies...); err != nil {
+			if err := query.collectField(ctx, opCtx, field, path, satisfies...); err != nil {
 				return err
 			}
-			ac.withAttestations = query
+			ac.WithNamedAttestations(alias, func(wq *AttestationQuery) {
+				*wq = *query
+			})
 		case "statement":
 			var (
-				path  = append(path, field.Name)
-				query = &StatementQuery{config: ac.config}
+				alias = field.Alias
+				path  = append(path, alias)
+				query = (&StatementClient{config: ac.config}).Query()
 			)
-			if err := query.collectField(ctx, op, field, path, satisfies...); err != nil {
+			if err := query.collectField(ctx, opCtx, field, path, satisfies...); err != nil {
 				return err
 			}
 			ac.withStatement = query
+		case "name":
+			if _, ok := fieldSeen[attestationcollection.FieldName]; !ok {
+				selectedFields = append(selectedFields, attestationcollection.FieldName)
+				fieldSeen[attestationcollection.FieldName] = struct{}{}
+			}
+		case "id":
+		case "__typename":
+		default:
+			unknownSeen = true
 		}
+	}
+	if !unknownSeen {
+		ac.Select(selectedFields...)
 	}
 	return nil
 }
@@ -116,7 +163,7 @@ type attestationcollectionPaginateArgs struct {
 	opts          []AttestationCollectionPaginateOption
 }
 
-func newAttestationCollectionPaginateArgs(rv map[string]interface{}) *attestationcollectionPaginateArgs {
+func newAttestationCollectionPaginateArgs(rv map[string]any) *attestationcollectionPaginateArgs {
 	args := &attestationcollectionPaginateArgs{}
 	if rv == nil {
 		return args
@@ -151,38 +198,67 @@ func (d *DsseQuery) CollectFields(ctx context.Context, satisfies ...string) (*Ds
 	return d, nil
 }
 
-func (d *DsseQuery) collectField(ctx context.Context, op *graphql.OperationContext, field graphql.CollectedField, path []string, satisfies ...string) error {
+func (d *DsseQuery) collectField(ctx context.Context, opCtx *graphql.OperationContext, collected graphql.CollectedField, path []string, satisfies ...string) error {
 	path = append([]string(nil), path...)
-	for _, field := range graphql.CollectFields(op, field.Selections, satisfies) {
+	var (
+		unknownSeen    bool
+		fieldSeen      = make(map[string]struct{}, len(dsse.Columns))
+		selectedFields = []string{dsse.FieldID}
+	)
+	for _, field := range graphql.CollectFields(opCtx, collected.Selections, satisfies) {
 		switch field.Name {
 		case "statement":
 			var (
-				path  = append(path, field.Name)
-				query = &StatementQuery{config: d.config}
+				alias = field.Alias
+				path  = append(path, alias)
+				query = (&StatementClient{config: d.config}).Query()
 			)
-			if err := query.collectField(ctx, op, field, path, satisfies...); err != nil {
+			if err := query.collectField(ctx, opCtx, field, path, satisfies...); err != nil {
 				return err
 			}
 			d.withStatement = query
 		case "signatures":
 			var (
-				path  = append(path, field.Name)
-				query = &SignatureQuery{config: d.config}
+				alias = field.Alias
+				path  = append(path, alias)
+				query = (&SignatureClient{config: d.config}).Query()
 			)
-			if err := query.collectField(ctx, op, field, path, satisfies...); err != nil {
+			if err := query.collectField(ctx, opCtx, field, path, satisfies...); err != nil {
 				return err
 			}
-			d.withSignatures = query
-		case "payloadDigests", "payload_digests":
+			d.WithNamedSignatures(alias, func(wq *SignatureQuery) {
+				*wq = *query
+			})
+		case "payloadDigests":
 			var (
-				path  = append(path, field.Name)
-				query = &PayloadDigestQuery{config: d.config}
+				alias = field.Alias
+				path  = append(path, alias)
+				query = (&PayloadDigestClient{config: d.config}).Query()
 			)
-			if err := query.collectField(ctx, op, field, path, satisfies...); err != nil {
+			if err := query.collectField(ctx, opCtx, field, path, satisfies...); err != nil {
 				return err
 			}
-			d.withPayloadDigests = query
+			d.WithNamedPayloadDigests(alias, func(wq *PayloadDigestQuery) {
+				*wq = *query
+			})
+		case "gitoidSha256":
+			if _, ok := fieldSeen[dsse.FieldGitoidSha256]; !ok {
+				selectedFields = append(selectedFields, dsse.FieldGitoidSha256)
+				fieldSeen[dsse.FieldGitoidSha256] = struct{}{}
+			}
+		case "payloadType":
+			if _, ok := fieldSeen[dsse.FieldPayloadType]; !ok {
+				selectedFields = append(selectedFields, dsse.FieldPayloadType)
+				fieldSeen[dsse.FieldPayloadType] = struct{}{}
+			}
+		case "id":
+		case "__typename":
+		default:
+			unknownSeen = true
 		}
+	}
+	if !unknownSeen {
+		d.Select(selectedFields...)
 	}
 	return nil
 }
@@ -193,7 +269,7 @@ type dssePaginateArgs struct {
 	opts          []DssePaginateOption
 }
 
-func newDssePaginateArgs(rv map[string]interface{}) *dssePaginateArgs {
+func newDssePaginateArgs(rv map[string]any) *dssePaginateArgs {
 	args := &dssePaginateArgs{}
 	if rv == nil {
 		return args
@@ -228,20 +304,43 @@ func (pd *PayloadDigestQuery) CollectFields(ctx context.Context, satisfies ...st
 	return pd, nil
 }
 
-func (pd *PayloadDigestQuery) collectField(ctx context.Context, op *graphql.OperationContext, field graphql.CollectedField, path []string, satisfies ...string) error {
+func (pd *PayloadDigestQuery) collectField(ctx context.Context, opCtx *graphql.OperationContext, collected graphql.CollectedField, path []string, satisfies ...string) error {
 	path = append([]string(nil), path...)
-	for _, field := range graphql.CollectFields(op, field.Selections, satisfies) {
+	var (
+		unknownSeen    bool
+		fieldSeen      = make(map[string]struct{}, len(payloaddigest.Columns))
+		selectedFields = []string{payloaddigest.FieldID}
+	)
+	for _, field := range graphql.CollectFields(opCtx, collected.Selections, satisfies) {
 		switch field.Name {
 		case "dsse":
 			var (
-				path  = append(path, field.Name)
-				query = &DsseQuery{config: pd.config}
+				alias = field.Alias
+				path  = append(path, alias)
+				query = (&DsseClient{config: pd.config}).Query()
 			)
-			if err := query.collectField(ctx, op, field, path, satisfies...); err != nil {
+			if err := query.collectField(ctx, opCtx, field, path, satisfies...); err != nil {
 				return err
 			}
 			pd.withDsse = query
+		case "algorithm":
+			if _, ok := fieldSeen[payloaddigest.FieldAlgorithm]; !ok {
+				selectedFields = append(selectedFields, payloaddigest.FieldAlgorithm)
+				fieldSeen[payloaddigest.FieldAlgorithm] = struct{}{}
+			}
+		case "value":
+			if _, ok := fieldSeen[payloaddigest.FieldValue]; !ok {
+				selectedFields = append(selectedFields, payloaddigest.FieldValue)
+				fieldSeen[payloaddigest.FieldValue] = struct{}{}
+			}
+		case "id":
+		case "__typename":
+		default:
+			unknownSeen = true
 		}
+	}
+	if !unknownSeen {
+		pd.Select(selectedFields...)
 	}
 	return nil
 }
@@ -252,7 +351,7 @@ type payloaddigestPaginateArgs struct {
 	opts          []PayloadDigestPaginateOption
 }
 
-func newPayloadDigestPaginateArgs(rv map[string]interface{}) *payloaddigestPaginateArgs {
+func newPayloadDigestPaginateArgs(rv map[string]any) *payloaddigestPaginateArgs {
 	args := &payloaddigestPaginateArgs{}
 	if rv == nil {
 		return args
@@ -287,29 +386,55 @@ func (s *SignatureQuery) CollectFields(ctx context.Context, satisfies ...string)
 	return s, nil
 }
 
-func (s *SignatureQuery) collectField(ctx context.Context, op *graphql.OperationContext, field graphql.CollectedField, path []string, satisfies ...string) error {
+func (s *SignatureQuery) collectField(ctx context.Context, opCtx *graphql.OperationContext, collected graphql.CollectedField, path []string, satisfies ...string) error {
 	path = append([]string(nil), path...)
-	for _, field := range graphql.CollectFields(op, field.Selections, satisfies) {
+	var (
+		unknownSeen    bool
+		fieldSeen      = make(map[string]struct{}, len(signature.Columns))
+		selectedFields = []string{signature.FieldID}
+	)
+	for _, field := range graphql.CollectFields(opCtx, collected.Selections, satisfies) {
 		switch field.Name {
 		case "dsse":
 			var (
-				path  = append(path, field.Name)
-				query = &DsseQuery{config: s.config}
+				alias = field.Alias
+				path  = append(path, alias)
+				query = (&DsseClient{config: s.config}).Query()
 			)
-			if err := query.collectField(ctx, op, field, path, satisfies...); err != nil {
+			if err := query.collectField(ctx, opCtx, field, path, satisfies...); err != nil {
 				return err
 			}
 			s.withDsse = query
 		case "timestamps":
 			var (
-				path  = append(path, field.Name)
-				query = &TimestampQuery{config: s.config}
+				alias = field.Alias
+				path  = append(path, alias)
+				query = (&TimestampClient{config: s.config}).Query()
 			)
-			if err := query.collectField(ctx, op, field, path, satisfies...); err != nil {
+			if err := query.collectField(ctx, opCtx, field, path, satisfies...); err != nil {
 				return err
 			}
-			s.withTimestamps = query
+			s.WithNamedTimestamps(alias, func(wq *TimestampQuery) {
+				*wq = *query
+			})
+		case "keyID":
+			if _, ok := fieldSeen[signature.FieldKeyID]; !ok {
+				selectedFields = append(selectedFields, signature.FieldKeyID)
+				fieldSeen[signature.FieldKeyID] = struct{}{}
+			}
+		case "signature":
+			if _, ok := fieldSeen[signature.FieldSignature]; !ok {
+				selectedFields = append(selectedFields, signature.FieldSignature)
+				fieldSeen[signature.FieldSignature] = struct{}{}
+			}
+		case "id":
+		case "__typename":
+		default:
+			unknownSeen = true
 		}
+	}
+	if !unknownSeen {
+		s.Select(selectedFields...)
 	}
 	return nil
 }
@@ -320,7 +445,7 @@ type signaturePaginateArgs struct {
 	opts          []SignaturePaginateOption
 }
 
-func newSignaturePaginateArgs(rv map[string]interface{}) *signaturePaginateArgs {
+func newSignaturePaginateArgs(rv map[string]any) *signaturePaginateArgs {
 	args := &signaturePaginateArgs{}
 	if rv == nil {
 		return args
@@ -355,28 +480,36 @@ func (s *StatementQuery) CollectFields(ctx context.Context, satisfies ...string)
 	return s, nil
 }
 
-func (s *StatementQuery) collectField(ctx context.Context, op *graphql.OperationContext, field graphql.CollectedField, path []string, satisfies ...string) error {
+func (s *StatementQuery) collectField(ctx context.Context, opCtx *graphql.OperationContext, collected graphql.CollectedField, path []string, satisfies ...string) error {
 	path = append([]string(nil), path...)
-	for _, field := range graphql.CollectFields(op, field.Selections, satisfies) {
+	var (
+		unknownSeen    bool
+		fieldSeen      = make(map[string]struct{}, len(statement.Columns))
+		selectedFields = []string{statement.FieldID}
+	)
+	for _, field := range graphql.CollectFields(opCtx, collected.Selections, satisfies) {
 		switch field.Name {
 		case "subjects":
 			var (
-				path  = append(path, field.Name)
-				query = &SubjectQuery{config: s.config}
+				alias = field.Alias
+				path  = append(path, alias)
+				query = (&SubjectClient{config: s.config}).Query()
 			)
 			args := newSubjectPaginateArgs(fieldArgs(ctx, new(SubjectWhereInput), path...))
 			if err := validateFirstLast(args.first, args.last); err != nil {
 				return fmt.Errorf("validate first and last in path %q: %w", path, err)
 			}
-			pager, err := newSubjectPager(args.opts)
+			pager, err := newSubjectPager(args.opts, args.last != nil)
 			if err != nil {
 				return fmt.Errorf("create new pager in path %q: %w", path, err)
 			}
 			if query, err = pager.applyFilter(query); err != nil {
 				return err
 			}
-			if !hasCollectedField(ctx, append(path, edgesField)...) || args.first != nil && *args.first == 0 || args.last != nil && *args.last == 0 {
-				if hasCollectedField(ctx, append(path, totalCountField)...) || hasCollectedField(ctx, append(path, pageInfoField)...) {
+			ignoredEdges := !hasCollectedField(ctx, append(path, edgesField)...)
+			if hasCollectedField(ctx, append(path, totalCountField)...) || hasCollectedField(ctx, append(path, pageInfoField)...) {
+				hasPagination := args.after != nil || args.first != nil || args.before != nil || args.last != nil
+				if hasPagination || ignoredEdges {
 					query := query.Clone()
 					s.loadTotal = append(s.loadTotal, func(ctx context.Context, nodes []*Statement) error {
 						ids := make([]driver.Value, len(nodes))
@@ -388,7 +521,7 @@ func (s *StatementQuery) collectField(ctx context.Context, op *graphql.Operation
 							Count  int `sql:"count"`
 						}
 						query.Where(func(s *sql.Selector) {
-							s.Where(sql.InValues(statement.SubjectsColumn, ids...))
+							s.Where(sql.InValues(s.C(statement.SubjectsColumn), ids...))
 						})
 						if err := query.GroupBy(statement.SubjectsColumn).Aggregate(Count()).Scan(ctx, &v); err != nil {
 							return err
@@ -399,82 +532,82 @@ func (s *StatementQuery) collectField(ctx context.Context, op *graphql.Operation
 						}
 						for i := range nodes {
 							n := m[nodes[i].ID]
-							nodes[i].Edges.totalCount[0] = &n
+							if nodes[i].Edges.totalCount[0] == nil {
+								nodes[i].Edges.totalCount[0] = make(map[string]int)
+							}
+							nodes[i].Edges.totalCount[0][alias] = n
+						}
+						return nil
+					})
+				} else {
+					s.loadTotal = append(s.loadTotal, func(_ context.Context, nodes []*Statement) error {
+						for i := range nodes {
+							n := len(nodes[i].Edges.Subjects)
+							if nodes[i].Edges.totalCount[0] == nil {
+								nodes[i].Edges.totalCount[0] = make(map[string]int)
+							}
+							nodes[i].Edges.totalCount[0][alias] = n
 						}
 						return nil
 					})
 				}
+			}
+			if ignoredEdges || (args.first != nil && *args.first == 0) || (args.last != nil && *args.last == 0) {
 				continue
 			}
-			if (args.after != nil || args.first != nil || args.before != nil || args.last != nil) && hasCollectedField(ctx, append(path, totalCountField)...) {
-				query := query.Clone()
-				s.loadTotal = append(s.loadTotal, func(ctx context.Context, nodes []*Statement) error {
-					ids := make([]driver.Value, len(nodes))
-					for i := range nodes {
-						ids[i] = nodes[i].ID
-					}
-					var v []struct {
-						NodeID int `sql:"statement_subjects"`
-						Count  int `sql:"count"`
-					}
-					query.Where(func(s *sql.Selector) {
-						s.Where(sql.InValues(statement.SubjectsColumn, ids...))
-					})
-					if err := query.GroupBy(statement.SubjectsColumn).Aggregate(Count()).Scan(ctx, &v); err != nil {
-						return err
-					}
-					m := make(map[int]int, len(v))
-					for i := range v {
-						m[v[i].NodeID] = v[i].Count
-					}
-					for i := range nodes {
-						n := m[nodes[i].ID]
-						nodes[i].Edges.totalCount[0] = &n
-					}
-					return nil
-				})
-			} else {
-				s.loadTotal = append(s.loadTotal, func(_ context.Context, nodes []*Statement) error {
-					for i := range nodes {
-						n := len(nodes[i].Edges.Subjects)
-						nodes[i].Edges.totalCount[0] = &n
-					}
-					return nil
-				})
-			}
-			query = pager.applyCursors(query, args.after, args.before)
-			if limit := paginateLimit(args.first, args.last); limit > 0 {
-				modify := limitRows(statement.SubjectsColumn, limit, pager.orderExpr(args.last != nil))
-				query.modifiers = append(query.modifiers, modify)
-			} else {
-				query = pager.applyOrder(query, args.last != nil)
+			if query, err = pager.applyCursors(query, args.after, args.before); err != nil {
+				return err
 			}
 			path = append(path, edgesField, nodeField)
 			if field := collectedField(ctx, path...); field != nil {
-				if err := query.collectField(ctx, op, *field, path, satisfies...); err != nil {
+				if err := query.collectField(ctx, opCtx, *field, path, mayAddCondition(satisfies, "Subject")...); err != nil {
 					return err
 				}
 			}
-			s.withSubjects = query
-		case "attestationCollections", "attestation_collections":
+			if limit := paginateLimit(args.first, args.last); limit > 0 {
+				modify := limitRows(statement.SubjectsColumn, limit, pager.orderExpr(query))
+				query.modifiers = append(query.modifiers, modify)
+			} else {
+				query = pager.applyOrder(query)
+			}
+			s.WithNamedSubjects(alias, func(wq *SubjectQuery) {
+				*wq = *query
+			})
+		case "attestationCollections":
 			var (
-				path  = append(path, field.Name)
-				query = &AttestationCollectionQuery{config: s.config}
+				alias = field.Alias
+				path  = append(path, alias)
+				query = (&AttestationCollectionClient{config: s.config}).Query()
 			)
-			if err := query.collectField(ctx, op, field, path, satisfies...); err != nil {
+			if err := query.collectField(ctx, opCtx, field, path, satisfies...); err != nil {
 				return err
 			}
 			s.withAttestationCollections = query
 		case "dsse":
 			var (
-				path  = append(path, field.Name)
-				query = &DsseQuery{config: s.config}
+				alias = field.Alias
+				path  = append(path, alias)
+				query = (&DsseClient{config: s.config}).Query()
 			)
-			if err := query.collectField(ctx, op, field, path, satisfies...); err != nil {
+			if err := query.collectField(ctx, opCtx, field, path, satisfies...); err != nil {
 				return err
 			}
-			s.withDsse = query
+			s.WithNamedDsse(alias, func(wq *DsseQuery) {
+				*wq = *query
+			})
+		case "predicate":
+			if _, ok := fieldSeen[statement.FieldPredicate]; !ok {
+				selectedFields = append(selectedFields, statement.FieldPredicate)
+				fieldSeen[statement.FieldPredicate] = struct{}{}
+			}
+		case "id":
+		case "__typename":
+		default:
+			unknownSeen = true
 		}
+	}
+	if !unknownSeen {
+		s.Select(selectedFields...)
 	}
 	return nil
 }
@@ -485,7 +618,7 @@ type statementPaginateArgs struct {
 	opts          []StatementPaginateOption
 }
 
-func newStatementPaginateArgs(rv map[string]interface{}) *statementPaginateArgs {
+func newStatementPaginateArgs(rv map[string]any) *statementPaginateArgs {
 	args := &statementPaginateArgs{}
 	if rv == nil {
 		return args
@@ -520,29 +653,50 @@ func (s *SubjectQuery) CollectFields(ctx context.Context, satisfies ...string) (
 	return s, nil
 }
 
-func (s *SubjectQuery) collectField(ctx context.Context, op *graphql.OperationContext, field graphql.CollectedField, path []string, satisfies ...string) error {
+func (s *SubjectQuery) collectField(ctx context.Context, opCtx *graphql.OperationContext, collected graphql.CollectedField, path []string, satisfies ...string) error {
 	path = append([]string(nil), path...)
-	for _, field := range graphql.CollectFields(op, field.Selections, satisfies) {
+	var (
+		unknownSeen    bool
+		fieldSeen      = make(map[string]struct{}, len(subject.Columns))
+		selectedFields = []string{subject.FieldID}
+	)
+	for _, field := range graphql.CollectFields(opCtx, collected.Selections, satisfies) {
 		switch field.Name {
-		case "subjectDigests", "subject_digests":
+		case "subjectDigests":
 			var (
-				path  = append(path, field.Name)
-				query = &SubjectDigestQuery{config: s.config}
+				alias = field.Alias
+				path  = append(path, alias)
+				query = (&SubjectDigestClient{config: s.config}).Query()
 			)
-			if err := query.collectField(ctx, op, field, path, satisfies...); err != nil {
+			if err := query.collectField(ctx, opCtx, field, path, satisfies...); err != nil {
 				return err
 			}
-			s.withSubjectDigests = query
+			s.WithNamedSubjectDigests(alias, func(wq *SubjectDigestQuery) {
+				*wq = *query
+			})
 		case "statement":
 			var (
-				path  = append(path, field.Name)
-				query = &StatementQuery{config: s.config}
+				alias = field.Alias
+				path  = append(path, alias)
+				query = (&StatementClient{config: s.config}).Query()
 			)
-			if err := query.collectField(ctx, op, field, path, satisfies...); err != nil {
+			if err := query.collectField(ctx, opCtx, field, path, satisfies...); err != nil {
 				return err
 			}
 			s.withStatement = query
+		case "name":
+			if _, ok := fieldSeen[subject.FieldName]; !ok {
+				selectedFields = append(selectedFields, subject.FieldName)
+				fieldSeen[subject.FieldName] = struct{}{}
+			}
+		case "id":
+		case "__typename":
+		default:
+			unknownSeen = true
 		}
+	}
+	if !unknownSeen {
+		s.Select(selectedFields...)
 	}
 	return nil
 }
@@ -553,7 +707,7 @@ type subjectPaginateArgs struct {
 	opts          []SubjectPaginateOption
 }
 
-func newSubjectPaginateArgs(rv map[string]interface{}) *subjectPaginateArgs {
+func newSubjectPaginateArgs(rv map[string]any) *subjectPaginateArgs {
 	args := &subjectPaginateArgs{}
 	if rv == nil {
 		return args
@@ -588,20 +742,43 @@ func (sd *SubjectDigestQuery) CollectFields(ctx context.Context, satisfies ...st
 	return sd, nil
 }
 
-func (sd *SubjectDigestQuery) collectField(ctx context.Context, op *graphql.OperationContext, field graphql.CollectedField, path []string, satisfies ...string) error {
+func (sd *SubjectDigestQuery) collectField(ctx context.Context, opCtx *graphql.OperationContext, collected graphql.CollectedField, path []string, satisfies ...string) error {
 	path = append([]string(nil), path...)
-	for _, field := range graphql.CollectFields(op, field.Selections, satisfies) {
+	var (
+		unknownSeen    bool
+		fieldSeen      = make(map[string]struct{}, len(subjectdigest.Columns))
+		selectedFields = []string{subjectdigest.FieldID}
+	)
+	for _, field := range graphql.CollectFields(opCtx, collected.Selections, satisfies) {
 		switch field.Name {
 		case "subject":
 			var (
-				path  = append(path, field.Name)
-				query = &SubjectQuery{config: sd.config}
+				alias = field.Alias
+				path  = append(path, alias)
+				query = (&SubjectClient{config: sd.config}).Query()
 			)
-			if err := query.collectField(ctx, op, field, path, satisfies...); err != nil {
+			if err := query.collectField(ctx, opCtx, field, path, satisfies...); err != nil {
 				return err
 			}
 			sd.withSubject = query
+		case "algorithm":
+			if _, ok := fieldSeen[subjectdigest.FieldAlgorithm]; !ok {
+				selectedFields = append(selectedFields, subjectdigest.FieldAlgorithm)
+				fieldSeen[subjectdigest.FieldAlgorithm] = struct{}{}
+			}
+		case "value":
+			if _, ok := fieldSeen[subjectdigest.FieldValue]; !ok {
+				selectedFields = append(selectedFields, subjectdigest.FieldValue)
+				fieldSeen[subjectdigest.FieldValue] = struct{}{}
+			}
+		case "id":
+		case "__typename":
+		default:
+			unknownSeen = true
 		}
+	}
+	if !unknownSeen {
+		sd.Select(selectedFields...)
 	}
 	return nil
 }
@@ -612,7 +789,7 @@ type subjectdigestPaginateArgs struct {
 	opts          []SubjectDigestPaginateOption
 }
 
-func newSubjectDigestPaginateArgs(rv map[string]interface{}) *subjectdigestPaginateArgs {
+func newSubjectDigestPaginateArgs(rv map[string]any) *subjectdigestPaginateArgs {
 	args := &subjectdigestPaginateArgs{}
 	if rv == nil {
 		return args
@@ -647,20 +824,43 @@ func (t *TimestampQuery) CollectFields(ctx context.Context, satisfies ...string)
 	return t, nil
 }
 
-func (t *TimestampQuery) collectField(ctx context.Context, op *graphql.OperationContext, field graphql.CollectedField, path []string, satisfies ...string) error {
+func (t *TimestampQuery) collectField(ctx context.Context, opCtx *graphql.OperationContext, collected graphql.CollectedField, path []string, satisfies ...string) error {
 	path = append([]string(nil), path...)
-	for _, field := range graphql.CollectFields(op, field.Selections, satisfies) {
+	var (
+		unknownSeen    bool
+		fieldSeen      = make(map[string]struct{}, len(timestamp.Columns))
+		selectedFields = []string{timestamp.FieldID}
+	)
+	for _, field := range graphql.CollectFields(opCtx, collected.Selections, satisfies) {
 		switch field.Name {
 		case "signature":
 			var (
-				path  = append(path, field.Name)
-				query = &SignatureQuery{config: t.config}
+				alias = field.Alias
+				path  = append(path, alias)
+				query = (&SignatureClient{config: t.config}).Query()
 			)
-			if err := query.collectField(ctx, op, field, path, satisfies...); err != nil {
+			if err := query.collectField(ctx, opCtx, field, path, satisfies...); err != nil {
 				return err
 			}
 			t.withSignature = query
+		case "type":
+			if _, ok := fieldSeen[timestamp.FieldType]; !ok {
+				selectedFields = append(selectedFields, timestamp.FieldType)
+				fieldSeen[timestamp.FieldType] = struct{}{}
+			}
+		case "timestamp":
+			if _, ok := fieldSeen[timestamp.FieldTimestamp]; !ok {
+				selectedFields = append(selectedFields, timestamp.FieldTimestamp)
+				fieldSeen[timestamp.FieldTimestamp] = struct{}{}
+			}
+		case "id":
+		case "__typename":
+		default:
+			unknownSeen = true
 		}
+	}
+	if !unknownSeen {
+		t.Select(selectedFields...)
 	}
 	return nil
 }
@@ -671,7 +871,7 @@ type timestampPaginateArgs struct {
 	opts          []TimestampPaginateOption
 }
 
-func newTimestampPaginateArgs(rv map[string]interface{}) *timestampPaginateArgs {
+func newTimestampPaginateArgs(rv map[string]any) *timestampPaginateArgs {
 	args := &timestampPaginateArgs{}
 	if rv == nil {
 		return args
@@ -705,35 +905,18 @@ const (
 	whereField     = "where"
 )
 
-func fieldArgs(ctx context.Context, whereInput interface{}, path ...string) map[string]interface{} {
-	fc := graphql.GetFieldContext(ctx)
-	if fc == nil {
+func fieldArgs(ctx context.Context, whereInput any, path ...string) map[string]any {
+	field := collectedField(ctx, path...)
+	if field == nil || field.Arguments == nil {
 		return nil
 	}
 	oc := graphql.GetOperationContext(ctx)
-	for _, name := range path {
-		var field *graphql.CollectedField
-		for _, f := range graphql.CollectFields(oc, fc.Field.Selections, nil) {
-			if f.Name == name {
-				field = &f
-				break
-			}
-		}
-		if field == nil {
-			return nil
-		}
-		cf, err := fc.Child(ctx, *field)
-		if err != nil {
-			args := field.ArgumentMap(oc.Variables)
-			return unmarshalArgs(ctx, whereInput, args)
-		}
-		fc = cf
-	}
-	return fc.Args
+	args := field.ArgumentMap(oc.Variables)
+	return unmarshalArgs(ctx, whereInput, args)
 }
 
 // unmarshalArgs allows extracting the field arguments from their raw representation.
-func unmarshalArgs(ctx context.Context, whereInput interface{}, args map[string]interface{}) map[string]interface{} {
+func unmarshalArgs(ctx context.Context, whereInput any, args map[string]any) map[string]any {
 	for _, k := range []string{firstField, lastField} {
 		v, ok := args[k]
 		if !ok {
@@ -751,7 +934,7 @@ func unmarshalArgs(ctx context.Context, whereInput interface{}, args map[string]
 		}
 		c := &Cursor{}
 		if c.UnmarshalGQL(v) == nil {
-			args[k] = &c
+			args[k] = c
 		}
 	}
 	if v, ok := args[whereField]; ok && whereInput != nil {
@@ -784,4 +967,18 @@ func limitRows(partitionBy string, limit int, orderBy ...sql.Querier) func(s *sq
 			Where(sql.LTE(t.C("row_number"), limit)).
 			Prefix(with)
 	}
+}
+
+// mayAddCondition appends another type condition to the satisfies list
+// if condition is enabled (Node/Nodes) and it does not exist in the list.
+func mayAddCondition(satisfies []string, typeCond string) []string {
+	if len(satisfies) == 0 {
+		return satisfies
+	}
+	for _, s := range satisfies {
+		if typeCond == s {
+			return satisfies
+		}
+	}
+	return append(satisfies, typeCond)
 }

@@ -73,34 +73,7 @@ func (tu *TimestampUpdate) ClearSignature() *TimestampUpdate {
 
 // Save executes the query and returns the number of nodes affected by the update operation.
 func (tu *TimestampUpdate) Save(ctx context.Context) (int, error) {
-	var (
-		err      error
-		affected int
-	)
-	if len(tu.hooks) == 0 {
-		affected, err = tu.sqlSave(ctx)
-	} else {
-		var mut Mutator = MutateFunc(func(ctx context.Context, m Mutation) (Value, error) {
-			mutation, ok := m.(*TimestampMutation)
-			if !ok {
-				return nil, fmt.Errorf("unexpected mutation type %T", m)
-			}
-			tu.mutation = mutation
-			affected, err = tu.sqlSave(ctx)
-			mutation.done = true
-			return affected, err
-		})
-		for i := len(tu.hooks) - 1; i >= 0; i-- {
-			if tu.hooks[i] == nil {
-				return 0, fmt.Errorf("ent: uninitialized hook (forgotten import ent/runtime?)")
-			}
-			mut = tu.hooks[i](mut)
-		}
-		if _, err := mut.Mutate(ctx, tu.mutation); err != nil {
-			return 0, err
-		}
-	}
-	return affected, err
+	return withHooks(ctx, tu.sqlSave, tu.mutation, tu.hooks)
 }
 
 // SaveX is like Save, but panics if an error occurs.
@@ -126,16 +99,7 @@ func (tu *TimestampUpdate) ExecX(ctx context.Context) {
 }
 
 func (tu *TimestampUpdate) sqlSave(ctx context.Context) (n int, err error) {
-	_spec := &sqlgraph.UpdateSpec{
-		Node: &sqlgraph.NodeSpec{
-			Table:   timestamp.Table,
-			Columns: timestamp.Columns,
-			ID: &sqlgraph.FieldSpec{
-				Type:   field.TypeInt,
-				Column: timestamp.FieldID,
-			},
-		},
-	}
+	_spec := sqlgraph.NewUpdateSpec(timestamp.Table, timestamp.Columns, sqlgraph.NewFieldSpec(timestamp.FieldID, field.TypeInt))
 	if ps := tu.mutation.predicates; len(ps) > 0 {
 		_spec.Predicate = func(selector *sql.Selector) {
 			for i := range ps {
@@ -144,18 +108,10 @@ func (tu *TimestampUpdate) sqlSave(ctx context.Context) (n int, err error) {
 		}
 	}
 	if value, ok := tu.mutation.GetType(); ok {
-		_spec.Fields.Set = append(_spec.Fields.Set, &sqlgraph.FieldSpec{
-			Type:   field.TypeString,
-			Value:  value,
-			Column: timestamp.FieldType,
-		})
+		_spec.SetField(timestamp.FieldType, field.TypeString, value)
 	}
 	if value, ok := tu.mutation.Timestamp(); ok {
-		_spec.Fields.Set = append(_spec.Fields.Set, &sqlgraph.FieldSpec{
-			Type:   field.TypeTime,
-			Value:  value,
-			Column: timestamp.FieldTimestamp,
-		})
+		_spec.SetField(timestamp.FieldTimestamp, field.TypeTime, value)
 	}
 	if tu.mutation.SignatureCleared() {
 		edge := &sqlgraph.EdgeSpec{
@@ -165,10 +121,7 @@ func (tu *TimestampUpdate) sqlSave(ctx context.Context) (n int, err error) {
 			Columns: []string{timestamp.SignatureColumn},
 			Bidi:    false,
 			Target: &sqlgraph.EdgeTarget{
-				IDSpec: &sqlgraph.FieldSpec{
-					Type:   field.TypeInt,
-					Column: signature.FieldID,
-				},
+				IDSpec: sqlgraph.NewFieldSpec(signature.FieldID, field.TypeInt),
 			},
 		}
 		_spec.Edges.Clear = append(_spec.Edges.Clear, edge)
@@ -181,10 +134,7 @@ func (tu *TimestampUpdate) sqlSave(ctx context.Context) (n int, err error) {
 			Columns: []string{timestamp.SignatureColumn},
 			Bidi:    false,
 			Target: &sqlgraph.EdgeTarget{
-				IDSpec: &sqlgraph.FieldSpec{
-					Type:   field.TypeInt,
-					Column: signature.FieldID,
-				},
+				IDSpec: sqlgraph.NewFieldSpec(signature.FieldID, field.TypeInt),
 			},
 		}
 		for _, k := range nodes {
@@ -200,6 +150,7 @@ func (tu *TimestampUpdate) sqlSave(ctx context.Context) (n int, err error) {
 		}
 		return 0, err
 	}
+	tu.mutation.done = true
 	return n, nil
 }
 
@@ -253,6 +204,12 @@ func (tuo *TimestampUpdateOne) ClearSignature() *TimestampUpdateOne {
 	return tuo
 }
 
+// Where appends a list predicates to the TimestampUpdate builder.
+func (tuo *TimestampUpdateOne) Where(ps ...predicate.Timestamp) *TimestampUpdateOne {
+	tuo.mutation.Where(ps...)
+	return tuo
+}
+
 // Select allows selecting one or more fields (columns) of the returned entity.
 // The default is selecting all fields defined in the entity schema.
 func (tuo *TimestampUpdateOne) Select(field string, fields ...string) *TimestampUpdateOne {
@@ -262,40 +219,7 @@ func (tuo *TimestampUpdateOne) Select(field string, fields ...string) *Timestamp
 
 // Save executes the query and returns the updated Timestamp entity.
 func (tuo *TimestampUpdateOne) Save(ctx context.Context) (*Timestamp, error) {
-	var (
-		err  error
-		node *Timestamp
-	)
-	if len(tuo.hooks) == 0 {
-		node, err = tuo.sqlSave(ctx)
-	} else {
-		var mut Mutator = MutateFunc(func(ctx context.Context, m Mutation) (Value, error) {
-			mutation, ok := m.(*TimestampMutation)
-			if !ok {
-				return nil, fmt.Errorf("unexpected mutation type %T", m)
-			}
-			tuo.mutation = mutation
-			node, err = tuo.sqlSave(ctx)
-			mutation.done = true
-			return node, err
-		})
-		for i := len(tuo.hooks) - 1; i >= 0; i-- {
-			if tuo.hooks[i] == nil {
-				return nil, fmt.Errorf("ent: uninitialized hook (forgotten import ent/runtime?)")
-			}
-			mut = tuo.hooks[i](mut)
-		}
-		v, err := mut.Mutate(ctx, tuo.mutation)
-		if err != nil {
-			return nil, err
-		}
-		nv, ok := v.(*Timestamp)
-		if !ok {
-			return nil, fmt.Errorf("unexpected node type %T returned from TimestampMutation", v)
-		}
-		node = nv
-	}
-	return node, err
+	return withHooks(ctx, tuo.sqlSave, tuo.mutation, tuo.hooks)
 }
 
 // SaveX is like Save, but panics if an error occurs.
@@ -321,16 +245,7 @@ func (tuo *TimestampUpdateOne) ExecX(ctx context.Context) {
 }
 
 func (tuo *TimestampUpdateOne) sqlSave(ctx context.Context) (_node *Timestamp, err error) {
-	_spec := &sqlgraph.UpdateSpec{
-		Node: &sqlgraph.NodeSpec{
-			Table:   timestamp.Table,
-			Columns: timestamp.Columns,
-			ID: &sqlgraph.FieldSpec{
-				Type:   field.TypeInt,
-				Column: timestamp.FieldID,
-			},
-		},
-	}
+	_spec := sqlgraph.NewUpdateSpec(timestamp.Table, timestamp.Columns, sqlgraph.NewFieldSpec(timestamp.FieldID, field.TypeInt))
 	id, ok := tuo.mutation.ID()
 	if !ok {
 		return nil, &ValidationError{Name: "id", err: errors.New(`ent: missing "Timestamp.id" for update`)}
@@ -356,18 +271,10 @@ func (tuo *TimestampUpdateOne) sqlSave(ctx context.Context) (_node *Timestamp, e
 		}
 	}
 	if value, ok := tuo.mutation.GetType(); ok {
-		_spec.Fields.Set = append(_spec.Fields.Set, &sqlgraph.FieldSpec{
-			Type:   field.TypeString,
-			Value:  value,
-			Column: timestamp.FieldType,
-		})
+		_spec.SetField(timestamp.FieldType, field.TypeString, value)
 	}
 	if value, ok := tuo.mutation.Timestamp(); ok {
-		_spec.Fields.Set = append(_spec.Fields.Set, &sqlgraph.FieldSpec{
-			Type:   field.TypeTime,
-			Value:  value,
-			Column: timestamp.FieldTimestamp,
-		})
+		_spec.SetField(timestamp.FieldTimestamp, field.TypeTime, value)
 	}
 	if tuo.mutation.SignatureCleared() {
 		edge := &sqlgraph.EdgeSpec{
@@ -377,10 +284,7 @@ func (tuo *TimestampUpdateOne) sqlSave(ctx context.Context) (_node *Timestamp, e
 			Columns: []string{timestamp.SignatureColumn},
 			Bidi:    false,
 			Target: &sqlgraph.EdgeTarget{
-				IDSpec: &sqlgraph.FieldSpec{
-					Type:   field.TypeInt,
-					Column: signature.FieldID,
-				},
+				IDSpec: sqlgraph.NewFieldSpec(signature.FieldID, field.TypeInt),
 			},
 		}
 		_spec.Edges.Clear = append(_spec.Edges.Clear, edge)
@@ -393,10 +297,7 @@ func (tuo *TimestampUpdateOne) sqlSave(ctx context.Context) (_node *Timestamp, e
 			Columns: []string{timestamp.SignatureColumn},
 			Bidi:    false,
 			Target: &sqlgraph.EdgeTarget{
-				IDSpec: &sqlgraph.FieldSpec{
-					Type:   field.TypeInt,
-					Column: signature.FieldID,
-				},
+				IDSpec: sqlgraph.NewFieldSpec(signature.FieldID, field.TypeInt),
 			},
 		}
 		for _, k := range nodes {
@@ -415,5 +316,6 @@ func (tuo *TimestampUpdateOne) sqlSave(ctx context.Context) (_node *Timestamp, e
 		}
 		return nil, err
 	}
+	tuo.mutation.done = true
 	return _node, nil
 }

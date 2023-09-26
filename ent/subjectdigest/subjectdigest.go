@@ -2,6 +2,11 @@
 
 package subjectdigest
 
+import (
+	"entgo.io/ent/dialect/sql"
+	"entgo.io/ent/dialect/sql/sqlgraph"
+)
+
 const (
 	// Label holds the string label denoting the subjectdigest type in the database.
 	Label = "subject_digest"
@@ -58,3 +63,35 @@ var (
 	// ValueValidator is a validator for the "value" field. It is called by the builders before save.
 	ValueValidator func(string) error
 )
+
+// OrderOption defines the ordering options for the SubjectDigest queries.
+type OrderOption func(*sql.Selector)
+
+// ByID orders the results by the id field.
+func ByID(opts ...sql.OrderTermOption) OrderOption {
+	return sql.OrderByField(FieldID, opts...).ToFunc()
+}
+
+// ByAlgorithm orders the results by the algorithm field.
+func ByAlgorithm(opts ...sql.OrderTermOption) OrderOption {
+	return sql.OrderByField(FieldAlgorithm, opts...).ToFunc()
+}
+
+// ByValue orders the results by the value field.
+func ByValue(opts ...sql.OrderTermOption) OrderOption {
+	return sql.OrderByField(FieldValue, opts...).ToFunc()
+}
+
+// BySubjectField orders the results by subject field.
+func BySubjectField(field string, opts ...sql.OrderTermOption) OrderOption {
+	return func(s *sql.Selector) {
+		sqlgraph.OrderByNeighborTerms(s, newSubjectStep(), sql.OrderByField(field, opts...))
+	}
+}
+func newSubjectStep() *sqlgraph.Step {
+	return sqlgraph.NewStep(
+		sqlgraph.From(Table, FieldID),
+		sqlgraph.To(SubjectInverseTable, FieldID),
+		sqlgraph.Edge(sqlgraph.M2O, true, SubjectTable, SubjectColumn),
+	)
+}

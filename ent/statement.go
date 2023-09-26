@@ -6,6 +6,7 @@ import (
 	"fmt"
 	"strings"
 
+	"entgo.io/ent"
 	"entgo.io/ent/dialect/sql"
 	"github.com/testifysec/archivista/ent/attestationcollection"
 	"github.com/testifysec/archivista/ent/statement"
@@ -20,7 +21,8 @@ type Statement struct {
 	Predicate string `json:"predicate,omitempty"`
 	// Edges holds the relations/edges for other nodes in the graph.
 	// The values are being populated by the StatementQuery when eager-loading is set.
-	Edges StatementEdges `json:"edges"`
+	Edges        StatementEdges `json:"edges"`
+	selectValues sql.SelectValues
 }
 
 // StatementEdges holds the relations/edges for other nodes in the graph.
@@ -35,7 +37,10 @@ type StatementEdges struct {
 	// type was loaded (or requested) in eager-loading or not.
 	loadedTypes [3]bool
 	// totalCount holds the count of the edges above.
-	totalCount [3]*int
+	totalCount [3]map[string]int
+
+	namedSubjects map[string][]*Subject
+	namedDsse     map[string][]*Dsse
 }
 
 // SubjectsOrErr returns the Subjects value or an error if the edge
@@ -79,7 +84,7 @@ func (*Statement) scanValues(columns []string) ([]any, error) {
 		case statement.FieldPredicate:
 			values[i] = new(sql.NullString)
 		default:
-			return nil, fmt.Errorf("unexpected column %q for type Statement", columns[i])
+			values[i] = new(sql.UnknownType)
 		}
 	}
 	return values, nil
@@ -105,31 +110,39 @@ func (s *Statement) assignValues(columns []string, values []any) error {
 			} else if value.Valid {
 				s.Predicate = value.String
 			}
+		default:
+			s.selectValues.Set(columns[i], values[i])
 		}
 	}
 	return nil
 }
 
+// Value returns the ent.Value that was dynamically selected and assigned to the Statement.
+// This includes values selected through modifiers, order, etc.
+func (s *Statement) Value(name string) (ent.Value, error) {
+	return s.selectValues.Get(name)
+}
+
 // QuerySubjects queries the "subjects" edge of the Statement entity.
 func (s *Statement) QuerySubjects() *SubjectQuery {
-	return (&StatementClient{config: s.config}).QuerySubjects(s)
+	return NewStatementClient(s.config).QuerySubjects(s)
 }
 
 // QueryAttestationCollections queries the "attestation_collections" edge of the Statement entity.
 func (s *Statement) QueryAttestationCollections() *AttestationCollectionQuery {
-	return (&StatementClient{config: s.config}).QueryAttestationCollections(s)
+	return NewStatementClient(s.config).QueryAttestationCollections(s)
 }
 
 // QueryDsse queries the "dsse" edge of the Statement entity.
 func (s *Statement) QueryDsse() *DsseQuery {
-	return (&StatementClient{config: s.config}).QueryDsse(s)
+	return NewStatementClient(s.config).QueryDsse(s)
 }
 
 // Update returns a builder for updating this Statement.
 // Note that you need to call Statement.Unwrap() before calling this method if this Statement
 // was returned from a transaction, and the transaction was committed or rolled back.
 func (s *Statement) Update() *StatementUpdateOne {
-	return (&StatementClient{config: s.config}).UpdateOne(s)
+	return NewStatementClient(s.config).UpdateOne(s)
 }
 
 // Unwrap unwraps the Statement entity that was returned from a transaction after it was closed,
@@ -154,11 +167,53 @@ func (s *Statement) String() string {
 	return builder.String()
 }
 
-// Statements is a parsable slice of Statement.
-type Statements []*Statement
+// NamedSubjects returns the Subjects named value or an error if the edge was not
+// loaded in eager-loading with this name.
+func (s *Statement) NamedSubjects(name string) ([]*Subject, error) {
+	if s.Edges.namedSubjects == nil {
+		return nil, &NotLoadedError{edge: name}
+	}
+	nodes, ok := s.Edges.namedSubjects[name]
+	if !ok {
+		return nil, &NotLoadedError{edge: name}
+	}
+	return nodes, nil
+}
 
-func (s Statements) config(cfg config) {
-	for _i := range s {
-		s[_i].config = cfg
+func (s *Statement) appendNamedSubjects(name string, edges ...*Subject) {
+	if s.Edges.namedSubjects == nil {
+		s.Edges.namedSubjects = make(map[string][]*Subject)
+	}
+	if len(edges) == 0 {
+		s.Edges.namedSubjects[name] = []*Subject{}
+	} else {
+		s.Edges.namedSubjects[name] = append(s.Edges.namedSubjects[name], edges...)
 	}
 }
+
+// NamedDsse returns the Dsse named value or an error if the edge was not
+// loaded in eager-loading with this name.
+func (s *Statement) NamedDsse(name string) ([]*Dsse, error) {
+	if s.Edges.namedDsse == nil {
+		return nil, &NotLoadedError{edge: name}
+	}
+	nodes, ok := s.Edges.namedDsse[name]
+	if !ok {
+		return nil, &NotLoadedError{edge: name}
+	}
+	return nodes, nil
+}
+
+func (s *Statement) appendNamedDsse(name string, edges ...*Dsse) {
+	if s.Edges.namedDsse == nil {
+		s.Edges.namedDsse = make(map[string][]*Dsse)
+	}
+	if len(edges) == 0 {
+		s.Edges.namedDsse[name] = []*Dsse{}
+	} else {
+		s.Edges.namedDsse[name] = append(s.Edges.namedDsse[name], edges...)
+	}
+}
+
+// Statements is a parsable slice of Statement.
+type Statements []*Statement

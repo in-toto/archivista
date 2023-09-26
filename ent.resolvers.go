@@ -20,6 +20,7 @@ package archivista
 import (
 	"context"
 
+	"entgo.io/contrib/entgql"
 	"github.com/testifysec/archivista/ent"
 )
 
@@ -31,11 +32,11 @@ func (r *queryResolver) Nodes(ctx context.Context, ids []int) ([]ent.Noder, erro
 	return r.client.Noders(ctx, ids)
 }
 
-func (r *queryResolver) Dsses(ctx context.Context, after *ent.Cursor, first *int, before *ent.Cursor, last *int, where *ent.DsseWhereInput) (*ent.DsseConnection, error) {
+func (r *queryResolver) Dsses(ctx context.Context, after *entgql.Cursor[int], first *int, before *entgql.Cursor[int], last *int, where *ent.DsseWhereInput) (*ent.DsseConnection, error) {
 	return r.client.Dsse.Query().Paginate(ctx, after, first, before, last, ent.WithDsseFilter(where.Filter))
 }
 
-func (r *queryResolver) Subjects(ctx context.Context, after *ent.Cursor, first *int, before *ent.Cursor, last *int, where *ent.SubjectWhereInput) (*ent.SubjectConnection, error) {
+func (r *queryResolver) Subjects(ctx context.Context, after *entgql.Cursor[int], first *int, before *entgql.Cursor[int], last *int, where *ent.SubjectWhereInput) (*ent.SubjectConnection, error) {
 	return r.client.Subject.Query().Paginate(ctx, after, first, before, last, ent.WithSubjectFilter(where.Filter))
 }
 

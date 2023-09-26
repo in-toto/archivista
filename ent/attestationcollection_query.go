@@ -20,17 +20,16 @@ import (
 // AttestationCollectionQuery is the builder for querying AttestationCollection entities.
 type AttestationCollectionQuery struct {
 	config
-	limit            *int
-	offset           *int
-	unique           *bool
-	order            []OrderFunc
-	fields           []string
-	predicates       []predicate.AttestationCollection
-	withAttestations *AttestationQuery
-	withStatement    *StatementQuery
-	withFKs          bool
-	modifiers        []func(*sql.Selector)
-	loadTotal        []func(context.Context, []*AttestationCollection) error
+	ctx                   *QueryContext
+	order                 []attestationcollection.OrderOption
+	inters                []Interceptor
+	predicates            []predicate.AttestationCollection
+	withAttestations      *AttestationQuery
+	withStatement         *StatementQuery
+	withFKs               bool
+	modifiers             []func(*sql.Selector)
+	loadTotal             []func(context.Context, []*AttestationCollection) error
+	withNamedAttestations map[string]*AttestationQuery
 	// intermediate query (i.e. traversal path).
 	sql  *sql.Selector
 	path func(context.Context) (*sql.Selector, error)
@@ -42,34 +41,34 @@ func (acq *AttestationCollectionQuery) Where(ps ...predicate.AttestationCollecti
 	return acq
 }
 
-// Limit adds a limit step to the query.
+// Limit the number of records to be returned by this query.
 func (acq *AttestationCollectionQuery) Limit(limit int) *AttestationCollectionQuery {
-	acq.limit = &limit
+	acq.ctx.Limit = &limit
 	return acq
 }
 
-// Offset adds an offset step to the query.
+// Offset to start from.
 func (acq *AttestationCollectionQuery) Offset(offset int) *AttestationCollectionQuery {
-	acq.offset = &offset
+	acq.ctx.Offset = &offset
 	return acq
 }
 
 // Unique configures the query builder to filter duplicate records on query.
 // By default, unique is set to true, and can be disabled using this method.
 func (acq *AttestationCollectionQuery) Unique(unique bool) *AttestationCollectionQuery {
-	acq.unique = &unique
+	acq.ctx.Unique = &unique
 	return acq
 }
 
-// Order adds an order step to the query.
-func (acq *AttestationCollectionQuery) Order(o ...OrderFunc) *AttestationCollectionQuery {
+// Order specifies how the records should be ordered.
+func (acq *AttestationCollectionQuery) Order(o ...attestationcollection.OrderOption) *AttestationCollectionQuery {
 	acq.order = append(acq.order, o...)
 	return acq
 }
 
 // QueryAttestations chains the current query on the "attestations" edge.
 func (acq *AttestationCollectionQuery) QueryAttestations() *AttestationQuery {
-	query := &AttestationQuery{config: acq.config}
+	query := (&AttestationClient{config: acq.config}).Query()
 	query.path = func(ctx context.Context) (fromU *sql.Selector, err error) {
 		if err := acq.prepareQuery(ctx); err != nil {
 			return nil, err
@@ -91,7 +90,7 @@ func (acq *AttestationCollectionQuery) QueryAttestations() *AttestationQuery {
 
 // QueryStatement chains the current query on the "statement" edge.
 func (acq *AttestationCollectionQuery) QueryStatement() *StatementQuery {
-	query := &StatementQuery{config: acq.config}
+	query := (&StatementClient{config: acq.config}).Query()
 	query.path = func(ctx context.Context) (fromU *sql.Selector, err error) {
 		if err := acq.prepareQuery(ctx); err != nil {
 			return nil, err
@@ -114,7 +113,7 @@ func (acq *AttestationCollectionQuery) QueryStatement() *StatementQuery {
 // First returns the first AttestationCollection entity from the query.
 // Returns a *NotFoundError when no AttestationCollection was found.
 func (acq *AttestationCollectionQuery) First(ctx context.Context) (*AttestationCollection, error) {
-	nodes, err := acq.Limit(1).All(ctx)
+	nodes, err := acq.Limit(1).All(setContextOp(ctx, acq.ctx, "First"))
 	if err != nil {
 		return nil, err
 	}
@@ -137,7 +136,7 @@ func (acq *AttestationCollectionQuery) FirstX(ctx context.Context) *AttestationC
 // Returns a *NotFoundError when no AttestationCollection ID was found.
 func (acq *AttestationCollectionQuery) FirstID(ctx context.Context) (id int, err error) {
 	var ids []int
-	if ids, err = acq.Limit(1).IDs(ctx); err != nil {
+	if ids, err = acq.Limit(1).IDs(setContextOp(ctx, acq.ctx, "FirstID")); err != nil {
 		return
 	}
 	if len(ids) == 0 {
@@ -160,7 +159,7 @@ func (acq *AttestationCollectionQuery) FirstIDX(ctx context.Context) int {
 // Returns a *NotSingularError when more than one AttestationCollection entity is found.
 // Returns a *NotFoundError when no AttestationCollection entities are found.
 func (acq *AttestationCollectionQuery) Only(ctx context.Context) (*AttestationCollection, error) {
-	nodes, err := acq.Limit(2).All(ctx)
+	nodes, err := acq.Limit(2).All(setContextOp(ctx, acq.ctx, "Only"))
 	if err != nil {
 		return nil, err
 	}
@@ -188,7 +187,7 @@ func (acq *AttestationCollectionQuery) OnlyX(ctx context.Context) *AttestationCo
 // Returns a *NotFoundError when no entities are found.
 func (acq *AttestationCollectionQuery) OnlyID(ctx context.Context) (id int, err error) {
 	var ids []int
-	if ids, err = acq.Limit(2).IDs(ctx); err != nil {
+	if ids, err = acq.Limit(2).IDs(setContextOp(ctx, acq.ctx, "OnlyID")); err != nil {
 		return
 	}
 	switch len(ids) {
@@ -213,10 +212,12 @@ func (acq *AttestationCollectionQuery) OnlyIDX(ctx context.Context) int {
 
 // All executes the query and returns a list of AttestationCollections.
 func (acq *AttestationCollectionQuery) All(ctx context.Context) ([]*AttestationCollection, error) {
+	ctx = setContextOp(ctx, acq.ctx, "All")
 	if err := acq.prepareQuery(ctx); err != nil {
 		return nil, err
 	}
-	return acq.sqlAll(ctx)
+	qr := querierAll[[]*AttestationCollection, *AttestationCollectionQuery]()
+	return withInterceptors[[]*AttestationCollection](ctx, acq, qr, acq.inters)
 }
 
 // AllX is like All, but panics if an error occurs.
@@ -229,9 +230,12 @@ func (acq *AttestationCollectionQuery) AllX(ctx context.Context) []*AttestationC
 }
 
 // IDs executes the query and returns a list of AttestationCollection IDs.
-func (acq *AttestationCollectionQuery) IDs(ctx context.Context) ([]int, error) {
-	var ids []int
-	if err := acq.Select(attestationcollection.FieldID).Scan(ctx, &ids); err != nil {
+func (acq *AttestationCollectionQuery) IDs(ctx context.Context) (ids []int, err error) {
+	if acq.ctx.Unique == nil && acq.path != nil {
+		acq.Unique(true)
+	}
+	ctx = setContextOp(ctx, acq.ctx, "IDs")
+	if err = acq.Select(attestationcollection.FieldID).Scan(ctx, &ids); err != nil {
 		return nil, err
 	}
 	return ids, nil
@@ -248,10 +252,11 @@ func (acq *AttestationCollectionQuery) IDsX(ctx context.Context) []int {
 
 // Count returns the count of the given query.
 func (acq *AttestationCollectionQuery) Count(ctx context.Context) (int, error) {
+	ctx = setContextOp(ctx, acq.ctx, "Count")
 	if err := acq.prepareQuery(ctx); err != nil {
 		return 0, err
 	}
-	return acq.sqlCount(ctx)
+	return withInterceptors[int](ctx, acq, querierCount[*AttestationCollectionQuery](), acq.inters)
 }
 
 // CountX is like Count, but panics if an error occurs.
@@ -265,10 +270,15 @@ func (acq *AttestationCollectionQuery) CountX(ctx context.Context) int {
 
 // Exist returns true if the query has elements in the graph.
 func (acq *AttestationCollectionQuery) Exist(ctx context.Context) (bool, error) {
-	if err := acq.prepareQuery(ctx); err != nil {
-		return false, err
+	ctx = setContextOp(ctx, acq.ctx, "Exist")
+	switch _, err := acq.FirstID(ctx); {
+	case IsNotFound(err):
+		return false, nil
+	case err != nil:
+		return false, fmt.Errorf("ent: check existence: %w", err)
+	default:
+		return true, nil
 	}
-	return acq.sqlExist(ctx)
 }
 
 // ExistX is like Exist, but panics if an error occurs.
@@ -288,23 +298,22 @@ func (acq *AttestationCollectionQuery) Clone() *AttestationCollectionQuery {
 	}
 	return &AttestationCollectionQuery{
 		config:           acq.config,
-		limit:            acq.limit,
-		offset:           acq.offset,
-		order:            append([]OrderFunc{}, acq.order...),
+		ctx:              acq.ctx.Clone(),
+		order:            append([]attestationcollection.OrderOption{}, acq.order...),
+		inters:           append([]Interceptor{}, acq.inters...),
 		predicates:       append([]predicate.AttestationCollection{}, acq.predicates...),
 		withAttestations: acq.withAttestations.Clone(),
 		withStatement:    acq.withStatement.Clone(),
 		// clone intermediate query.
-		sql:    acq.sql.Clone(),
-		path:   acq.path,
-		unique: acq.unique,
+		sql:  acq.sql.Clone(),
+		path: acq.path,
 	}
 }
 
 // WithAttestations tells the query-builder to eager-load the nodes that are connected to
 // the "attestations" edge. The optional arguments are used to configure the query builder of the edge.
 func (acq *AttestationCollectionQuery) WithAttestations(opts ...func(*AttestationQuery)) *AttestationCollectionQuery {
-	query := &AttestationQuery{config: acq.config}
+	query := (&AttestationClient{config: acq.config}).Query()
 	for _, opt := range opts {
 		opt(query)
 	}
@@ -315,7 +324,7 @@ func (acq *AttestationCollectionQuery) WithAttestations(opts ...func(*Attestatio
 // WithStatement tells the query-builder to eager-load the nodes that are connected to
 // the "statement" edge. The optional arguments are used to configure the query builder of the edge.
 func (acq *AttestationCollectionQuery) WithStatement(opts ...func(*StatementQuery)) *AttestationCollectionQuery {
-	query := &StatementQuery{config: acq.config}
+	query := (&StatementClient{config: acq.config}).Query()
 	for _, opt := range opts {
 		opt(query)
 	}
@@ -338,16 +347,11 @@ func (acq *AttestationCollectionQuery) WithStatement(opts ...func(*StatementQuer
 //		Aggregate(ent.Count()).
 //		Scan(ctx, &v)
 func (acq *AttestationCollectionQuery) GroupBy(field string, fields ...string) *AttestationCollectionGroupBy {
-	grbuild := &AttestationCollectionGroupBy{config: acq.config}
-	grbuild.fields = append([]string{field}, fields...)
-	grbuild.path = func(ctx context.Context) (prev *sql.Selector, err error) {
-		if err := acq.prepareQuery(ctx); err != nil {
-			return nil, err
-		}
-		return acq.sqlQuery(ctx), nil
-	}
+	acq.ctx.Fields = append([]string{field}, fields...)
+	grbuild := &AttestationCollectionGroupBy{build: acq}
+	grbuild.flds = &acq.ctx.Fields
 	grbuild.label = attestationcollection.Label
-	grbuild.flds, grbuild.scan = &grbuild.fields, grbuild.Scan
+	grbuild.scan = grbuild.Scan
 	return grbuild
 }
 
@@ -364,15 +368,30 @@ func (acq *AttestationCollectionQuery) GroupBy(field string, fields ...string) *
 //		Select(attestationcollection.FieldName).
 //		Scan(ctx, &v)
 func (acq *AttestationCollectionQuery) Select(fields ...string) *AttestationCollectionSelect {
-	acq.fields = append(acq.fields, fields...)
-	selbuild := &AttestationCollectionSelect{AttestationCollectionQuery: acq}
-	selbuild.label = attestationcollection.Label
-	selbuild.flds, selbuild.scan = &acq.fields, selbuild.Scan
-	return selbuild
+	acq.ctx.Fields = append(acq.ctx.Fields, fields...)
+	sbuild := &AttestationCollectionSelect{AttestationCollectionQuery: acq}
+	sbuild.label = attestationcollection.Label
+	sbuild.flds, sbuild.scan = &acq.ctx.Fields, sbuild.Scan
+	return sbuild
+}
+
+// Aggregate returns a AttestationCollectionSelect configured with the given aggregations.
+func (acq *AttestationCollectionQuery) Aggregate(fns ...AggregateFunc) *AttestationCollectionSelect {
+	return acq.Select().Aggregate(fns...)
 }
 
 func (acq *AttestationCollectionQuery) prepareQuery(ctx context.Context) error {
-	for _, f := range acq.fields {
+	for _, inter := range acq.inters {
+		if inter == nil {
+			return fmt.Errorf("ent: uninitialized interceptor (forgotten import ent/runtime?)")
+		}
+		if trv, ok := inter.(Traverser); ok {
+			if err := trv.Traverse(ctx, acq); err != nil {
+				return err
+			}
+		}
+	}
+	for _, f := range acq.ctx.Fields {
 		if !attestationcollection.ValidColumn(f) {
 			return &ValidationError{Name: f, err: fmt.Errorf("ent: invalid field %q for query", f)}
 		}
@@ -437,6 +456,13 @@ func (acq *AttestationCollectionQuery) sqlAll(ctx context.Context, hooks ...quer
 			return nil, err
 		}
 	}
+	for name, query := range acq.withNamedAttestations {
+		if err := acq.loadAttestations(ctx, query, nodes,
+			func(n *AttestationCollection) { n.appendNamedAttestations(name) },
+			func(n *AttestationCollection, e *Attestation) { n.appendNamedAttestations(name, e) }); err != nil {
+			return nil, err
+		}
+	}
 	for i := range acq.loadTotal {
 		if err := acq.loadTotal[i](ctx, nodes); err != nil {
 			return nil, err
@@ -457,7 +483,7 @@ func (acq *AttestationCollectionQuery) loadAttestations(ctx context.Context, que
 	}
 	query.withFKs = true
 	query.Where(predicate.Attestation(func(s *sql.Selector) {
-		s.Where(sql.InValues(attestationcollection.AttestationsColumn, fks...))
+		s.Where(sql.InValues(s.C(attestationcollection.AttestationsColumn), fks...))
 	}))
 	neighbors, err := query.All(ctx)
 	if err != nil {
@@ -470,7 +496,7 @@ func (acq *AttestationCollectionQuery) loadAttestations(ctx context.Context, que
 		}
 		node, ok := nodeids[*fk]
 		if !ok {
-			return fmt.Errorf(`unexpected foreign-key "attestation_collection_attestations" returned %v for node %v`, *fk, n.ID)
+			return fmt.Errorf(`unexpected referenced foreign-key "attestation_collection_attestations" returned %v for node %v`, *fk, n.ID)
 		}
 		assign(node, n)
 	}
@@ -488,6 +514,9 @@ func (acq *AttestationCollectionQuery) loadStatement(ctx context.Context, query 
 			ids = append(ids, fk)
 		}
 		nodeids[fk] = append(nodeids[fk], nodes[i])
+	}
+	if len(ids) == 0 {
+		return nil
 	}
 	query.Where(statement.IDIn(ids...))
 	neighbors, err := query.All(ctx)
@@ -511,41 +540,22 @@ func (acq *AttestationCollectionQuery) sqlCount(ctx context.Context) (int, error
 	if len(acq.modifiers) > 0 {
 		_spec.Modifiers = acq.modifiers
 	}
-	_spec.Node.Columns = acq.fields
-	if len(acq.fields) > 0 {
-		_spec.Unique = acq.unique != nil && *acq.unique
+	_spec.Node.Columns = acq.ctx.Fields
+	if len(acq.ctx.Fields) > 0 {
+		_spec.Unique = acq.ctx.Unique != nil && *acq.ctx.Unique
 	}
 	return sqlgraph.CountNodes(ctx, acq.driver, _spec)
 }
 
-func (acq *AttestationCollectionQuery) sqlExist(ctx context.Context) (bool, error) {
-	switch _, err := acq.FirstID(ctx); {
-	case IsNotFound(err):
-		return false, nil
-	case err != nil:
-		return false, fmt.Errorf("ent: check existence: %w", err)
-	default:
-		return true, nil
-	}
-}
-
 func (acq *AttestationCollectionQuery) querySpec() *sqlgraph.QuerySpec {
-	_spec := &sqlgraph.QuerySpec{
-		Node: &sqlgraph.NodeSpec{
-			Table:   attestationcollection.Table,
-			Columns: attestationcollection.Columns,
-			ID: &sqlgraph.FieldSpec{
-				Type:   field.TypeInt,
-				Column: attestationcollection.FieldID,
-			},
-		},
-		From:   acq.sql,
-		Unique: true,
-	}
-	if unique := acq.unique; unique != nil {
+	_spec := sqlgraph.NewQuerySpec(attestationcollection.Table, attestationcollection.Columns, sqlgraph.NewFieldSpec(attestationcollection.FieldID, field.TypeInt))
+	_spec.From = acq.sql
+	if unique := acq.ctx.Unique; unique != nil {
 		_spec.Unique = *unique
+	} else if acq.path != nil {
+		_spec.Unique = true
 	}
-	if fields := acq.fields; len(fields) > 0 {
+	if fields := acq.ctx.Fields; len(fields) > 0 {
 		_spec.Node.Columns = make([]string, 0, len(fields))
 		_spec.Node.Columns = append(_spec.Node.Columns, attestationcollection.FieldID)
 		for i := range fields {
@@ -561,10 +571,10 @@ func (acq *AttestationCollectionQuery) querySpec() *sqlgraph.QuerySpec {
 			}
 		}
 	}
-	if limit := acq.limit; limit != nil {
+	if limit := acq.ctx.Limit; limit != nil {
 		_spec.Limit = *limit
 	}
-	if offset := acq.offset; offset != nil {
+	if offset := acq.ctx.Offset; offset != nil {
 		_spec.Offset = *offset
 	}
 	if ps := acq.order; len(ps) > 0 {
@@ -580,7 +590,7 @@ func (acq *AttestationCollectionQuery) querySpec() *sqlgraph.QuerySpec {
 func (acq *AttestationCollectionQuery) sqlQuery(ctx context.Context) *sql.Selector {
 	builder := sql.Dialect(acq.driver.Dialect())
 	t1 := builder.Table(attestationcollection.Table)
-	columns := acq.fields
+	columns := acq.ctx.Fields
 	if len(columns) == 0 {
 		columns = attestationcollection.Columns
 	}
@@ -589,7 +599,7 @@ func (acq *AttestationCollectionQuery) sqlQuery(ctx context.Context) *sql.Select
 		selector = acq.sql
 		selector.Select(selector.Columns(columns...)...)
 	}
-	if acq.unique != nil && *acq.unique {
+	if acq.ctx.Unique != nil && *acq.ctx.Unique {
 		selector.Distinct()
 	}
 	for _, p := range acq.predicates {
@@ -598,26 +608,35 @@ func (acq *AttestationCollectionQuery) sqlQuery(ctx context.Context) *sql.Select
 	for _, p := range acq.order {
 		p(selector)
 	}
-	if offset := acq.offset; offset != nil {
+	if offset := acq.ctx.Offset; offset != nil {
 		// limit is mandatory for offset clause. We start
 		// with default value, and override it below if needed.
 		selector.Offset(*offset).Limit(math.MaxInt32)
 	}
-	if limit := acq.limit; limit != nil {
+	if limit := acq.ctx.Limit; limit != nil {
 		selector.Limit(*limit)
 	}
 	return selector
 }
 
+// WithNamedAttestations tells the query-builder to eager-load the nodes that are connected to the "attestations"
+// edge with the given name. The optional arguments are used to configure the query builder of the edge.
+func (acq *AttestationCollectionQuery) WithNamedAttestations(name string, opts ...func(*AttestationQuery)) *AttestationCollectionQuery {
+	query := (&AttestationClient{config: acq.config}).Query()
+	for _, opt := range opts {
+		opt(query)
+	}
+	if acq.withNamedAttestations == nil {
+		acq.withNamedAttestations = make(map[string]*AttestationQuery)
+	}
+	acq.withNamedAttestations[name] = query
+	return acq
+}
+
 // AttestationCollectionGroupBy is the group-by builder for AttestationCollection entities.
 type AttestationCollectionGroupBy struct {
-	config
 	selector
-	fields []string
-	fns    []AggregateFunc
-	// intermediate query (i.e. traversal path).
-	sql  *sql.Selector
-	path func(context.Context) (*sql.Selector, error)
+	build *AttestationCollectionQuery
 }
 
 // Aggregate adds the given aggregation functions to the group-by query.
@@ -626,74 +645,77 @@ func (acgb *AttestationCollectionGroupBy) Aggregate(fns ...AggregateFunc) *Attes
 	return acgb
 }
 
-// Scan applies the group-by query and scans the result into the given value.
+// Scan applies the selector query and scans the result into the given value.
 func (acgb *AttestationCollectionGroupBy) Scan(ctx context.Context, v any) error {
-	query, err := acgb.path(ctx)
-	if err != nil {
+	ctx = setContextOp(ctx, acgb.build.ctx, "GroupBy")
+	if err := acgb.build.prepareQuery(ctx); err != nil {
 		return err
 	}
-	acgb.sql = query
-	return acgb.sqlScan(ctx, v)
+	return scanWithInterceptors[*AttestationCollectionQuery, *AttestationCollectionGroupBy](ctx, acgb.build, acgb, acgb.build.inters, v)
 }
 
-func (acgb *AttestationCollectionGroupBy) sqlScan(ctx context.Context, v any) error {
-	for _, f := range acgb.fields {
-		if !attestationcollection.ValidColumn(f) {
-			return &ValidationError{Name: f, err: fmt.Errorf("invalid field %q for group-by", f)}
-		}
+func (acgb *AttestationCollectionGroupBy) sqlScan(ctx context.Context, root *AttestationCollectionQuery, v any) error {
+	selector := root.sqlQuery(ctx).Select()
+	aggregation := make([]string, 0, len(acgb.fns))
+	for _, fn := range acgb.fns {
+		aggregation = append(aggregation, fn(selector))
 	}
-	selector := acgb.sqlQuery()
+	if len(selector.SelectedColumns()) == 0 {
+		columns := make([]string, 0, len(*acgb.flds)+len(acgb.fns))
+		for _, f := range *acgb.flds {
+			columns = append(columns, selector.C(f))
+		}
+		columns = append(columns, aggregation...)
+		selector.Select(columns...)
+	}
+	selector.GroupBy(selector.Columns(*acgb.flds...)...)
 	if err := selector.Err(); err != nil {
 		return err
 	}
 	rows := &sql.Rows{}
 	query, args := selector.Query()
-	if err := acgb.driver.Query(ctx, query, args, rows); err != nil {
+	if err := acgb.build.driver.Query(ctx, query, args, rows); err != nil {
 		return err
 	}
 	defer rows.Close()
 	return sql.ScanSlice(rows, v)
 }
 
-func (acgb *AttestationCollectionGroupBy) sqlQuery() *sql.Selector {
-	selector := acgb.sql.Select()
-	aggregation := make([]string, 0, len(acgb.fns))
-	for _, fn := range acgb.fns {
-		aggregation = append(aggregation, fn(selector))
-	}
-	// If no columns were selected in a custom aggregation function, the default
-	// selection is the fields used for "group-by", and the aggregation functions.
-	if len(selector.SelectedColumns()) == 0 {
-		columns := make([]string, 0, len(acgb.fields)+len(acgb.fns))
-		for _, f := range acgb.fields {
-			columns = append(columns, selector.C(f))
-		}
-		columns = append(columns, aggregation...)
-		selector.Select(columns...)
-	}
-	return selector.GroupBy(selector.Columns(acgb.fields...)...)
-}
-
 // AttestationCollectionSelect is the builder for selecting fields of AttestationCollection entities.
 type AttestationCollectionSelect struct {
 	*AttestationCollectionQuery
 	selector
-	// intermediate query (i.e. traversal path).
-	sql *sql.Selector
+}
+
+// Aggregate adds the given aggregation functions to the selector query.
+func (acs *AttestationCollectionSelect) Aggregate(fns ...AggregateFunc) *AttestationCollectionSelect {
+	acs.fns = append(acs.fns, fns...)
+	return acs
 }
 
 // Scan applies the selector query and scans the result into the given value.
 func (acs *AttestationCollectionSelect) Scan(ctx context.Context, v any) error {
+	ctx = setContextOp(ctx, acs.ctx, "Select")
 	if err := acs.prepareQuery(ctx); err != nil {
 		return err
 	}
-	acs.sql = acs.AttestationCollectionQuery.sqlQuery(ctx)
-	return acs.sqlScan(ctx, v)
+	return scanWithInterceptors[*AttestationCollectionQuery, *AttestationCollectionSelect](ctx, acs.AttestationCollectionQuery, acs, acs.inters, v)
 }
 
-func (acs *AttestationCollectionSelect) sqlScan(ctx context.Context, v any) error {
+func (acs *AttestationCollectionSelect) sqlScan(ctx context.Context, root *AttestationCollectionQuery, v any) error {
+	selector := root.sqlQuery(ctx)
+	aggregation := make([]string, 0, len(acs.fns))
+	for _, fn := range acs.fns {
+		aggregation = append(aggregation, fn(selector))
+	}
+	switch n := len(*acs.selector.flds); {
+	case n == 0 && len(aggregation) > 0:
+		selector.Select(aggregation...)
+	case n != 0 && len(aggregation) > 0:
+		selector.AppendSelect(aggregation...)
+	}
 	rows := &sql.Rows{}
-	query, args := acs.sql.Query()
+	query, args := selector.Query()
 	if err := acs.driver.Query(ctx, query, args, rows); err != nil {
 		return err
 	}

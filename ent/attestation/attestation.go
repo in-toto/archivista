@@ -2,6 +2,11 @@
 
 package attestation
 
+import (
+	"entgo.io/ent/dialect/sql"
+	"entgo.io/ent/dialect/sql/sqlgraph"
+)
+
 const (
 	// Label holds the string label denoting the attestation type in the database.
 	Label = "attestation"
@@ -53,3 +58,30 @@ var (
 	// TypeValidator is a validator for the "type" field. It is called by the builders before save.
 	TypeValidator func(string) error
 )
+
+// OrderOption defines the ordering options for the Attestation queries.
+type OrderOption func(*sql.Selector)
+
+// ByID orders the results by the id field.
+func ByID(opts ...sql.OrderTermOption) OrderOption {
+	return sql.OrderByField(FieldID, opts...).ToFunc()
+}
+
+// ByType orders the results by the type field.
+func ByType(opts ...sql.OrderTermOption) OrderOption {
+	return sql.OrderByField(FieldType, opts...).ToFunc()
+}
+
+// ByAttestationCollectionField orders the results by attestation_collection field.
+func ByAttestationCollectionField(field string, opts ...sql.OrderTermOption) OrderOption {
+	return func(s *sql.Selector) {
+		sqlgraph.OrderByNeighborTerms(s, newAttestationCollectionStep(), sql.OrderByField(field, opts...))
+	}
+}
+func newAttestationCollectionStep() *sqlgraph.Step {
+	return sqlgraph.NewStep(
+		sqlgraph.From(Table, FieldID),
+		sqlgraph.To(AttestationCollectionInverseTable, FieldID),
+		sqlgraph.Edge(sqlgraph.M2O, true, AttestationCollectionTable, AttestationCollectionColumn),
+	)
+}

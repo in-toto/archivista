@@ -58,40 +58,7 @@ func (au *AttestationUpdate) ClearAttestationCollection() *AttestationUpdate {
 
 // Save executes the query and returns the number of nodes affected by the update operation.
 func (au *AttestationUpdate) Save(ctx context.Context) (int, error) {
-	var (
-		err      error
-		affected int
-	)
-	if len(au.hooks) == 0 {
-		if err = au.check(); err != nil {
-			return 0, err
-		}
-		affected, err = au.sqlSave(ctx)
-	} else {
-		var mut Mutator = MutateFunc(func(ctx context.Context, m Mutation) (Value, error) {
-			mutation, ok := m.(*AttestationMutation)
-			if !ok {
-				return nil, fmt.Errorf("unexpected mutation type %T", m)
-			}
-			if err = au.check(); err != nil {
-				return 0, err
-			}
-			au.mutation = mutation
-			affected, err = au.sqlSave(ctx)
-			mutation.done = true
-			return affected, err
-		})
-		for i := len(au.hooks) - 1; i >= 0; i-- {
-			if au.hooks[i] == nil {
-				return 0, fmt.Errorf("ent: uninitialized hook (forgotten import ent/runtime?)")
-			}
-			mut = au.hooks[i](mut)
-		}
-		if _, err := mut.Mutate(ctx, au.mutation); err != nil {
-			return 0, err
-		}
-	}
-	return affected, err
+	return withHooks(ctx, au.sqlSave, au.mutation, au.hooks)
 }
 
 // SaveX is like Save, but panics if an error occurs.
@@ -130,16 +97,10 @@ func (au *AttestationUpdate) check() error {
 }
 
 func (au *AttestationUpdate) sqlSave(ctx context.Context) (n int, err error) {
-	_spec := &sqlgraph.UpdateSpec{
-		Node: &sqlgraph.NodeSpec{
-			Table:   attestation.Table,
-			Columns: attestation.Columns,
-			ID: &sqlgraph.FieldSpec{
-				Type:   field.TypeInt,
-				Column: attestation.FieldID,
-			},
-		},
+	if err := au.check(); err != nil {
+		return n, err
 	}
+	_spec := sqlgraph.NewUpdateSpec(attestation.Table, attestation.Columns, sqlgraph.NewFieldSpec(attestation.FieldID, field.TypeInt))
 	if ps := au.mutation.predicates; len(ps) > 0 {
 		_spec.Predicate = func(selector *sql.Selector) {
 			for i := range ps {
@@ -148,11 +109,7 @@ func (au *AttestationUpdate) sqlSave(ctx context.Context) (n int, err error) {
 		}
 	}
 	if value, ok := au.mutation.GetType(); ok {
-		_spec.Fields.Set = append(_spec.Fields.Set, &sqlgraph.FieldSpec{
-			Type:   field.TypeString,
-			Value:  value,
-			Column: attestation.FieldType,
-		})
+		_spec.SetField(attestation.FieldType, field.TypeString, value)
 	}
 	if au.mutation.AttestationCollectionCleared() {
 		edge := &sqlgraph.EdgeSpec{
@@ -162,10 +119,7 @@ func (au *AttestationUpdate) sqlSave(ctx context.Context) (n int, err error) {
 			Columns: []string{attestation.AttestationCollectionColumn},
 			Bidi:    false,
 			Target: &sqlgraph.EdgeTarget{
-				IDSpec: &sqlgraph.FieldSpec{
-					Type:   field.TypeInt,
-					Column: attestationcollection.FieldID,
-				},
+				IDSpec: sqlgraph.NewFieldSpec(attestationcollection.FieldID, field.TypeInt),
 			},
 		}
 		_spec.Edges.Clear = append(_spec.Edges.Clear, edge)
@@ -178,10 +132,7 @@ func (au *AttestationUpdate) sqlSave(ctx context.Context) (n int, err error) {
 			Columns: []string{attestation.AttestationCollectionColumn},
 			Bidi:    false,
 			Target: &sqlgraph.EdgeTarget{
-				IDSpec: &sqlgraph.FieldSpec{
-					Type:   field.TypeInt,
-					Column: attestationcollection.FieldID,
-				},
+				IDSpec: sqlgraph.NewFieldSpec(attestationcollection.FieldID, field.TypeInt),
 			},
 		}
 		for _, k := range nodes {
@@ -197,6 +148,7 @@ func (au *AttestationUpdate) sqlSave(ctx context.Context) (n int, err error) {
 		}
 		return 0, err
 	}
+	au.mutation.done = true
 	return n, nil
 }
 
@@ -236,6 +188,12 @@ func (auo *AttestationUpdateOne) ClearAttestationCollection() *AttestationUpdate
 	return auo
 }
 
+// Where appends a list predicates to the AttestationUpdate builder.
+func (auo *AttestationUpdateOne) Where(ps ...predicate.Attestation) *AttestationUpdateOne {
+	auo.mutation.Where(ps...)
+	return auo
+}
+
 // Select allows selecting one or more fields (columns) of the returned entity.
 // The default is selecting all fields defined in the entity schema.
 func (auo *AttestationUpdateOne) Select(field string, fields ...string) *AttestationUpdateOne {
@@ -245,46 +203,7 @@ func (auo *AttestationUpdateOne) Select(field string, fields ...string) *Attesta
 
 // Save executes the query and returns the updated Attestation entity.
 func (auo *AttestationUpdateOne) Save(ctx context.Context) (*Attestation, error) {
-	var (
-		err  error
-		node *Attestation
-	)
-	if len(auo.hooks) == 0 {
-		if err = auo.check(); err != nil {
-			return nil, err
-		}
-		node, err = auo.sqlSave(ctx)
-	} else {
-		var mut Mutator = MutateFunc(func(ctx context.Context, m Mutation) (Value, error) {
-			mutation, ok := m.(*AttestationMutation)
-			if !ok {
-				return nil, fmt.Errorf("unexpected mutation type %T", m)
-			}
-			if err = auo.check(); err != nil {
-				return nil, err
-			}
-			auo.mutation = mutation
-			node, err = auo.sqlSave(ctx)
-			mutation.done = true
-			return node, err
-		})
-		for i := len(auo.hooks) - 1; i >= 0; i-- {
-			if auo.hooks[i] == nil {
-				return nil, fmt.Errorf("ent: uninitialized hook (forgotten import ent/runtime?)")
-			}
-			mut = auo.hooks[i](mut)
-		}
-		v, err := mut.Mutate(ctx, auo.mutation)
-		if err != nil {
-			return nil, err
-		}
-		nv, ok := v.(*Attestation)
-		if !ok {
-			return nil, fmt.Errorf("unexpected node type %T returned from AttestationMutation", v)
-		}
-		node = nv
-	}
-	return node, err
+	return withHooks(ctx, auo.sqlSave, auo.mutation, auo.hooks)
 }
 
 // SaveX is like Save, but panics if an error occurs.
@@ -323,16 +242,10 @@ func (auo *AttestationUpdateOne) check() error {
 }
 
 func (auo *AttestationUpdateOne) sqlSave(ctx context.Context) (_node *Attestation, err error) {
-	_spec := &sqlgraph.UpdateSpec{
-		Node: &sqlgraph.NodeSpec{
-			Table:   attestation.Table,
-			Columns: attestation.Columns,
-			ID: &sqlgraph.FieldSpec{
-				Type:   field.TypeInt,
-				Column: attestation.FieldID,
-			},
-		},
+	if err := auo.check(); err != nil {
+		return _node, err
 	}
+	_spec := sqlgraph.NewUpdateSpec(attestation.Table, attestation.Columns, sqlgraph.NewFieldSpec(attestation.FieldID, field.TypeInt))
 	id, ok := auo.mutation.ID()
 	if !ok {
 		return nil, &ValidationError{Name: "id", err: errors.New(`ent: missing "Attestation.id" for update`)}
@@ -358,11 +271,7 @@ func (auo *AttestationUpdateOne) sqlSave(ctx context.Context) (_node *Attestatio
 		}
 	}
 	if value, ok := auo.mutation.GetType(); ok {
-		_spec.Fields.Set = append(_spec.Fields.Set, &sqlgraph.FieldSpec{
-			Type:   field.TypeString,
-			Value:  value,
-			Column: attestation.FieldType,
-		})
+		_spec.SetField(attestation.FieldType, field.TypeString, value)
 	}
 	if auo.mutation.AttestationCollectionCleared() {
 		edge := &sqlgraph.EdgeSpec{
@@ -372,10 +281,7 @@ func (auo *AttestationUpdateOne) sqlSave(ctx context.Context) (_node *Attestatio
 			Columns: []string{attestation.AttestationCollectionColumn},
 			Bidi:    false,
 			Target: &sqlgraph.EdgeTarget{
-				IDSpec: &sqlgraph.FieldSpec{
-					Type:   field.TypeInt,
-					Column: attestationcollection.FieldID,
-				},
+				IDSpec: sqlgraph.NewFieldSpec(attestationcollection.FieldID, field.TypeInt),
 			},
 		}
 		_spec.Edges.Clear = append(_spec.Edges.Clear, edge)
@@ -388,10 +294,7 @@ func (auo *AttestationUpdateOne) sqlSave(ctx context.Context) (_node *Attestatio
 			Columns: []string{attestation.AttestationCollectionColumn},
 			Bidi:    false,
 			Target: &sqlgraph.EdgeTarget{
-				IDSpec: &sqlgraph.FieldSpec{
-					Type:   field.TypeInt,
-					Column: attestationcollection.FieldID,
-				},
+				IDSpec: sqlgraph.NewFieldSpec(attestationcollection.FieldID, field.TypeInt),
 			},
 		}
 		for _, k := range nodes {
@@ -410,5 +313,6 @@ func (auo *AttestationUpdateOne) sqlSave(ctx context.Context) (_node *Attestatio
 		}
 		return nil, err
 	}
+	auo.mutation.done = true
 	return _node, nil
 }

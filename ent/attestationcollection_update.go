@@ -95,40 +95,7 @@ func (acu *AttestationCollectionUpdate) ClearStatement() *AttestationCollectionU
 
 // Save executes the query and returns the number of nodes affected by the update operation.
 func (acu *AttestationCollectionUpdate) Save(ctx context.Context) (int, error) {
-	var (
-		err      error
-		affected int
-	)
-	if len(acu.hooks) == 0 {
-		if err = acu.check(); err != nil {
-			return 0, err
-		}
-		affected, err = acu.sqlSave(ctx)
-	} else {
-		var mut Mutator = MutateFunc(func(ctx context.Context, m Mutation) (Value, error) {
-			mutation, ok := m.(*AttestationCollectionMutation)
-			if !ok {
-				return nil, fmt.Errorf("unexpected mutation type %T", m)
-			}
-			if err = acu.check(); err != nil {
-				return 0, err
-			}
-			acu.mutation = mutation
-			affected, err = acu.sqlSave(ctx)
-			mutation.done = true
-			return affected, err
-		})
-		for i := len(acu.hooks) - 1; i >= 0; i-- {
-			if acu.hooks[i] == nil {
-				return 0, fmt.Errorf("ent: uninitialized hook (forgotten import ent/runtime?)")
-			}
-			mut = acu.hooks[i](mut)
-		}
-		if _, err := mut.Mutate(ctx, acu.mutation); err != nil {
-			return 0, err
-		}
-	}
-	return affected, err
+	return withHooks(ctx, acu.sqlSave, acu.mutation, acu.hooks)
 }
 
 // SaveX is like Save, but panics if an error occurs.
@@ -167,16 +134,10 @@ func (acu *AttestationCollectionUpdate) check() error {
 }
 
 func (acu *AttestationCollectionUpdate) sqlSave(ctx context.Context) (n int, err error) {
-	_spec := &sqlgraph.UpdateSpec{
-		Node: &sqlgraph.NodeSpec{
-			Table:   attestationcollection.Table,
-			Columns: attestationcollection.Columns,
-			ID: &sqlgraph.FieldSpec{
-				Type:   field.TypeInt,
-				Column: attestationcollection.FieldID,
-			},
-		},
+	if err := acu.check(); err != nil {
+		return n, err
 	}
+	_spec := sqlgraph.NewUpdateSpec(attestationcollection.Table, attestationcollection.Columns, sqlgraph.NewFieldSpec(attestationcollection.FieldID, field.TypeInt))
 	if ps := acu.mutation.predicates; len(ps) > 0 {
 		_spec.Predicate = func(selector *sql.Selector) {
 			for i := range ps {
@@ -185,11 +146,7 @@ func (acu *AttestationCollectionUpdate) sqlSave(ctx context.Context) (n int, err
 		}
 	}
 	if value, ok := acu.mutation.Name(); ok {
-		_spec.Fields.Set = append(_spec.Fields.Set, &sqlgraph.FieldSpec{
-			Type:   field.TypeString,
-			Value:  value,
-			Column: attestationcollection.FieldName,
-		})
+		_spec.SetField(attestationcollection.FieldName, field.TypeString, value)
 	}
 	if acu.mutation.AttestationsCleared() {
 		edge := &sqlgraph.EdgeSpec{
@@ -199,10 +156,7 @@ func (acu *AttestationCollectionUpdate) sqlSave(ctx context.Context) (n int, err
 			Columns: []string{attestationcollection.AttestationsColumn},
 			Bidi:    false,
 			Target: &sqlgraph.EdgeTarget{
-				IDSpec: &sqlgraph.FieldSpec{
-					Type:   field.TypeInt,
-					Column: attestation.FieldID,
-				},
+				IDSpec: sqlgraph.NewFieldSpec(attestation.FieldID, field.TypeInt),
 			},
 		}
 		_spec.Edges.Clear = append(_spec.Edges.Clear, edge)
@@ -215,10 +169,7 @@ func (acu *AttestationCollectionUpdate) sqlSave(ctx context.Context) (n int, err
 			Columns: []string{attestationcollection.AttestationsColumn},
 			Bidi:    false,
 			Target: &sqlgraph.EdgeTarget{
-				IDSpec: &sqlgraph.FieldSpec{
-					Type:   field.TypeInt,
-					Column: attestation.FieldID,
-				},
+				IDSpec: sqlgraph.NewFieldSpec(attestation.FieldID, field.TypeInt),
 			},
 		}
 		for _, k := range nodes {
@@ -234,10 +185,7 @@ func (acu *AttestationCollectionUpdate) sqlSave(ctx context.Context) (n int, err
 			Columns: []string{attestationcollection.AttestationsColumn},
 			Bidi:    false,
 			Target: &sqlgraph.EdgeTarget{
-				IDSpec: &sqlgraph.FieldSpec{
-					Type:   field.TypeInt,
-					Column: attestation.FieldID,
-				},
+				IDSpec: sqlgraph.NewFieldSpec(attestation.FieldID, field.TypeInt),
 			},
 		}
 		for _, k := range nodes {
@@ -253,10 +201,7 @@ func (acu *AttestationCollectionUpdate) sqlSave(ctx context.Context) (n int, err
 			Columns: []string{attestationcollection.StatementColumn},
 			Bidi:    false,
 			Target: &sqlgraph.EdgeTarget{
-				IDSpec: &sqlgraph.FieldSpec{
-					Type:   field.TypeInt,
-					Column: statement.FieldID,
-				},
+				IDSpec: sqlgraph.NewFieldSpec(statement.FieldID, field.TypeInt),
 			},
 		}
 		_spec.Edges.Clear = append(_spec.Edges.Clear, edge)
@@ -269,10 +214,7 @@ func (acu *AttestationCollectionUpdate) sqlSave(ctx context.Context) (n int, err
 			Columns: []string{attestationcollection.StatementColumn},
 			Bidi:    false,
 			Target: &sqlgraph.EdgeTarget{
-				IDSpec: &sqlgraph.FieldSpec{
-					Type:   field.TypeInt,
-					Column: statement.FieldID,
-				},
+				IDSpec: sqlgraph.NewFieldSpec(statement.FieldID, field.TypeInt),
 			},
 		}
 		for _, k := range nodes {
@@ -288,6 +230,7 @@ func (acu *AttestationCollectionUpdate) sqlSave(ctx context.Context) (n int, err
 		}
 		return 0, err
 	}
+	acu.mutation.done = true
 	return n, nil
 }
 
@@ -363,6 +306,12 @@ func (acuo *AttestationCollectionUpdateOne) ClearStatement() *AttestationCollect
 	return acuo
 }
 
+// Where appends a list predicates to the AttestationCollectionUpdate builder.
+func (acuo *AttestationCollectionUpdateOne) Where(ps ...predicate.AttestationCollection) *AttestationCollectionUpdateOne {
+	acuo.mutation.Where(ps...)
+	return acuo
+}
+
 // Select allows selecting one or more fields (columns) of the returned entity.
 // The default is selecting all fields defined in the entity schema.
 func (acuo *AttestationCollectionUpdateOne) Select(field string, fields ...string) *AttestationCollectionUpdateOne {
@@ -372,46 +321,7 @@ func (acuo *AttestationCollectionUpdateOne) Select(field string, fields ...strin
 
 // Save executes the query and returns the updated AttestationCollection entity.
 func (acuo *AttestationCollectionUpdateOne) Save(ctx context.Context) (*AttestationCollection, error) {
-	var (
-		err  error
-		node *AttestationCollection
-	)
-	if len(acuo.hooks) == 0 {
-		if err = acuo.check(); err != nil {
-			return nil, err
-		}
-		node, err = acuo.sqlSave(ctx)
-	} else {
-		var mut Mutator = MutateFunc(func(ctx context.Context, m Mutation) (Value, error) {
-			mutation, ok := m.(*AttestationCollectionMutation)
-			if !ok {
-				return nil, fmt.Errorf("unexpected mutation type %T", m)
-			}
-			if err = acuo.check(); err != nil {
-				return nil, err
-			}
-			acuo.mutation = mutation
-			node, err = acuo.sqlSave(ctx)
-			mutation.done = true
-			return node, err
-		})
-		for i := len(acuo.hooks) - 1; i >= 0; i-- {
-			if acuo.hooks[i] == nil {
-				return nil, fmt.Errorf("ent: uninitialized hook (forgotten import ent/runtime?)")
-			}
-			mut = acuo.hooks[i](mut)
-		}
-		v, err := mut.Mutate(ctx, acuo.mutation)
-		if err != nil {
-			return nil, err
-		}
-		nv, ok := v.(*AttestationCollection)
-		if !ok {
-			return nil, fmt.Errorf("unexpected node type %T returned from AttestationCollectionMutation", v)
-		}
-		node = nv
-	}
-	return node, err
+	return withHooks(ctx, acuo.sqlSave, acuo.mutation, acuo.hooks)
 }
 
 // SaveX is like Save, but panics if an error occurs.
@@ -450,16 +360,10 @@ func (acuo *AttestationCollectionUpdateOne) check() error {
 }
 
 func (acuo *AttestationCollectionUpdateOne) sqlSave(ctx context.Context) (_node *AttestationCollection, err error) {
-	_spec := &sqlgraph.UpdateSpec{
-		Node: &sqlgraph.NodeSpec{
-			Table:   attestationcollection.Table,
-			Columns: attestationcollection.Columns,
-			ID: &sqlgraph.FieldSpec{
-				Type:   field.TypeInt,
-				Column: attestationcollection.FieldID,
-			},
-		},
+	if err := acuo.check(); err != nil {
+		return _node, err
 	}
+	_spec := sqlgraph.NewUpdateSpec(attestationcollection.Table, attestationcollection.Columns, sqlgraph.NewFieldSpec(attestationcollection.FieldID, field.TypeInt))
 	id, ok := acuo.mutation.ID()
 	if !ok {
 		return nil, &ValidationError{Name: "id", err: errors.New(`ent: missing "AttestationCollection.id" for update`)}
@@ -485,11 +389,7 @@ func (acuo *AttestationCollectionUpdateOne) sqlSave(ctx context.Context) (_node 
 		}
 	}
 	if value, ok := acuo.mutation.Name(); ok {
-		_spec.Fields.Set = append(_spec.Fields.Set, &sqlgraph.FieldSpec{
-			Type:   field.TypeString,
-			Value:  value,
-			Column: attestationcollection.FieldName,
-		})
+		_spec.SetField(attestationcollection.FieldName, field.TypeString, value)
 	}
 	if acuo.mutation.AttestationsCleared() {
 		edge := &sqlgraph.EdgeSpec{
@@ -499,10 +399,7 @@ func (acuo *AttestationCollectionUpdateOne) sqlSave(ctx context.Context) (_node 
 			Columns: []string{attestationcollection.AttestationsColumn},
 			Bidi:    false,
 			Target: &sqlgraph.EdgeTarget{
-				IDSpec: &sqlgraph.FieldSpec{
-					Type:   field.TypeInt,
-					Column: attestation.FieldID,
-				},
+				IDSpec: sqlgraph.NewFieldSpec(attestation.FieldID, field.TypeInt),
 			},
 		}
 		_spec.Edges.Clear = append(_spec.Edges.Clear, edge)
@@ -515,10 +412,7 @@ func (acuo *AttestationCollectionUpdateOne) sqlSave(ctx context.Context) (_node 
 			Columns: []string{attestationcollection.AttestationsColumn},
 			Bidi:    false,
 			Target: &sqlgraph.EdgeTarget{
-				IDSpec: &sqlgraph.FieldSpec{
-					Type:   field.TypeInt,
-					Column: attestation.FieldID,
-				},
+				IDSpec: sqlgraph.NewFieldSpec(attestation.FieldID, field.TypeInt),
 			},
 		}
 		for _, k := range nodes {
@@ -534,10 +428,7 @@ func (acuo *AttestationCollectionUpdateOne) sqlSave(ctx context.Context) (_node 
 			Columns: []string{attestationcollection.AttestationsColumn},
 			Bidi:    false,
 			Target: &sqlgraph.EdgeTarget{
-				IDSpec: &sqlgraph.FieldSpec{
-					Type:   field.TypeInt,
-					Column: attestation.FieldID,
-				},
+				IDSpec: sqlgraph.NewFieldSpec(attestation.FieldID, field.TypeInt),
 			},
 		}
 		for _, k := range nodes {
@@ -553,10 +444,7 @@ func (acuo *AttestationCollectionUpdateOne) sqlSave(ctx context.Context) (_node 
 			Columns: []string{attestationcollection.StatementColumn},
 			Bidi:    false,
 			Target: &sqlgraph.EdgeTarget{
-				IDSpec: &sqlgraph.FieldSpec{
-					Type:   field.TypeInt,
-					Column: statement.FieldID,
-				},
+				IDSpec: sqlgraph.NewFieldSpec(statement.FieldID, field.TypeInt),
 			},
 		}
 		_spec.Edges.Clear = append(_spec.Edges.Clear, edge)
@@ -569,10 +457,7 @@ func (acuo *AttestationCollectionUpdateOne) sqlSave(ctx context.Context) (_node 
 			Columns: []string{attestationcollection.StatementColumn},
 			Bidi:    false,
 			Target: &sqlgraph.EdgeTarget{
-				IDSpec: &sqlgraph.FieldSpec{
-					Type:   field.TypeInt,
-					Column: statement.FieldID,
-				},
+				IDSpec: sqlgraph.NewFieldSpec(statement.FieldID, field.TypeInt),
 			},
 		}
 		for _, k := range nodes {
@@ -591,5 +476,6 @@ func (acuo *AttestationCollectionUpdateOne) sqlSave(ctx context.Context) (_node 
 		}
 		return nil, err
 	}
+	acuo.mutation.done = true
 	return _node, nil
 }

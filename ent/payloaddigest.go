@@ -6,6 +6,7 @@ import (
 	"fmt"
 	"strings"
 
+	"entgo.io/ent"
 	"entgo.io/ent/dialect/sql"
 	"github.com/testifysec/archivista/ent/dsse"
 	"github.com/testifysec/archivista/ent/payloaddigest"
@@ -24,6 +25,7 @@ type PayloadDigest struct {
 	// The values are being populated by the PayloadDigestQuery when eager-loading is set.
 	Edges                PayloadDigestEdges `json:"edges"`
 	dsse_payload_digests *int
+	selectValues         sql.SelectValues
 }
 
 // PayloadDigestEdges holds the relations/edges for other nodes in the graph.
@@ -34,7 +36,7 @@ type PayloadDigestEdges struct {
 	// type was loaded (or requested) in eager-loading or not.
 	loadedTypes [1]bool
 	// totalCount holds the count of the edges above.
-	totalCount [1]*int
+	totalCount [1]map[string]int
 }
 
 // DsseOrErr returns the Dsse value or an error if the edge
@@ -62,7 +64,7 @@ func (*PayloadDigest) scanValues(columns []string) ([]any, error) {
 		case payloaddigest.ForeignKeys[0]: // dsse_payload_digests
 			values[i] = new(sql.NullInt64)
 		default:
-			return nil, fmt.Errorf("unexpected column %q for type PayloadDigest", columns[i])
+			values[i] = new(sql.UnknownType)
 		}
 	}
 	return values, nil
@@ -101,21 +103,29 @@ func (pd *PayloadDigest) assignValues(columns []string, values []any) error {
 				pd.dsse_payload_digests = new(int)
 				*pd.dsse_payload_digests = int(value.Int64)
 			}
+		default:
+			pd.selectValues.Set(columns[i], values[i])
 		}
 	}
 	return nil
 }
 
+// GetValue returns the ent.Value that was dynamically selected and assigned to the PayloadDigest.
+// This includes values selected through modifiers, order, etc.
+func (pd *PayloadDigest) GetValue(name string) (ent.Value, error) {
+	return pd.selectValues.Get(name)
+}
+
 // QueryDsse queries the "dsse" edge of the PayloadDigest entity.
 func (pd *PayloadDigest) QueryDsse() *DsseQuery {
-	return (&PayloadDigestClient{config: pd.config}).QueryDsse(pd)
+	return NewPayloadDigestClient(pd.config).QueryDsse(pd)
 }
 
 // Update returns a builder for updating this PayloadDigest.
 // Note that you need to call PayloadDigest.Unwrap() before calling this method if this PayloadDigest
 // was returned from a transaction, and the transaction was committed or rolled back.
 func (pd *PayloadDigest) Update() *PayloadDigestUpdateOne {
-	return (&PayloadDigestClient{config: pd.config}).UpdateOne(pd)
+	return NewPayloadDigestClient(pd.config).UpdateOne(pd)
 }
 
 // Unwrap unwraps the PayloadDigest entity that was returned from a transaction after it was closed,
@@ -145,9 +155,3 @@ func (pd *PayloadDigest) String() string {
 
 // PayloadDigests is a parsable slice of PayloadDigest.
 type PayloadDigests []*PayloadDigest
-
-func (pd PayloadDigests) config(cfg config) {
-	for _i := range pd {
-		pd[_i].config = cfg
-	}
-}

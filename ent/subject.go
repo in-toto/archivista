@@ -6,6 +6,7 @@ import (
 	"fmt"
 	"strings"
 
+	"entgo.io/ent"
 	"entgo.io/ent/dialect/sql"
 	"github.com/testifysec/archivista/ent/statement"
 	"github.com/testifysec/archivista/ent/subject"
@@ -22,6 +23,7 @@ type Subject struct {
 	// The values are being populated by the SubjectQuery when eager-loading is set.
 	Edges              SubjectEdges `json:"edges"`
 	statement_subjects *int
+	selectValues       sql.SelectValues
 }
 
 // SubjectEdges holds the relations/edges for other nodes in the graph.
@@ -34,7 +36,9 @@ type SubjectEdges struct {
 	// type was loaded (or requested) in eager-loading or not.
 	loadedTypes [2]bool
 	// totalCount holds the count of the edges above.
-	totalCount [2]*int
+	totalCount [2]map[string]int
+
+	namedSubjectDigests map[string][]*SubjectDigest
 }
 
 // SubjectDigestsOrErr returns the SubjectDigests value or an error if the edge
@@ -71,7 +75,7 @@ func (*Subject) scanValues(columns []string) ([]any, error) {
 		case subject.ForeignKeys[0]: // statement_subjects
 			values[i] = new(sql.NullInt64)
 		default:
-			return nil, fmt.Errorf("unexpected column %q for type Subject", columns[i])
+			values[i] = new(sql.UnknownType)
 		}
 	}
 	return values, nil
@@ -104,26 +108,34 @@ func (s *Subject) assignValues(columns []string, values []any) error {
 				s.statement_subjects = new(int)
 				*s.statement_subjects = int(value.Int64)
 			}
+		default:
+			s.selectValues.Set(columns[i], values[i])
 		}
 	}
 	return nil
 }
 
+// Value returns the ent.Value that was dynamically selected and assigned to the Subject.
+// This includes values selected through modifiers, order, etc.
+func (s *Subject) Value(name string) (ent.Value, error) {
+	return s.selectValues.Get(name)
+}
+
 // QuerySubjectDigests queries the "subject_digests" edge of the Subject entity.
 func (s *Subject) QuerySubjectDigests() *SubjectDigestQuery {
-	return (&SubjectClient{config: s.config}).QuerySubjectDigests(s)
+	return NewSubjectClient(s.config).QuerySubjectDigests(s)
 }
 
 // QueryStatement queries the "statement" edge of the Subject entity.
 func (s *Subject) QueryStatement() *StatementQuery {
-	return (&SubjectClient{config: s.config}).QueryStatement(s)
+	return NewSubjectClient(s.config).QueryStatement(s)
 }
 
 // Update returns a builder for updating this Subject.
 // Note that you need to call Subject.Unwrap() before calling this method if this Subject
 // was returned from a transaction, and the transaction was committed or rolled back.
 func (s *Subject) Update() *SubjectUpdateOne {
-	return (&SubjectClient{config: s.config}).UpdateOne(s)
+	return NewSubjectClient(s.config).UpdateOne(s)
 }
 
 // Unwrap unwraps the Subject entity that was returned from a transaction after it was closed,
@@ -148,11 +160,29 @@ func (s *Subject) String() string {
 	return builder.String()
 }
 
-// Subjects is a parsable slice of Subject.
-type Subjects []*Subject
+// NamedSubjectDigests returns the SubjectDigests named value or an error if the edge was not
+// loaded in eager-loading with this name.
+func (s *Subject) NamedSubjectDigests(name string) ([]*SubjectDigest, error) {
+	if s.Edges.namedSubjectDigests == nil {
+		return nil, &NotLoadedError{edge: name}
+	}
+	nodes, ok := s.Edges.namedSubjectDigests[name]
+	if !ok {
+		return nil, &NotLoadedError{edge: name}
+	}
+	return nodes, nil
+}
 
-func (s Subjects) config(cfg config) {
-	for _i := range s {
-		s[_i].config = cfg
+func (s *Subject) appendNamedSubjectDigests(name string, edges ...*SubjectDigest) {
+	if s.Edges.namedSubjectDigests == nil {
+		s.Edges.namedSubjectDigests = make(map[string][]*SubjectDigest)
+	}
+	if len(edges) == 0 {
+		s.Edges.namedSubjectDigests[name] = []*SubjectDigest{}
+	} else {
+		s.Edges.namedSubjectDigests[name] = append(s.Edges.namedSubjectDigests[name], edges...)
 	}
 }
+
+// Subjects is a parsable slice of Subject.
+type Subjects []*Subject

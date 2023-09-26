@@ -2,6 +2,11 @@
 
 package payloaddigest
 
+import (
+	"entgo.io/ent/dialect/sql"
+	"entgo.io/ent/dialect/sql/sqlgraph"
+)
+
 const (
 	// Label holds the string label denoting the payloaddigest type in the database.
 	Label = "payload_digest"
@@ -58,3 +63,35 @@ var (
 	// ValueValidator is a validator for the "value" field. It is called by the builders before save.
 	ValueValidator func(string) error
 )
+
+// OrderOption defines the ordering options for the PayloadDigest queries.
+type OrderOption func(*sql.Selector)
+
+// ByID orders the results by the id field.
+func ByID(opts ...sql.OrderTermOption) OrderOption {
+	return sql.OrderByField(FieldID, opts...).ToFunc()
+}
+
+// ByAlgorithm orders the results by the algorithm field.
+func ByAlgorithm(opts ...sql.OrderTermOption) OrderOption {
+	return sql.OrderByField(FieldAlgorithm, opts...).ToFunc()
+}
+
+// ByValue orders the results by the value field.
+func ByValue(opts ...sql.OrderTermOption) OrderOption {
+	return sql.OrderByField(FieldValue, opts...).ToFunc()
+}
+
+// ByDsseField orders the results by dsse field.
+func ByDsseField(field string, opts ...sql.OrderTermOption) OrderOption {
+	return func(s *sql.Selector) {
+		sqlgraph.OrderByNeighborTerms(s, newDsseStep(), sql.OrderByField(field, opts...))
+	}
+}
+func newDsseStep() *sqlgraph.Step {
+	return sqlgraph.NewStep(
+		sqlgraph.From(Table, FieldID),
+		sqlgraph.To(DsseInverseTable, FieldID),
+		sqlgraph.Edge(sqlgraph.M2O, true, DsseTable, DsseColumn),
+	)
+}
