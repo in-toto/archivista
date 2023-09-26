@@ -28,9 +28,48 @@ import (
 	_ "github.com/lib/pq"
 )
 
+type ClientOption func(*clientOptions)
+
+type clientOptions struct {
+	maxIdleConns    int
+	maxOpenConns    int
+	connMaxLifetime time.Duration
+}
+
+// Configures a client with the specified max idle connections. Default is 10 connections
+func ClientWithMaxIdleConns(maxIdleConns int) ClientOption {
+	return func(co *clientOptions) {
+		co.maxIdleConns = maxIdleConns
+	}
+}
+
+// Configures a client with the specified max open connections. Default is 100 connections
+func ClientWithMaxOpenConns(maxOpenConns int) ClientOption {
+	return func(co *clientOptions) {
+		co.maxOpenConns = maxOpenConns
+	}
+}
+
+// Congiures a client with the specified max connection lifetime. Default is 3 minutes
+func ClientWithConnMaxLifetime(connMaxLifetime time.Duration) ClientOption {
+	return func(co *clientOptions) {
+		co.connMaxLifetime = connMaxLifetime
+	}
+}
+
 // NewEntClient creates an ent client for use in the sqlmetadata store.
 // Valid backends are MYSQL and PSQL.
-func NewEntClient(sqlBackend string, connectionString string) (*ent.Client, error) {
+func NewEntClient(sqlBackend string, connectionString string, opts ...ClientOption) (*ent.Client, error) {
+	clientOpts := &clientOptions{
+		maxIdleConns:    10,
+		maxOpenConns:    100,
+		connMaxLifetime: 3 * time.Minute,
+	}
+
+	for _, opt := range opts {
+		opt(clientOpts)
+	}
+
 	var entDialect string
 	switch strings.ToUpper(sqlBackend) {
 	case "MYSQL":
@@ -56,9 +95,9 @@ func NewEntClient(sqlBackend string, connectionString string) (*ent.Client, erro
 	}
 
 	db := drv.DB()
-	db.SetMaxIdleConns(10)
-	db.SetMaxOpenConns(100)
-	db.SetConnMaxLifetime(3 * time.Minute)
+	db.SetMaxIdleConns(clientOpts.maxIdleConns)
+	db.SetMaxOpenConns(clientOpts.maxOpenConns)
+	db.SetConnMaxLifetime(clientOpts.connMaxLifetime)
 	sqlcommentDrv := sqlcomment.NewDriver(drv,
 		sqlcomment.WithDriverVerTag(),
 		sqlcomment.WithTags(sqlcomment.Tags{
