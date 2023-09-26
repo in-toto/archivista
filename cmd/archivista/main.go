@@ -86,7 +86,12 @@ func main() {
 		logrus.Fatalf("error initializing storage clients: %+v", err)
 	}
 
-	entClient, err := sqlstore.NewEntClient(cfg.SQLStoreBackend, cfg.SQLStoreConnectionString)
+	entClient, err := sqlstore.NewEntClient(
+		cfg.SQLStoreBackend,
+		cfg.SQLStoreConnectionString,
+		sqlstore.ClientWithMaxIdleConns(cfg.SQLStoreMaxIdleConnections),
+		sqlstore.ClientWithMaxOpenConns(cfg.SQLStoreMaxOpenConnections),
+		sqlstore.ClientWithConnMaxLifetime(cfg.SQLStoreConnectionMaxLifetime))
 	if err != nil {
 		logrus.Fatalf("could not create ent client: %+v", err)
 	}
