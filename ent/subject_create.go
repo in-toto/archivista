@@ -68,49 +68,7 @@ func (sc *SubjectCreate) Mutation() *SubjectMutation {
 
 // Save creates the Subject in the database.
 func (sc *SubjectCreate) Save(ctx context.Context) (*Subject, error) {
-	var (
-		err  error
-		node *Subject
-	)
-	if len(sc.hooks) == 0 {
-		if err = sc.check(); err != nil {
-			return nil, err
-		}
-		node, err = sc.sqlSave(ctx)
-	} else {
-		var mut Mutator = MutateFunc(func(ctx context.Context, m Mutation) (Value, error) {
-			mutation, ok := m.(*SubjectMutation)
-			if !ok {
-				return nil, fmt.Errorf("unexpected mutation type %T", m)
-			}
-			if err = sc.check(); err != nil {
-				return nil, err
-			}
-			sc.mutation = mutation
-			if node, err = sc.sqlSave(ctx); err != nil {
-				return nil, err
-			}
-			mutation.id = &node.ID
-			mutation.done = true
-			return node, err
-		})
-		for i := len(sc.hooks) - 1; i >= 0; i-- {
-			if sc.hooks[i] == nil {
-				return nil, fmt.Errorf("ent: uninitialized hook (forgotten import ent/runtime?)")
-			}
-			mut = sc.hooks[i](mut)
-		}
-		v, err := mut.Mutate(ctx, sc.mutation)
-		if err != nil {
-			return nil, err
-		}
-		nv, ok := v.(*Subject)
-		if !ok {
-			return nil, fmt.Errorf("unexpected node type %T returned from SubjectMutation", v)
-		}
-		node = nv
-	}
-	return node, err
+	return withHooks(ctx, sc.sqlSave, sc.mutation, sc.hooks)
 }
 
 // SaveX calls Save and panics if Save returns an error.
@@ -149,6 +107,9 @@ func (sc *SubjectCreate) check() error {
 }
 
 func (sc *SubjectCreate) sqlSave(ctx context.Context) (*Subject, error) {
+	if err := sc.check(); err != nil {
+		return nil, err
+	}
 	_node, _spec := sc.createSpec()
 	if err := sqlgraph.CreateNode(ctx, sc.driver, _spec); err != nil {
 		if sqlgraph.IsConstraintError(err) {
@@ -158,26 +119,18 @@ func (sc *SubjectCreate) sqlSave(ctx context.Context) (*Subject, error) {
 	}
 	id := _spec.ID.Value.(int64)
 	_node.ID = int(id)
+	sc.mutation.id = &_node.ID
+	sc.mutation.done = true
 	return _node, nil
 }
 
 func (sc *SubjectCreate) createSpec() (*Subject, *sqlgraph.CreateSpec) {
 	var (
 		_node = &Subject{config: sc.config}
-		_spec = &sqlgraph.CreateSpec{
-			Table: subject.Table,
-			ID: &sqlgraph.FieldSpec{
-				Type:   field.TypeInt,
-				Column: subject.FieldID,
-			},
-		}
+		_spec = sqlgraph.NewCreateSpec(subject.Table, sqlgraph.NewFieldSpec(subject.FieldID, field.TypeInt))
 	)
 	if value, ok := sc.mutation.Name(); ok {
-		_spec.Fields = append(_spec.Fields, &sqlgraph.FieldSpec{
-			Type:   field.TypeString,
-			Value:  value,
-			Column: subject.FieldName,
-		})
+		_spec.SetField(subject.FieldName, field.TypeString, value)
 		_node.Name = value
 	}
 	if nodes := sc.mutation.SubjectDigestsIDs(); len(nodes) > 0 {
@@ -188,10 +141,7 @@ func (sc *SubjectCreate) createSpec() (*Subject, *sqlgraph.CreateSpec) {
 			Columns: []string{subject.SubjectDigestsColumn},
 			Bidi:    false,
 			Target: &sqlgraph.EdgeTarget{
-				IDSpec: &sqlgraph.FieldSpec{
-					Type:   field.TypeInt,
-					Column: subjectdigest.FieldID,
-				},
+				IDSpec: sqlgraph.NewFieldSpec(subjectdigest.FieldID, field.TypeInt),
 			},
 		}
 		for _, k := range nodes {
@@ -207,10 +157,7 @@ func (sc *SubjectCreate) createSpec() (*Subject, *sqlgraph.CreateSpec) {
 			Columns: []string{subject.StatementColumn},
 			Bidi:    false,
 			Target: &sqlgraph.EdgeTarget{
-				IDSpec: &sqlgraph.FieldSpec{
-					Type:   field.TypeInt,
-					Column: statement.FieldID,
-				},
+				IDSpec: sqlgraph.NewFieldSpec(statement.FieldID, field.TypeInt),
 			},
 		}
 		for _, k := range nodes {
@@ -225,11 +172,15 @@ func (sc *SubjectCreate) createSpec() (*Subject, *sqlgraph.CreateSpec) {
 // SubjectCreateBulk is the builder for creating many Subject entities in bulk.
 type SubjectCreateBulk struct {
 	config
+	err      error
 	builders []*SubjectCreate
 }
 
 // Save creates the Subject entities in the database.
 func (scb *SubjectCreateBulk) Save(ctx context.Context) ([]*Subject, error) {
+	if scb.err != nil {
+		return nil, scb.err
+	}
 	specs := make([]*sqlgraph.CreateSpec, len(scb.builders))
 	nodes := make([]*Subject, len(scb.builders))
 	mutators := make([]Mutator, len(scb.builders))
@@ -245,8 +196,8 @@ func (scb *SubjectCreateBulk) Save(ctx context.Context) ([]*Subject, error) {
 					return nil, err
 				}
 				builder.mutation = mutation
-				nodes[i], specs[i] = builder.createSpec()
 				var err error
+				nodes[i], specs[i] = builder.createSpec()
 				if i < len(mutators)-1 {
 					_, err = mutators[i+1].Mutate(root, scb.builders[i+1].mutation)
 				} else {

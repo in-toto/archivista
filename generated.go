@@ -12,6 +12,7 @@ import (
 	"sync/atomic"
 	"time"
 
+	"entgo.io/contrib/entgql"
 	"github.com/99designs/gqlgen/graphql"
 	"github.com/99designs/gqlgen/graphql/introspection"
 	"github.com/testifysec/archivista/ent"
@@ -92,10 +93,10 @@ type ComplexityRoot struct {
 	}
 
 	Query struct {
-		Dsses    func(childComplexity int, after *ent.Cursor, first *int, before *ent.Cursor, last *int, where *ent.DsseWhereInput) int
+		Dsses    func(childComplexity int, after *entgql.Cursor[int], first *int, before *entgql.Cursor[int], last *int, where *ent.DsseWhereInput) int
 		Node     func(childComplexity int, id int) int
 		Nodes    func(childComplexity int, ids []int) int
-		Subjects func(childComplexity int, after *ent.Cursor, first *int, before *ent.Cursor, last *int, where *ent.SubjectWhereInput) int
+		Subjects func(childComplexity int, after *entgql.Cursor[int], first *int, before *entgql.Cursor[int], last *int, where *ent.SubjectWhereInput) int
 	}
 
 	Signature struct {
@@ -111,7 +112,7 @@ type ComplexityRoot struct {
 		Dsse                   func(childComplexity int) int
 		ID                     func(childComplexity int) int
 		Predicate              func(childComplexity int) int
-		Subjects               func(childComplexity int, after *ent.Cursor, first *int, before *ent.Cursor, last *int, where *ent.SubjectWhereInput) int
+		Subjects               func(childComplexity int, after *entgql.Cursor[int], first *int, before *entgql.Cursor[int], last *int, where *ent.SubjectWhereInput) int
 	}
 
 	Subject struct {
@@ -150,8 +151,8 @@ type ComplexityRoot struct {
 type QueryResolver interface {
 	Node(ctx context.Context, id int) (ent.Noder, error)
 	Nodes(ctx context.Context, ids []int) ([]ent.Noder, error)
-	Dsses(ctx context.Context, after *ent.Cursor, first *int, before *ent.Cursor, last *int, where *ent.DsseWhereInput) (*ent.DsseConnection, error)
-	Subjects(ctx context.Context, after *ent.Cursor, first *int, before *ent.Cursor, last *int, where *ent.SubjectWhereInput) (*ent.SubjectConnection, error)
+	Dsses(ctx context.Context, after *entgql.Cursor[int], first *int, before *entgql.Cursor[int], last *int, where *ent.DsseWhereInput) (*ent.DsseConnection, error)
+	Subjects(ctx context.Context, after *entgql.Cursor[int], first *int, before *entgql.Cursor[int], last *int, where *ent.SubjectWhereInput) (*ent.SubjectConnection, error)
 }
 
 type executableSchema struct {
@@ -361,7 +362,7 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 			return 0, false
 		}
 
-		return e.complexity.Query.Dsses(childComplexity, args["after"].(*ent.Cursor), args["first"].(*int), args["before"].(*ent.Cursor), args["last"].(*int), args["where"].(*ent.DsseWhereInput)), true
+		return e.complexity.Query.Dsses(childComplexity, args["after"].(*entgql.Cursor[int]), args["first"].(*int), args["before"].(*entgql.Cursor[int]), args["last"].(*int), args["where"].(*ent.DsseWhereInput)), true
 
 	case "Query.node":
 		if e.complexity.Query.Node == nil {
@@ -397,7 +398,7 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 			return 0, false
 		}
 
-		return e.complexity.Query.Subjects(childComplexity, args["after"].(*ent.Cursor), args["first"].(*int), args["before"].(*ent.Cursor), args["last"].(*int), args["where"].(*ent.SubjectWhereInput)), true
+		return e.complexity.Query.Subjects(childComplexity, args["after"].(*entgql.Cursor[int]), args["first"].(*int), args["before"].(*entgql.Cursor[int]), args["last"].(*int), args["where"].(*ent.SubjectWhereInput)), true
 
 	case "Signature.dsse":
 		if e.complexity.Signature.Dsse == nil {
@@ -472,7 +473,7 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 			return 0, false
 		}
 
-		return e.complexity.Statement.Subjects(childComplexity, args["after"].(*ent.Cursor), args["first"].(*int), args["before"].(*ent.Cursor), args["last"].(*int), args["where"].(*ent.SubjectWhereInput)), true
+		return e.complexity.Statement.Subjects(childComplexity, args["after"].(*entgql.Cursor[int]), args["first"].(*int), args["before"].(*entgql.Cursor[int]), args["last"].(*int), args["where"].(*ent.SubjectWhereInput)), true
 
 	case "Subject.id":
 		if e.complexity.Subject.ID == nil {
@@ -1268,10 +1269,10 @@ func (ec *executionContext) field_Query___type_args(ctx context.Context, rawArgs
 func (ec *executionContext) field_Query_dsses_args(ctx context.Context, rawArgs map[string]interface{}) (map[string]interface{}, error) {
 	var err error
 	args := map[string]interface{}{}
-	var arg0 *ent.Cursor
+	var arg0 *entgql.Cursor[int]
 	if tmp, ok := rawArgs["after"]; ok {
 		ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("after"))
-		arg0, err = ec.unmarshalOCursor2ᚖgithubᚗcomᚋtestifysecᚋarchivistaᚋentᚐCursor(ctx, tmp)
+		arg0, err = ec.unmarshalOCursor2ᚖentgoᚗioᚋcontribᚋentgqlᚐCursor(ctx, tmp)
 		if err != nil {
 			return nil, err
 		}
@@ -1286,10 +1287,10 @@ func (ec *executionContext) field_Query_dsses_args(ctx context.Context, rawArgs 
 		}
 	}
 	args["first"] = arg1
-	var arg2 *ent.Cursor
+	var arg2 *entgql.Cursor[int]
 	if tmp, ok := rawArgs["before"]; ok {
 		ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("before"))
-		arg2, err = ec.unmarshalOCursor2ᚖgithubᚗcomᚋtestifysecᚋarchivistaᚋentᚐCursor(ctx, tmp)
+		arg2, err = ec.unmarshalOCursor2ᚖentgoᚗioᚋcontribᚋentgqlᚐCursor(ctx, tmp)
 		if err != nil {
 			return nil, err
 		}
@@ -1349,10 +1350,10 @@ func (ec *executionContext) field_Query_nodes_args(ctx context.Context, rawArgs 
 func (ec *executionContext) field_Query_subjects_args(ctx context.Context, rawArgs map[string]interface{}) (map[string]interface{}, error) {
 	var err error
 	args := map[string]interface{}{}
-	var arg0 *ent.Cursor
+	var arg0 *entgql.Cursor[int]
 	if tmp, ok := rawArgs["after"]; ok {
 		ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("after"))
-		arg0, err = ec.unmarshalOCursor2ᚖgithubᚗcomᚋtestifysecᚋarchivistaᚋentᚐCursor(ctx, tmp)
+		arg0, err = ec.unmarshalOCursor2ᚖentgoᚗioᚋcontribᚋentgqlᚐCursor(ctx, tmp)
 		if err != nil {
 			return nil, err
 		}
@@ -1367,10 +1368,10 @@ func (ec *executionContext) field_Query_subjects_args(ctx context.Context, rawAr
 		}
 	}
 	args["first"] = arg1
-	var arg2 *ent.Cursor
+	var arg2 *entgql.Cursor[int]
 	if tmp, ok := rawArgs["before"]; ok {
 		ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("before"))
-		arg2, err = ec.unmarshalOCursor2ᚖgithubᚗcomᚋtestifysecᚋarchivistaᚋentᚐCursor(ctx, tmp)
+		arg2, err = ec.unmarshalOCursor2ᚖentgoᚗioᚋcontribᚋentgqlᚐCursor(ctx, tmp)
 		if err != nil {
 			return nil, err
 		}
@@ -1400,10 +1401,10 @@ func (ec *executionContext) field_Query_subjects_args(ctx context.Context, rawAr
 func (ec *executionContext) field_Statement_subjects_args(ctx context.Context, rawArgs map[string]interface{}) (map[string]interface{}, error) {
 	var err error
 	args := map[string]interface{}{}
-	var arg0 *ent.Cursor
+	var arg0 *entgql.Cursor[int]
 	if tmp, ok := rawArgs["after"]; ok {
 		ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("after"))
-		arg0, err = ec.unmarshalOCursor2ᚖgithubᚗcomᚋtestifysecᚋarchivistaᚋentᚐCursor(ctx, tmp)
+		arg0, err = ec.unmarshalOCursor2ᚖentgoᚗioᚋcontribᚋentgqlᚐCursor(ctx, tmp)
 		if err != nil {
 			return nil, err
 		}
@@ -1418,10 +1419,10 @@ func (ec *executionContext) field_Statement_subjects_args(ctx context.Context, r
 		}
 	}
 	args["first"] = arg1
-	var arg2 *ent.Cursor
+	var arg2 *entgql.Cursor[int]
 	if tmp, ok := rawArgs["before"]; ok {
 		ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("before"))
-		arg2, err = ec.unmarshalOCursor2ᚖgithubᚗcomᚋtestifysecᚋarchivistaᚋentᚐCursor(ctx, tmp)
+		arg2, err = ec.unmarshalOCursor2ᚖentgoᚗioᚋcontribᚋentgqlᚐCursor(ctx, tmp)
 		if err != nil {
 			return nil, err
 		}
@@ -2183,9 +2184,9 @@ func (ec *executionContext) _DsseConnection_pageInfo(ctx context.Context, field 
 		}
 		return graphql.Null
 	}
-	res := resTmp.(ent.PageInfo)
+	res := resTmp.(entgql.PageInfo[int])
 	fc.Result = res
-	return ec.marshalNPageInfo2githubᚗcomᚋtestifysecᚋarchivistaᚋentᚐPageInfo(ctx, field.Selections, res)
+	return ec.marshalNPageInfo2entgoᚗioᚋcontribᚋentgqlᚐPageInfo(ctx, field.Selections, res)
 }
 
 func (ec *executionContext) fieldContext_DsseConnection_pageInfo(ctx context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
@@ -2336,9 +2337,9 @@ func (ec *executionContext) _DsseEdge_cursor(ctx context.Context, field graphql.
 		}
 		return graphql.Null
 	}
-	res := resTmp.(ent.Cursor)
+	res := resTmp.(entgql.Cursor[int])
 	fc.Result = res
-	return ec.marshalNCursor2githubᚗcomᚋtestifysecᚋarchivistaᚋentᚐCursor(ctx, field.Selections, res)
+	return ec.marshalNCursor2entgoᚗioᚋcontribᚋentgqlᚐCursor(ctx, field.Selections, res)
 }
 
 func (ec *executionContext) fieldContext_DsseEdge_cursor(ctx context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
@@ -2354,7 +2355,7 @@ func (ec *executionContext) fieldContext_DsseEdge_cursor(ctx context.Context, fi
 	return fc, nil
 }
 
-func (ec *executionContext) _PageInfo_hasNextPage(ctx context.Context, field graphql.CollectedField, obj *ent.PageInfo) (ret graphql.Marshaler) {
+func (ec *executionContext) _PageInfo_hasNextPage(ctx context.Context, field graphql.CollectedField, obj *entgql.PageInfo[int]) (ret graphql.Marshaler) {
 	fc, err := ec.fieldContext_PageInfo_hasNextPage(ctx, field)
 	if err != nil {
 		return graphql.Null
@@ -2398,7 +2399,7 @@ func (ec *executionContext) fieldContext_PageInfo_hasNextPage(ctx context.Contex
 	return fc, nil
 }
 
-func (ec *executionContext) _PageInfo_hasPreviousPage(ctx context.Context, field graphql.CollectedField, obj *ent.PageInfo) (ret graphql.Marshaler) {
+func (ec *executionContext) _PageInfo_hasPreviousPage(ctx context.Context, field graphql.CollectedField, obj *entgql.PageInfo[int]) (ret graphql.Marshaler) {
 	fc, err := ec.fieldContext_PageInfo_hasPreviousPage(ctx, field)
 	if err != nil {
 		return graphql.Null
@@ -2442,7 +2443,7 @@ func (ec *executionContext) fieldContext_PageInfo_hasPreviousPage(ctx context.Co
 	return fc, nil
 }
 
-func (ec *executionContext) _PageInfo_startCursor(ctx context.Context, field graphql.CollectedField, obj *ent.PageInfo) (ret graphql.Marshaler) {
+func (ec *executionContext) _PageInfo_startCursor(ctx context.Context, field graphql.CollectedField, obj *entgql.PageInfo[int]) (ret graphql.Marshaler) {
 	fc, err := ec.fieldContext_PageInfo_startCursor(ctx, field)
 	if err != nil {
 		return graphql.Null
@@ -2465,9 +2466,9 @@ func (ec *executionContext) _PageInfo_startCursor(ctx context.Context, field gra
 	if resTmp == nil {
 		return graphql.Null
 	}
-	res := resTmp.(*ent.Cursor)
+	res := resTmp.(*entgql.Cursor[int])
 	fc.Result = res
-	return ec.marshalOCursor2ᚖgithubᚗcomᚋtestifysecᚋarchivistaᚋentᚐCursor(ctx, field.Selections, res)
+	return ec.marshalOCursor2ᚖentgoᚗioᚋcontribᚋentgqlᚐCursor(ctx, field.Selections, res)
 }
 
 func (ec *executionContext) fieldContext_PageInfo_startCursor(ctx context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
@@ -2483,7 +2484,7 @@ func (ec *executionContext) fieldContext_PageInfo_startCursor(ctx context.Contex
 	return fc, nil
 }
 
-func (ec *executionContext) _PageInfo_endCursor(ctx context.Context, field graphql.CollectedField, obj *ent.PageInfo) (ret graphql.Marshaler) {
+func (ec *executionContext) _PageInfo_endCursor(ctx context.Context, field graphql.CollectedField, obj *entgql.PageInfo[int]) (ret graphql.Marshaler) {
 	fc, err := ec.fieldContext_PageInfo_endCursor(ctx, field)
 	if err != nil {
 		return graphql.Null
@@ -2506,9 +2507,9 @@ func (ec *executionContext) _PageInfo_endCursor(ctx context.Context, field graph
 	if resTmp == nil {
 		return graphql.Null
 	}
-	res := resTmp.(*ent.Cursor)
+	res := resTmp.(*entgql.Cursor[int])
 	fc.Result = res
-	return ec.marshalOCursor2ᚖgithubᚗcomᚋtestifysecᚋarchivistaᚋentᚐCursor(ctx, field.Selections, res)
+	return ec.marshalOCursor2ᚖentgoᚗioᚋcontribᚋentgqlᚐCursor(ctx, field.Selections, res)
 }
 
 func (ec *executionContext) fieldContext_PageInfo_endCursor(ctx context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
@@ -2832,7 +2833,7 @@ func (ec *executionContext) _Query_dsses(ctx context.Context, field graphql.Coll
 	}()
 	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
 		ctx = rctx // use context from middleware stack in children
-		return ec.resolvers.Query().Dsses(rctx, fc.Args["after"].(*ent.Cursor), fc.Args["first"].(*int), fc.Args["before"].(*ent.Cursor), fc.Args["last"].(*int), fc.Args["where"].(*ent.DsseWhereInput))
+		return ec.resolvers.Query().Dsses(rctx, fc.Args["after"].(*entgql.Cursor[int]), fc.Args["first"].(*int), fc.Args["before"].(*entgql.Cursor[int]), fc.Args["last"].(*int), fc.Args["where"].(*ent.DsseWhereInput))
 	})
 	if err != nil {
 		ec.Error(ctx, err)
@@ -2895,7 +2896,7 @@ func (ec *executionContext) _Query_subjects(ctx context.Context, field graphql.C
 	}()
 	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
 		ctx = rctx // use context from middleware stack in children
-		return ec.resolvers.Query().Subjects(rctx, fc.Args["after"].(*ent.Cursor), fc.Args["first"].(*int), fc.Args["before"].(*ent.Cursor), fc.Args["last"].(*int), fc.Args["where"].(*ent.SubjectWhereInput))
+		return ec.resolvers.Query().Subjects(rctx, fc.Args["after"].(*entgql.Cursor[int]), fc.Args["first"].(*int), fc.Args["before"].(*entgql.Cursor[int]), fc.Args["last"].(*int), fc.Args["where"].(*ent.SubjectWhereInput))
 	})
 	if err != nil {
 		ec.Error(ctx, err)
@@ -3413,7 +3414,7 @@ func (ec *executionContext) _Statement_subjects(ctx context.Context, field graph
 	}()
 	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
 		ctx = rctx // use context from middleware stack in children
-		return obj.Subjects(ctx, fc.Args["after"].(*ent.Cursor), fc.Args["first"].(*int), fc.Args["before"].(*ent.Cursor), fc.Args["last"].(*int), fc.Args["where"].(*ent.SubjectWhereInput))
+		return obj.Subjects(ctx, fc.Args["after"].(*entgql.Cursor[int]), fc.Args["first"].(*int), fc.Args["before"].(*entgql.Cursor[int]), fc.Args["last"].(*int), fc.Args["where"].(*ent.SubjectWhereInput))
 	})
 	if err != nil {
 		ec.Error(ctx, err)
@@ -3833,9 +3834,9 @@ func (ec *executionContext) _SubjectConnection_pageInfo(ctx context.Context, fie
 		}
 		return graphql.Null
 	}
-	res := resTmp.(ent.PageInfo)
+	res := resTmp.(entgql.PageInfo[int])
 	fc.Result = res
-	return ec.marshalNPageInfo2githubᚗcomᚋtestifysecᚋarchivistaᚋentᚐPageInfo(ctx, field.Selections, res)
+	return ec.marshalNPageInfo2entgoᚗioᚋcontribᚋentgqlᚐPageInfo(ctx, field.Selections, res)
 }
 
 func (ec *executionContext) fieldContext_SubjectConnection_pageInfo(ctx context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
@@ -4165,9 +4166,9 @@ func (ec *executionContext) _SubjectEdge_cursor(ctx context.Context, field graph
 		}
 		return graphql.Null
 	}
-	res := resTmp.(ent.Cursor)
+	res := resTmp.(entgql.Cursor[int])
 	fc.Result = res
-	return ec.marshalNCursor2githubᚗcomᚋtestifysecᚋarchivistaᚋentᚐCursor(ctx, field.Selections, res)
+	return ec.marshalNCursor2entgoᚗioᚋcontribᚋentgqlᚐCursor(ctx, field.Selections, res)
 }
 
 func (ec *executionContext) fieldContext_SubjectEdge_cursor(ctx context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
@@ -9095,7 +9096,7 @@ func (ec *executionContext) _DsseEdge(ctx context.Context, sel ast.SelectionSet,
 
 var pageInfoImplementors = []string{"PageInfo"}
 
-func (ec *executionContext) _PageInfo(ctx context.Context, sel ast.SelectionSet, obj *ent.PageInfo) graphql.Marshaler {
+func (ec *executionContext) _PageInfo(ctx context.Context, sel ast.SelectionSet, obj *entgql.PageInfo[int]) graphql.Marshaler {
 	fields := graphql.CollectFields(ec.OperationContext, sel, pageInfoImplementors)
 	out := graphql.NewFieldSet(fields)
 	var invalids uint32
@@ -10112,13 +10113,13 @@ func (ec *executionContext) marshalNBoolean2bool(ctx context.Context, sel ast.Se
 	return res
 }
 
-func (ec *executionContext) unmarshalNCursor2githubᚗcomᚋtestifysecᚋarchivistaᚋentᚐCursor(ctx context.Context, v interface{}) (ent.Cursor, error) {
-	var res ent.Cursor
+func (ec *executionContext) unmarshalNCursor2entgoᚗioᚋcontribᚋentgqlᚐCursor(ctx context.Context, v interface{}) (entgql.Cursor[int], error) {
+	var res entgql.Cursor[int]
 	err := res.UnmarshalGQL(v)
 	return res, graphql.ErrorOnPath(ctx, err)
 }
 
-func (ec *executionContext) marshalNCursor2githubᚗcomᚋtestifysecᚋarchivistaᚋentᚐCursor(ctx context.Context, sel ast.SelectionSet, v ent.Cursor) graphql.Marshaler {
+func (ec *executionContext) marshalNCursor2entgoᚗioᚋcontribᚋentgqlᚐCursor(ctx context.Context, sel ast.SelectionSet, v entgql.Cursor[int]) graphql.Marshaler {
 	return v
 }
 
@@ -10251,7 +10252,7 @@ func (ec *executionContext) marshalNNode2ᚕgithubᚗcomᚋtestifysecᚋarchivis
 	return ret
 }
 
-func (ec *executionContext) marshalNPageInfo2githubᚗcomᚋtestifysecᚋarchivistaᚋentᚐPageInfo(ctx context.Context, sel ast.SelectionSet, v ent.PageInfo) graphql.Marshaler {
+func (ec *executionContext) marshalNPageInfo2entgoᚗioᚋcontribᚋentgqlᚐPageInfo(ctx context.Context, sel ast.SelectionSet, v entgql.PageInfo[int]) graphql.Marshaler {
 	return ec._PageInfo(ctx, sel, &v)
 }
 
@@ -10768,16 +10769,16 @@ func (ec *executionContext) marshalOBoolean2ᚖbool(ctx context.Context, sel ast
 	return res
 }
 
-func (ec *executionContext) unmarshalOCursor2ᚖgithubᚗcomᚋtestifysecᚋarchivistaᚋentᚐCursor(ctx context.Context, v interface{}) (*ent.Cursor, error) {
+func (ec *executionContext) unmarshalOCursor2ᚖentgoᚗioᚋcontribᚋentgqlᚐCursor(ctx context.Context, v interface{}) (*entgql.Cursor[int], error) {
 	if v == nil {
 		return nil, nil
 	}
-	var res = new(ent.Cursor)
+	var res = new(entgql.Cursor[int])
 	err := res.UnmarshalGQL(v)
 	return res, graphql.ErrorOnPath(ctx, err)
 }
 
-func (ec *executionContext) marshalOCursor2ᚖgithubᚗcomᚋtestifysecᚋarchivistaᚋentᚐCursor(ctx context.Context, sel ast.SelectionSet, v *ent.Cursor) graphql.Marshaler {
+func (ec *executionContext) marshalOCursor2ᚖentgoᚗioᚋcontribᚋentgqlᚐCursor(ctx context.Context, sel ast.SelectionSet, v *entgql.Cursor[int]) graphql.Marshaler {
 	if v == nil {
 		return graphql.Null
 	}

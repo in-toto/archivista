@@ -7,6 +7,7 @@ import (
 	"strings"
 	"time"
 
+	"entgo.io/ent"
 	"entgo.io/ent/dialect/sql"
 	"github.com/testifysec/archivista/ent/signature"
 	"github.com/testifysec/archivista/ent/timestamp"
@@ -25,6 +26,7 @@ type Timestamp struct {
 	// The values are being populated by the TimestampQuery when eager-loading is set.
 	Edges                TimestampEdges `json:"edges"`
 	signature_timestamps *int
+	selectValues         sql.SelectValues
 }
 
 // TimestampEdges holds the relations/edges for other nodes in the graph.
@@ -35,7 +37,7 @@ type TimestampEdges struct {
 	// type was loaded (or requested) in eager-loading or not.
 	loadedTypes [1]bool
 	// totalCount holds the count of the edges above.
-	totalCount [1]*int
+	totalCount [1]map[string]int
 }
 
 // SignatureOrErr returns the Signature value or an error if the edge
@@ -65,7 +67,7 @@ func (*Timestamp) scanValues(columns []string) ([]any, error) {
 		case timestamp.ForeignKeys[0]: // signature_timestamps
 			values[i] = new(sql.NullInt64)
 		default:
-			return nil, fmt.Errorf("unexpected column %q for type Timestamp", columns[i])
+			values[i] = new(sql.UnknownType)
 		}
 	}
 	return values, nil
@@ -104,21 +106,29 @@ func (t *Timestamp) assignValues(columns []string, values []any) error {
 				t.signature_timestamps = new(int)
 				*t.signature_timestamps = int(value.Int64)
 			}
+		default:
+			t.selectValues.Set(columns[i], values[i])
 		}
 	}
 	return nil
 }
 
+// Value returns the ent.Value that was dynamically selected and assigned to the Timestamp.
+// This includes values selected through modifiers, order, etc.
+func (t *Timestamp) Value(name string) (ent.Value, error) {
+	return t.selectValues.Get(name)
+}
+
 // QuerySignature queries the "signature" edge of the Timestamp entity.
 func (t *Timestamp) QuerySignature() *SignatureQuery {
-	return (&TimestampClient{config: t.config}).QuerySignature(t)
+	return NewTimestampClient(t.config).QuerySignature(t)
 }
 
 // Update returns a builder for updating this Timestamp.
 // Note that you need to call Timestamp.Unwrap() before calling this method if this Timestamp
 // was returned from a transaction, and the transaction was committed or rolled back.
 func (t *Timestamp) Update() *TimestampUpdateOne {
-	return (&TimestampClient{config: t.config}).UpdateOne(t)
+	return NewTimestampClient(t.config).UpdateOne(t)
 }
 
 // Unwrap unwraps the Timestamp entity that was returned from a transaction after it was closed,
@@ -148,9 +158,3 @@ func (t *Timestamp) String() string {
 
 // Timestamps is a parsable slice of Timestamp.
 type Timestamps []*Timestamp
-
-func (t Timestamps) config(cfg config) {
-	for _i := range t {
-		t[_i].config = cfg
-	}
-}

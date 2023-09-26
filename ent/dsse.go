@@ -6,6 +6,7 @@ import (
 	"fmt"
 	"strings"
 
+	"entgo.io/ent"
 	"entgo.io/ent/dialect/sql"
 	"github.com/testifysec/archivista/ent/dsse"
 	"github.com/testifysec/archivista/ent/statement"
@@ -24,6 +25,7 @@ type Dsse struct {
 	// The values are being populated by the DsseQuery when eager-loading is set.
 	Edges          DsseEdges `json:"edges"`
 	dsse_statement *int
+	selectValues   sql.SelectValues
 }
 
 // DsseEdges holds the relations/edges for other nodes in the graph.
@@ -38,7 +40,10 @@ type DsseEdges struct {
 	// type was loaded (or requested) in eager-loading or not.
 	loadedTypes [3]bool
 	// totalCount holds the count of the edges above.
-	totalCount [3]*int
+	totalCount [3]map[string]int
+
+	namedSignatures     map[string][]*Signature
+	namedPayloadDigests map[string][]*PayloadDigest
 }
 
 // StatementOrErr returns the Statement value or an error if the edge
@@ -84,7 +89,7 @@ func (*Dsse) scanValues(columns []string) ([]any, error) {
 		case dsse.ForeignKeys[0]: // dsse_statement
 			values[i] = new(sql.NullInt64)
 		default:
-			return nil, fmt.Errorf("unexpected column %q for type Dsse", columns[i])
+			values[i] = new(sql.UnknownType)
 		}
 	}
 	return values, nil
@@ -123,31 +128,39 @@ func (d *Dsse) assignValues(columns []string, values []any) error {
 				d.dsse_statement = new(int)
 				*d.dsse_statement = int(value.Int64)
 			}
+		default:
+			d.selectValues.Set(columns[i], values[i])
 		}
 	}
 	return nil
 }
 
+// Value returns the ent.Value that was dynamically selected and assigned to the Dsse.
+// This includes values selected through modifiers, order, etc.
+func (d *Dsse) Value(name string) (ent.Value, error) {
+	return d.selectValues.Get(name)
+}
+
 // QueryStatement queries the "statement" edge of the Dsse entity.
 func (d *Dsse) QueryStatement() *StatementQuery {
-	return (&DsseClient{config: d.config}).QueryStatement(d)
+	return NewDsseClient(d.config).QueryStatement(d)
 }
 
 // QuerySignatures queries the "signatures" edge of the Dsse entity.
 func (d *Dsse) QuerySignatures() *SignatureQuery {
-	return (&DsseClient{config: d.config}).QuerySignatures(d)
+	return NewDsseClient(d.config).QuerySignatures(d)
 }
 
 // QueryPayloadDigests queries the "payload_digests" edge of the Dsse entity.
 func (d *Dsse) QueryPayloadDigests() *PayloadDigestQuery {
-	return (&DsseClient{config: d.config}).QueryPayloadDigests(d)
+	return NewDsseClient(d.config).QueryPayloadDigests(d)
 }
 
 // Update returns a builder for updating this Dsse.
 // Note that you need to call Dsse.Unwrap() before calling this method if this Dsse
 // was returned from a transaction, and the transaction was committed or rolled back.
 func (d *Dsse) Update() *DsseUpdateOne {
-	return (&DsseClient{config: d.config}).UpdateOne(d)
+	return NewDsseClient(d.config).UpdateOne(d)
 }
 
 // Unwrap unwraps the Dsse entity that was returned from a transaction after it was closed,
@@ -175,11 +188,53 @@ func (d *Dsse) String() string {
 	return builder.String()
 }
 
-// Dsses is a parsable slice of Dsse.
-type Dsses []*Dsse
+// NamedSignatures returns the Signatures named value or an error if the edge was not
+// loaded in eager-loading with this name.
+func (d *Dsse) NamedSignatures(name string) ([]*Signature, error) {
+	if d.Edges.namedSignatures == nil {
+		return nil, &NotLoadedError{edge: name}
+	}
+	nodes, ok := d.Edges.namedSignatures[name]
+	if !ok {
+		return nil, &NotLoadedError{edge: name}
+	}
+	return nodes, nil
+}
 
-func (d Dsses) config(cfg config) {
-	for _i := range d {
-		d[_i].config = cfg
+func (d *Dsse) appendNamedSignatures(name string, edges ...*Signature) {
+	if d.Edges.namedSignatures == nil {
+		d.Edges.namedSignatures = make(map[string][]*Signature)
+	}
+	if len(edges) == 0 {
+		d.Edges.namedSignatures[name] = []*Signature{}
+	} else {
+		d.Edges.namedSignatures[name] = append(d.Edges.namedSignatures[name], edges...)
 	}
 }
+
+// NamedPayloadDigests returns the PayloadDigests named value or an error if the edge was not
+// loaded in eager-loading with this name.
+func (d *Dsse) NamedPayloadDigests(name string) ([]*PayloadDigest, error) {
+	if d.Edges.namedPayloadDigests == nil {
+		return nil, &NotLoadedError{edge: name}
+	}
+	nodes, ok := d.Edges.namedPayloadDigests[name]
+	if !ok {
+		return nil, &NotLoadedError{edge: name}
+	}
+	return nodes, nil
+}
+
+func (d *Dsse) appendNamedPayloadDigests(name string, edges ...*PayloadDigest) {
+	if d.Edges.namedPayloadDigests == nil {
+		d.Edges.namedPayloadDigests = make(map[string][]*PayloadDigest)
+	}
+	if len(edges) == 0 {
+		d.Edges.namedPayloadDigests[name] = []*PayloadDigest{}
+	} else {
+		d.Edges.namedPayloadDigests[name] = append(d.Edges.namedPayloadDigests[name], edges...)
+	}
+}
+
+// Dsses is a parsable slice of Dsse.
+type Dsses []*Dsse

@@ -60,49 +60,7 @@ func (acc *AttestationCollectionCreate) Mutation() *AttestationCollectionMutatio
 
 // Save creates the AttestationCollection in the database.
 func (acc *AttestationCollectionCreate) Save(ctx context.Context) (*AttestationCollection, error) {
-	var (
-		err  error
-		node *AttestationCollection
-	)
-	if len(acc.hooks) == 0 {
-		if err = acc.check(); err != nil {
-			return nil, err
-		}
-		node, err = acc.sqlSave(ctx)
-	} else {
-		var mut Mutator = MutateFunc(func(ctx context.Context, m Mutation) (Value, error) {
-			mutation, ok := m.(*AttestationCollectionMutation)
-			if !ok {
-				return nil, fmt.Errorf("unexpected mutation type %T", m)
-			}
-			if err = acc.check(); err != nil {
-				return nil, err
-			}
-			acc.mutation = mutation
-			if node, err = acc.sqlSave(ctx); err != nil {
-				return nil, err
-			}
-			mutation.id = &node.ID
-			mutation.done = true
-			return node, err
-		})
-		for i := len(acc.hooks) - 1; i >= 0; i-- {
-			if acc.hooks[i] == nil {
-				return nil, fmt.Errorf("ent: uninitialized hook (forgotten import ent/runtime?)")
-			}
-			mut = acc.hooks[i](mut)
-		}
-		v, err := mut.Mutate(ctx, acc.mutation)
-		if err != nil {
-			return nil, err
-		}
-		nv, ok := v.(*AttestationCollection)
-		if !ok {
-			return nil, fmt.Errorf("unexpected node type %T returned from AttestationCollectionMutation", v)
-		}
-		node = nv
-	}
-	return node, err
+	return withHooks(ctx, acc.sqlSave, acc.mutation, acc.hooks)
 }
 
 // SaveX calls Save and panics if Save returns an error.
@@ -144,6 +102,9 @@ func (acc *AttestationCollectionCreate) check() error {
 }
 
 func (acc *AttestationCollectionCreate) sqlSave(ctx context.Context) (*AttestationCollection, error) {
+	if err := acc.check(); err != nil {
+		return nil, err
+	}
 	_node, _spec := acc.createSpec()
 	if err := sqlgraph.CreateNode(ctx, acc.driver, _spec); err != nil {
 		if sqlgraph.IsConstraintError(err) {
@@ -153,26 +114,18 @@ func (acc *AttestationCollectionCreate) sqlSave(ctx context.Context) (*Attestati
 	}
 	id := _spec.ID.Value.(int64)
 	_node.ID = int(id)
+	acc.mutation.id = &_node.ID
+	acc.mutation.done = true
 	return _node, nil
 }
 
 func (acc *AttestationCollectionCreate) createSpec() (*AttestationCollection, *sqlgraph.CreateSpec) {
 	var (
 		_node = &AttestationCollection{config: acc.config}
-		_spec = &sqlgraph.CreateSpec{
-			Table: attestationcollection.Table,
-			ID: &sqlgraph.FieldSpec{
-				Type:   field.TypeInt,
-				Column: attestationcollection.FieldID,
-			},
-		}
+		_spec = sqlgraph.NewCreateSpec(attestationcollection.Table, sqlgraph.NewFieldSpec(attestationcollection.FieldID, field.TypeInt))
 	)
 	if value, ok := acc.mutation.Name(); ok {
-		_spec.Fields = append(_spec.Fields, &sqlgraph.FieldSpec{
-			Type:   field.TypeString,
-			Value:  value,
-			Column: attestationcollection.FieldName,
-		})
+		_spec.SetField(attestationcollection.FieldName, field.TypeString, value)
 		_node.Name = value
 	}
 	if nodes := acc.mutation.AttestationsIDs(); len(nodes) > 0 {
@@ -183,10 +136,7 @@ func (acc *AttestationCollectionCreate) createSpec() (*AttestationCollection, *s
 			Columns: []string{attestationcollection.AttestationsColumn},
 			Bidi:    false,
 			Target: &sqlgraph.EdgeTarget{
-				IDSpec: &sqlgraph.FieldSpec{
-					Type:   field.TypeInt,
-					Column: attestation.FieldID,
-				},
+				IDSpec: sqlgraph.NewFieldSpec(attestation.FieldID, field.TypeInt),
 			},
 		}
 		for _, k := range nodes {
@@ -202,10 +152,7 @@ func (acc *AttestationCollectionCreate) createSpec() (*AttestationCollection, *s
 			Columns: []string{attestationcollection.StatementColumn},
 			Bidi:    false,
 			Target: &sqlgraph.EdgeTarget{
-				IDSpec: &sqlgraph.FieldSpec{
-					Type:   field.TypeInt,
-					Column: statement.FieldID,
-				},
+				IDSpec: sqlgraph.NewFieldSpec(statement.FieldID, field.TypeInt),
 			},
 		}
 		for _, k := range nodes {
@@ -220,11 +167,15 @@ func (acc *AttestationCollectionCreate) createSpec() (*AttestationCollection, *s
 // AttestationCollectionCreateBulk is the builder for creating many AttestationCollection entities in bulk.
 type AttestationCollectionCreateBulk struct {
 	config
+	err      error
 	builders []*AttestationCollectionCreate
 }
 
 // Save creates the AttestationCollection entities in the database.
 func (accb *AttestationCollectionCreateBulk) Save(ctx context.Context) ([]*AttestationCollection, error) {
+	if accb.err != nil {
+		return nil, accb.err
+	}
 	specs := make([]*sqlgraph.CreateSpec, len(accb.builders))
 	nodes := make([]*AttestationCollection, len(accb.builders))
 	mutators := make([]Mutator, len(accb.builders))
@@ -240,8 +191,8 @@ func (accb *AttestationCollectionCreateBulk) Save(ctx context.Context) ([]*Attes
 					return nil, err
 				}
 				builder.mutation = mutation
-				nodes[i], specs[i] = builder.createSpec()
 				var err error
+				nodes[i], specs[i] = builder.createSpec()
 				if i < len(mutators)-1 {
 					_, err = mutators[i+1].Mutate(root, accb.builders[i+1].mutation)
 				} else {

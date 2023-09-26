@@ -4,7 +4,6 @@ package ent
 
 import (
 	"context"
-	"fmt"
 
 	"entgo.io/ent/dialect/sql"
 	"entgo.io/ent/dialect/sql/sqlgraph"
@@ -28,34 +27,7 @@ func (pdd *PayloadDigestDelete) Where(ps ...predicate.PayloadDigest) *PayloadDig
 
 // Exec executes the deletion query and returns how many vertices were deleted.
 func (pdd *PayloadDigestDelete) Exec(ctx context.Context) (int, error) {
-	var (
-		err      error
-		affected int
-	)
-	if len(pdd.hooks) == 0 {
-		affected, err = pdd.sqlExec(ctx)
-	} else {
-		var mut Mutator = MutateFunc(func(ctx context.Context, m Mutation) (Value, error) {
-			mutation, ok := m.(*PayloadDigestMutation)
-			if !ok {
-				return nil, fmt.Errorf("unexpected mutation type %T", m)
-			}
-			pdd.mutation = mutation
-			affected, err = pdd.sqlExec(ctx)
-			mutation.done = true
-			return affected, err
-		})
-		for i := len(pdd.hooks) - 1; i >= 0; i-- {
-			if pdd.hooks[i] == nil {
-				return 0, fmt.Errorf("ent: uninitialized hook (forgotten import ent/runtime?)")
-			}
-			mut = pdd.hooks[i](mut)
-		}
-		if _, err := mut.Mutate(ctx, pdd.mutation); err != nil {
-			return 0, err
-		}
-	}
-	return affected, err
+	return withHooks(ctx, pdd.sqlExec, pdd.mutation, pdd.hooks)
 }
 
 // ExecX is like Exec, but panics if an error occurs.
@@ -68,15 +40,7 @@ func (pdd *PayloadDigestDelete) ExecX(ctx context.Context) int {
 }
 
 func (pdd *PayloadDigestDelete) sqlExec(ctx context.Context) (int, error) {
-	_spec := &sqlgraph.DeleteSpec{
-		Node: &sqlgraph.NodeSpec{
-			Table: payloaddigest.Table,
-			ID: &sqlgraph.FieldSpec{
-				Type:   field.TypeInt,
-				Column: payloaddigest.FieldID,
-			},
-		},
-	}
+	_spec := sqlgraph.NewDeleteSpec(payloaddigest.Table, sqlgraph.NewFieldSpec(payloaddigest.FieldID, field.TypeInt))
 	if ps := pdd.mutation.predicates; len(ps) > 0 {
 		_spec.Predicate = func(selector *sql.Selector) {
 			for i := range ps {
@@ -88,12 +52,19 @@ func (pdd *PayloadDigestDelete) sqlExec(ctx context.Context) (int, error) {
 	if err != nil && sqlgraph.IsConstraintError(err) {
 		err = &ConstraintError{msg: err.Error(), wrap: err}
 	}
+	pdd.mutation.done = true
 	return affected, err
 }
 
 // PayloadDigestDeleteOne is the builder for deleting a single PayloadDigest entity.
 type PayloadDigestDeleteOne struct {
 	pdd *PayloadDigestDelete
+}
+
+// Where appends a list predicates to the PayloadDigestDelete builder.
+func (pddo *PayloadDigestDeleteOne) Where(ps ...predicate.PayloadDigest) *PayloadDigestDeleteOne {
+	pddo.pdd.mutation.Where(ps...)
+	return pddo
 }
 
 // Exec executes the deletion query.
@@ -111,5 +82,7 @@ func (pddo *PayloadDigestDeleteOne) Exec(ctx context.Context) error {
 
 // ExecX is like Exec, but panics if an error occurs.
 func (pddo *PayloadDigestDeleteOne) ExecX(ctx context.Context) {
-	pddo.pdd.ExecX(ctx)
+	if err := pddo.Exec(ctx); err != nil {
+		panic(err)
+	}
 }

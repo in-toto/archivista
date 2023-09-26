@@ -18,11 +18,9 @@ import (
 // SubjectDigestQuery is the builder for querying SubjectDigest entities.
 type SubjectDigestQuery struct {
 	config
-	limit       *int
-	offset      *int
-	unique      *bool
-	order       []OrderFunc
-	fields      []string
+	ctx         *QueryContext
+	order       []subjectdigest.OrderOption
+	inters      []Interceptor
 	predicates  []predicate.SubjectDigest
 	withSubject *SubjectQuery
 	withFKs     bool
@@ -39,34 +37,34 @@ func (sdq *SubjectDigestQuery) Where(ps ...predicate.SubjectDigest) *SubjectDige
 	return sdq
 }
 
-// Limit adds a limit step to the query.
+// Limit the number of records to be returned by this query.
 func (sdq *SubjectDigestQuery) Limit(limit int) *SubjectDigestQuery {
-	sdq.limit = &limit
+	sdq.ctx.Limit = &limit
 	return sdq
 }
 
-// Offset adds an offset step to the query.
+// Offset to start from.
 func (sdq *SubjectDigestQuery) Offset(offset int) *SubjectDigestQuery {
-	sdq.offset = &offset
+	sdq.ctx.Offset = &offset
 	return sdq
 }
 
 // Unique configures the query builder to filter duplicate records on query.
 // By default, unique is set to true, and can be disabled using this method.
 func (sdq *SubjectDigestQuery) Unique(unique bool) *SubjectDigestQuery {
-	sdq.unique = &unique
+	sdq.ctx.Unique = &unique
 	return sdq
 }
 
-// Order adds an order step to the query.
-func (sdq *SubjectDigestQuery) Order(o ...OrderFunc) *SubjectDigestQuery {
+// Order specifies how the records should be ordered.
+func (sdq *SubjectDigestQuery) Order(o ...subjectdigest.OrderOption) *SubjectDigestQuery {
 	sdq.order = append(sdq.order, o...)
 	return sdq
 }
 
 // QuerySubject chains the current query on the "subject" edge.
 func (sdq *SubjectDigestQuery) QuerySubject() *SubjectQuery {
-	query := &SubjectQuery{config: sdq.config}
+	query := (&SubjectClient{config: sdq.config}).Query()
 	query.path = func(ctx context.Context) (fromU *sql.Selector, err error) {
 		if err := sdq.prepareQuery(ctx); err != nil {
 			return nil, err
@@ -89,7 +87,7 @@ func (sdq *SubjectDigestQuery) QuerySubject() *SubjectQuery {
 // First returns the first SubjectDigest entity from the query.
 // Returns a *NotFoundError when no SubjectDigest was found.
 func (sdq *SubjectDigestQuery) First(ctx context.Context) (*SubjectDigest, error) {
-	nodes, err := sdq.Limit(1).All(ctx)
+	nodes, err := sdq.Limit(1).All(setContextOp(ctx, sdq.ctx, "First"))
 	if err != nil {
 		return nil, err
 	}
@@ -112,7 +110,7 @@ func (sdq *SubjectDigestQuery) FirstX(ctx context.Context) *SubjectDigest {
 // Returns a *NotFoundError when no SubjectDigest ID was found.
 func (sdq *SubjectDigestQuery) FirstID(ctx context.Context) (id int, err error) {
 	var ids []int
-	if ids, err = sdq.Limit(1).IDs(ctx); err != nil {
+	if ids, err = sdq.Limit(1).IDs(setContextOp(ctx, sdq.ctx, "FirstID")); err != nil {
 		return
 	}
 	if len(ids) == 0 {
@@ -135,7 +133,7 @@ func (sdq *SubjectDigestQuery) FirstIDX(ctx context.Context) int {
 // Returns a *NotSingularError when more than one SubjectDigest entity is found.
 // Returns a *NotFoundError when no SubjectDigest entities are found.
 func (sdq *SubjectDigestQuery) Only(ctx context.Context) (*SubjectDigest, error) {
-	nodes, err := sdq.Limit(2).All(ctx)
+	nodes, err := sdq.Limit(2).All(setContextOp(ctx, sdq.ctx, "Only"))
 	if err != nil {
 		return nil, err
 	}
@@ -163,7 +161,7 @@ func (sdq *SubjectDigestQuery) OnlyX(ctx context.Context) *SubjectDigest {
 // Returns a *NotFoundError when no entities are found.
 func (sdq *SubjectDigestQuery) OnlyID(ctx context.Context) (id int, err error) {
 	var ids []int
-	if ids, err = sdq.Limit(2).IDs(ctx); err != nil {
+	if ids, err = sdq.Limit(2).IDs(setContextOp(ctx, sdq.ctx, "OnlyID")); err != nil {
 		return
 	}
 	switch len(ids) {
@@ -188,10 +186,12 @@ func (sdq *SubjectDigestQuery) OnlyIDX(ctx context.Context) int {
 
 // All executes the query and returns a list of SubjectDigests.
 func (sdq *SubjectDigestQuery) All(ctx context.Context) ([]*SubjectDigest, error) {
+	ctx = setContextOp(ctx, sdq.ctx, "All")
 	if err := sdq.prepareQuery(ctx); err != nil {
 		return nil, err
 	}
-	return sdq.sqlAll(ctx)
+	qr := querierAll[[]*SubjectDigest, *SubjectDigestQuery]()
+	return withInterceptors[[]*SubjectDigest](ctx, sdq, qr, sdq.inters)
 }
 
 // AllX is like All, but panics if an error occurs.
@@ -204,9 +204,12 @@ func (sdq *SubjectDigestQuery) AllX(ctx context.Context) []*SubjectDigest {
 }
 
 // IDs executes the query and returns a list of SubjectDigest IDs.
-func (sdq *SubjectDigestQuery) IDs(ctx context.Context) ([]int, error) {
-	var ids []int
-	if err := sdq.Select(subjectdigest.FieldID).Scan(ctx, &ids); err != nil {
+func (sdq *SubjectDigestQuery) IDs(ctx context.Context) (ids []int, err error) {
+	if sdq.ctx.Unique == nil && sdq.path != nil {
+		sdq.Unique(true)
+	}
+	ctx = setContextOp(ctx, sdq.ctx, "IDs")
+	if err = sdq.Select(subjectdigest.FieldID).Scan(ctx, &ids); err != nil {
 		return nil, err
 	}
 	return ids, nil
@@ -223,10 +226,11 @@ func (sdq *SubjectDigestQuery) IDsX(ctx context.Context) []int {
 
 // Count returns the count of the given query.
 func (sdq *SubjectDigestQuery) Count(ctx context.Context) (int, error) {
+	ctx = setContextOp(ctx, sdq.ctx, "Count")
 	if err := sdq.prepareQuery(ctx); err != nil {
 		return 0, err
 	}
-	return sdq.sqlCount(ctx)
+	return withInterceptors[int](ctx, sdq, querierCount[*SubjectDigestQuery](), sdq.inters)
 }
 
 // CountX is like Count, but panics if an error occurs.
@@ -240,10 +244,15 @@ func (sdq *SubjectDigestQuery) CountX(ctx context.Context) int {
 
 // Exist returns true if the query has elements in the graph.
 func (sdq *SubjectDigestQuery) Exist(ctx context.Context) (bool, error) {
-	if err := sdq.prepareQuery(ctx); err != nil {
-		return false, err
+	ctx = setContextOp(ctx, sdq.ctx, "Exist")
+	switch _, err := sdq.FirstID(ctx); {
+	case IsNotFound(err):
+		return false, nil
+	case err != nil:
+		return false, fmt.Errorf("ent: check existence: %w", err)
+	default:
+		return true, nil
 	}
-	return sdq.sqlExist(ctx)
 }
 
 // ExistX is like Exist, but panics if an error occurs.
@@ -263,22 +272,21 @@ func (sdq *SubjectDigestQuery) Clone() *SubjectDigestQuery {
 	}
 	return &SubjectDigestQuery{
 		config:      sdq.config,
-		limit:       sdq.limit,
-		offset:      sdq.offset,
-		order:       append([]OrderFunc{}, sdq.order...),
+		ctx:         sdq.ctx.Clone(),
+		order:       append([]subjectdigest.OrderOption{}, sdq.order...),
+		inters:      append([]Interceptor{}, sdq.inters...),
 		predicates:  append([]predicate.SubjectDigest{}, sdq.predicates...),
 		withSubject: sdq.withSubject.Clone(),
 		// clone intermediate query.
-		sql:    sdq.sql.Clone(),
-		path:   sdq.path,
-		unique: sdq.unique,
+		sql:  sdq.sql.Clone(),
+		path: sdq.path,
 	}
 }
 
 // WithSubject tells the query-builder to eager-load the nodes that are connected to
 // the "subject" edge. The optional arguments are used to configure the query builder of the edge.
 func (sdq *SubjectDigestQuery) WithSubject(opts ...func(*SubjectQuery)) *SubjectDigestQuery {
-	query := &SubjectQuery{config: sdq.config}
+	query := (&SubjectClient{config: sdq.config}).Query()
 	for _, opt := range opts {
 		opt(query)
 	}
@@ -301,16 +309,11 @@ func (sdq *SubjectDigestQuery) WithSubject(opts ...func(*SubjectQuery)) *Subject
 //		Aggregate(ent.Count()).
 //		Scan(ctx, &v)
 func (sdq *SubjectDigestQuery) GroupBy(field string, fields ...string) *SubjectDigestGroupBy {
-	grbuild := &SubjectDigestGroupBy{config: sdq.config}
-	grbuild.fields = append([]string{field}, fields...)
-	grbuild.path = func(ctx context.Context) (prev *sql.Selector, err error) {
-		if err := sdq.prepareQuery(ctx); err != nil {
-			return nil, err
-		}
-		return sdq.sqlQuery(ctx), nil
-	}
+	sdq.ctx.Fields = append([]string{field}, fields...)
+	grbuild := &SubjectDigestGroupBy{build: sdq}
+	grbuild.flds = &sdq.ctx.Fields
 	grbuild.label = subjectdigest.Label
-	grbuild.flds, grbuild.scan = &grbuild.fields, grbuild.Scan
+	grbuild.scan = grbuild.Scan
 	return grbuild
 }
 
@@ -327,15 +330,30 @@ func (sdq *SubjectDigestQuery) GroupBy(field string, fields ...string) *SubjectD
 //		Select(subjectdigest.FieldAlgorithm).
 //		Scan(ctx, &v)
 func (sdq *SubjectDigestQuery) Select(fields ...string) *SubjectDigestSelect {
-	sdq.fields = append(sdq.fields, fields...)
-	selbuild := &SubjectDigestSelect{SubjectDigestQuery: sdq}
-	selbuild.label = subjectdigest.Label
-	selbuild.flds, selbuild.scan = &sdq.fields, selbuild.Scan
-	return selbuild
+	sdq.ctx.Fields = append(sdq.ctx.Fields, fields...)
+	sbuild := &SubjectDigestSelect{SubjectDigestQuery: sdq}
+	sbuild.label = subjectdigest.Label
+	sbuild.flds, sbuild.scan = &sdq.ctx.Fields, sbuild.Scan
+	return sbuild
+}
+
+// Aggregate returns a SubjectDigestSelect configured with the given aggregations.
+func (sdq *SubjectDigestQuery) Aggregate(fns ...AggregateFunc) *SubjectDigestSelect {
+	return sdq.Select().Aggregate(fns...)
 }
 
 func (sdq *SubjectDigestQuery) prepareQuery(ctx context.Context) error {
-	for _, f := range sdq.fields {
+	for _, inter := range sdq.inters {
+		if inter == nil {
+			return fmt.Errorf("ent: uninitialized interceptor (forgotten import ent/runtime?)")
+		}
+		if trv, ok := inter.(Traverser); ok {
+			if err := trv.Traverse(ctx, sdq); err != nil {
+				return err
+			}
+		}
+	}
+	for _, f := range sdq.ctx.Fields {
 		if !subjectdigest.ValidColumn(f) {
 			return &ValidationError{Name: f, err: fmt.Errorf("ent: invalid field %q for query", f)}
 		}
@@ -413,6 +431,9 @@ func (sdq *SubjectDigestQuery) loadSubject(ctx context.Context, query *SubjectQu
 		}
 		nodeids[fk] = append(nodeids[fk], nodes[i])
 	}
+	if len(ids) == 0 {
+		return nil
+	}
 	query.Where(subject.IDIn(ids...))
 	neighbors, err := query.All(ctx)
 	if err != nil {
@@ -435,41 +456,22 @@ func (sdq *SubjectDigestQuery) sqlCount(ctx context.Context) (int, error) {
 	if len(sdq.modifiers) > 0 {
 		_spec.Modifiers = sdq.modifiers
 	}
-	_spec.Node.Columns = sdq.fields
-	if len(sdq.fields) > 0 {
-		_spec.Unique = sdq.unique != nil && *sdq.unique
+	_spec.Node.Columns = sdq.ctx.Fields
+	if len(sdq.ctx.Fields) > 0 {
+		_spec.Unique = sdq.ctx.Unique != nil && *sdq.ctx.Unique
 	}
 	return sqlgraph.CountNodes(ctx, sdq.driver, _spec)
 }
 
-func (sdq *SubjectDigestQuery) sqlExist(ctx context.Context) (bool, error) {
-	switch _, err := sdq.FirstID(ctx); {
-	case IsNotFound(err):
-		return false, nil
-	case err != nil:
-		return false, fmt.Errorf("ent: check existence: %w", err)
-	default:
-		return true, nil
-	}
-}
-
 func (sdq *SubjectDigestQuery) querySpec() *sqlgraph.QuerySpec {
-	_spec := &sqlgraph.QuerySpec{
-		Node: &sqlgraph.NodeSpec{
-			Table:   subjectdigest.Table,
-			Columns: subjectdigest.Columns,
-			ID: &sqlgraph.FieldSpec{
-				Type:   field.TypeInt,
-				Column: subjectdigest.FieldID,
-			},
-		},
-		From:   sdq.sql,
-		Unique: true,
-	}
-	if unique := sdq.unique; unique != nil {
+	_spec := sqlgraph.NewQuerySpec(subjectdigest.Table, subjectdigest.Columns, sqlgraph.NewFieldSpec(subjectdigest.FieldID, field.TypeInt))
+	_spec.From = sdq.sql
+	if unique := sdq.ctx.Unique; unique != nil {
 		_spec.Unique = *unique
+	} else if sdq.path != nil {
+		_spec.Unique = true
 	}
-	if fields := sdq.fields; len(fields) > 0 {
+	if fields := sdq.ctx.Fields; len(fields) > 0 {
 		_spec.Node.Columns = make([]string, 0, len(fields))
 		_spec.Node.Columns = append(_spec.Node.Columns, subjectdigest.FieldID)
 		for i := range fields {
@@ -485,10 +487,10 @@ func (sdq *SubjectDigestQuery) querySpec() *sqlgraph.QuerySpec {
 			}
 		}
 	}
-	if limit := sdq.limit; limit != nil {
+	if limit := sdq.ctx.Limit; limit != nil {
 		_spec.Limit = *limit
 	}
-	if offset := sdq.offset; offset != nil {
+	if offset := sdq.ctx.Offset; offset != nil {
 		_spec.Offset = *offset
 	}
 	if ps := sdq.order; len(ps) > 0 {
@@ -504,7 +506,7 @@ func (sdq *SubjectDigestQuery) querySpec() *sqlgraph.QuerySpec {
 func (sdq *SubjectDigestQuery) sqlQuery(ctx context.Context) *sql.Selector {
 	builder := sql.Dialect(sdq.driver.Dialect())
 	t1 := builder.Table(subjectdigest.Table)
-	columns := sdq.fields
+	columns := sdq.ctx.Fields
 	if len(columns) == 0 {
 		columns = subjectdigest.Columns
 	}
@@ -513,7 +515,7 @@ func (sdq *SubjectDigestQuery) sqlQuery(ctx context.Context) *sql.Selector {
 		selector = sdq.sql
 		selector.Select(selector.Columns(columns...)...)
 	}
-	if sdq.unique != nil && *sdq.unique {
+	if sdq.ctx.Unique != nil && *sdq.ctx.Unique {
 		selector.Distinct()
 	}
 	for _, p := range sdq.predicates {
@@ -522,12 +524,12 @@ func (sdq *SubjectDigestQuery) sqlQuery(ctx context.Context) *sql.Selector {
 	for _, p := range sdq.order {
 		p(selector)
 	}
-	if offset := sdq.offset; offset != nil {
+	if offset := sdq.ctx.Offset; offset != nil {
 		// limit is mandatory for offset clause. We start
 		// with default value, and override it below if needed.
 		selector.Offset(*offset).Limit(math.MaxInt32)
 	}
-	if limit := sdq.limit; limit != nil {
+	if limit := sdq.ctx.Limit; limit != nil {
 		selector.Limit(*limit)
 	}
 	return selector
@@ -535,13 +537,8 @@ func (sdq *SubjectDigestQuery) sqlQuery(ctx context.Context) *sql.Selector {
 
 // SubjectDigestGroupBy is the group-by builder for SubjectDigest entities.
 type SubjectDigestGroupBy struct {
-	config
 	selector
-	fields []string
-	fns    []AggregateFunc
-	// intermediate query (i.e. traversal path).
-	sql  *sql.Selector
-	path func(context.Context) (*sql.Selector, error)
+	build *SubjectDigestQuery
 }
 
 // Aggregate adds the given aggregation functions to the group-by query.
@@ -550,74 +547,77 @@ func (sdgb *SubjectDigestGroupBy) Aggregate(fns ...AggregateFunc) *SubjectDigest
 	return sdgb
 }
 
-// Scan applies the group-by query and scans the result into the given value.
+// Scan applies the selector query and scans the result into the given value.
 func (sdgb *SubjectDigestGroupBy) Scan(ctx context.Context, v any) error {
-	query, err := sdgb.path(ctx)
-	if err != nil {
+	ctx = setContextOp(ctx, sdgb.build.ctx, "GroupBy")
+	if err := sdgb.build.prepareQuery(ctx); err != nil {
 		return err
 	}
-	sdgb.sql = query
-	return sdgb.sqlScan(ctx, v)
+	return scanWithInterceptors[*SubjectDigestQuery, *SubjectDigestGroupBy](ctx, sdgb.build, sdgb, sdgb.build.inters, v)
 }
 
-func (sdgb *SubjectDigestGroupBy) sqlScan(ctx context.Context, v any) error {
-	for _, f := range sdgb.fields {
-		if !subjectdigest.ValidColumn(f) {
-			return &ValidationError{Name: f, err: fmt.Errorf("invalid field %q for group-by", f)}
-		}
+func (sdgb *SubjectDigestGroupBy) sqlScan(ctx context.Context, root *SubjectDigestQuery, v any) error {
+	selector := root.sqlQuery(ctx).Select()
+	aggregation := make([]string, 0, len(sdgb.fns))
+	for _, fn := range sdgb.fns {
+		aggregation = append(aggregation, fn(selector))
 	}
-	selector := sdgb.sqlQuery()
+	if len(selector.SelectedColumns()) == 0 {
+		columns := make([]string, 0, len(*sdgb.flds)+len(sdgb.fns))
+		for _, f := range *sdgb.flds {
+			columns = append(columns, selector.C(f))
+		}
+		columns = append(columns, aggregation...)
+		selector.Select(columns...)
+	}
+	selector.GroupBy(selector.Columns(*sdgb.flds...)...)
 	if err := selector.Err(); err != nil {
 		return err
 	}
 	rows := &sql.Rows{}
 	query, args := selector.Query()
-	if err := sdgb.driver.Query(ctx, query, args, rows); err != nil {
+	if err := sdgb.build.driver.Query(ctx, query, args, rows); err != nil {
 		return err
 	}
 	defer rows.Close()
 	return sql.ScanSlice(rows, v)
 }
 
-func (sdgb *SubjectDigestGroupBy) sqlQuery() *sql.Selector {
-	selector := sdgb.sql.Select()
-	aggregation := make([]string, 0, len(sdgb.fns))
-	for _, fn := range sdgb.fns {
-		aggregation = append(aggregation, fn(selector))
-	}
-	// If no columns were selected in a custom aggregation function, the default
-	// selection is the fields used for "group-by", and the aggregation functions.
-	if len(selector.SelectedColumns()) == 0 {
-		columns := make([]string, 0, len(sdgb.fields)+len(sdgb.fns))
-		for _, f := range sdgb.fields {
-			columns = append(columns, selector.C(f))
-		}
-		columns = append(columns, aggregation...)
-		selector.Select(columns...)
-	}
-	return selector.GroupBy(selector.Columns(sdgb.fields...)...)
-}
-
 // SubjectDigestSelect is the builder for selecting fields of SubjectDigest entities.
 type SubjectDigestSelect struct {
 	*SubjectDigestQuery
 	selector
-	// intermediate query (i.e. traversal path).
-	sql *sql.Selector
+}
+
+// Aggregate adds the given aggregation functions to the selector query.
+func (sds *SubjectDigestSelect) Aggregate(fns ...AggregateFunc) *SubjectDigestSelect {
+	sds.fns = append(sds.fns, fns...)
+	return sds
 }
 
 // Scan applies the selector query and scans the result into the given value.
 func (sds *SubjectDigestSelect) Scan(ctx context.Context, v any) error {
+	ctx = setContextOp(ctx, sds.ctx, "Select")
 	if err := sds.prepareQuery(ctx); err != nil {
 		return err
 	}
-	sds.sql = sds.SubjectDigestQuery.sqlQuery(ctx)
-	return sds.sqlScan(ctx, v)
+	return scanWithInterceptors[*SubjectDigestQuery, *SubjectDigestSelect](ctx, sds.SubjectDigestQuery, sds, sds.inters, v)
 }
 
-func (sds *SubjectDigestSelect) sqlScan(ctx context.Context, v any) error {
+func (sds *SubjectDigestSelect) sqlScan(ctx context.Context, root *SubjectDigestQuery, v any) error {
+	selector := root.sqlQuery(ctx)
+	aggregation := make([]string, 0, len(sds.fns))
+	for _, fn := range sds.fns {
+		aggregation = append(aggregation, fn(selector))
+	}
+	switch n := len(*sds.selector.flds); {
+	case n == 0 && len(aggregation) > 0:
+		selector.Select(aggregation...)
+	case n != 0 && len(aggregation) > 0:
+		selector.AppendSelect(aggregation...)
+	}
 	rows := &sql.Rows{}
-	query, args := sds.sql.Query()
+	query, args := selector.Query()
 	if err := sds.driver.Query(ctx, query, args, rows); err != nil {
 		return err
 	}

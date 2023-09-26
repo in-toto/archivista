@@ -6,6 +6,7 @@ import (
 	"fmt"
 	"strings"
 
+	"entgo.io/ent"
 	"entgo.io/ent/dialect/sql"
 	"github.com/testifysec/archivista/ent/attestationcollection"
 	"github.com/testifysec/archivista/ent/statement"
@@ -22,6 +23,7 @@ type AttestationCollection struct {
 	// The values are being populated by the AttestationCollectionQuery when eager-loading is set.
 	Edges                             AttestationCollectionEdges `json:"edges"`
 	statement_attestation_collections *int
+	selectValues                      sql.SelectValues
 }
 
 // AttestationCollectionEdges holds the relations/edges for other nodes in the graph.
@@ -34,7 +36,9 @@ type AttestationCollectionEdges struct {
 	// type was loaded (or requested) in eager-loading or not.
 	loadedTypes [2]bool
 	// totalCount holds the count of the edges above.
-	totalCount [2]*int
+	totalCount [2]map[string]int
+
+	namedAttestations map[string][]*Attestation
 }
 
 // AttestationsOrErr returns the Attestations value or an error if the edge
@@ -71,7 +75,7 @@ func (*AttestationCollection) scanValues(columns []string) ([]any, error) {
 		case attestationcollection.ForeignKeys[0]: // statement_attestation_collections
 			values[i] = new(sql.NullInt64)
 		default:
-			return nil, fmt.Errorf("unexpected column %q for type AttestationCollection", columns[i])
+			values[i] = new(sql.UnknownType)
 		}
 	}
 	return values, nil
@@ -104,26 +108,34 @@ func (ac *AttestationCollection) assignValues(columns []string, values []any) er
 				ac.statement_attestation_collections = new(int)
 				*ac.statement_attestation_collections = int(value.Int64)
 			}
+		default:
+			ac.selectValues.Set(columns[i], values[i])
 		}
 	}
 	return nil
 }
 
+// Value returns the ent.Value that was dynamically selected and assigned to the AttestationCollection.
+// This includes values selected through modifiers, order, etc.
+func (ac *AttestationCollection) Value(name string) (ent.Value, error) {
+	return ac.selectValues.Get(name)
+}
+
 // QueryAttestations queries the "attestations" edge of the AttestationCollection entity.
 func (ac *AttestationCollection) QueryAttestations() *AttestationQuery {
-	return (&AttestationCollectionClient{config: ac.config}).QueryAttestations(ac)
+	return NewAttestationCollectionClient(ac.config).QueryAttestations(ac)
 }
 
 // QueryStatement queries the "statement" edge of the AttestationCollection entity.
 func (ac *AttestationCollection) QueryStatement() *StatementQuery {
-	return (&AttestationCollectionClient{config: ac.config}).QueryStatement(ac)
+	return NewAttestationCollectionClient(ac.config).QueryStatement(ac)
 }
 
 // Update returns a builder for updating this AttestationCollection.
 // Note that you need to call AttestationCollection.Unwrap() before calling this method if this AttestationCollection
 // was returned from a transaction, and the transaction was committed or rolled back.
 func (ac *AttestationCollection) Update() *AttestationCollectionUpdateOne {
-	return (&AttestationCollectionClient{config: ac.config}).UpdateOne(ac)
+	return NewAttestationCollectionClient(ac.config).UpdateOne(ac)
 }
 
 // Unwrap unwraps the AttestationCollection entity that was returned from a transaction after it was closed,
@@ -148,11 +160,29 @@ func (ac *AttestationCollection) String() string {
 	return builder.String()
 }
 
-// AttestationCollections is a parsable slice of AttestationCollection.
-type AttestationCollections []*AttestationCollection
+// NamedAttestations returns the Attestations named value or an error if the edge was not
+// loaded in eager-loading with this name.
+func (ac *AttestationCollection) NamedAttestations(name string) ([]*Attestation, error) {
+	if ac.Edges.namedAttestations == nil {
+		return nil, &NotLoadedError{edge: name}
+	}
+	nodes, ok := ac.Edges.namedAttestations[name]
+	if !ok {
+		return nil, &NotLoadedError{edge: name}
+	}
+	return nodes, nil
+}
 
-func (ac AttestationCollections) config(cfg config) {
-	for _i := range ac {
-		ac[_i].config = cfg
+func (ac *AttestationCollection) appendNamedAttestations(name string, edges ...*Attestation) {
+	if ac.Edges.namedAttestations == nil {
+		ac.Edges.namedAttestations = make(map[string][]*Attestation)
+	}
+	if len(edges) == 0 {
+		ac.Edges.namedAttestations[name] = []*Attestation{}
+	} else {
+		ac.Edges.namedAttestations[name] = append(ac.Edges.namedAttestations[name], edges...)
 	}
 }
+
+// AttestationCollections is a parsable slice of AttestationCollection.
+type AttestationCollections []*AttestationCollection

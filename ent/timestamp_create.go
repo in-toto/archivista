@@ -59,49 +59,7 @@ func (tc *TimestampCreate) Mutation() *TimestampMutation {
 
 // Save creates the Timestamp in the database.
 func (tc *TimestampCreate) Save(ctx context.Context) (*Timestamp, error) {
-	var (
-		err  error
-		node *Timestamp
-	)
-	if len(tc.hooks) == 0 {
-		if err = tc.check(); err != nil {
-			return nil, err
-		}
-		node, err = tc.sqlSave(ctx)
-	} else {
-		var mut Mutator = MutateFunc(func(ctx context.Context, m Mutation) (Value, error) {
-			mutation, ok := m.(*TimestampMutation)
-			if !ok {
-				return nil, fmt.Errorf("unexpected mutation type %T", m)
-			}
-			if err = tc.check(); err != nil {
-				return nil, err
-			}
-			tc.mutation = mutation
-			if node, err = tc.sqlSave(ctx); err != nil {
-				return nil, err
-			}
-			mutation.id = &node.ID
-			mutation.done = true
-			return node, err
-		})
-		for i := len(tc.hooks) - 1; i >= 0; i-- {
-			if tc.hooks[i] == nil {
-				return nil, fmt.Errorf("ent: uninitialized hook (forgotten import ent/runtime?)")
-			}
-			mut = tc.hooks[i](mut)
-		}
-		v, err := mut.Mutate(ctx, tc.mutation)
-		if err != nil {
-			return nil, err
-		}
-		nv, ok := v.(*Timestamp)
-		if !ok {
-			return nil, fmt.Errorf("unexpected node type %T returned from TimestampMutation", v)
-		}
-		node = nv
-	}
-	return node, err
+	return withHooks(ctx, tc.sqlSave, tc.mutation, tc.hooks)
 }
 
 // SaveX calls Save and panics if Save returns an error.
@@ -138,6 +96,9 @@ func (tc *TimestampCreate) check() error {
 }
 
 func (tc *TimestampCreate) sqlSave(ctx context.Context) (*Timestamp, error) {
+	if err := tc.check(); err != nil {
+		return nil, err
+	}
 	_node, _spec := tc.createSpec()
 	if err := sqlgraph.CreateNode(ctx, tc.driver, _spec); err != nil {
 		if sqlgraph.IsConstraintError(err) {
@@ -147,34 +108,22 @@ func (tc *TimestampCreate) sqlSave(ctx context.Context) (*Timestamp, error) {
 	}
 	id := _spec.ID.Value.(int64)
 	_node.ID = int(id)
+	tc.mutation.id = &_node.ID
+	tc.mutation.done = true
 	return _node, nil
 }
 
 func (tc *TimestampCreate) createSpec() (*Timestamp, *sqlgraph.CreateSpec) {
 	var (
 		_node = &Timestamp{config: tc.config}
-		_spec = &sqlgraph.CreateSpec{
-			Table: timestamp.Table,
-			ID: &sqlgraph.FieldSpec{
-				Type:   field.TypeInt,
-				Column: timestamp.FieldID,
-			},
-		}
+		_spec = sqlgraph.NewCreateSpec(timestamp.Table, sqlgraph.NewFieldSpec(timestamp.FieldID, field.TypeInt))
 	)
 	if value, ok := tc.mutation.GetType(); ok {
-		_spec.Fields = append(_spec.Fields, &sqlgraph.FieldSpec{
-			Type:   field.TypeString,
-			Value:  value,
-			Column: timestamp.FieldType,
-		})
+		_spec.SetField(timestamp.FieldType, field.TypeString, value)
 		_node.Type = value
 	}
 	if value, ok := tc.mutation.Timestamp(); ok {
-		_spec.Fields = append(_spec.Fields, &sqlgraph.FieldSpec{
-			Type:   field.TypeTime,
-			Value:  value,
-			Column: timestamp.FieldTimestamp,
-		})
+		_spec.SetField(timestamp.FieldTimestamp, field.TypeTime, value)
 		_node.Timestamp = value
 	}
 	if nodes := tc.mutation.SignatureIDs(); len(nodes) > 0 {
@@ -185,10 +134,7 @@ func (tc *TimestampCreate) createSpec() (*Timestamp, *sqlgraph.CreateSpec) {
 			Columns: []string{timestamp.SignatureColumn},
 			Bidi:    false,
 			Target: &sqlgraph.EdgeTarget{
-				IDSpec: &sqlgraph.FieldSpec{
-					Type:   field.TypeInt,
-					Column: signature.FieldID,
-				},
+				IDSpec: sqlgraph.NewFieldSpec(signature.FieldID, field.TypeInt),
 			},
 		}
 		for _, k := range nodes {
@@ -203,11 +149,15 @@ func (tc *TimestampCreate) createSpec() (*Timestamp, *sqlgraph.CreateSpec) {
 // TimestampCreateBulk is the builder for creating many Timestamp entities in bulk.
 type TimestampCreateBulk struct {
 	config
+	err      error
 	builders []*TimestampCreate
 }
 
 // Save creates the Timestamp entities in the database.
 func (tcb *TimestampCreateBulk) Save(ctx context.Context) ([]*Timestamp, error) {
+	if tcb.err != nil {
+		return nil, tcb.err
+	}
 	specs := make([]*sqlgraph.CreateSpec, len(tcb.builders))
 	nodes := make([]*Timestamp, len(tcb.builders))
 	mutators := make([]Mutator, len(tcb.builders))
@@ -223,8 +173,8 @@ func (tcb *TimestampCreateBulk) Save(ctx context.Context) ([]*Timestamp, error) 
 					return nil, err
 				}
 				builder.mutation = mutation
-				nodes[i], specs[i] = builder.createSpec()
 				var err error
+				nodes[i], specs[i] = builder.createSpec()
 				if i < len(mutators)-1 {
 					_, err = mutators[i+1].Mutate(root, tcb.builders[i+1].mutation)
 				} else {

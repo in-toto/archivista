@@ -6,6 +6,7 @@ import (
 	"fmt"
 	"strings"
 
+	"entgo.io/ent"
 	"entgo.io/ent/dialect/sql"
 	"github.com/testifysec/archivista/ent/subject"
 	"github.com/testifysec/archivista/ent/subjectdigest"
@@ -24,6 +25,7 @@ type SubjectDigest struct {
 	// The values are being populated by the SubjectDigestQuery when eager-loading is set.
 	Edges                   SubjectDigestEdges `json:"edges"`
 	subject_subject_digests *int
+	selectValues            sql.SelectValues
 }
 
 // SubjectDigestEdges holds the relations/edges for other nodes in the graph.
@@ -34,7 +36,7 @@ type SubjectDigestEdges struct {
 	// type was loaded (or requested) in eager-loading or not.
 	loadedTypes [1]bool
 	// totalCount holds the count of the edges above.
-	totalCount [1]*int
+	totalCount [1]map[string]int
 }
 
 // SubjectOrErr returns the Subject value or an error if the edge
@@ -62,7 +64,7 @@ func (*SubjectDigest) scanValues(columns []string) ([]any, error) {
 		case subjectdigest.ForeignKeys[0]: // subject_subject_digests
 			values[i] = new(sql.NullInt64)
 		default:
-			return nil, fmt.Errorf("unexpected column %q for type SubjectDigest", columns[i])
+			values[i] = new(sql.UnknownType)
 		}
 	}
 	return values, nil
@@ -101,21 +103,29 @@ func (sd *SubjectDigest) assignValues(columns []string, values []any) error {
 				sd.subject_subject_digests = new(int)
 				*sd.subject_subject_digests = int(value.Int64)
 			}
+		default:
+			sd.selectValues.Set(columns[i], values[i])
 		}
 	}
 	return nil
 }
 
+// GetValue returns the ent.Value that was dynamically selected and assigned to the SubjectDigest.
+// This includes values selected through modifiers, order, etc.
+func (sd *SubjectDigest) GetValue(name string) (ent.Value, error) {
+	return sd.selectValues.Get(name)
+}
+
 // QuerySubject queries the "subject" edge of the SubjectDigest entity.
 func (sd *SubjectDigest) QuerySubject() *SubjectQuery {
-	return (&SubjectDigestClient{config: sd.config}).QuerySubject(sd)
+	return NewSubjectDigestClient(sd.config).QuerySubject(sd)
 }
 
 // Update returns a builder for updating this SubjectDigest.
 // Note that you need to call SubjectDigest.Unwrap() before calling this method if this SubjectDigest
 // was returned from a transaction, and the transaction was committed or rolled back.
 func (sd *SubjectDigest) Update() *SubjectDigestUpdateOne {
-	return (&SubjectDigestClient{config: sd.config}).UpdateOne(sd)
+	return NewSubjectDigestClient(sd.config).UpdateOne(sd)
 }
 
 // Unwrap unwraps the SubjectDigest entity that was returned from a transaction after it was closed,
@@ -145,9 +155,3 @@ func (sd *SubjectDigest) String() string {
 
 // SubjectDigests is a parsable slice of SubjectDigest.
 type SubjectDigests []*SubjectDigest
-
-func (sd SubjectDigests) config(cfg config) {
-	for _i := range sd {
-		sd[_i].config = cfg
-	}
-}

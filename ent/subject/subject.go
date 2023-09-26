@@ -2,6 +2,11 @@
 
 package subject
 
+import (
+	"entgo.io/ent/dialect/sql"
+	"entgo.io/ent/dialect/sql/sqlgraph"
+)
+
 const (
 	// Label holds the string label denoting the subject type in the database.
 	Label = "subject"
@@ -62,3 +67,51 @@ var (
 	// NameValidator is a validator for the "name" field. It is called by the builders before save.
 	NameValidator func(string) error
 )
+
+// OrderOption defines the ordering options for the Subject queries.
+type OrderOption func(*sql.Selector)
+
+// ByID orders the results by the id field.
+func ByID(opts ...sql.OrderTermOption) OrderOption {
+	return sql.OrderByField(FieldID, opts...).ToFunc()
+}
+
+// ByName orders the results by the name field.
+func ByName(opts ...sql.OrderTermOption) OrderOption {
+	return sql.OrderByField(FieldName, opts...).ToFunc()
+}
+
+// BySubjectDigestsCount orders the results by subject_digests count.
+func BySubjectDigestsCount(opts ...sql.OrderTermOption) OrderOption {
+	return func(s *sql.Selector) {
+		sqlgraph.OrderByNeighborsCount(s, newSubjectDigestsStep(), opts...)
+	}
+}
+
+// BySubjectDigests orders the results by subject_digests terms.
+func BySubjectDigests(term sql.OrderTerm, terms ...sql.OrderTerm) OrderOption {
+	return func(s *sql.Selector) {
+		sqlgraph.OrderByNeighborTerms(s, newSubjectDigestsStep(), append([]sql.OrderTerm{term}, terms...)...)
+	}
+}
+
+// ByStatementField orders the results by statement field.
+func ByStatementField(field string, opts ...sql.OrderTermOption) OrderOption {
+	return func(s *sql.Selector) {
+		sqlgraph.OrderByNeighborTerms(s, newStatementStep(), sql.OrderByField(field, opts...))
+	}
+}
+func newSubjectDigestsStep() *sqlgraph.Step {
+	return sqlgraph.NewStep(
+		sqlgraph.From(Table, FieldID),
+		sqlgraph.To(SubjectDigestsInverseTable, FieldID),
+		sqlgraph.Edge(sqlgraph.O2M, false, SubjectDigestsTable, SubjectDigestsColumn),
+	)
+}
+func newStatementStep() *sqlgraph.Step {
+	return sqlgraph.NewStep(
+		sqlgraph.From(Table, FieldID),
+		sqlgraph.To(StatementInverseTable, FieldID),
+		sqlgraph.Edge(sqlgraph.M2O, true, StatementTable, StatementColumn),
+	)
+}
