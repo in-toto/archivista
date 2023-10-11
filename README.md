@@ -81,6 +81,67 @@ Additionally Archivista exposes a GraphQL API. By default the GraphQL playground
 is capable of uploading and downloading attestations as well as doing some basic queries such as finding all
 attestations with a specified subject and retrieving all subjects for a specified attestation.
 
+## Navigating the Graph
+
+As previously mentioned, Archivista offers a GraphQL API that enables users to discover attestations. When Archivista ingests
+an attestation some metadata will be stored into the SQL metadata store. This metadata is exposed through the GraphQL API.
+Archivista uses [Relay connections](https://relay.dev/graphql/connections.htm) for querying and pagination.
+
+Here is an entity relationship diagram of the metadata that is currently available.
+
+```mermaid
+erDiagram
+dsse ||--|| statement : Contains
+statement ||--o{ subject : has
+subject ||--|{ subjectDigest : has
+statement ||--o| attestationCollection : contains
+attestationCollection ||--|{ attestation : contains
+dsse ||--|{ payloadDigest : has
+dsse ||--|{ signature : has
+signature ||--o{ timestamp : has
+
+dsse {
+    string gitoidSha256
+    string payloadType
+}
+
+statement {
+    string predicate
+}
+
+subject {
+    string name
+}
+
+subjectDigest {
+    string algorithm
+    string value
+}
+
+attestationCollection {
+    string name
+}
+
+attestation {
+    string type
+}
+
+payloadDigest {
+    string algorithm
+    string value
+}
+
+signature {
+    string keyID
+    string signature
+}
+
+timestamp {
+    string type
+    time timestamp
+}
+```
+
 ## What's Next
 
 We would like to expand the types of data Archivista can ingest as well as expand the metadata Archivista collected about
