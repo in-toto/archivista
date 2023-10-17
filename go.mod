@@ -1,6 +1,6 @@
 module github.com/testifysec/archivista
 
-go 1.19
+go 1.21
 
 require (
 	ariga.io/sqlcomment v0.0.0-20211020114721-6bb67a62a61a
