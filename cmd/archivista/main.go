@@ -139,13 +139,17 @@ func main() {
 	if err != nil {
 		logrus.Fatalf("unable to start http listener: %+v", err)
 	}
-
-	go func() {
-		if err := http.Serve(listener, handlers.CORS(
+	srv := &http.Server{
+		Handler: handlers.CORS(
 			handlers.AllowedOrigins(cfg.CORSAllowOrigins),
 			handlers.AllowedMethods([]string{"GET", "POST", "OPTIONS"}),
 			handlers.AllowedHeaders([]string{"Accept", "Content-Type", "Content-Length", "Accept-Encoding", "X-CSRF-Token", "Authorization"}),
-		)(router)); err != nil {
+		)(router),
+		ReadTimeout:  5 * time.Second,
+		WriteTimeout: 10 * time.Second,
+	}
+	go func() {
+		if err := srv.Serve(listener); err != nil {
 			logrus.Fatalf("unable to start http server: %+v", err)
 		}
 	}()
