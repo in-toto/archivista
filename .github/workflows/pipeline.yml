@@ -59,12 +59,12 @@ jobs:
             command: ./test/test.sh
 
     release:
+        needs: e2e-tests
         permissions:
             id-token: write
             contents: write
             packages: write
         runs-on: ubuntu-latest
-        needs: test
         if: github.event_name == 'push' && contains(github.ref, 'refs/tags/')
         
         steps:
