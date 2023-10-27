@@ -41,6 +41,7 @@ jobs:
           command: go vet ./...
 
     test:
+        needs: [fmt, static_analysis]
         uses: ./.github/workflows/witness.yml
         with: 
             pull_request: ${{ github.event_name == 'pull_request' }}
@@ -56,3 +57,38 @@ jobs:
             step: "e2e"
             attestations: "github"
             command: ./test/test.sh
+
+    release:
+        permissions:
+            id-token: write
+            contents: write
+            packages: write
+        runs-on: ubuntu-latest
+        needs: test
+        if: github.event_name == 'push' && contains(github.ref, 'refs/tags/')
+        
+        steps:
+            - uses: actions/checkout@v4.1.1
+            - uses: actions/setup-go@v4.1.0
+              with:
+                go-version: 1.21.x
+    
+            - name: Login to GitHub Container Registry
+              uses: docker/login-action@v2
+              with:
+                registry: ghcr.io
+                username: ${{ github.actor }}
+                password: ${{ secrets.GITHUB_TOKEN }}
+    
+            - name: Download GoReleaser
+              run: go install github.com/goreleaser/goreleaser@latest
+    
+            - name: Run GoReleaser
+              uses: testifysec/witness-run-action@40aa4ef36fc431a37de7c3faebcb66513c03b934
+              env:
+                GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+                GITHUB_REPOSITORY_OWNER: ${{ github.repository_owner }}
+              with:
+                step: "build"
+                attestations: "github"
+                command: goreleaser release --clean
