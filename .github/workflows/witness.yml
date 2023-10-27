@@ -32,13 +32,10 @@ jobs:
     witness:
         runs-on: ubuntu-latest
         steps:
-          - name: Install Go
-            uses: actions/setup-go@v2
+          - uses: actions/checkout@v4.1.1
+          - uses: actions/setup-go@v4.1.0
             with:
               go-version: 1.21.x
-          
-          - name: Checkout code
-            uses: actions/checkout@v2
 
           - if: ${{ inputs.pull_request == false }}
             uses: testifysec/witness-run-action@40aa4ef36fc431a37de7c3faebcb66513c03b934

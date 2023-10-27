@@ -25,18 +25,12 @@ on:
     pull_request:
 jobs:
     fmt:
-        runs-on: ubuntu-latest
-        steps:
-            - name: Install Go
-              uses: actions/setup-go@v2
-              with:
-                go-version: 1.21.x
-            
-            - name: Checkout code
-              uses: actions/checkout@v2
-
-            - name: Go fmt
-              run: test -z $(go fmt ./...)
+        uses: ./.github/workflows/witness.yml
+        with:
+          pull_request: ${{ github.event_name == 'pull_request' }}
+          step: static-analysis
+          attestations: "github"
+          command: go fmt ./...
 
     static_analysis:
         uses: ./.github/workflows/witness.yml
@@ -53,17 +47,6 @@ jobs:
             step: "test"
             attestations: "github"
             command: go test -v -coverprofile=profile.cov -covermode=atomic ./...
-
-    upload-coverage:
-        needs: test
-        runs-on: ubuntu-latest
-        env:
-            COVERALLS_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-        steps:
-            - name: Upload coverage
-              run: |
-                GO111MODULE=off go get github.com/mattn/goveralls
-                $(go env GOPATH)/bin/goveralls -coverprofile=profile.cov -service=github
 
     e2e-tests:
         needs: test
