@@ -41,7 +41,7 @@ jobs:
             uses: testifysec/witness-run-action@40aa4ef36fc431a37de7c3faebcb66513c03b934
             with:
               step: ${{ inputs.step }}
-              attestations: $${ inputs.attestations }}
-              command: /bin/sh -c "$${ inputs.command }}"
+              attestations: ${{ inputs.attestations }}
+              command: /bin/sh -c "${{ inputs.command }}"
           - if: ${{ inputs.pull_request == true }}
             run: ${{ inputs.command }}
