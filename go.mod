@@ -19,7 +19,7 @@ require (
 	github.com/minio/minio-go v6.0.14+incompatible
 	github.com/sirupsen/logrus v1.9.3
 	github.com/spf13/cobra v1.7.0
-	github.com/stretchr/testify v1.8.3
+	github.com/stretchr/testify v1.8.4
 	github.com/testifysec/archivista-api v0.0.0-20230303165309-a31a92afd132
 	github.com/testifysec/go-witness v0.1.16
 	github.com/vektah/gqlparser/v2 v2.4.7
