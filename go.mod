@@ -23,7 +23,7 @@ require (
 	github.com/testifysec/archivista-api v0.0.0-20230303165309-a31a92afd132
 	github.com/testifysec/go-witness v0.1.16
 	github.com/vektah/gqlparser/v2 v2.4.7
-	golang.org/x/sync v0.4.0
+	golang.org/x/sync v0.5.0
 )
 
 require (
