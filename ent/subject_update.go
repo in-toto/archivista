@@ -35,6 +35,14 @@ func (su *SubjectUpdate) SetName(s string) *SubjectUpdate {
 	return su
 }
 
+// SetNillableName sets the "name" field if the given value is not nil.
+func (su *SubjectUpdate) SetNillableName(s *string) *SubjectUpdate {
+	if s != nil {
+		su.SetName(*s)
+	}
+	return su
+}
+
 // AddSubjectDigestIDs adds the "subject_digests" edge to the SubjectDigest entity by IDs.
 func (su *SubjectUpdate) AddSubjectDigestIDs(ids ...int) *SubjectUpdate {
 	su.mutation.AddSubjectDigestIDs(ids...)
@@ -250,6 +258,14 @@ type SubjectUpdateOne struct {
 // SetName sets the "name" field.
 func (suo *SubjectUpdateOne) SetName(s string) *SubjectUpdateOne {
 	suo.mutation.SetName(s)
+	return suo
+}
+
+// SetNillableName sets the "name" field if the given value is not nil.
+func (suo *SubjectUpdateOne) SetNillableName(s *string) *SubjectUpdateOne {
+	if s != nil {
+		suo.SetName(*s)
+	}
 	return suo
 }
 

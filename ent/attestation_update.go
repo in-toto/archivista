@@ -34,6 +34,14 @@ func (au *AttestationUpdate) SetType(s string) *AttestationUpdate {
 	return au
 }
 
+// SetNillableType sets the "type" field if the given value is not nil.
+func (au *AttestationUpdate) SetNillableType(s *string) *AttestationUpdate {
+	if s != nil {
+		au.SetType(*s)
+	}
+	return au
+}
+
 // SetAttestationCollectionID sets the "attestation_collection" edge to the AttestationCollection entity by ID.
 func (au *AttestationUpdate) SetAttestationCollectionID(id int) *AttestationUpdate {
 	au.mutation.SetAttestationCollectionID(id)
@@ -163,6 +171,14 @@ type AttestationUpdateOne struct {
 // SetType sets the "type" field.
 func (auo *AttestationUpdateOne) SetType(s string) *AttestationUpdateOne {
 	auo.mutation.SetType(s)
+	return auo
+}
+
+// SetNillableType sets the "type" field if the given value is not nil.
+func (auo *AttestationUpdateOne) SetNillableType(s *string) *AttestationUpdateOne {
+	if s != nil {
+		auo.SetType(*s)
+	}
 	return auo
 }
 

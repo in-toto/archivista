@@ -34,9 +34,25 @@ func (sdu *SubjectDigestUpdate) SetAlgorithm(s string) *SubjectDigestUpdate {
 	return sdu
 }
 
+// SetNillableAlgorithm sets the "algorithm" field if the given value is not nil.
+func (sdu *SubjectDigestUpdate) SetNillableAlgorithm(s *string) *SubjectDigestUpdate {
+	if s != nil {
+		sdu.SetAlgorithm(*s)
+	}
+	return sdu
+}
+
 // SetValue sets the "value" field.
 func (sdu *SubjectDigestUpdate) SetValue(s string) *SubjectDigestUpdate {
 	sdu.mutation.SetValue(s)
+	return sdu
+}
+
+// SetNillableValue sets the "value" field if the given value is not nil.
+func (sdu *SubjectDigestUpdate) SetNillableValue(s *string) *SubjectDigestUpdate {
+	if s != nil {
+		sdu.SetValue(*s)
+	}
 	return sdu
 }
 
@@ -185,9 +201,25 @@ func (sduo *SubjectDigestUpdateOne) SetAlgorithm(s string) *SubjectDigestUpdateO
 	return sduo
 }
 
+// SetNillableAlgorithm sets the "algorithm" field if the given value is not nil.
+func (sduo *SubjectDigestUpdateOne) SetNillableAlgorithm(s *string) *SubjectDigestUpdateOne {
+	if s != nil {
+		sduo.SetAlgorithm(*s)
+	}
+	return sduo
+}
+
 // SetValue sets the "value" field.
 func (sduo *SubjectDigestUpdateOne) SetValue(s string) *SubjectDigestUpdateOne {
 	sduo.mutation.SetValue(s)
+	return sduo
+}
+
+// SetNillableValue sets the "value" field if the given value is not nil.
+func (sduo *SubjectDigestUpdateOne) SetNillableValue(s *string) *SubjectDigestUpdateOne {
+	if s != nil {
+		sduo.SetValue(*s)
+	}
 	return sduo
 }
 

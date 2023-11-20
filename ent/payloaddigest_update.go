@@ -34,9 +34,25 @@ func (pdu *PayloadDigestUpdate) SetAlgorithm(s string) *PayloadDigestUpdate {
 	return pdu
 }
 
+// SetNillableAlgorithm sets the "algorithm" field if the given value is not nil.
+func (pdu *PayloadDigestUpdate) SetNillableAlgorithm(s *string) *PayloadDigestUpdate {
+	if s != nil {
+		pdu.SetAlgorithm(*s)
+	}
+	return pdu
+}
+
 // SetValue sets the "value" field.
 func (pdu *PayloadDigestUpdate) SetValue(s string) *PayloadDigestUpdate {
 	pdu.mutation.SetValue(s)
+	return pdu
+}
+
+// SetNillableValue sets the "value" field if the given value is not nil.
+func (pdu *PayloadDigestUpdate) SetNillableValue(s *string) *PayloadDigestUpdate {
+	if s != nil {
+		pdu.SetValue(*s)
+	}
 	return pdu
 }
 
@@ -185,9 +201,25 @@ func (pduo *PayloadDigestUpdateOne) SetAlgorithm(s string) *PayloadDigestUpdateO
 	return pduo
 }
 
+// SetNillableAlgorithm sets the "algorithm" field if the given value is not nil.
+func (pduo *PayloadDigestUpdateOne) SetNillableAlgorithm(s *string) *PayloadDigestUpdateOne {
+	if s != nil {
+		pduo.SetAlgorithm(*s)
+	}
+	return pduo
+}
+
 // SetValue sets the "value" field.
 func (pduo *PayloadDigestUpdateOne) SetValue(s string) *PayloadDigestUpdateOne {
 	pduo.mutation.SetValue(s)
+	return pduo
+}
+
+// SetNillableValue sets the "value" field if the given value is not nil.
+func (pduo *PayloadDigestUpdateOne) SetNillableValue(s *string) *PayloadDigestUpdateOne {
+	if s != nil {
+		pduo.SetValue(*s)
+	}
 	return pduo
 }
 

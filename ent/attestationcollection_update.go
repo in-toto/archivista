@@ -35,6 +35,14 @@ func (acu *AttestationCollectionUpdate) SetName(s string) *AttestationCollection
 	return acu
 }
 
+// SetNillableName sets the "name" field if the given value is not nil.
+func (acu *AttestationCollectionUpdate) SetNillableName(s *string) *AttestationCollectionUpdate {
+	if s != nil {
+		acu.SetName(*s)
+	}
+	return acu
+}
+
 // AddAttestationIDs adds the "attestations" edge to the Attestation entity by IDs.
 func (acu *AttestationCollectionUpdate) AddAttestationIDs(ids ...int) *AttestationCollectionUpdate {
 	acu.mutation.AddAttestationIDs(ids...)
@@ -245,6 +253,14 @@ type AttestationCollectionUpdateOne struct {
 // SetName sets the "name" field.
 func (acuo *AttestationCollectionUpdateOne) SetName(s string) *AttestationCollectionUpdateOne {
 	acuo.mutation.SetName(s)
+	return acuo
+}
+
+// SetNillableName sets the "name" field if the given value is not nil.
+func (acuo *AttestationCollectionUpdateOne) SetNillableName(s *string) *AttestationCollectionUpdateOne {
+	if s != nil {
+		acuo.SetName(*s)
+	}
 	return acuo
 }
 

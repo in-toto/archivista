@@ -35,9 +35,25 @@ func (su *SignatureUpdate) SetKeyID(s string) *SignatureUpdate {
 	return su
 }
 
+// SetNillableKeyID sets the "key_id" field if the given value is not nil.
+func (su *SignatureUpdate) SetNillableKeyID(s *string) *SignatureUpdate {
+	if s != nil {
+		su.SetKeyID(*s)
+	}
+	return su
+}
+
 // SetSignature sets the "signature" field.
 func (su *SignatureUpdate) SetSignature(s string) *SignatureUpdate {
 	su.mutation.SetSignature(s)
+	return su
+}
+
+// SetNillableSignature sets the "signature" field if the given value is not nil.
+func (su *SignatureUpdate) SetNillableSignature(s *string) *SignatureUpdate {
+	if s != nil {
+		su.SetSignature(*s)
+	}
 	return su
 }
 
@@ -267,9 +283,25 @@ func (suo *SignatureUpdateOne) SetKeyID(s string) *SignatureUpdateOne {
 	return suo
 }
 
+// SetNillableKeyID sets the "key_id" field if the given value is not nil.
+func (suo *SignatureUpdateOne) SetNillableKeyID(s *string) *SignatureUpdateOne {
+	if s != nil {
+		suo.SetKeyID(*s)
+	}
+	return suo
+}
+
 // SetSignature sets the "signature" field.
 func (suo *SignatureUpdateOne) SetSignature(s string) *SignatureUpdateOne {
 	suo.mutation.SetSignature(s)
+	return suo
+}
+
+// SetNillableSignature sets the "signature" field if the given value is not nil.
+func (suo *SignatureUpdateOne) SetNillableSignature(s *string) *SignatureUpdateOne {
+	if s != nil {
+		suo.SetSignature(*s)
+	}
 	return suo
 }
 
