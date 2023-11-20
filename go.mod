@@ -5,7 +5,7 @@ go 1.19
 require (
 	ariga.io/sqlcomment v0.1.0
 	entgo.io/contrib v0.4.5
-	entgo.io/ent v0.12.4
+	entgo.io/ent v0.12.5
 	github.com/99designs/gqlgen v0.17.5-0.20220428154617-9250f9ac1f90
 	github.com/antonfisher/nested-logrus-formatter v1.3.1
 	github.com/digitorus/timestamp v0.0.0-20230220124323-d542479a2425
