@@ -35,9 +35,25 @@ func (tu *TimestampUpdate) SetType(s string) *TimestampUpdate {
 	return tu
 }
 
+// SetNillableType sets the "type" field if the given value is not nil.
+func (tu *TimestampUpdate) SetNillableType(s *string) *TimestampUpdate {
+	if s != nil {
+		tu.SetType(*s)
+	}
+	return tu
+}
+
 // SetTimestamp sets the "timestamp" field.
 func (tu *TimestampUpdate) SetTimestamp(t time.Time) *TimestampUpdate {
 	tu.mutation.SetTimestamp(t)
+	return tu
+}
+
+// SetNillableTimestamp sets the "timestamp" field if the given value is not nil.
+func (tu *TimestampUpdate) SetNillableTimestamp(t *time.Time) *TimestampUpdate {
+	if t != nil {
+		tu.SetTimestamp(*t)
+	}
 	return tu
 }
 
@@ -168,9 +184,25 @@ func (tuo *TimestampUpdateOne) SetType(s string) *TimestampUpdateOne {
 	return tuo
 }
 
+// SetNillableType sets the "type" field if the given value is not nil.
+func (tuo *TimestampUpdateOne) SetNillableType(s *string) *TimestampUpdateOne {
+	if s != nil {
+		tuo.SetType(*s)
+	}
+	return tuo
+}
+
 // SetTimestamp sets the "timestamp" field.
 func (tuo *TimestampUpdateOne) SetTimestamp(t time.Time) *TimestampUpdateOne {
 	tuo.mutation.SetTimestamp(t)
+	return tuo
+}
+
+// SetNillableTimestamp sets the "timestamp" field if the given value is not nil.
+func (tuo *TimestampUpdateOne) SetNillableTimestamp(t *time.Time) *TimestampUpdateOne {
+	if t != nil {
+		tuo.SetTimestamp(*t)
+	}
 	return tuo
 }
 

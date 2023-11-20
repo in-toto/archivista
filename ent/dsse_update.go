@@ -36,9 +36,25 @@ func (du *DsseUpdate) SetGitoidSha256(s string) *DsseUpdate {
 	return du
 }
 
+// SetNillableGitoidSha256 sets the "gitoid_sha256" field if the given value is not nil.
+func (du *DsseUpdate) SetNillableGitoidSha256(s *string) *DsseUpdate {
+	if s != nil {
+		du.SetGitoidSha256(*s)
+	}
+	return du
+}
+
 // SetPayloadType sets the "payload_type" field.
 func (du *DsseUpdate) SetPayloadType(s string) *DsseUpdate {
 	du.mutation.SetPayloadType(s)
+	return du
+}
+
+// SetNillablePayloadType sets the "payload_type" field if the given value is not nil.
+func (du *DsseUpdate) SetNillablePayloadType(s *string) *DsseUpdate {
+	if s != nil {
+		du.SetPayloadType(*s)
+	}
 	return du
 }
 
@@ -349,9 +365,25 @@ func (duo *DsseUpdateOne) SetGitoidSha256(s string) *DsseUpdateOne {
 	return duo
 }
 
+// SetNillableGitoidSha256 sets the "gitoid_sha256" field if the given value is not nil.
+func (duo *DsseUpdateOne) SetNillableGitoidSha256(s *string) *DsseUpdateOne {
+	if s != nil {
+		duo.SetGitoidSha256(*s)
+	}
+	return duo
+}
+
 // SetPayloadType sets the "payload_type" field.
 func (duo *DsseUpdateOne) SetPayloadType(s string) *DsseUpdateOne {
 	duo.mutation.SetPayloadType(s)
+	return duo
+}
+
+// SetNillablePayloadType sets the "payload_type" field if the given value is not nil.
+func (duo *DsseUpdateOne) SetNillablePayloadType(s *string) *DsseUpdateOne {
+	if s != nil {
+		duo.SetPayloadType(*s)
+	}
 	return duo
 }
 

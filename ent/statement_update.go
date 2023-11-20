@@ -36,6 +36,14 @@ func (su *StatementUpdate) SetPredicate(s string) *StatementUpdate {
 	return su
 }
 
+// SetNillablePredicate sets the "predicate" field if the given value is not nil.
+func (su *StatementUpdate) SetNillablePredicate(s *string) *StatementUpdate {
+	if s != nil {
+		su.SetPredicate(*s)
+	}
+	return su
+}
+
 // AddSubjectIDs adds the "subjects" edge to the Subject entity by IDs.
 func (su *StatementUpdate) AddSubjectIDs(ids ...int) *StatementUpdate {
 	su.mutation.AddSubjectIDs(ids...)
@@ -332,6 +340,14 @@ type StatementUpdateOne struct {
 // SetPredicate sets the "predicate" field.
 func (suo *StatementUpdateOne) SetPredicate(s string) *StatementUpdateOne {
 	suo.mutation.SetPredicate(s)
+	return suo
+}
+
+// SetNillablePredicate sets the "predicate" field if the given value is not nil.
+func (suo *StatementUpdateOne) SetNillablePredicate(s *string) *StatementUpdateOne {
+	if s != nil {
+		suo.SetPredicate(*s)
+	}
 	return suo
 }
 
