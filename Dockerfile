@@ -12,7 +12,7 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-FROM golang:1.21.4-alpine AS build
+FROM golang:1.21.4-alpine@sha256:110b07af87238fbdc5f1df52b00927cf58ce3de358eeeb1854f10a8b5e5e1411 AS build
 WORKDIR /src
 RUN apk update && apk add --no-cache file git
 ENV GOMODCACHE /root/.cache/gocache
