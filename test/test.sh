@@ -21,8 +21,8 @@ checkprograms() {
   local result=0
   for prog in "$@"
   do
-    if ! command -v $prog > /dev/null; then
-      printf "$prog is required to run this script. please ensure it is installed and in your PATH\n"
+    if ! command -v "$prog" > /dev/null; then
+      print "$prog is required to run this script. please ensure it is installed and in your PATH\n"
       result=1
     fi
   done
@@ -31,14 +31,15 @@ checkprograms() {
 }
 
 runtests() {
-  go run $DIR/../cmd/archivistactl/main.go store $DIR/*.attestation.json
+  go run "$DIR/../cmd/archivistactl/main.go store $DIR/*.attestation.json"
 }
 
 waitForArchivista() {
   echo "Waiting for archivista to be ready..."
   for attempt in $(seq 1 6); do
     sleep 10
-    local archivistastate=$(docker compose -f "$DIR/../compose.yml" ps archivista --format json | jq -r '.State')
+    local archivistastate
+    archivistastate=$(docker compose -f "$DIR/../compose.yml" ps archivista --format json | jq -r '.State')
     if [ "$archivistastate" == "running" ]; then
       break
     fi

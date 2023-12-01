@@ -115,7 +115,7 @@ const searchQuery = `query($algo: String!, $digest: String!) {
       hasStatementWith: {
         hasSubjectsWith: {
           hasSubjectDigestsWith: {
-            value: $digest, 
+            value: $digest,
             algorithm: $algo
           }
         }

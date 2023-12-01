@@ -114,7 +114,7 @@ const retrieveSubjectsQuery = `query($gitoid: String!) {
         hasDsseWith:{
           gitoidSha256: $gitoid
         }
-      } 
+      }
 		}
 	) {
 		edges {

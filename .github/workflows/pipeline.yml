@@ -43,7 +43,7 @@ jobs:
     test:
         needs: [fmt, static_analysis]
         uses: ./.github/workflows/witness.yml
-        with: 
+        with:
             pull_request: ${{ github.event_name == 'pull_request' }}
             step: "test"
             attestations: "github"
@@ -66,7 +66,7 @@ jobs:
             packages: write
         runs-on: ubuntu-latest
         if: github.event_name == 'push' && contains(github.ref, 'refs/tags/')
-        
+
         steps:
             - name: Harden Runner
               uses: step-security/harden-runner@eb238b55efaa70779f274895e782ed17c84f2895 # v2.6.1
@@ -77,17 +77,17 @@ jobs:
             - uses: actions/setup-go@93397bea11091df50f3d7e59dc26a7711a8bcfbe # v4.1.0
               with:
                 go-version: 1.21.x
-    
+
             - name: Login to GitHub Container Registry
               uses: docker/login-action@343f7c4344506bcbf9b4de18042ae17996df046d # v3.0.0
               with:
                 registry: ghcr.io
                 username: ${{ github.actor }}
                 password: ${{ secrets.GITHUB_TOKEN }}
-    
+
             - name: Download GoReleaser
               run: go install github.com/goreleaser/goreleaser@latest
-    
+
             - name: Run GoReleaser
               uses: testifysec/witness-run-action@40aa4ef36fc431a37de7c3faebcb66513c03b934
               env:
