@@ -31,7 +31,7 @@ checkprograms() {
 }
 
 runtests() {
-  go run "$DIR/../cmd/archivistactl/main.go store $DIR/*.attestation.json"
+  go run "$DIR/../cmd/archivistactl/main.go" store "$DIR/*.attestation.json"
 }
 
 waitForArchivista() {
