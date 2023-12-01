@@ -68,13 +68,18 @@ jobs:
         if: github.event_name == 'push' && contains(github.ref, 'refs/tags/')
         
         steps:
-            - uses: actions/checkout@v4.1.1
-            - uses: actions/setup-go@v4.1.0
+            - name: Harden Runner
+              uses: step-security/harden-runner@eb238b55efaa70779f274895e782ed17c84f2895 # v2.6.1
+              with:
+                egress-policy: audit
+
+            - uses: actions/checkout@b4ffde65f46336ab88eb53be808477a3936bae11 # v4.1.1
+            - uses: actions/setup-go@93397bea11091df50f3d7e59dc26a7711a8bcfbe # v4.1.0
               with:
                 go-version: 1.21.x
     
             - name: Login to GitHub Container Registry
-              uses: docker/login-action@v3
+              uses: docker/login-action@343f7c4344506bcbf9b4de18042ae17996df046d # v3.0.0
               with:
                 registry: ghcr.io
                 username: ${{ github.actor }}
