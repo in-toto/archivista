@@ -38,7 +38,7 @@ waitForArchivista() {
   echo "Waiting for archivista to be ready..."
   for attempt in $(seq 1 6); do
     sleep 10
-    local archivistastate=$(docker compose -f "$DIR/../compose.yml" ps archivista --format json | jq -r '.State')
+    local archivistastate=$(docker compose -f "$DIR/../compose.yml" ps archivista --format json | jq -r '.[0].State')
     if [ "$archivistastate" == "running" ]; then
       break
     fi
