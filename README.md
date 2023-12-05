@@ -16,7 +16,7 @@ finding all attestations that recorded the use of a specific dependency.
 
 Archivista uses Subjects on the [in-toto
 Statement](https://github.com/in-toto/attestation/blob/main/spec/README.md#statement) as edges on this graph. Producers
-of attestations (such as [Witness](https://github.com/testifysec/witness) can use these subjects as a way to expose
+of attestations (such as [Witness](https://github.com/in-toto/witness) can use these subjects as a way to expose
 relationships between attestations.
 
 For example when attesting that an artifact was compiled the compiled artifact may be a subject, as well as the git
