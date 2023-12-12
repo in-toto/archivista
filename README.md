@@ -147,3 +147,8 @@ timestamp {
 We would like to expand the types of data Archivista can ingest as well as expand the metadata Archivista collected about
 ingested data. If you have ideas or use cases for Archivista, feel free to [contact us](mailto:info@testifysec.io) or
 create an issue!
+
+
+## Contributing
+
+See [CONTRIBUTING.md](CONTRIBUTING.md) for information on how to contribute to Archivista.

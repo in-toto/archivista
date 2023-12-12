@@ -62,7 +62,7 @@ runtests
 docker compose -f "$DIR/../compose.yml" down -v
 
 echo "Test psql..."
-docker compose -f "$DIR/../compose.yml" -f "$DIR/../compose.psql.yml" up --build -d
+docker compose -f "$DIR/../compose.yml" -f "$DIR/../compose-psql.yml" up --build -d
 waitForArchivista
 runtests
-docker compose -f "$DIR/../compose.yml" -f "$DIR/../compose.psql.yml" down -v
+docker compose -f "$DIR/../compose.yml" -f "$DIR/../compose-psql.yml" down -v
