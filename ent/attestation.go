@@ -8,8 +8,8 @@ import (
 
 	"entgo.io/ent"
 	"entgo.io/ent/dialect/sql"
-	"github.com/testifysec/archivista/ent/attestation"
-	"github.com/testifysec/archivista/ent/attestationcollection"
+	"github.com/in-toto/archivista/ent/attestation"
+	"github.com/in-toto/archivista/ent/attestationcollection"
 )
 
 // Attestation is the model entity for the Attestation schema.

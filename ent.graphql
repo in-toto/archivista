@@ -172,7 +172,7 @@ input DsseWhereInput {
 An object with an ID.
 Follows the [Relay Global Object Identification Specification](https://relay.dev/graphql/objectidentification.htm)
 """
-interface Node @goModel(model: "github.com/testifysec/archivista/ent.Noder") {
+interface Node @goModel(model: "github.com/in-toto/archivista/ent.Noder") {
   """The id of the object."""
   id: ID!
 }
