@@ -20,7 +20,7 @@ import (
 	"os"
 
 	"github.com/spf13/cobra"
-	archivistaapi "github.com/testifysec/archivista-api"
+	"github.com/testifysec/archivista/pkg/api"
 )
 
 var (
@@ -54,7 +54,7 @@ func storeAttestationByPath(ctx context.Context, baseUrl, path string) (string, 
 	}
 
 	defer file.Close()
-	resp, err := archivistaapi.StoreWithReader(ctx, baseUrl, file)
+	resp, err := api.StoreWithReader(ctx, baseUrl, file)
 	if err != nil {
 		return "", err
 	}

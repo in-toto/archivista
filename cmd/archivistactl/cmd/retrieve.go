@@ -21,7 +21,7 @@ import (
 	"strings"
 
 	"github.com/spf13/cobra"
-	archivistaapi "github.com/testifysec/archivista-api"
+	"github.com/testifysec/archivista/pkg/api"
 )
 
 var (
@@ -50,7 +50,7 @@ var (
 				out = file
 			}
 
-			return archivistaapi.DownloadWithWriter(cmd.Context(), archivistaUrl, args[0], out)
+			return api.DownloadWithWriter(cmd.Context(), archivistaUrl, args[0], out)
 		},
 	}
 
@@ -60,7 +60,7 @@ var (
 		SilenceUsage: true,
 		Args:         cobra.ExactArgs(1),
 		RunE: func(cmd *cobra.Command, args []string) error {
-			results, err := archivistaapi.GraphQlQuery[retrieveSubjectResults](cmd.Context(), archivistaUrl, retrieveSubjectsQuery, retrieveSubjectVars{Gitoid: args[0]})
+			results, err := api.GraphQlQuery[retrieveSubjectResults](cmd.Context(), archivistaUrl, retrieveSubjectsQuery, retrieveSubjectVars{Gitoid: args[0]})
 			if err != nil {
 				return err
 			}
