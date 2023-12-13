@@ -28,14 +28,14 @@ stop:  ## Stop the dev server
 
 
 .PHONY: clean
-clean:
+clean: ## Clean up the dev server
 	$(MAKE) stop
 	@docker compose rm --force
 	@docker rmi archivista-archivista --force
 
 
 .PHONY: test
-test:  ## Clean up the dev server
+test: ## Run tests
 	@bash ./test/test.sh
 
 help:  ## Show this help
