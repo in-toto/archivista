@@ -34,12 +34,12 @@ the development process:
  on your terminal. If this command is unsuccessful, you will need to find the standard
  method for installing it for your system. For installing `make` on Windows, please see
  [here](https://gnuwin32.sourceforge.net/packages/make.html).
- 
-* Go v1.19: Archivista is written in [Go](https://golang.org/), so you 
+
+* Go v1.19: Archivista is written in [Go](https://golang.org/), so you
  will need this installed in order to compile and run the source code.
 
 * pre-commit: It is a framework for managing and maintaining multi-language
- pre-commit hooks. It is used to run some checks on the code before it is 
+ pre-commit hooks. It is used to run some checks on the code before it is
  committed. You can install it by following the instructions
  [here](https://pre-commit.com/#install).
 
@@ -59,7 +59,7 @@ the development process:
 
 [Fork](https://docs.github.com/en/get-started/quickstart/fork-a-repo>) the repository on GitHub and
 [clone](https://docs.github.com/en/repositories/creating-and-managing-repositories/cloning-a-repository) it to
-your local machine: 
+your local machine:
 ```console
     git clone git@github.com:YOUR-USERNAME/archivista.git
 ```
@@ -106,6 +106,14 @@ To clean all Archivista containers in your environment execute the command:
     make clean
 ```
 
+### Changes in the Archivista SQL Schema `ent/schema`
+
+If there are changes in the SQL Schema you must to create the database migration.
+To do this, you must run the following command:
+
+```console
+    make db-migrations
+```
 
 ### Running Tests
 

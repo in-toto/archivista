@@ -14,7 +14,8 @@
 
 FROM golang:1.21.5-alpine@sha256:feceecc0e1d73d085040a8844de11a2858ba4a0c58c16a672f1736daecc2a4ff AS build
 WORKDIR /src
-RUN apk update && apk add --no-cache file git
+RUN apk update && apk add --no-cache file git curl
+RUN curl -sSf https://atlasgo.sh | sh
 ENV GOMODCACHE /root/.cache/gocache
 RUN --mount=target=. --mount=target=/root/.cache,type=cache \
     CGO_ENABLED=0 go build -o /out/archivista -ldflags '-s -d -w' ./cmd/archivista; \
@@ -22,5 +23,8 @@ RUN --mount=target=. --mount=target=/root/.cache,type=cache \
 
 FROM alpine
 COPY --from=build /out/archivista /bin/archivista
+COPY --from=build /usr/local/bin/atlas /bin/atlas
+ADD entrypoint.sh /bin/entrypoint.sh
+ADD ent/migrate/migrations /archivista/migrations
 RUN mkdir /tmp/archivista
-ENTRYPOINT ["/bin/archivista"]
+ENTRYPOINT ["sh", "/bin/entrypoint.sh"]
