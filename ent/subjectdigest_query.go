@@ -10,9 +10,9 @@ import (
 	"entgo.io/ent/dialect/sql"
 	"entgo.io/ent/dialect/sql/sqlgraph"
 	"entgo.io/ent/schema/field"
-	"github.com/testifysec/archivista/ent/predicate"
-	"github.com/testifysec/archivista/ent/subject"
-	"github.com/testifysec/archivista/ent/subjectdigest"
+	"github.com/in-toto/archivista/ent/predicate"
+	"github.com/in-toto/archivista/ent/subject"
+	"github.com/in-toto/archivista/ent/subjectdigest"
 )
 
 // SubjectDigestQuery is the builder for querying SubjectDigest entities.

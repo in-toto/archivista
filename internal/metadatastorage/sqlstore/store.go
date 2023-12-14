@@ -23,10 +23,10 @@ import (
 	"time"
 
 	"github.com/digitorus/timestamp"
+	"github.com/in-toto/archivista/ent"
+	"github.com/in-toto/archivista/internal/metadatastorage"
+	"github.com/in-toto/archivista/internal/metadatastorage/parserregistry"
 	"github.com/sirupsen/logrus"
-	"github.com/testifysec/archivista/ent"
-	"github.com/testifysec/archivista/internal/metadatastorage"
-	"github.com/testifysec/archivista/internal/metadatastorage/parserregistry"
 	"github.com/testifysec/go-witness/cryptoutil"
 	"github.com/testifysec/go-witness/dsse"
 	"github.com/testifysec/go-witness/intoto"

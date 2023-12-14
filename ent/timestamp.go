@@ -9,8 +9,8 @@ import (
 
 	"entgo.io/ent"
 	"entgo.io/ent/dialect/sql"
-	"github.com/testifysec/archivista/ent/signature"
-	"github.com/testifysec/archivista/ent/timestamp"
+	"github.com/in-toto/archivista/ent/signature"
+	"github.com/in-toto/archivista/ent/timestamp"
 )
 
 // Timestamp is the model entity for the Timestamp schema.

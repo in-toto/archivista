@@ -23,7 +23,7 @@ import (
 	"entgo.io/ent/dialect"
 	"entgo.io/ent/dialect/sql"
 	"github.com/go-sql-driver/mysql"
-	"github.com/testifysec/archivista/ent"
+	"github.com/in-toto/archivista/ent"
 
 	_ "github.com/lib/pq"
 )

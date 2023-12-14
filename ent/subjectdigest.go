@@ -8,8 +8,8 @@ import (
 
 	"entgo.io/ent"
 	"entgo.io/ent/dialect/sql"
-	"github.com/testifysec/archivista/ent/subject"
-	"github.com/testifysec/archivista/ent/subjectdigest"
+	"github.com/in-toto/archivista/ent/subject"
+	"github.com/in-toto/archivista/ent/subjectdigest"
 )
 
 // SubjectDigest is the model entity for the SubjectDigest schema.

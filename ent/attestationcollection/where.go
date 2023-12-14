@@ -5,7 +5,7 @@ package attestationcollection
 import (
 	"entgo.io/ent/dialect/sql"
 	"entgo.io/ent/dialect/sql/sqlgraph"
-	"github.com/testifysec/archivista/ent/predicate"
+	"github.com/in-toto/archivista/ent/predicate"
 )
 
 // ID filters vertices based on their ID field.

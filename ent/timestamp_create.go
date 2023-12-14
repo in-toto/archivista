@@ -10,8 +10,8 @@ import (
 
 	"entgo.io/ent/dialect/sql/sqlgraph"
 	"entgo.io/ent/schema/field"
-	"github.com/testifysec/archivista/ent/signature"
-	"github.com/testifysec/archivista/ent/timestamp"
+	"github.com/in-toto/archivista/ent/signature"
+	"github.com/in-toto/archivista/ent/timestamp"
 )
 
 // TimestampCreate is the builder for creating a Timestamp entity.

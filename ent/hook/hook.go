@@ -6,7 +6,7 @@ import (
 	"context"
 	"fmt"
 
-	"github.com/testifysec/archivista/ent"
+	"github.com/in-toto/archivista/ent"
 )
 
 // The AttestationFunc type is an adapter to allow the use of ordinary

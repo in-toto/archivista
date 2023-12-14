@@ -15,8 +15,8 @@
 package parserregistry
 
 import (
-	"github.com/testifysec/archivista/internal/metadatastorage"
-	"github.com/testifysec/archivista/internal/metadatastorage/attestationcollection"
+	"github.com/in-toto/archivista/internal/metadatastorage"
+	"github.com/in-toto/archivista/internal/metadatastorage/attestationcollection"
 )
 
 var (

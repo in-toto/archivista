@@ -147,8 +147,6 @@ github.com/stretchr/testify v1.8.0/go.mod h1:yNjHg4UonilssWZ8iaSj1OCr/vHnekPRkoO
 github.com/stretchr/testify v1.8.1/go.mod h1:w2LPCIKwWwSfY2zedu0+kehJoqGctiVI29o6fzry7u4=
 github.com/stretchr/testify v1.8.4 h1:CcVxjf3Q8PM0mHUKJCdn+eZZtm5yQwehR5yeSVQQcUk=
 github.com/stretchr/testify v1.8.4/go.mod h1:sz/lmYIOXD/1dqDmKjjqLyZ2RngseejIcXlSw2iwfAo=
-github.com/testifysec/archivista-api v0.0.0-20230303165309-a31a92afd132 h1:w/8ACAtNVo201VSxtdStNvahmIYvgFzjfpeCdu0BkSo=
-github.com/testifysec/archivista-api v0.0.0-20230303165309-a31a92afd132/go.mod h1:F9iPXqTd/Pj7HICL0CKD1Rv8taBOEr/GZk5KG6Omnas=
 github.com/testifysec/go-witness v0.1.16 h1:E2lQ5Vsq7vVurDJFvjA1wuLC7slnErx77WGEFUB4DFw=
 github.com/testifysec/go-witness v0.1.16/go.mod h1:ljKDAQFb949IQMmch/B7kb1pYz1tJ10sSNjqM+HNijQ=
 github.com/vektah/gqlparser/v2 v2.5.10 h1:6zSM4azXC9u4Nxy5YmdmGu4uKamfwsdKTwp5zsEealU=

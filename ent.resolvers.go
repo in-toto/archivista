@@ -22,7 +22,7 @@ import (
 	"context"
 
 	"entgo.io/contrib/entgql"
-	"github.com/testifysec/archivista/ent"
+	"github.com/in-toto/archivista/ent"
 )
 
 // Node is the resolver for the node field.

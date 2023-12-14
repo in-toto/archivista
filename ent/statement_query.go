@@ -11,11 +11,11 @@ import (
 	"entgo.io/ent/dialect/sql"
 	"entgo.io/ent/dialect/sql/sqlgraph"
 	"entgo.io/ent/schema/field"
-	"github.com/testifysec/archivista/ent/attestationcollection"
-	"github.com/testifysec/archivista/ent/dsse"
-	"github.com/testifysec/archivista/ent/predicate"
-	"github.com/testifysec/archivista/ent/statement"
-	"github.com/testifysec/archivista/ent/subject"
+	"github.com/in-toto/archivista/ent/attestationcollection"
+	"github.com/in-toto/archivista/ent/dsse"
+	"github.com/in-toto/archivista/ent/predicate"
+	"github.com/in-toto/archivista/ent/statement"
+	"github.com/in-toto/archivista/ent/subject"
 )
 
 // StatementQuery is the builder for querying Statement entities.

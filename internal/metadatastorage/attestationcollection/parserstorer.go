@@ -18,8 +18,8 @@ import (
 	"context"
 	"encoding/json"
 
-	"github.com/testifysec/archivista/ent"
-	"github.com/testifysec/archivista/internal/metadatastorage"
+	"github.com/in-toto/archivista/ent"
+	"github.com/in-toto/archivista/internal/metadatastorage"
 	"github.com/testifysec/go-witness/attestation"
 )
 

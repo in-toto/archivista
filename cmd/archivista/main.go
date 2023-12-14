@@ -36,13 +36,13 @@ import (
 	nested "github.com/antonfisher/nested-logrus-formatter"
 	"github.com/gorilla/handlers"
 	"github.com/gorilla/mux"
+	"github.com/in-toto/archivista"
+	"github.com/in-toto/archivista/internal/config"
+	"github.com/in-toto/archivista/internal/metadatastorage/sqlstore"
+	"github.com/in-toto/archivista/internal/objectstorage/blobstore"
+	"github.com/in-toto/archivista/internal/objectstorage/filestore"
+	"github.com/in-toto/archivista/internal/server"
 	"github.com/sirupsen/logrus"
-	"github.com/testifysec/archivista"
-	"github.com/testifysec/archivista/internal/config"
-	"github.com/testifysec/archivista/internal/metadatastorage/sqlstore"
-	"github.com/testifysec/archivista/internal/objectstorage/blobstore"
-	"github.com/testifysec/archivista/internal/objectstorage/filestore"
-	"github.com/testifysec/archivista/internal/server"
 )
 
 func init() {

@@ -8,8 +8,8 @@ import (
 
 	"entgo.io/ent"
 	"entgo.io/ent/dialect/sql"
-	"github.com/testifysec/archivista/ent/statement"
-	"github.com/testifysec/archivista/ent/subject"
+	"github.com/in-toto/archivista/ent/statement"
+	"github.com/in-toto/archivista/ent/subject"
 )
 
 // Subject is the model entity for the Subject schema.

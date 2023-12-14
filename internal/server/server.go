@@ -26,8 +26,8 @@ import (
 
 	"github.com/edwarnicke/gitoid"
 	"github.com/gorilla/mux"
+	"github.com/in-toto/archivista/pkg/api"
 	"github.com/sirupsen/logrus"
-	"github.com/testifysec/archivista/pkg/api"
 )
 
 type Server struct {

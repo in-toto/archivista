@@ -2,7 +2,7 @@
 
 package runtime
 
-// The schema-stitching logic is generated in github.com/testifysec/archivista/ent/runtime.go
+// The schema-stitching logic is generated in github.com/in-toto/archivista/ent/runtime.go
 
 const (
 	Version = "v0.12.5"                                         // Version of ent codegen.

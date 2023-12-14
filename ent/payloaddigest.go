@@ -8,8 +8,8 @@ import (
 
 	"entgo.io/ent"
 	"entgo.io/ent/dialect/sql"
-	"github.com/testifysec/archivista/ent/dsse"
-	"github.com/testifysec/archivista/ent/payloaddigest"
+	"github.com/in-toto/archivista/ent/dsse"
+	"github.com/in-toto/archivista/ent/payloaddigest"
 )
 
 // PayloadDigest is the model entity for the PayloadDigest schema.
