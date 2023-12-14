@@ -26,10 +26,10 @@ import (
 	"github.com/in-toto/archivista/ent"
 	"github.com/in-toto/archivista/internal/metadatastorage"
 	"github.com/in-toto/archivista/internal/metadatastorage/parserregistry"
+	"github.com/in-toto/go-witness/cryptoutil"
+	"github.com/in-toto/go-witness/dsse"
+	"github.com/in-toto/go-witness/intoto"
 	"github.com/sirupsen/logrus"
-	"github.com/testifysec/go-witness/cryptoutil"
-	"github.com/testifysec/go-witness/dsse"
-	"github.com/testifysec/go-witness/intoto"
 )
 
 // mysql has a limit of 65536 parameters in a single query. each subject has ~2 parameters [statment id and name],
