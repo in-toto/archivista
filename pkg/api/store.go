@@ -23,7 +23,7 @@ import (
 	"net/http"
 	"net/url"
 
-	"github.com/testifysec/go-witness/dsse"
+	"github.com/in-toto/go-witness/dsse"
 )
 
 type StoreResponse struct {

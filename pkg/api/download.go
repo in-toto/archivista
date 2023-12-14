@@ -23,7 +23,7 @@ import (
 	"net/http"
 	"net/url"
 
-	"github.com/testifysec/go-witness/dsse"
+	"github.com/in-toto/go-witness/dsse"
 )
 
 func Download(ctx context.Context, baseUrl string, gitoid string) (dsse.Envelope, error) {

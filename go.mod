@@ -14,13 +14,14 @@ require (
 	github.com/gorilla/handlers v1.5.2
 	github.com/gorilla/mux v1.8.1
 	github.com/hashicorp/go-multierror v1.1.1
+	github.com/in-toto/go-witness v0.0.0-00010101000000-000000000000
 	github.com/kelseyhightower/envconfig v1.4.0
 	github.com/lib/pq v1.10.9
 	github.com/minio/minio-go v6.0.14+incompatible
 	github.com/sirupsen/logrus v1.9.3
 	github.com/spf13/cobra v1.8.0
 	github.com/stretchr/testify v1.8.4
-	github.com/testifysec/go-witness v0.1.16
+	github.com/testifysec/go-witness v0.1.17
 	github.com/vektah/gqlparser/v2 v2.5.10
 	golang.org/x/sync v0.5.0
 )
@@ -70,3 +71,5 @@ require (
 	gopkg.in/check.v1 v1.0.0-20201130134442-10cb98267c6c // indirect
 	gopkg.in/yaml.v3 v3.0.1 // indirect
 )
+
+replace github.com/in-toto/go-witness => github.com/chaosinthecrd/go-witness v0.0.0-20231213174711-5ac12a706419
