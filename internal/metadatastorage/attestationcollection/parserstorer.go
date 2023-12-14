@@ -20,7 +20,7 @@ import (
 
 	"github.com/in-toto/archivista/ent"
 	"github.com/in-toto/archivista/internal/metadatastorage"
-	"github.com/testifysec/go-witness/attestation"
+	"github.com/in-toto/go-witness/attestation"
 )
 
 const (
