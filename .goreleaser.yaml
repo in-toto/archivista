@@ -75,7 +75,7 @@ release:
   github:
     owner: "{{ .Env.GITHUB_REPOSITORY_OWNER }}"
 kos:
-  - repository: ghcr.io/testifysec/archivista
+  - repository: ghcr.io/in-toto/archivista
     id: archivista
     build: archivista
     tags:
@@ -86,7 +86,7 @@ kos:
     platforms:
     - linux/amd64
     - linux/arm64
-  - repository: ghcr.io/testifysec/archivistactl
+  - repository: ghcr.io/in-toto/archivistactl
     id: archivistactl
     build: archivistactl
     tags:
