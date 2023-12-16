@@ -42,6 +42,7 @@ import (
 	"github.com/in-toto/archivista/internal/objectstorage/blobstore"
 	"github.com/in-toto/archivista/internal/objectstorage/filestore"
 	"github.com/in-toto/archivista/internal/server"
+	"github.com/minio/minio-go/pkg/credentials"
 	"github.com/sirupsen/logrus"
 )
 
@@ -166,11 +167,18 @@ func initObjectStore(ctx context.Context, cfg *config.Config) (server.StorerGett
 		return filestore.New(ctx, cfg.FileDir, cfg.FileServeOn)
 
 	case "BLOB":
+		var creds *credentials.Credentials
+		if cfg.BlobStoreCredentialType == "IAM" {
+			creds = credentials.NewIAM("")
+		} else if cfg.BlobStoreCredentialType == "ACCESS_KEY" {
+			creds = credentials.NewStaticV4(cfg.BlobStoreAccessKeyId, cfg.BlobStoreSecretAccessKeyId, "")
+		} else {
+			logrus.Fatalln("invalid blob store credential type: ", cfg.BlobStoreCredentialType)
+		}
 		return blobstore.New(
 			ctx,
 			cfg.BlobStoreEndpoint,
-			cfg.BlobStoreAccessKeyId,
-			cfg.BlobStoreSecretAccessKeyId,
+			creds,
 			cfg.BlobStoreBucketName,
 			cfg.BlobStoreUseTLS,
 		)
