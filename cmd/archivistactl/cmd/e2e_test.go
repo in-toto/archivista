@@ -125,7 +125,7 @@ func (e2e *E2EStoreSuite) Test_E2E() {
 				expectedError:  "value is less than the required length",
 			},
 			{
-				name:          "inexistent payload file",
+				name:          "nonexistent payload file",
 				attestation:   "../../../test/missing.attestation.json",
 				expectedError: "no such file or directory",
 			},
