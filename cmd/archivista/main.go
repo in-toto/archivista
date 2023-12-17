@@ -42,7 +42,7 @@ import (
 	"github.com/in-toto/archivista/internal/objectstorage/blobstore"
 	"github.com/in-toto/archivista/internal/objectstorage/filestore"
 	"github.com/in-toto/archivista/internal/server"
-	"github.com/minio/minio-go/pkg/credentials"
+	"github.com/minio/minio-go/v7/pkg/credentials"
 	"github.com/sirupsen/logrus"
 )
 
