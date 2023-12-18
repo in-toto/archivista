@@ -14,7 +14,7 @@ require (
 	github.com/gorilla/handlers v1.5.2
 	github.com/gorilla/mux v1.8.1
 	github.com/hashicorp/go-multierror v1.1.1
-	github.com/in-toto/go-witness v0.1.18-0.20231214175634-5b5647c42b3c
+	github.com/in-toto/go-witness v0.2.0
 	github.com/kelseyhightower/envconfig v1.4.0
 	github.com/lib/pq v1.10.9
 	github.com/minio/minio-go v6.0.14+incompatible

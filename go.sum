@@ -99,8 +99,8 @@ github.com/hashicorp/golang-lru/v2 v2.0.3 h1:kmRrRLlInXvng0SmLxmQpQkpbYAvcXm7NPD
 github.com/hashicorp/golang-lru/v2 v2.0.3/go.mod h1:QeFd9opnmA6QUJc5vARoKUSoFhyfM2/ZepoAG6RGpeM=
 github.com/hashicorp/hcl/v2 v2.13.0 h1:0Apadu1w6M11dyGFxWnmhhcMjkbAiKCv7G1r/2QgCNc=
 github.com/hashicorp/hcl/v2 v2.13.0/go.mod h1:e4z5nxYlWNPdDSNYX+ph14EvWYMFm3eP0zIUqPc2jr0=
-github.com/in-toto/go-witness v0.1.18-0.20231214175634-5b5647c42b3c h1:BrnFYv8TI/uFBkB+WkY5npqveeNFG/fVf1k4Hd9LMl8=
-github.com/in-toto/go-witness v0.1.18-0.20231214175634-5b5647c42b3c/go.mod h1:uiBFKD3cykEKWZzzc5Vshy3YeKAwlafIm9/7NGx+Xck=
+github.com/in-toto/go-witness v0.2.0 h1:lxp3+Kc4Der2C1jV9ZePjSCEHUr2NsB4sImXI5sZHu4=
+github.com/in-toto/go-witness v0.2.0/go.mod h1:Jr6ZlYoVfTS3hjUSmJ10J8qiHjpF1cfSE4NLAIJpbLw=
 github.com/inconshreveable/mousetrap v1.1.0 h1:wN+x4NVGpMsO7ErUn/mUI3vEoE6Jt13X2s0bqwp9tc8=
 github.com/inconshreveable/mousetrap v1.1.0/go.mod h1:vpF70FUmC8bwa3OWnCshd2FqLfsEA9PFc4w1p2J65bw=
 github.com/kelseyhightower/envconfig v1.4.0 h1:Im6hONhd3pLkfDFsbRgu68RDNkGF1r3dvMUtDTo2cv8=
