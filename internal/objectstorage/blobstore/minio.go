@@ -38,7 +38,7 @@ func (store *Store) PutBlob(ctx context.Context, idx string, obj []byte) error {
 	if err != nil {
 		return fmt.Errorf("failed to put blob: %v", err)
 	} else if n.Size != size {
-		return fmt.Errorf("failed to upload full blob: size %d != uploaded size %d", size, n)
+		return fmt.Errorf("failed to upload full blob: size %d != uploaded size %d", size, n.Size)
 	}
 	return nil
 }
