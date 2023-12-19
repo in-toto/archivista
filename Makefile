@@ -35,7 +35,19 @@ clean: ## Clean up the dev server
 
 .PHONY: test
 test: ## Run tests
-	@bash ./test/test.sh
+	@go test ./... -covermode atomic -coverprofile=cover.out -v
+
+.PHONY: coverage
+coverage:  ## Show html coverage
+	@go tool cover -html=cover.out
+
+
+.PHONY: lint
+lint:  ## Run linter
+	@golangci-lint run
+	@go fmt ./...
+	@go vet ./...
+
 
 help:  ## Show this help
 	@grep -h -E '^[a-zA-Z_-]+:.*?## .*$$' $(MAKEFILE_LIST) | awk 'BEGIN {FS = ":.*?## "}; {printf "\033[36m%-30s\033[0m %s\n", $$1, $$2}'

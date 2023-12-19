@@ -16,7 +16,6 @@ package cmd
 
 import (
 	"errors"
-	"fmt"
 	"strings"
 
 	"github.com/in-toto/archivista/pkg/api"
@@ -75,14 +74,14 @@ func validateDigestString(ds string) (algo, digest string, err error) {
 
 func printResults(results searchResults) {
 	for _, edge := range results.Dsses.Edges {
-		fmt.Printf("Gitoid: %s\n", edge.Node.GitoidSha256)
-		fmt.Printf("Collection name: %s\n", edge.Node.Statement.AttestationCollection.Name)
+		rootCmd.Printf("Gitoid: %s\n", edge.Node.GitoidSha256)
+		rootCmd.Printf("Collection name: %s\n", edge.Node.Statement.AttestationCollection.Name)
 		types := make([]string, 0, len(edge.Node.Statement.AttestationCollection.Attestations))
 		for _, attestation := range edge.Node.Statement.AttestationCollection.Attestations {
 			types = append(types, attestation.Type)
 		}
 
-		fmt.Printf("Attestations: %s\n\n", strings.Join(types, ", "))
+		rootCmd.Printf("Attestations: %s\n\n", strings.Join(types, ", "))
 	}
 }
 

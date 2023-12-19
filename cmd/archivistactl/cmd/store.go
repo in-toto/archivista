@@ -34,7 +34,7 @@ var (
 				if gitoid, err := storeAttestationByPath(cmd.Context(), archivistaUrl, filePath); err != nil {
 					return fmt.Errorf("failed to store %s: %w", filePath, err)
 				} else {
-					fmt.Printf("%s stored with gitoid %s\n", filePath, gitoid)
+					rootCmd.Printf("%s stored with gitoid %s\n", filePath, gitoid)
 				}
 			}
 

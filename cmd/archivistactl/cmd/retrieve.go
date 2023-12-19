@@ -85,7 +85,7 @@ func printSubjects(results retrieveSubjectResults) {
 			digestStrings = append(digestStrings, fmt.Sprintf("%s:%s", digest.Algorithm, digest.Value))
 		}
 
-		fmt.Printf("Name: %s\nDigests: %s\n", edge.Node.Name, strings.Join(digestStrings, ", "))
+		rootCmd.Printf("Name: %s\nDigests: %s\n", edge.Node.Name, strings.Join(digestStrings, ", "))
 	}
 }
 
