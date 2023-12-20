@@ -55,16 +55,17 @@ func (ut *UTRetrieveSuite) Test_RetrieveEnvelopeMissingArg() {
 	}
 }
 
-func (ut *UTRetrieveSuite) Test_RetrieveEnvelope() {
+func (ut *UTRetrieveSuite) Test_RetrieveEnvelope_NoDB() {
 	output := bytes.NewBufferString("")
 	rootCmd.SetOut(output)
 	rootCmd.SetErr(output)
 	rootCmd.SetArgs([]string{"retrieve", "envelope", "test"})
 	err := rootCmd.Execute()
 	if err != nil {
+		ut.ErrorContains(err, "connection refused")
+	} else {
 		ut.FailNow("Expected: error")
 	}
-	ut.Equal(output.String(), "")
 }
 
 func (ut *UTRetrieveSuite) Test_RetrieveSubjectsMissingArg() {

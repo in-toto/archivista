@@ -56,7 +56,7 @@ func DownloadWithWriter(ctx context.Context, baseUrl, gitoid string, dst io.Writ
 	hc := &http.Client{}
 	resp, err := hc.Do(req)
 	if err != nil {
-		return nil
+		return err
 	}
 
 	defer resp.Body.Close()
