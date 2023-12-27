@@ -35,7 +35,7 @@ func (ut *UTRootSuite) Test_Root() {
 	rootCmd.SetOut(output)
 	rootCmd.SetErr(output)
 	rootCmd.SetArgs([]string{"help"})
-	err := rootCmd.Execute()
+	err := Execute()
 	if err != nil {
 		ut.FailNow(err.Error())
 	}
