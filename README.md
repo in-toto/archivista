@@ -7,6 +7,29 @@
 Archivista is a graph and storage service for [in-toto](https://in-toto.io) attestations. Archivista enables the discovery
 and retrieval of attestations for software artifacts.
 
+## Archivista enables you to:
+
+- Store and retrieve in-toto attestations
+- Query for relationships between attestations via a GraphQL API
+- Validate Witness policy without the need to manually list expected attestations
+
+## Archivista is a trusted store for supply chain metadata
+
+- It creates a graph of supply chain metadata while storing attestations that can be later used for policy validation and flexible querying.
+- It is designed to be horizontally scaleable, supporting storing a large number of attestations.
+- It supports deployment on major cloud service and infrastructure providers, making it a versatile and flexible solution for securing software supply chains.
+- It only stores signed attestations to further enhance security and and increase trust.
+
+## Key Features
+
+- Native support for storing attestations created by Witness
+- A GraphQL API endpoint and playground
+- Support for MySQL and Postgres database backends
+- Support for S3-compatible object storage
+- A Helm Chart for deployment in Kubernetes environments
+- The ability to download and export attestations to transfer across an air gap
+- Support for Darwin, Windows, and ARM architectures.
+
 ## How Archivista Works
 
 When an attestation is uploaded to Archivista it will store the entire attestation in a configured object store as well
