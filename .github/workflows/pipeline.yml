@@ -40,28 +40,19 @@ jobs:
           attestations: "github"
           command: go vet ./...
 
-    test:
+    tests:
         needs: [fmt, static_analysis]
         uses: ./.github/workflows/witness.yml
         with:
             pull_request: ${{ github.event_name == 'pull_request' }}
-            step: "test"
-            attestations: "github"
-            command: go test -v -coverprofile=profile.cov -covermode=atomic ./...
-
-    e2e-tests:
-        needs: test
-        uses: ./.github/workflows/witness.yml
-        with:
-            pull_request: ${{ github.event_name == 'pull_request' }}
-            step: "e2e"
+            step: "tests"
             attestations: "github"
             command: |
               make clean
               make test
 
     release:
-        needs: e2e-tests
+        needs: tests
         permissions:
             id-token: write
             contents: write
