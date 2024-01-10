@@ -1,4 +1,4 @@
-// Copyright 2022 The Archivista Contributors
+// Copyright 2024 The Archivista Contributors
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -20,21 +20,39 @@ import (
 	"path/filepath"
 	"testing"
 
-	filestore "github.com/in-toto/archivista/internal/objectstorage/filestore"
+	"github.com/in-toto/archivista/internal/objectstorage/filestore"
+	"github.com/stretchr/testify/suite"
 )
 
-func TestStore_Get(t *testing.T) {
+// Test Suite: UT FileStoreSuite
+type UTFileStoreSuite struct {
+	suite.Suite
+	tempDir string
+	payload []byte
+}
+
+func TestUTFileStoreSuite(t *testing.T) {
+	suite.Run(t, new(UTFileStoreSuite))
+}
+
+func (ut *UTFileStoreSuite) SetupTest() {
 	// Create a temporary directory for testing
 	tempDir, err := os.MkdirTemp("", "filestore_test")
 	if err != nil {
-		t.Fatalf("Failed to create temporary directory: %v", err)
+		ut.FailNow(err.Error())
 	}
-	defer os.RemoveAll(tempDir)
+	ut.tempDir = tempDir
+	ut.payload = []byte("test payload")
+}
 
-	// Create a new file store
-	store, _, err := filestore.New(context.Background(), tempDir, "")
+func (ut *UTFileStoreSuite) TearDownTest() {
+	os.RemoveAll(ut.tempDir)
+}
+func (ut *UTFileStoreSuite) Test_Get() {
+
+	store, _, err := filestore.New(context.Background(), ut.tempDir, "")
 	if err != nil {
-		t.Fatalf("Failed to create file store: %v", err)
+		ut.FailNow(err.Error())
 	}
 
 	// Define a test payload
@@ -43,37 +61,35 @@ func TestStore_Get(t *testing.T) {
 	// Store the payload
 	err = store.Store(context.Background(), "test_gitoid", payload)
 	if err != nil {
-		t.Fatalf("Failed to store payload: %v", err)
+		ut.FailNow(err.Error())
 	}
 
 	// Attempt storing at malicious payload location
 	err = store.Store(context.Background(), "../../test_gitoid", payload)
 	if err != nil && err != filepath.ErrBadPattern {
-		t.Errorf("Failed to detect bad path: %v", err)
+		ut.FailNowf("Failed to detect bad path: %v", err.Error())
 	}
 
 	// Retrieve the payload
 	reader, err := store.Get(context.Background(), "test_gitoid")
 	if err != nil {
-		t.Errorf("Failed to retrieve payload: %v", err)
+		ut.FailNowf("Failed to retrieve payload: %v", err.Error())
 	}
 	defer reader.Close()
 
 	// Read the payload from the reader
 	retrievedPayload, err := io.ReadAll(reader)
 	if err != nil {
-		t.Fatalf("Failed to read payload: %v", err)
+		ut.FailNowf("Failed to read payload: %v", err.Error())
 	}
 
 	// Compare the retrieved payload with the original payload
-	if string(retrievedPayload) != string(payload) {
-		t.Errorf("Retrieved payload does not match original payload")
-	}
+	ut.Equal(string(retrievedPayload), string(payload))
 
 	// Attempt to retrieve non-local payload
 	_, err = store.Get(context.Background(), "/etc/passwd")
 	if err != nil && err != filepath.ErrBadPattern {
-		t.Errorf("Failed to detect bad path: %v", err)
+		ut.FailNowf("Failed to detect bad path: %v", err.Error())
 	}
 
 }
