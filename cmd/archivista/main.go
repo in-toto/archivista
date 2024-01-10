@@ -97,7 +97,7 @@ func main() {
 		logrus.Fatalf("could not create ent client: %+v", err)
 	}
 
-	mysqlStore, mysqlStoreCh, err := sqlstore.New(ctx, entClient)
+	sqlStore, sqlStoreCh, err := sqlstore.New(ctx, entClient)
 	if err != nil {
 		logrus.Fatalf("error initializing mysql client: %+v", err)
 	}
@@ -108,13 +108,13 @@ func main() {
 	logrus.Infof("executing phase 3: create and register http service (time since start: %s)", time.Since(startTime))
 	// ********************************************************************************
 	now = time.Now()
-	server := server.New(mysqlStore, fileStore)
+	server := server.New(sqlStore, fileStore)
 	router := mux.NewRouter()
 	router.HandleFunc("/download/{gitoid}", server.GetHandler)
 	router.HandleFunc("/upload", server.StoreHandler)
 
 	if cfg.EnableGraphql {
-		client := mysqlStore.GetClient()
+		client := sqlStore.GetClient()
 		srv := handler.NewDefaultServer(archivista.NewSchema(client))
 		srv.Use(entgql.Transactioner{TxOpener: client})
 		router.Handle("/query", srv)
@@ -156,7 +156,7 @@ func main() {
 
 	<-ctx.Done()
 	<-fileStoreCh
-	<-mysqlStoreCh
+	<-sqlStoreCh
 
 	logrus.Infof("exiting, uptime: %v", time.Since(startTime))
 }
