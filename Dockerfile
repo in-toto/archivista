@@ -15,7 +15,7 @@
 FROM golang:1.21.5-alpine@sha256:4db4aac30880b978cae5445dd4a706215249ad4f43d28bd7cdf7906e9be8dd6b AS build
 WORKDIR /src
 RUN apk update && apk add --no-cache file git curl
-RUN go install ariga.io/atlas/cmd/atlas@v0.12.2-0.20230806193313-117e03f96e45
+RUN GOBIN=/usr/local/bin go install ariga.io/atlas/cmd/atlas@v0.12.2-0.20230806193313-117e03f96e45
 ENV GOMODCACHE /root/.cache/gocache
 RUN --mount=target=. --mount=target=/root/.cache,type=cache \
     CGO_ENABLED=0 go build -o /out/archivista -ldflags '-s -d -w' ./cmd/archivista; \
