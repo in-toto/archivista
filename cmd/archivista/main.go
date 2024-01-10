@@ -1,4 +1,4 @@
-// Copyright 2022 The Archivista Contributors
+// Copyright 2022-2024 The Archivista Contributors
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -30,13 +30,8 @@ import (
 	"syscall"
 	"time"
 
-	"entgo.io/contrib/entgql"
-	"github.com/99designs/gqlgen/graphql/handler"
-	"github.com/99designs/gqlgen/graphql/playground"
 	nested "github.com/antonfisher/nested-logrus-formatter"
 	"github.com/gorilla/handlers"
-	"github.com/gorilla/mux"
-	"github.com/in-toto/archivista"
 	"github.com/in-toto/archivista/internal/config"
 	"github.com/in-toto/archivista/internal/metadatastorage/sqlstore"
 	"github.com/in-toto/archivista/internal/objectstorage/blobstore"
@@ -108,22 +103,10 @@ func main() {
 	logrus.Infof("executing phase 3: create and register http service (time since start: %s)", time.Since(startTime))
 	// ********************************************************************************
 	now = time.Now()
-	server := server.New(sqlStore, fileStore)
-	router := mux.NewRouter()
-	router.HandleFunc("/download/{gitoid}", server.GetHandler)
-	router.HandleFunc("/upload", server.StoreHandler)
 
-	if cfg.EnableGraphql {
-		client := sqlStore.GetClient()
-		srv := handler.NewDefaultServer(archivista.NewSchema(client))
-		srv.Use(entgql.Transactioner{TxOpener: client})
-		router.Handle("/query", srv)
-		if cfg.GraphqlWebClientEnable {
-			router.Handle("/",
-				playground.Handler("Archivista", "/query"),
-			)
-		}
-	}
+	// initialize the server
+	sqlClient := sqlStore.GetClient()
+	server := server.New(sqlStore, fileStore, cfg, sqlClient)
 
 	listenAddress := cfg.ListenOn
 	listenAddress = strings.ToLower(strings.TrimSpace(listenAddress))
@@ -146,7 +129,7 @@ func main() {
 			handlers.AllowedOrigins(cfg.CORSAllowOrigins),
 			handlers.AllowedMethods([]string{"GET", "POST", "OPTIONS"}),
 			handlers.AllowedHeaders([]string{"Accept", "Content-Type", "Content-Length", "Accept-Encoding", "X-CSRF-Token", "Authorization"}),
-		)(router)); err != nil {
+		)(server.Router())); err != nil {
 			logrus.Fatalf("unable to start http server: %+v", err)
 		}
 	}()

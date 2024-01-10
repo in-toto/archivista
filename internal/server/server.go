@@ -1,4 +1,4 @@
-// Copyright 2022 The Archivista Contributors
+// Copyright 2022-2024 The Archivista Contributors
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -24,15 +24,24 @@ import (
 	"net/http"
 	"strings"
 
+	"entgo.io/contrib/entgql"
+	"github.com/99designs/gqlgen/graphql/handler"
+	"github.com/99designs/gqlgen/graphql/playground"
 	"github.com/edwarnicke/gitoid"
 	"github.com/gorilla/mux"
+	"github.com/in-toto/archivista"
+	_ "github.com/in-toto/archivista/docs"
+	"github.com/in-toto/archivista/ent"
+	"github.com/in-toto/archivista/internal/config"
 	"github.com/in-toto/archivista/pkg/api"
 	"github.com/sirupsen/logrus"
+	httpSwagger "github.com/swaggo/http-swagger/v2"
 )
 
 type Server struct {
 	metadataStore Storer
 	objectStore   StorerGetter
+	router        *mux.Router
 }
 
 type Storer interface {
@@ -48,11 +57,51 @@ type StorerGetter interface {
 	Getter
 }
 
-func New(metadataStore Storer, objectStore StorerGetter) *Server {
-	return &Server{metadataStore, objectStore}
+func New(metadataStore Storer, objectStore StorerGetter, cfg *config.Config, sqlClient *ent.Client) Server {
+	r := mux.NewRouter()
+	s := &Server{metadataStore, objectStore, nil}
+
+	// TODO: remove from future version (v0.5.0) endpoint with version
+	r.HandleFunc("/download/{gitoid}", s.DownloadHandler)
+	r.HandleFunc("/upload", s.UploadHandler)
+	if cfg.EnableGraphql {
+		r.Handle("/query", s.Query(sqlClient))
+		r.Handle("/v1/query", s.Query(sqlClient))
+	}
+
+	r.HandleFunc("/v1/download/{gitoid}", s.DownloadHandler)
+	r.HandleFunc("/v1/upload", s.UploadHandler)
+	if cfg.GraphqlWebClientEnable {
+		r.Handle("/",
+			playground.Handler("Archivista", "/v1/query"),
+		)
+	}
+	r.PathPrefix("/swagger/").Handler(httpSwagger.WrapHandler)
+	s.router = r
+
+	return *s
+
 }
 
-func (s *Server) Store(ctx context.Context, r io.Reader) (api.StoreResponse, error) {
+// @title Archivista API
+// @description Archivista API
+// @version v1
+// @contact.name Archivista Contributors
+// @contact.url https://github.com/in-toto/archivista/issues/new
+// @license Apache 2
+// @license.url https://opensource.org/licenses/Apache-2
+// InitRoutes initializes the HTTP API routes for the server
+func (s *Server) Router() *mux.Router {
+	return s.router
+}
+
+// @Summary Store
+// @Description stores an attestation
+// @Produce  json
+// @Success 200 {object} api.StoreResponse
+// @Tags attestation
+// @Router /v1/upload [post]
+func (s *Server) Upload(ctx context.Context, r io.Reader) (api.StoreResponse, error) {
 	payload, err := io.ReadAll(r)
 	if err != nil {
 		return api.StoreResponse{}, err
@@ -79,14 +128,20 @@ func (s *Server) Store(ctx context.Context, r io.Reader) (api.StoreResponse, err
 	return api.StoreResponse{Gitoid: gid.String()}, nil
 }
 
-func (s *Server) StoreHandler(w http.ResponseWriter, r *http.Request) {
+// @Summary Store
+// @Description stores an attestation
+// @Produce  json
+// @Success 200 {object} api.StoreResponse
+// @Router /upload [post]
+// @Deprecated
+func (s *Server) UploadHandler(w http.ResponseWriter, r *http.Request) {
 	if r.Method != http.MethodPost {
 		http.Error(w, fmt.Sprintf("%s is an unsupported method", r.Method), http.StatusBadRequest)
 		return
 	}
 
 	defer r.Body.Close()
-	resp, err := s.Store(r.Context(), r.Body)
+	resp, err := s.Upload(r.Context(), r.Body)
 	if err != nil {
 		http.Error(w, err.Error(), http.StatusBadRequest)
 		return
@@ -102,7 +157,13 @@ func (s *Server) StoreHandler(w http.ResponseWriter, r *http.Request) {
 	w.Header().Set("Content-Type", "application/json")
 }
 
-func (s *Server) Get(ctx context.Context, gitoid string) (io.ReadCloser, error) {
+// @Summary Download
+// @Description download an attestation
+// @Produce  json
+// @Success 200 {object} dsse.Envelope
+// @Tags attestation
+// @Router /v1/donwload/{gitoid} [post]
+func (s *Server) Download(ctx context.Context, gitoid string) (io.ReadCloser, error) {
 	if len(strings.TrimSpace(gitoid)) == 0 {
 		return nil, errors.New("gitoid parameter is required")
 	}
@@ -119,14 +180,20 @@ func (s *Server) Get(ctx context.Context, gitoid string) (io.ReadCloser, error) 
 	return objReader, err
 }
 
-func (s *Server) GetHandler(w http.ResponseWriter, r *http.Request) {
+// @Summary Download
+// @Description download an attestation
+// @Produce  json
+// @Success 200 {object} dsse.Envelope
+// @Deprecated
+// @Router /donwload/{gitoid} [post]
+func (s *Server) DownloadHandler(w http.ResponseWriter, r *http.Request) {
 	if r.Method != http.MethodGet {
 		http.Error(w, fmt.Sprintf("%s is an unsupported method", r.Method), http.StatusBadRequest)
 		return
 	}
 
 	vars := mux.Vars(r)
-	attestationReader, err := s.Get(r.Context(), vars["gitoid"])
+	attestationReader, err := s.Download(r.Context(), vars["gitoid"])
 	if err != nil {
 		http.Error(w, err.Error(), http.StatusBadRequest)
 		return
@@ -140,4 +207,16 @@ func (s *Server) GetHandler(w http.ResponseWriter, r *http.Request) {
 	}
 
 	w.Header().Set("Content-Type", "application/json")
+}
+
+// @Summary Query GraphQL
+// @Description GraphQL query
+// @Produce  json
+// @Success 200 {object} archivista.Resolver
+// @Tags graphql
+// @Router /v1/query [post]
+func (s *Server) Query(sqlclient *ent.Client) *handler.Server {
+	srv := handler.NewDefaultServer(archivista.NewSchema(sqlclient))
+	srv.Use(entgql.Transactioner{TxOpener: sqlclient})
+	return srv
 }
