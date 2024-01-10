@@ -13,7 +13,6 @@
 # limitations under the License.
 
 permissions:
-    id-token: write # This is required for requesting the JWT
     contents: read  # This is required for actions/checkout
 name: pipeline
 on:
@@ -26,6 +25,9 @@ on:
 jobs:
     fmt:
         uses: ./.github/workflows/witness.yml
+        permissions:
+          id-token: write # This is required for requesting the JWT
+          contents: read  # This is required for actions/checkout
         with:
           pull_request: ${{ github.event_name == 'pull_request' }}
           step: static-analysis
@@ -34,6 +36,9 @@ jobs:
 
     static_analysis:
         uses: ./.github/workflows/witness.yml
+        permissions:
+          id-token: write # This is required for requesting the JWT
+          contents: read  # This is required for actions/checkout
         with:
           pull_request: ${{ github.event_name == 'pull_request' }}
           step: static-analysis
@@ -43,6 +48,9 @@ jobs:
     tests:
         needs: [fmt, static_analysis]
         uses: ./.github/workflows/witness.yml
+        permissions:
+          id-token: write # This is required for requesting the JWT
+          contents: read  # This is required for actions/checkout
         with:
             pull_request: ${{ github.event_name == 'pull_request' }}
             step: "tests"
@@ -79,7 +87,7 @@ jobs:
                 password: ${{ secrets.GITHUB_TOKEN }}
 
             - name: Download GoReleaser
-              run: go install github.com/goreleaser/goreleaser@latest
+              run: go install github.com/goreleaser/goreleaser@v1.23.0
 
             - name: Run GoReleaser
               uses: testifysec/witness-run-action@40aa4ef36fc431a37de7c3faebcb66513c03b934

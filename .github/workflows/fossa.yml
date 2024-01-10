@@ -1,0 +1,42 @@
+# Copyright 2023 The Archivista Contributors
+#
+# Licensed under the Apache License, Version 2.0 (the "License");
+# you may not use this file except in compliance with the License.
+# You may obtain a copy of the License at
+#
+#     http://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an "AS IS" BASIS,
+# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+# See the License for the specific language governing permissions and
+# limitations under the License.
+
+name: "Fossa Scan"
+
+on:
+    push:
+      branches: ["main"]
+    pull_request:
+      # The branches below must be a subset of the branches above
+      branches: ["main"]
+    schedule:
+      - cron: "0 0 * * 1"
+
+permissions:
+  contents: read
+
+jobs:
+    fossa-scan:
+      env:
+        FOSSA_API_KEY: ${{ secrets.fossaApiKey }}
+      runs-on: ubuntu-latest
+      steps:
+        - if: ${{ env.FOSSA_API_KEY != '' }}
+          name: "Checkout Code"
+          uses: actions/checkout@b4ffde65f46336ab88eb53be808477a3936bae11 # v4.1.1
+        - if: ${{ env.FOSSA_API_KEY != '' }}
+          name: "Run FOSSA Scan"
+          uses: fossas/fossa-action@f61a4c0c263690f2ddb54b9822a719c25a7b608f # v1.3.1
+          with:
+            api-key: ${{ env.FOSSA_API_KEY }}

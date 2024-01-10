@@ -17,5 +17,5 @@ WORKDIR /src
 RUN apk update && apk add --no-cache file git curl
 RUN curl -sSf https://atlasgo.sh | sh
 ENV GOMODCACHE /root/.cache/gocache
-RUN go install github.com/githubnemo/CompileDaemon@latest
+RUN go install github.com/githubnemo/CompileDaemon@v1.4.0
 ENTRYPOINT ["sh", "entrypoint-dev.sh"]

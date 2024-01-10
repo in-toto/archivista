@@ -21,7 +21,7 @@ RUN --mount=target=. --mount=target=/root/.cache,type=cache \
     CGO_ENABLED=0 go build -o /out/archivista -ldflags '-s -d -w' ./cmd/archivista; \
     file /out/archivista | grep "statically linked"
 
-FROM alpine
+FROM alpine:3.19.0@sha256:51b67269f354137895d43f3b3d810bfacd3945438e94dc5ac55fdac340352f48
 COPY --from=build /out/archivista /bin/archivista
 COPY --from=build /usr/local/bin/atlas /bin/atlas
 ADD entrypoint.sh /bin/entrypoint.sh
