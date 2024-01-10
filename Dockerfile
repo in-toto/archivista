@@ -15,13 +15,13 @@
 FROM golang:1.21.5-alpine@sha256:4db4aac30880b978cae5445dd4a706215249ad4f43d28bd7cdf7906e9be8dd6b AS build
 WORKDIR /src
 RUN apk update && apk add --no-cache file git curl
-RUN GOBIN=/usr/local/bin go install ariga.io/atlas/cmd/atlas@v0.12.2-0.20230806193313-117e03f96e45
+RUN curl -sSf https://atlasgo.sh | sh
 ENV GOMODCACHE /root/.cache/gocache
 RUN --mount=target=. --mount=target=/root/.cache,type=cache \
     CGO_ENABLED=0 go build -o /out/archivista -ldflags '-s -d -w' ./cmd/archivista; \
     file /out/archivista | grep "statically linked"
 
-FROM alpine:3.19.0@sha256:13b7e62e8df80264dbb747995705a986aa530415763a6c58f84a3ca8af9a5bcd
+FROM alpine:3.19.0@sha256:51b67269f354137895d43f3b3d810bfacd3945438e94dc5ac55fdac340352f48
 COPY --from=build /out/archivista /bin/archivista
 COPY --from=build /usr/local/bin/atlas /bin/atlas
 ADD entrypoint.sh /bin/entrypoint.sh

@@ -40,7 +40,7 @@ jobs:
 
       - name: Check DB Migrations
         run: |
-          GOBIN=/usr/local/bin go install ariga.io/atlas/cmd/atlas@v0.12.2-0.20230806193313-117e03f96e45
+          curl -sSf https://atlasgo.sh | sh
           before=$(find ent/migrate/migrations/ -type f | wc -l | awk '{ print $1 }')
           make db-migrations
           after=$(find ent/migrate/migrations/ -type f | wc -l | awk '{ print $1 }')
