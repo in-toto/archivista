@@ -1,0 +1,7 @@
+run:
+  timeout: 6m
+linters:
+  enable:
+    - gosec
+issues:
+  max-same-issues: 50
