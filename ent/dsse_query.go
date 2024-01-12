@@ -11,28 +11,28 @@ import (
 	"entgo.io/ent/dialect/sql"
 	"entgo.io/ent/dialect/sql/sqlgraph"
 	"entgo.io/ent/schema/field"
-	"github.com/testifysec/archivista/ent/dsse"
-	"github.com/testifysec/archivista/ent/payloaddigest"
-	"github.com/testifysec/archivista/ent/predicate"
-	"github.com/testifysec/archivista/ent/signature"
-	"github.com/testifysec/archivista/ent/statement"
+	"github.com/in-toto/archivista/ent/dsse"
+	"github.com/in-toto/archivista/ent/payloaddigest"
+	"github.com/in-toto/archivista/ent/predicate"
+	"github.com/in-toto/archivista/ent/signature"
+	"github.com/in-toto/archivista/ent/statement"
 )
 
 // DsseQuery is the builder for querying Dsse entities.
 type DsseQuery struct {
 	config
-	limit              *int
-	offset             *int
-	unique             *bool
-	order              []OrderFunc
-	fields             []string
-	predicates         []predicate.Dsse
-	withStatement      *StatementQuery
-	withSignatures     *SignatureQuery
-	withPayloadDigests *PayloadDigestQuery
-	withFKs            bool
-	modifiers          []func(*sql.Selector)
-	loadTotal          []func(context.Context, []*Dsse) error
+	ctx                     *QueryContext
+	order                   []dsse.OrderOption
+	inters                  []Interceptor
+	predicates              []predicate.Dsse
+	withStatement           *StatementQuery
+	withSignatures          *SignatureQuery
+	withPayloadDigests      *PayloadDigestQuery
+	withFKs                 bool
+	modifiers               []func(*sql.Selector)
+	loadTotal               []func(context.Context, []*Dsse) error
+	withNamedSignatures     map[string]*SignatureQuery
+	withNamedPayloadDigests map[string]*PayloadDigestQuery
 	// intermediate query (i.e. traversal path).
 	sql  *sql.Selector
 	path func(context.Context) (*sql.Selector, error)
@@ -44,34 +44,34 @@ func (dq *DsseQuery) Where(ps ...predicate.Dsse) *DsseQuery {
 	return dq
 }
 
-// Limit adds a limit step to the query.
+// Limit the number of records to be returned by this query.
 func (dq *DsseQuery) Limit(limit int) *DsseQuery {
-	dq.limit = &limit
+	dq.ctx.Limit = &limit
 	return dq
 }
 
-// Offset adds an offset step to the query.
+// Offset to start from.
 func (dq *DsseQuery) Offset(offset int) *DsseQuery {
-	dq.offset = &offset
+	dq.ctx.Offset = &offset
 	return dq
 }
 
 // Unique configures the query builder to filter duplicate records on query.
 // By default, unique is set to true, and can be disabled using this method.
 func (dq *DsseQuery) Unique(unique bool) *DsseQuery {
-	dq.unique = &unique
+	dq.ctx.Unique = &unique
 	return dq
 }
 
-// Order adds an order step to the query.
-func (dq *DsseQuery) Order(o ...OrderFunc) *DsseQuery {
+// Order specifies how the records should be ordered.
+func (dq *DsseQuery) Order(o ...dsse.OrderOption) *DsseQuery {
 	dq.order = append(dq.order, o...)
 	return dq
 }
 
 // QueryStatement chains the current query on the "statement" edge.
 func (dq *DsseQuery) QueryStatement() *StatementQuery {
-	query := &StatementQuery{config: dq.config}
+	query := (&StatementClient{config: dq.config}).Query()
 	query.path = func(ctx context.Context) (fromU *sql.Selector, err error) {
 		if err := dq.prepareQuery(ctx); err != nil {
 			return nil, err
@@ -93,7 +93,7 @@ func (dq *DsseQuery) QueryStatement() *StatementQuery {
 
 // QuerySignatures chains the current query on the "signatures" edge.
 func (dq *DsseQuery) QuerySignatures() *SignatureQuery {
-	query := &SignatureQuery{config: dq.config}
+	query := (&SignatureClient{config: dq.config}).Query()
 	query.path = func(ctx context.Context) (fromU *sql.Selector, err error) {
 		if err := dq.prepareQuery(ctx); err != nil {
 			return nil, err
@@ -115,7 +115,7 @@ func (dq *DsseQuery) QuerySignatures() *SignatureQuery {
 
 // QueryPayloadDigests chains the current query on the "payload_digests" edge.
 func (dq *DsseQuery) QueryPayloadDigests() *PayloadDigestQuery {
-	query := &PayloadDigestQuery{config: dq.config}
+	query := (&PayloadDigestClient{config: dq.config}).Query()
 	query.path = func(ctx context.Context) (fromU *sql.Selector, err error) {
 		if err := dq.prepareQuery(ctx); err != nil {
 			return nil, err
@@ -138,7 +138,7 @@ func (dq *DsseQuery) QueryPayloadDigests() *PayloadDigestQuery {
 // First returns the first Dsse entity from the query.
 // Returns a *NotFoundError when no Dsse was found.
 func (dq *DsseQuery) First(ctx context.Context) (*Dsse, error) {
-	nodes, err := dq.Limit(1).All(ctx)
+	nodes, err := dq.Limit(1).All(setContextOp(ctx, dq.ctx, "First"))
 	if err != nil {
 		return nil, err
 	}
@@ -161,7 +161,7 @@ func (dq *DsseQuery) FirstX(ctx context.Context) *Dsse {
 // Returns a *NotFoundError when no Dsse ID was found.
 func (dq *DsseQuery) FirstID(ctx context.Context) (id int, err error) {
 	var ids []int
-	if ids, err = dq.Limit(1).IDs(ctx); err != nil {
+	if ids, err = dq.Limit(1).IDs(setContextOp(ctx, dq.ctx, "FirstID")); err != nil {
 		return
 	}
 	if len(ids) == 0 {
@@ -184,7 +184,7 @@ func (dq *DsseQuery) FirstIDX(ctx context.Context) int {
 // Returns a *NotSingularError when more than one Dsse entity is found.
 // Returns a *NotFoundError when no Dsse entities are found.
 func (dq *DsseQuery) Only(ctx context.Context) (*Dsse, error) {
-	nodes, err := dq.Limit(2).All(ctx)
+	nodes, err := dq.Limit(2).All(setContextOp(ctx, dq.ctx, "Only"))
 	if err != nil {
 		return nil, err
 	}
@@ -212,7 +212,7 @@ func (dq *DsseQuery) OnlyX(ctx context.Context) *Dsse {
 // Returns a *NotFoundError when no entities are found.
 func (dq *DsseQuery) OnlyID(ctx context.Context) (id int, err error) {
 	var ids []int
-	if ids, err = dq.Limit(2).IDs(ctx); err != nil {
+	if ids, err = dq.Limit(2).IDs(setContextOp(ctx, dq.ctx, "OnlyID")); err != nil {
 		return
 	}
 	switch len(ids) {
@@ -237,10 +237,12 @@ func (dq *DsseQuery) OnlyIDX(ctx context.Context) int {
 
 // All executes the query and returns a list of Dsses.
 func (dq *DsseQuery) All(ctx context.Context) ([]*Dsse, error) {
+	ctx = setContextOp(ctx, dq.ctx, "All")
 	if err := dq.prepareQuery(ctx); err != nil {
 		return nil, err
 	}
-	return dq.sqlAll(ctx)
+	qr := querierAll[[]*Dsse, *DsseQuery]()
+	return withInterceptors[[]*Dsse](ctx, dq, qr, dq.inters)
 }
 
 // AllX is like All, but panics if an error occurs.
@@ -253,9 +255,12 @@ func (dq *DsseQuery) AllX(ctx context.Context) []*Dsse {
 }
 
 // IDs executes the query and returns a list of Dsse IDs.
-func (dq *DsseQuery) IDs(ctx context.Context) ([]int, error) {
-	var ids []int
-	if err := dq.Select(dsse.FieldID).Scan(ctx, &ids); err != nil {
+func (dq *DsseQuery) IDs(ctx context.Context) (ids []int, err error) {
+	if dq.ctx.Unique == nil && dq.path != nil {
+		dq.Unique(true)
+	}
+	ctx = setContextOp(ctx, dq.ctx, "IDs")
+	if err = dq.Select(dsse.FieldID).Scan(ctx, &ids); err != nil {
 		return nil, err
 	}
 	return ids, nil
@@ -272,10 +277,11 @@ func (dq *DsseQuery) IDsX(ctx context.Context) []int {
 
 // Count returns the count of the given query.
 func (dq *DsseQuery) Count(ctx context.Context) (int, error) {
+	ctx = setContextOp(ctx, dq.ctx, "Count")
 	if err := dq.prepareQuery(ctx); err != nil {
 		return 0, err
 	}
-	return dq.sqlCount(ctx)
+	return withInterceptors[int](ctx, dq, querierCount[*DsseQuery](), dq.inters)
 }
 
 // CountX is like Count, but panics if an error occurs.
@@ -289,10 +295,15 @@ func (dq *DsseQuery) CountX(ctx context.Context) int {
 
 // Exist returns true if the query has elements in the graph.
 func (dq *DsseQuery) Exist(ctx context.Context) (bool, error) {
-	if err := dq.prepareQuery(ctx); err != nil {
-		return false, err
+	ctx = setContextOp(ctx, dq.ctx, "Exist")
+	switch _, err := dq.FirstID(ctx); {
+	case IsNotFound(err):
+		return false, nil
+	case err != nil:
+		return false, fmt.Errorf("ent: check existence: %w", err)
+	default:
+		return true, nil
 	}
-	return dq.sqlExist(ctx)
 }
 
 // ExistX is like Exist, but panics if an error occurs.
@@ -312,24 +323,23 @@ func (dq *DsseQuery) Clone() *DsseQuery {
 	}
 	return &DsseQuery{
 		config:             dq.config,
-		limit:              dq.limit,
-		offset:             dq.offset,
-		order:              append([]OrderFunc{}, dq.order...),
+		ctx:                dq.ctx.Clone(),
+		order:              append([]dsse.OrderOption{}, dq.order...),
+		inters:             append([]Interceptor{}, dq.inters...),
 		predicates:         append([]predicate.Dsse{}, dq.predicates...),
 		withStatement:      dq.withStatement.Clone(),
 		withSignatures:     dq.withSignatures.Clone(),
 		withPayloadDigests: dq.withPayloadDigests.Clone(),
 		// clone intermediate query.
-		sql:    dq.sql.Clone(),
-		path:   dq.path,
-		unique: dq.unique,
+		sql:  dq.sql.Clone(),
+		path: dq.path,
 	}
 }
 
 // WithStatement tells the query-builder to eager-load the nodes that are connected to
 // the "statement" edge. The optional arguments are used to configure the query builder of the edge.
 func (dq *DsseQuery) WithStatement(opts ...func(*StatementQuery)) *DsseQuery {
-	query := &StatementQuery{config: dq.config}
+	query := (&StatementClient{config: dq.config}).Query()
 	for _, opt := range opts {
 		opt(query)
 	}
@@ -340,7 +350,7 @@ func (dq *DsseQuery) WithStatement(opts ...func(*StatementQuery)) *DsseQuery {
 // WithSignatures tells the query-builder to eager-load the nodes that are connected to
 // the "signatures" edge. The optional arguments are used to configure the query builder of the edge.
 func (dq *DsseQuery) WithSignatures(opts ...func(*SignatureQuery)) *DsseQuery {
-	query := &SignatureQuery{config: dq.config}
+	query := (&SignatureClient{config: dq.config}).Query()
 	for _, opt := range opts {
 		opt(query)
 	}
@@ -351,7 +361,7 @@ func (dq *DsseQuery) WithSignatures(opts ...func(*SignatureQuery)) *DsseQuery {
 // WithPayloadDigests tells the query-builder to eager-load the nodes that are connected to
 // the "payload_digests" edge. The optional arguments are used to configure the query builder of the edge.
 func (dq *DsseQuery) WithPayloadDigests(opts ...func(*PayloadDigestQuery)) *DsseQuery {
-	query := &PayloadDigestQuery{config: dq.config}
+	query := (&PayloadDigestClient{config: dq.config}).Query()
 	for _, opt := range opts {
 		opt(query)
 	}
@@ -374,16 +384,11 @@ func (dq *DsseQuery) WithPayloadDigests(opts ...func(*PayloadDigestQuery)) *Dsse
 //		Aggregate(ent.Count()).
 //		Scan(ctx, &v)
 func (dq *DsseQuery) GroupBy(field string, fields ...string) *DsseGroupBy {
-	grbuild := &DsseGroupBy{config: dq.config}
-	grbuild.fields = append([]string{field}, fields...)
-	grbuild.path = func(ctx context.Context) (prev *sql.Selector, err error) {
-		if err := dq.prepareQuery(ctx); err != nil {
-			return nil, err
-		}
-		return dq.sqlQuery(ctx), nil
-	}
+	dq.ctx.Fields = append([]string{field}, fields...)
+	grbuild := &DsseGroupBy{build: dq}
+	grbuild.flds = &dq.ctx.Fields
 	grbuild.label = dsse.Label
-	grbuild.flds, grbuild.scan = &grbuild.fields, grbuild.Scan
+	grbuild.scan = grbuild.Scan
 	return grbuild
 }
 
@@ -400,15 +405,30 @@ func (dq *DsseQuery) GroupBy(field string, fields ...string) *DsseGroupBy {
 //		Select(dsse.FieldGitoidSha256).
 //		Scan(ctx, &v)
 func (dq *DsseQuery) Select(fields ...string) *DsseSelect {
-	dq.fields = append(dq.fields, fields...)
-	selbuild := &DsseSelect{DsseQuery: dq}
-	selbuild.label = dsse.Label
-	selbuild.flds, selbuild.scan = &dq.fields, selbuild.Scan
-	return selbuild
+	dq.ctx.Fields = append(dq.ctx.Fields, fields...)
+	sbuild := &DsseSelect{DsseQuery: dq}
+	sbuild.label = dsse.Label
+	sbuild.flds, sbuild.scan = &dq.ctx.Fields, sbuild.Scan
+	return sbuild
+}
+
+// Aggregate returns a DsseSelect configured with the given aggregations.
+func (dq *DsseQuery) Aggregate(fns ...AggregateFunc) *DsseSelect {
+	return dq.Select().Aggregate(fns...)
 }
 
 func (dq *DsseQuery) prepareQuery(ctx context.Context) error {
-	for _, f := range dq.fields {
+	for _, inter := range dq.inters {
+		if inter == nil {
+			return fmt.Errorf("ent: uninitialized interceptor (forgotten import ent/runtime?)")
+		}
+		if trv, ok := inter.(Traverser); ok {
+			if err := trv.Traverse(ctx, dq); err != nil {
+				return err
+			}
+		}
+	}
+	for _, f := range dq.ctx.Fields {
 		if !dsse.ValidColumn(f) {
 			return &ValidationError{Name: f, err: fmt.Errorf("ent: invalid field %q for query", f)}
 		}
@@ -481,6 +501,20 @@ func (dq *DsseQuery) sqlAll(ctx context.Context, hooks ...queryHook) ([]*Dsse, e
 			return nil, err
 		}
 	}
+	for name, query := range dq.withNamedSignatures {
+		if err := dq.loadSignatures(ctx, query, nodes,
+			func(n *Dsse) { n.appendNamedSignatures(name) },
+			func(n *Dsse, e *Signature) { n.appendNamedSignatures(name, e) }); err != nil {
+			return nil, err
+		}
+	}
+	for name, query := range dq.withNamedPayloadDigests {
+		if err := dq.loadPayloadDigests(ctx, query, nodes,
+			func(n *Dsse) { n.appendNamedPayloadDigests(name) },
+			func(n *Dsse, e *PayloadDigest) { n.appendNamedPayloadDigests(name, e) }); err != nil {
+			return nil, err
+		}
+	}
 	for i := range dq.loadTotal {
 		if err := dq.loadTotal[i](ctx, nodes); err != nil {
 			return nil, err
@@ -501,6 +535,9 @@ func (dq *DsseQuery) loadStatement(ctx context.Context, query *StatementQuery, n
 			ids = append(ids, fk)
 		}
 		nodeids[fk] = append(nodeids[fk], nodes[i])
+	}
+	if len(ids) == 0 {
+		return nil
 	}
 	query.Where(statement.IDIn(ids...))
 	neighbors, err := query.All(ctx)
@@ -530,7 +567,7 @@ func (dq *DsseQuery) loadSignatures(ctx context.Context, query *SignatureQuery, 
 	}
 	query.withFKs = true
 	query.Where(predicate.Signature(func(s *sql.Selector) {
-		s.Where(sql.InValues(dsse.SignaturesColumn, fks...))
+		s.Where(sql.InValues(s.C(dsse.SignaturesColumn), fks...))
 	}))
 	neighbors, err := query.All(ctx)
 	if err != nil {
@@ -543,7 +580,7 @@ func (dq *DsseQuery) loadSignatures(ctx context.Context, query *SignatureQuery, 
 		}
 		node, ok := nodeids[*fk]
 		if !ok {
-			return fmt.Errorf(`unexpected foreign-key "dsse_signatures" returned %v for node %v`, *fk, n.ID)
+			return fmt.Errorf(`unexpected referenced foreign-key "dsse_signatures" returned %v for node %v`, *fk, n.ID)
 		}
 		assign(node, n)
 	}
@@ -561,7 +598,7 @@ func (dq *DsseQuery) loadPayloadDigests(ctx context.Context, query *PayloadDiges
 	}
 	query.withFKs = true
 	query.Where(predicate.PayloadDigest(func(s *sql.Selector) {
-		s.Where(sql.InValues(dsse.PayloadDigestsColumn, fks...))
+		s.Where(sql.InValues(s.C(dsse.PayloadDigestsColumn), fks...))
 	}))
 	neighbors, err := query.All(ctx)
 	if err != nil {
@@ -574,7 +611,7 @@ func (dq *DsseQuery) loadPayloadDigests(ctx context.Context, query *PayloadDiges
 		}
 		node, ok := nodeids[*fk]
 		if !ok {
-			return fmt.Errorf(`unexpected foreign-key "dsse_payload_digests" returned %v for node %v`, *fk, n.ID)
+			return fmt.Errorf(`unexpected referenced foreign-key "dsse_payload_digests" returned %v for node %v`, *fk, n.ID)
 		}
 		assign(node, n)
 	}
@@ -586,41 +623,22 @@ func (dq *DsseQuery) sqlCount(ctx context.Context) (int, error) {
 	if len(dq.modifiers) > 0 {
 		_spec.Modifiers = dq.modifiers
 	}
-	_spec.Node.Columns = dq.fields
-	if len(dq.fields) > 0 {
-		_spec.Unique = dq.unique != nil && *dq.unique
+	_spec.Node.Columns = dq.ctx.Fields
+	if len(dq.ctx.Fields) > 0 {
+		_spec.Unique = dq.ctx.Unique != nil && *dq.ctx.Unique
 	}
 	return sqlgraph.CountNodes(ctx, dq.driver, _spec)
 }
 
-func (dq *DsseQuery) sqlExist(ctx context.Context) (bool, error) {
-	switch _, err := dq.FirstID(ctx); {
-	case IsNotFound(err):
-		return false, nil
-	case err != nil:
-		return false, fmt.Errorf("ent: check existence: %w", err)
-	default:
-		return true, nil
-	}
-}
-
 func (dq *DsseQuery) querySpec() *sqlgraph.QuerySpec {
-	_spec := &sqlgraph.QuerySpec{
-		Node: &sqlgraph.NodeSpec{
-			Table:   dsse.Table,
-			Columns: dsse.Columns,
-			ID: &sqlgraph.FieldSpec{
-				Type:   field.TypeInt,
-				Column: dsse.FieldID,
-			},
-		},
-		From:   dq.sql,
-		Unique: true,
-	}
-	if unique := dq.unique; unique != nil {
+	_spec := sqlgraph.NewQuerySpec(dsse.Table, dsse.Columns, sqlgraph.NewFieldSpec(dsse.FieldID, field.TypeInt))
+	_spec.From = dq.sql
+	if unique := dq.ctx.Unique; unique != nil {
 		_spec.Unique = *unique
+	} else if dq.path != nil {
+		_spec.Unique = true
 	}
-	if fields := dq.fields; len(fields) > 0 {
+	if fields := dq.ctx.Fields; len(fields) > 0 {
 		_spec.Node.Columns = make([]string, 0, len(fields))
 		_spec.Node.Columns = append(_spec.Node.Columns, dsse.FieldID)
 		for i := range fields {
@@ -636,10 +654,10 @@ func (dq *DsseQuery) querySpec() *sqlgraph.QuerySpec {
 			}
 		}
 	}
-	if limit := dq.limit; limit != nil {
+	if limit := dq.ctx.Limit; limit != nil {
 		_spec.Limit = *limit
 	}
-	if offset := dq.offset; offset != nil {
+	if offset := dq.ctx.Offset; offset != nil {
 		_spec.Offset = *offset
 	}
 	if ps := dq.order; len(ps) > 0 {
@@ -655,7 +673,7 @@ func (dq *DsseQuery) querySpec() *sqlgraph.QuerySpec {
 func (dq *DsseQuery) sqlQuery(ctx context.Context) *sql.Selector {
 	builder := sql.Dialect(dq.driver.Dialect())
 	t1 := builder.Table(dsse.Table)
-	columns := dq.fields
+	columns := dq.ctx.Fields
 	if len(columns) == 0 {
 		columns = dsse.Columns
 	}
@@ -664,7 +682,7 @@ func (dq *DsseQuery) sqlQuery(ctx context.Context) *sql.Selector {
 		selector = dq.sql
 		selector.Select(selector.Columns(columns...)...)
 	}
-	if dq.unique != nil && *dq.unique {
+	if dq.ctx.Unique != nil && *dq.ctx.Unique {
 		selector.Distinct()
 	}
 	for _, p := range dq.predicates {
@@ -673,26 +691,49 @@ func (dq *DsseQuery) sqlQuery(ctx context.Context) *sql.Selector {
 	for _, p := range dq.order {
 		p(selector)
 	}
-	if offset := dq.offset; offset != nil {
+	if offset := dq.ctx.Offset; offset != nil {
 		// limit is mandatory for offset clause. We start
 		// with default value, and override it below if needed.
 		selector.Offset(*offset).Limit(math.MaxInt32)
 	}
-	if limit := dq.limit; limit != nil {
+	if limit := dq.ctx.Limit; limit != nil {
 		selector.Limit(*limit)
 	}
 	return selector
 }
 
+// WithNamedSignatures tells the query-builder to eager-load the nodes that are connected to the "signatures"
+// edge with the given name. The optional arguments are used to configure the query builder of the edge.
+func (dq *DsseQuery) WithNamedSignatures(name string, opts ...func(*SignatureQuery)) *DsseQuery {
+	query := (&SignatureClient{config: dq.config}).Query()
+	for _, opt := range opts {
+		opt(query)
+	}
+	if dq.withNamedSignatures == nil {
+		dq.withNamedSignatures = make(map[string]*SignatureQuery)
+	}
+	dq.withNamedSignatures[name] = query
+	return dq
+}
+
+// WithNamedPayloadDigests tells the query-builder to eager-load the nodes that are connected to the "payload_digests"
+// edge with the given name. The optional arguments are used to configure the query builder of the edge.
+func (dq *DsseQuery) WithNamedPayloadDigests(name string, opts ...func(*PayloadDigestQuery)) *DsseQuery {
+	query := (&PayloadDigestClient{config: dq.config}).Query()
+	for _, opt := range opts {
+		opt(query)
+	}
+	if dq.withNamedPayloadDigests == nil {
+		dq.withNamedPayloadDigests = make(map[string]*PayloadDigestQuery)
+	}
+	dq.withNamedPayloadDigests[name] = query
+	return dq
+}
+
 // DsseGroupBy is the group-by builder for Dsse entities.
 type DsseGroupBy struct {
-	config
 	selector
-	fields []string
-	fns    []AggregateFunc
-	// intermediate query (i.e. traversal path).
-	sql  *sql.Selector
-	path func(context.Context) (*sql.Selector, error)
+	build *DsseQuery
 }
 
 // Aggregate adds the given aggregation functions to the group-by query.
@@ -701,74 +742,77 @@ func (dgb *DsseGroupBy) Aggregate(fns ...AggregateFunc) *DsseGroupBy {
 	return dgb
 }
 
-// Scan applies the group-by query and scans the result into the given value.
+// Scan applies the selector query and scans the result into the given value.
 func (dgb *DsseGroupBy) Scan(ctx context.Context, v any) error {
-	query, err := dgb.path(ctx)
-	if err != nil {
+	ctx = setContextOp(ctx, dgb.build.ctx, "GroupBy")
+	if err := dgb.build.prepareQuery(ctx); err != nil {
 		return err
 	}
-	dgb.sql = query
-	return dgb.sqlScan(ctx, v)
+	return scanWithInterceptors[*DsseQuery, *DsseGroupBy](ctx, dgb.build, dgb, dgb.build.inters, v)
 }
 
-func (dgb *DsseGroupBy) sqlScan(ctx context.Context, v any) error {
-	for _, f := range dgb.fields {
-		if !dsse.ValidColumn(f) {
-			return &ValidationError{Name: f, err: fmt.Errorf("invalid field %q for group-by", f)}
-		}
+func (dgb *DsseGroupBy) sqlScan(ctx context.Context, root *DsseQuery, v any) error {
+	selector := root.sqlQuery(ctx).Select()
+	aggregation := make([]string, 0, len(dgb.fns))
+	for _, fn := range dgb.fns {
+		aggregation = append(aggregation, fn(selector))
 	}
-	selector := dgb.sqlQuery()
+	if len(selector.SelectedColumns()) == 0 {
+		columns := make([]string, 0, len(*dgb.flds)+len(dgb.fns))
+		for _, f := range *dgb.flds {
+			columns = append(columns, selector.C(f))
+		}
+		columns = append(columns, aggregation...)
+		selector.Select(columns...)
+	}
+	selector.GroupBy(selector.Columns(*dgb.flds...)...)
 	if err := selector.Err(); err != nil {
 		return err
 	}
 	rows := &sql.Rows{}
 	query, args := selector.Query()
-	if err := dgb.driver.Query(ctx, query, args, rows); err != nil {
+	if err := dgb.build.driver.Query(ctx, query, args, rows); err != nil {
 		return err
 	}
 	defer rows.Close()
 	return sql.ScanSlice(rows, v)
 }
 
-func (dgb *DsseGroupBy) sqlQuery() *sql.Selector {
-	selector := dgb.sql.Select()
-	aggregation := make([]string, 0, len(dgb.fns))
-	for _, fn := range dgb.fns {
-		aggregation = append(aggregation, fn(selector))
-	}
-	// If no columns were selected in a custom aggregation function, the default
-	// selection is the fields used for "group-by", and the aggregation functions.
-	if len(selector.SelectedColumns()) == 0 {
-		columns := make([]string, 0, len(dgb.fields)+len(dgb.fns))
-		for _, f := range dgb.fields {
-			columns = append(columns, selector.C(f))
-		}
-		columns = append(columns, aggregation...)
-		selector.Select(columns...)
-	}
-	return selector.GroupBy(selector.Columns(dgb.fields...)...)
-}
-
 // DsseSelect is the builder for selecting fields of Dsse entities.
 type DsseSelect struct {
 	*DsseQuery
 	selector
-	// intermediate query (i.e. traversal path).
-	sql *sql.Selector
+}
+
+// Aggregate adds the given aggregation functions to the selector query.
+func (ds *DsseSelect) Aggregate(fns ...AggregateFunc) *DsseSelect {
+	ds.fns = append(ds.fns, fns...)
+	return ds
 }
 
 // Scan applies the selector query and scans the result into the given value.
 func (ds *DsseSelect) Scan(ctx context.Context, v any) error {
+	ctx = setContextOp(ctx, ds.ctx, "Select")
 	if err := ds.prepareQuery(ctx); err != nil {
 		return err
 	}
-	ds.sql = ds.DsseQuery.sqlQuery(ctx)
-	return ds.sqlScan(ctx, v)
+	return scanWithInterceptors[*DsseQuery, *DsseSelect](ctx, ds.DsseQuery, ds, ds.inters, v)
 }
 
-func (ds *DsseSelect) sqlScan(ctx context.Context, v any) error {
+func (ds *DsseSelect) sqlScan(ctx context.Context, root *DsseQuery, v any) error {
+	selector := root.sqlQuery(ctx)
+	aggregation := make([]string, 0, len(ds.fns))
+	for _, fn := range ds.fns {
+		aggregation = append(aggregation, fn(selector))
+	}
+	switch n := len(*ds.selector.flds); {
+	case n == 0 && len(aggregation) > 0:
+		selector.Select(aggregation...)
+	case n != 0 && len(aggregation) > 0:
+		selector.AppendSelect(aggregation...)
+	}
 	rows := &sql.Rows{}
-	query, args := ds.sql.Query()
+	query, args := selector.Query()
 	if err := ds.driver.Query(ctx, query, args, rows); err != nil {
 		return err
 	}

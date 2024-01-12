@@ -9,10 +9,10 @@ import (
 
 	"entgo.io/ent/dialect/sql/sqlgraph"
 	"entgo.io/ent/schema/field"
-	"github.com/testifysec/archivista/ent/attestationcollection"
-	"github.com/testifysec/archivista/ent/dsse"
-	"github.com/testifysec/archivista/ent/statement"
-	"github.com/testifysec/archivista/ent/subject"
+	"github.com/in-toto/archivista/ent/attestationcollection"
+	"github.com/in-toto/archivista/ent/dsse"
+	"github.com/in-toto/archivista/ent/statement"
+	"github.com/in-toto/archivista/ent/subject"
 )
 
 // StatementCreate is the builder for creating a Statement entity.
@@ -84,49 +84,7 @@ func (sc *StatementCreate) Mutation() *StatementMutation {
 
 // Save creates the Statement in the database.
 func (sc *StatementCreate) Save(ctx context.Context) (*Statement, error) {
-	var (
-		err  error
-		node *Statement
-	)
-	if len(sc.hooks) == 0 {
-		if err = sc.check(); err != nil {
-			return nil, err
-		}
-		node, err = sc.sqlSave(ctx)
-	} else {
-		var mut Mutator = MutateFunc(func(ctx context.Context, m Mutation) (Value, error) {
-			mutation, ok := m.(*StatementMutation)
-			if !ok {
-				return nil, fmt.Errorf("unexpected mutation type %T", m)
-			}
-			if err = sc.check(); err != nil {
-				return nil, err
-			}
-			sc.mutation = mutation
-			if node, err = sc.sqlSave(ctx); err != nil {
-				return nil, err
-			}
-			mutation.id = &node.ID
-			mutation.done = true
-			return node, err
-		})
-		for i := len(sc.hooks) - 1; i >= 0; i-- {
-			if sc.hooks[i] == nil {
-				return nil, fmt.Errorf("ent: uninitialized hook (forgotten import ent/runtime?)")
-			}
-			mut = sc.hooks[i](mut)
-		}
-		v, err := mut.Mutate(ctx, sc.mutation)
-		if err != nil {
-			return nil, err
-		}
-		nv, ok := v.(*Statement)
-		if !ok {
-			return nil, fmt.Errorf("unexpected node type %T returned from StatementMutation", v)
-		}
-		node = nv
-	}
-	return node, err
+	return withHooks(ctx, sc.sqlSave, sc.mutation, sc.hooks)
 }
 
 // SaveX calls Save and panics if Save returns an error.
@@ -165,6 +123,9 @@ func (sc *StatementCreate) check() error {
 }
 
 func (sc *StatementCreate) sqlSave(ctx context.Context) (*Statement, error) {
+	if err := sc.check(); err != nil {
+		return nil, err
+	}
 	_node, _spec := sc.createSpec()
 	if err := sqlgraph.CreateNode(ctx, sc.driver, _spec); err != nil {
 		if sqlgraph.IsConstraintError(err) {
@@ -174,26 +135,18 @@ func (sc *StatementCreate) sqlSave(ctx context.Context) (*Statement, error) {
 	}
 	id := _spec.ID.Value.(int64)
 	_node.ID = int(id)
+	sc.mutation.id = &_node.ID
+	sc.mutation.done = true
 	return _node, nil
 }
 
 func (sc *StatementCreate) createSpec() (*Statement, *sqlgraph.CreateSpec) {
 	var (
 		_node = &Statement{config: sc.config}
-		_spec = &sqlgraph.CreateSpec{
-			Table: statement.Table,
-			ID: &sqlgraph.FieldSpec{
-				Type:   field.TypeInt,
-				Column: statement.FieldID,
-			},
-		}
+		_spec = sqlgraph.NewCreateSpec(statement.Table, sqlgraph.NewFieldSpec(statement.FieldID, field.TypeInt))
 	)
 	if value, ok := sc.mutation.Predicate(); ok {
-		_spec.Fields = append(_spec.Fields, &sqlgraph.FieldSpec{
-			Type:   field.TypeString,
-			Value:  value,
-			Column: statement.FieldPredicate,
-		})
+		_spec.SetField(statement.FieldPredicate, field.TypeString, value)
 		_node.Predicate = value
 	}
 	if nodes := sc.mutation.SubjectsIDs(); len(nodes) > 0 {
@@ -204,10 +157,7 @@ func (sc *StatementCreate) createSpec() (*Statement, *sqlgraph.CreateSpec) {
 			Columns: []string{statement.SubjectsColumn},
 			Bidi:    false,
 			Target: &sqlgraph.EdgeTarget{
-				IDSpec: &sqlgraph.FieldSpec{
-					Type:   field.TypeInt,
-					Column: subject.FieldID,
-				},
+				IDSpec: sqlgraph.NewFieldSpec(subject.FieldID, field.TypeInt),
 			},
 		}
 		for _, k := range nodes {
@@ -223,10 +173,7 @@ func (sc *StatementCreate) createSpec() (*Statement, *sqlgraph.CreateSpec) {
 			Columns: []string{statement.AttestationCollectionsColumn},
 			Bidi:    false,
 			Target: &sqlgraph.EdgeTarget{
-				IDSpec: &sqlgraph.FieldSpec{
-					Type:   field.TypeInt,
-					Column: attestationcollection.FieldID,
-				},
+				IDSpec: sqlgraph.NewFieldSpec(attestationcollection.FieldID, field.TypeInt),
 			},
 		}
 		for _, k := range nodes {
@@ -242,10 +189,7 @@ func (sc *StatementCreate) createSpec() (*Statement, *sqlgraph.CreateSpec) {
 			Columns: []string{statement.DsseColumn},
 			Bidi:    false,
 			Target: &sqlgraph.EdgeTarget{
-				IDSpec: &sqlgraph.FieldSpec{
-					Type:   field.TypeInt,
-					Column: dsse.FieldID,
-				},
+				IDSpec: sqlgraph.NewFieldSpec(dsse.FieldID, field.TypeInt),
 			},
 		}
 		for _, k := range nodes {
@@ -259,11 +203,15 @@ func (sc *StatementCreate) createSpec() (*Statement, *sqlgraph.CreateSpec) {
 // StatementCreateBulk is the builder for creating many Statement entities in bulk.
 type StatementCreateBulk struct {
 	config
+	err      error
 	builders []*StatementCreate
 }
 
 // Save creates the Statement entities in the database.
 func (scb *StatementCreateBulk) Save(ctx context.Context) ([]*Statement, error) {
+	if scb.err != nil {
+		return nil, scb.err
+	}
 	specs := make([]*sqlgraph.CreateSpec, len(scb.builders))
 	nodes := make([]*Statement, len(scb.builders))
 	mutators := make([]Mutator, len(scb.builders))
@@ -279,8 +227,8 @@ func (scb *StatementCreateBulk) Save(ctx context.Context) ([]*Statement, error) 
 					return nil, err
 				}
 				builder.mutation = mutation
-				nodes[i], specs[i] = builder.createSpec()
 				var err error
+				nodes[i], specs[i] = builder.createSpec()
 				if i < len(mutators)-1 {
 					_, err = mutators[i+1].Mutate(root, scb.builders[i+1].mutation)
 				} else {

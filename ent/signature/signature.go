@@ -2,6 +2,11 @@
 
 package signature
 
+import (
+	"entgo.io/ent/dialect/sql"
+	"entgo.io/ent/dialect/sql/sqlgraph"
+)
+
 const (
 	// Label holds the string label denoting the signature type in the database.
 	Label = "signature"
@@ -67,3 +72,56 @@ var (
 	// SignatureValidator is a validator for the "signature" field. It is called by the builders before save.
 	SignatureValidator func(string) error
 )
+
+// OrderOption defines the ordering options for the Signature queries.
+type OrderOption func(*sql.Selector)
+
+// ByID orders the results by the id field.
+func ByID(opts ...sql.OrderTermOption) OrderOption {
+	return sql.OrderByField(FieldID, opts...).ToFunc()
+}
+
+// ByKeyID orders the results by the key_id field.
+func ByKeyID(opts ...sql.OrderTermOption) OrderOption {
+	return sql.OrderByField(FieldKeyID, opts...).ToFunc()
+}
+
+// BySignature orders the results by the signature field.
+func BySignature(opts ...sql.OrderTermOption) OrderOption {
+	return sql.OrderByField(FieldSignature, opts...).ToFunc()
+}
+
+// ByDsseField orders the results by dsse field.
+func ByDsseField(field string, opts ...sql.OrderTermOption) OrderOption {
+	return func(s *sql.Selector) {
+		sqlgraph.OrderByNeighborTerms(s, newDsseStep(), sql.OrderByField(field, opts...))
+	}
+}
+
+// ByTimestampsCount orders the results by timestamps count.
+func ByTimestampsCount(opts ...sql.OrderTermOption) OrderOption {
+	return func(s *sql.Selector) {
+		sqlgraph.OrderByNeighborsCount(s, newTimestampsStep(), opts...)
+	}
+}
+
+// ByTimestamps orders the results by timestamps terms.
+func ByTimestamps(term sql.OrderTerm, terms ...sql.OrderTerm) OrderOption {
+	return func(s *sql.Selector) {
+		sqlgraph.OrderByNeighborTerms(s, newTimestampsStep(), append([]sql.OrderTerm{term}, terms...)...)
+	}
+}
+func newDsseStep() *sqlgraph.Step {
+	return sqlgraph.NewStep(
+		sqlgraph.From(Table, FieldID),
+		sqlgraph.To(DsseInverseTable, FieldID),
+		sqlgraph.Edge(sqlgraph.M2O, true, DsseTable, DsseColumn),
+	)
+}
+func newTimestampsStep() *sqlgraph.Step {
+	return sqlgraph.NewStep(
+		sqlgraph.From(Table, FieldID),
+		sqlgraph.To(TimestampsInverseTable, FieldID),
+		sqlgraph.Edge(sqlgraph.O2M, false, TimestampsTable, TimestampsColumn),
+	)
+}

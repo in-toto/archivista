@@ -2,6 +2,11 @@
 
 package attestationcollection
 
+import (
+	"entgo.io/ent/dialect/sql"
+	"entgo.io/ent/dialect/sql/sqlgraph"
+)
+
 const (
 	// Label holds the string label denoting the attestationcollection type in the database.
 	Label = "attestation_collection"
@@ -62,3 +67,51 @@ var (
 	// NameValidator is a validator for the "name" field. It is called by the builders before save.
 	NameValidator func(string) error
 )
+
+// OrderOption defines the ordering options for the AttestationCollection queries.
+type OrderOption func(*sql.Selector)
+
+// ByID orders the results by the id field.
+func ByID(opts ...sql.OrderTermOption) OrderOption {
+	return sql.OrderByField(FieldID, opts...).ToFunc()
+}
+
+// ByName orders the results by the name field.
+func ByName(opts ...sql.OrderTermOption) OrderOption {
+	return sql.OrderByField(FieldName, opts...).ToFunc()
+}
+
+// ByAttestationsCount orders the results by attestations count.
+func ByAttestationsCount(opts ...sql.OrderTermOption) OrderOption {
+	return func(s *sql.Selector) {
+		sqlgraph.OrderByNeighborsCount(s, newAttestationsStep(), opts...)
+	}
+}
+
+// ByAttestations orders the results by attestations terms.
+func ByAttestations(term sql.OrderTerm, terms ...sql.OrderTerm) OrderOption {
+	return func(s *sql.Selector) {
+		sqlgraph.OrderByNeighborTerms(s, newAttestationsStep(), append([]sql.OrderTerm{term}, terms...)...)
+	}
+}
+
+// ByStatementField orders the results by statement field.
+func ByStatementField(field string, opts ...sql.OrderTermOption) OrderOption {
+	return func(s *sql.Selector) {
+		sqlgraph.OrderByNeighborTerms(s, newStatementStep(), sql.OrderByField(field, opts...))
+	}
+}
+func newAttestationsStep() *sqlgraph.Step {
+	return sqlgraph.NewStep(
+		sqlgraph.From(Table, FieldID),
+		sqlgraph.To(AttestationsInverseTable, FieldID),
+		sqlgraph.Edge(sqlgraph.O2M, false, AttestationsTable, AttestationsColumn),
+	)
+}
+func newStatementStep() *sqlgraph.Step {
+	return sqlgraph.NewStep(
+		sqlgraph.From(Table, FieldID),
+		sqlgraph.To(StatementInverseTable, FieldID),
+		sqlgraph.Edge(sqlgraph.O2O, true, StatementTable, StatementColumn),
+	)
+}

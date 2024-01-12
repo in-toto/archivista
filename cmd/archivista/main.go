@@ -36,13 +36,14 @@ import (
 	nested "github.com/antonfisher/nested-logrus-formatter"
 	"github.com/gorilla/handlers"
 	"github.com/gorilla/mux"
+	"github.com/in-toto/archivista"
+	"github.com/in-toto/archivista/internal/config"
+	"github.com/in-toto/archivista/internal/metadatastorage/sqlstore"
+	"github.com/in-toto/archivista/internal/objectstorage/blobstore"
+	"github.com/in-toto/archivista/internal/objectstorage/filestore"
+	"github.com/in-toto/archivista/internal/server"
+	"github.com/minio/minio-go/v7/pkg/credentials"
 	"github.com/sirupsen/logrus"
-	"github.com/testifysec/archivista"
-	"github.com/testifysec/archivista/internal/config"
-	"github.com/testifysec/archivista/internal/metadatastorage/mysqlstore"
-	"github.com/testifysec/archivista/internal/objectstorage/blobstore"
-	"github.com/testifysec/archivista/internal/objectstorage/filestore"
-	"github.com/testifysec/archivista/internal/server"
 )
 
 func init() {
@@ -86,7 +87,17 @@ func main() {
 		logrus.Fatalf("error initializing storage clients: %+v", err)
 	}
 
-	mysqlStore, mysqlStoreCh, err := mysqlstore.New(ctx, cfg.SQLStoreConnectionString)
+	entClient, err := sqlstore.NewEntClient(
+		cfg.SQLStoreBackend,
+		cfg.SQLStoreConnectionString,
+		sqlstore.ClientWithMaxIdleConns(cfg.SQLStoreMaxIdleConnections),
+		sqlstore.ClientWithMaxOpenConns(cfg.SQLStoreMaxOpenConnections),
+		sqlstore.ClientWithConnMaxLifetime(cfg.SQLStoreConnectionMaxLifetime))
+	if err != nil {
+		logrus.Fatalf("could not create ent client: %+v", err)
+	}
+
+	mysqlStore, mysqlStoreCh, err := sqlstore.New(ctx, entClient)
 	if err != nil {
 		logrus.Fatalf("error initializing mysql client: %+v", err)
 	}
@@ -156,11 +167,18 @@ func initObjectStore(ctx context.Context, cfg *config.Config) (server.StorerGett
 		return filestore.New(ctx, cfg.FileDir, cfg.FileServeOn)
 
 	case "BLOB":
+		var creds *credentials.Credentials
+		if cfg.BlobStoreCredentialType == "IAM" {
+			creds = credentials.NewIAM("")
+		} else if cfg.BlobStoreCredentialType == "ACCESS_KEY" {
+			creds = credentials.NewStaticV4(cfg.BlobStoreAccessKeyId, cfg.BlobStoreSecretAccessKeyId, "")
+		} else {
+			logrus.Fatalln("invalid blob store credential type: ", cfg.BlobStoreCredentialType)
+		}
 		return blobstore.New(
 			ctx,
 			cfg.BlobStoreEndpoint,
-			cfg.BlobStoreAccessKeyId,
-			cfg.BlobStoreSecretAccessKeyId,
+			creds,
 			cfg.BlobStoreBucketName,
 			cfg.BlobStoreUseTLS,
 		)

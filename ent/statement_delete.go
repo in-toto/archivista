@@ -4,13 +4,12 @@ package ent
 
 import (
 	"context"
-	"fmt"
 
 	"entgo.io/ent/dialect/sql"
 	"entgo.io/ent/dialect/sql/sqlgraph"
 	"entgo.io/ent/schema/field"
-	"github.com/testifysec/archivista/ent/predicate"
-	"github.com/testifysec/archivista/ent/statement"
+	"github.com/in-toto/archivista/ent/predicate"
+	"github.com/in-toto/archivista/ent/statement"
 )
 
 // StatementDelete is the builder for deleting a Statement entity.
@@ -28,34 +27,7 @@ func (sd *StatementDelete) Where(ps ...predicate.Statement) *StatementDelete {
 
 // Exec executes the deletion query and returns how many vertices were deleted.
 func (sd *StatementDelete) Exec(ctx context.Context) (int, error) {
-	var (
-		err      error
-		affected int
-	)
-	if len(sd.hooks) == 0 {
-		affected, err = sd.sqlExec(ctx)
-	} else {
-		var mut Mutator = MutateFunc(func(ctx context.Context, m Mutation) (Value, error) {
-			mutation, ok := m.(*StatementMutation)
-			if !ok {
-				return nil, fmt.Errorf("unexpected mutation type %T", m)
-			}
-			sd.mutation = mutation
-			affected, err = sd.sqlExec(ctx)
-			mutation.done = true
-			return affected, err
-		})
-		for i := len(sd.hooks) - 1; i >= 0; i-- {
-			if sd.hooks[i] == nil {
-				return 0, fmt.Errorf("ent: uninitialized hook (forgotten import ent/runtime?)")
-			}
-			mut = sd.hooks[i](mut)
-		}
-		if _, err := mut.Mutate(ctx, sd.mutation); err != nil {
-			return 0, err
-		}
-	}
-	return affected, err
+	return withHooks(ctx, sd.sqlExec, sd.mutation, sd.hooks)
 }
 
 // ExecX is like Exec, but panics if an error occurs.
@@ -68,15 +40,7 @@ func (sd *StatementDelete) ExecX(ctx context.Context) int {
 }
 
 func (sd *StatementDelete) sqlExec(ctx context.Context) (int, error) {
-	_spec := &sqlgraph.DeleteSpec{
-		Node: &sqlgraph.NodeSpec{
-			Table: statement.Table,
-			ID: &sqlgraph.FieldSpec{
-				Type:   field.TypeInt,
-				Column: statement.FieldID,
-			},
-		},
-	}
+	_spec := sqlgraph.NewDeleteSpec(statement.Table, sqlgraph.NewFieldSpec(statement.FieldID, field.TypeInt))
 	if ps := sd.mutation.predicates; len(ps) > 0 {
 		_spec.Predicate = func(selector *sql.Selector) {
 			for i := range ps {
@@ -88,12 +52,19 @@ func (sd *StatementDelete) sqlExec(ctx context.Context) (int, error) {
 	if err != nil && sqlgraph.IsConstraintError(err) {
 		err = &ConstraintError{msg: err.Error(), wrap: err}
 	}
+	sd.mutation.done = true
 	return affected, err
 }
 
 // StatementDeleteOne is the builder for deleting a single Statement entity.
 type StatementDeleteOne struct {
 	sd *StatementDelete
+}
+
+// Where appends a list predicates to the StatementDelete builder.
+func (sdo *StatementDeleteOne) Where(ps ...predicate.Statement) *StatementDeleteOne {
+	sdo.sd.mutation.Where(ps...)
+	return sdo
 }
 
 // Exec executes the deletion query.
@@ -111,5 +82,7 @@ func (sdo *StatementDeleteOne) Exec(ctx context.Context) error {
 
 // ExecX is like Exec, but panics if an error occurs.
 func (sdo *StatementDeleteOne) ExecX(ctx context.Context) {
-	sdo.sd.ExecX(ctx)
+	if err := sdo.Exec(ctx); err != nil {
+		panic(err)
+	}
 }

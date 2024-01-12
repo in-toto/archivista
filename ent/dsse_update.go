@@ -10,11 +10,11 @@ import (
 	"entgo.io/ent/dialect/sql"
 	"entgo.io/ent/dialect/sql/sqlgraph"
 	"entgo.io/ent/schema/field"
-	"github.com/testifysec/archivista/ent/dsse"
-	"github.com/testifysec/archivista/ent/payloaddigest"
-	"github.com/testifysec/archivista/ent/predicate"
-	"github.com/testifysec/archivista/ent/signature"
-	"github.com/testifysec/archivista/ent/statement"
+	"github.com/in-toto/archivista/ent/dsse"
+	"github.com/in-toto/archivista/ent/payloaddigest"
+	"github.com/in-toto/archivista/ent/predicate"
+	"github.com/in-toto/archivista/ent/signature"
+	"github.com/in-toto/archivista/ent/statement"
 )
 
 // DsseUpdate is the builder for updating Dsse entities.
@@ -36,9 +36,25 @@ func (du *DsseUpdate) SetGitoidSha256(s string) *DsseUpdate {
 	return du
 }
 
+// SetNillableGitoidSha256 sets the "gitoid_sha256" field if the given value is not nil.
+func (du *DsseUpdate) SetNillableGitoidSha256(s *string) *DsseUpdate {
+	if s != nil {
+		du.SetGitoidSha256(*s)
+	}
+	return du
+}
+
 // SetPayloadType sets the "payload_type" field.
 func (du *DsseUpdate) SetPayloadType(s string) *DsseUpdate {
 	du.mutation.SetPayloadType(s)
+	return du
+}
+
+// SetNillablePayloadType sets the "payload_type" field if the given value is not nil.
+func (du *DsseUpdate) SetNillablePayloadType(s *string) *DsseUpdate {
+	if s != nil {
+		du.SetPayloadType(*s)
+	}
 	return du
 }
 
@@ -146,40 +162,7 @@ func (du *DsseUpdate) RemovePayloadDigests(p ...*PayloadDigest) *DsseUpdate {
 
 // Save executes the query and returns the number of nodes affected by the update operation.
 func (du *DsseUpdate) Save(ctx context.Context) (int, error) {
-	var (
-		err      error
-		affected int
-	)
-	if len(du.hooks) == 0 {
-		if err = du.check(); err != nil {
-			return 0, err
-		}
-		affected, err = du.sqlSave(ctx)
-	} else {
-		var mut Mutator = MutateFunc(func(ctx context.Context, m Mutation) (Value, error) {
-			mutation, ok := m.(*DsseMutation)
-			if !ok {
-				return nil, fmt.Errorf("unexpected mutation type %T", m)
-			}
-			if err = du.check(); err != nil {
-				return 0, err
-			}
-			du.mutation = mutation
-			affected, err = du.sqlSave(ctx)
-			mutation.done = true
-			return affected, err
-		})
-		for i := len(du.hooks) - 1; i >= 0; i-- {
-			if du.hooks[i] == nil {
-				return 0, fmt.Errorf("ent: uninitialized hook (forgotten import ent/runtime?)")
-			}
-			mut = du.hooks[i](mut)
-		}
-		if _, err := mut.Mutate(ctx, du.mutation); err != nil {
-			return 0, err
-		}
-	}
-	return affected, err
+	return withHooks(ctx, du.sqlSave, du.mutation, du.hooks)
 }
 
 // SaveX is like Save, but panics if an error occurs.
@@ -220,16 +203,10 @@ func (du *DsseUpdate) check() error {
 }
 
 func (du *DsseUpdate) sqlSave(ctx context.Context) (n int, err error) {
-	_spec := &sqlgraph.UpdateSpec{
-		Node: &sqlgraph.NodeSpec{
-			Table:   dsse.Table,
-			Columns: dsse.Columns,
-			ID: &sqlgraph.FieldSpec{
-				Type:   field.TypeInt,
-				Column: dsse.FieldID,
-			},
-		},
+	if err := du.check(); err != nil {
+		return n, err
 	}
+	_spec := sqlgraph.NewUpdateSpec(dsse.Table, dsse.Columns, sqlgraph.NewFieldSpec(dsse.FieldID, field.TypeInt))
 	if ps := du.mutation.predicates; len(ps) > 0 {
 		_spec.Predicate = func(selector *sql.Selector) {
 			for i := range ps {
@@ -238,18 +215,10 @@ func (du *DsseUpdate) sqlSave(ctx context.Context) (n int, err error) {
 		}
 	}
 	if value, ok := du.mutation.GitoidSha256(); ok {
-		_spec.Fields.Set = append(_spec.Fields.Set, &sqlgraph.FieldSpec{
-			Type:   field.TypeString,
-			Value:  value,
-			Column: dsse.FieldGitoidSha256,
-		})
+		_spec.SetField(dsse.FieldGitoidSha256, field.TypeString, value)
 	}
 	if value, ok := du.mutation.PayloadType(); ok {
-		_spec.Fields.Set = append(_spec.Fields.Set, &sqlgraph.FieldSpec{
-			Type:   field.TypeString,
-			Value:  value,
-			Column: dsse.FieldPayloadType,
-		})
+		_spec.SetField(dsse.FieldPayloadType, field.TypeString, value)
 	}
 	if du.mutation.StatementCleared() {
 		edge := &sqlgraph.EdgeSpec{
@@ -259,10 +228,7 @@ func (du *DsseUpdate) sqlSave(ctx context.Context) (n int, err error) {
 			Columns: []string{dsse.StatementColumn},
 			Bidi:    false,
 			Target: &sqlgraph.EdgeTarget{
-				IDSpec: &sqlgraph.FieldSpec{
-					Type:   field.TypeInt,
-					Column: statement.FieldID,
-				},
+				IDSpec: sqlgraph.NewFieldSpec(statement.FieldID, field.TypeInt),
 			},
 		}
 		_spec.Edges.Clear = append(_spec.Edges.Clear, edge)
@@ -275,10 +241,7 @@ func (du *DsseUpdate) sqlSave(ctx context.Context) (n int, err error) {
 			Columns: []string{dsse.StatementColumn},
 			Bidi:    false,
 			Target: &sqlgraph.EdgeTarget{
-				IDSpec: &sqlgraph.FieldSpec{
-					Type:   field.TypeInt,
-					Column: statement.FieldID,
-				},
+				IDSpec: sqlgraph.NewFieldSpec(statement.FieldID, field.TypeInt),
 			},
 		}
 		for _, k := range nodes {
@@ -294,10 +257,7 @@ func (du *DsseUpdate) sqlSave(ctx context.Context) (n int, err error) {
 			Columns: []string{dsse.SignaturesColumn},
 			Bidi:    false,
 			Target: &sqlgraph.EdgeTarget{
-				IDSpec: &sqlgraph.FieldSpec{
-					Type:   field.TypeInt,
-					Column: signature.FieldID,
-				},
+				IDSpec: sqlgraph.NewFieldSpec(signature.FieldID, field.TypeInt),
 			},
 		}
 		_spec.Edges.Clear = append(_spec.Edges.Clear, edge)
@@ -310,10 +270,7 @@ func (du *DsseUpdate) sqlSave(ctx context.Context) (n int, err error) {
 			Columns: []string{dsse.SignaturesColumn},
 			Bidi:    false,
 			Target: &sqlgraph.EdgeTarget{
-				IDSpec: &sqlgraph.FieldSpec{
-					Type:   field.TypeInt,
-					Column: signature.FieldID,
-				},
+				IDSpec: sqlgraph.NewFieldSpec(signature.FieldID, field.TypeInt),
 			},
 		}
 		for _, k := range nodes {
@@ -329,10 +286,7 @@ func (du *DsseUpdate) sqlSave(ctx context.Context) (n int, err error) {
 			Columns: []string{dsse.SignaturesColumn},
 			Bidi:    false,
 			Target: &sqlgraph.EdgeTarget{
-				IDSpec: &sqlgraph.FieldSpec{
-					Type:   field.TypeInt,
-					Column: signature.FieldID,
-				},
+				IDSpec: sqlgraph.NewFieldSpec(signature.FieldID, field.TypeInt),
 			},
 		}
 		for _, k := range nodes {
@@ -348,10 +302,7 @@ func (du *DsseUpdate) sqlSave(ctx context.Context) (n int, err error) {
 			Columns: []string{dsse.PayloadDigestsColumn},
 			Bidi:    false,
 			Target: &sqlgraph.EdgeTarget{
-				IDSpec: &sqlgraph.FieldSpec{
-					Type:   field.TypeInt,
-					Column: payloaddigest.FieldID,
-				},
+				IDSpec: sqlgraph.NewFieldSpec(payloaddigest.FieldID, field.TypeInt),
 			},
 		}
 		_spec.Edges.Clear = append(_spec.Edges.Clear, edge)
@@ -364,10 +315,7 @@ func (du *DsseUpdate) sqlSave(ctx context.Context) (n int, err error) {
 			Columns: []string{dsse.PayloadDigestsColumn},
 			Bidi:    false,
 			Target: &sqlgraph.EdgeTarget{
-				IDSpec: &sqlgraph.FieldSpec{
-					Type:   field.TypeInt,
-					Column: payloaddigest.FieldID,
-				},
+				IDSpec: sqlgraph.NewFieldSpec(payloaddigest.FieldID, field.TypeInt),
 			},
 		}
 		for _, k := range nodes {
@@ -383,10 +331,7 @@ func (du *DsseUpdate) sqlSave(ctx context.Context) (n int, err error) {
 			Columns: []string{dsse.PayloadDigestsColumn},
 			Bidi:    false,
 			Target: &sqlgraph.EdgeTarget{
-				IDSpec: &sqlgraph.FieldSpec{
-					Type:   field.TypeInt,
-					Column: payloaddigest.FieldID,
-				},
+				IDSpec: sqlgraph.NewFieldSpec(payloaddigest.FieldID, field.TypeInt),
 			},
 		}
 		for _, k := range nodes {
@@ -402,6 +347,7 @@ func (du *DsseUpdate) sqlSave(ctx context.Context) (n int, err error) {
 		}
 		return 0, err
 	}
+	du.mutation.done = true
 	return n, nil
 }
 
@@ -419,9 +365,25 @@ func (duo *DsseUpdateOne) SetGitoidSha256(s string) *DsseUpdateOne {
 	return duo
 }
 
+// SetNillableGitoidSha256 sets the "gitoid_sha256" field if the given value is not nil.
+func (duo *DsseUpdateOne) SetNillableGitoidSha256(s *string) *DsseUpdateOne {
+	if s != nil {
+		duo.SetGitoidSha256(*s)
+	}
+	return duo
+}
+
 // SetPayloadType sets the "payload_type" field.
 func (duo *DsseUpdateOne) SetPayloadType(s string) *DsseUpdateOne {
 	duo.mutation.SetPayloadType(s)
+	return duo
+}
+
+// SetNillablePayloadType sets the "payload_type" field if the given value is not nil.
+func (duo *DsseUpdateOne) SetNillablePayloadType(s *string) *DsseUpdateOne {
+	if s != nil {
+		duo.SetPayloadType(*s)
+	}
 	return duo
 }
 
@@ -527,6 +489,12 @@ func (duo *DsseUpdateOne) RemovePayloadDigests(p ...*PayloadDigest) *DsseUpdateO
 	return duo.RemovePayloadDigestIDs(ids...)
 }
 
+// Where appends a list predicates to the DsseUpdate builder.
+func (duo *DsseUpdateOne) Where(ps ...predicate.Dsse) *DsseUpdateOne {
+	duo.mutation.Where(ps...)
+	return duo
+}
+
 // Select allows selecting one or more fields (columns) of the returned entity.
 // The default is selecting all fields defined in the entity schema.
 func (duo *DsseUpdateOne) Select(field string, fields ...string) *DsseUpdateOne {
@@ -536,46 +504,7 @@ func (duo *DsseUpdateOne) Select(field string, fields ...string) *DsseUpdateOne 
 
 // Save executes the query and returns the updated Dsse entity.
 func (duo *DsseUpdateOne) Save(ctx context.Context) (*Dsse, error) {
-	var (
-		err  error
-		node *Dsse
-	)
-	if len(duo.hooks) == 0 {
-		if err = duo.check(); err != nil {
-			return nil, err
-		}
-		node, err = duo.sqlSave(ctx)
-	} else {
-		var mut Mutator = MutateFunc(func(ctx context.Context, m Mutation) (Value, error) {
-			mutation, ok := m.(*DsseMutation)
-			if !ok {
-				return nil, fmt.Errorf("unexpected mutation type %T", m)
-			}
-			if err = duo.check(); err != nil {
-				return nil, err
-			}
-			duo.mutation = mutation
-			node, err = duo.sqlSave(ctx)
-			mutation.done = true
-			return node, err
-		})
-		for i := len(duo.hooks) - 1; i >= 0; i-- {
-			if duo.hooks[i] == nil {
-				return nil, fmt.Errorf("ent: uninitialized hook (forgotten import ent/runtime?)")
-			}
-			mut = duo.hooks[i](mut)
-		}
-		v, err := mut.Mutate(ctx, duo.mutation)
-		if err != nil {
-			return nil, err
-		}
-		nv, ok := v.(*Dsse)
-		if !ok {
-			return nil, fmt.Errorf("unexpected node type %T returned from DsseMutation", v)
-		}
-		node = nv
-	}
-	return node, err
+	return withHooks(ctx, duo.sqlSave, duo.mutation, duo.hooks)
 }
 
 // SaveX is like Save, but panics if an error occurs.
@@ -616,16 +545,10 @@ func (duo *DsseUpdateOne) check() error {
 }
 
 func (duo *DsseUpdateOne) sqlSave(ctx context.Context) (_node *Dsse, err error) {
-	_spec := &sqlgraph.UpdateSpec{
-		Node: &sqlgraph.NodeSpec{
-			Table:   dsse.Table,
-			Columns: dsse.Columns,
-			ID: &sqlgraph.FieldSpec{
-				Type:   field.TypeInt,
-				Column: dsse.FieldID,
-			},
-		},
+	if err := duo.check(); err != nil {
+		return _node, err
 	}
+	_spec := sqlgraph.NewUpdateSpec(dsse.Table, dsse.Columns, sqlgraph.NewFieldSpec(dsse.FieldID, field.TypeInt))
 	id, ok := duo.mutation.ID()
 	if !ok {
 		return nil, &ValidationError{Name: "id", err: errors.New(`ent: missing "Dsse.id" for update`)}
@@ -651,18 +574,10 @@ func (duo *DsseUpdateOne) sqlSave(ctx context.Context) (_node *Dsse, err error) 
 		}
 	}
 	if value, ok := duo.mutation.GitoidSha256(); ok {
-		_spec.Fields.Set = append(_spec.Fields.Set, &sqlgraph.FieldSpec{
-			Type:   field.TypeString,
-			Value:  value,
-			Column: dsse.FieldGitoidSha256,
-		})
+		_spec.SetField(dsse.FieldGitoidSha256, field.TypeString, value)
 	}
 	if value, ok := duo.mutation.PayloadType(); ok {
-		_spec.Fields.Set = append(_spec.Fields.Set, &sqlgraph.FieldSpec{
-			Type:   field.TypeString,
-			Value:  value,
-			Column: dsse.FieldPayloadType,
-		})
+		_spec.SetField(dsse.FieldPayloadType, field.TypeString, value)
 	}
 	if duo.mutation.StatementCleared() {
 		edge := &sqlgraph.EdgeSpec{
@@ -672,10 +587,7 @@ func (duo *DsseUpdateOne) sqlSave(ctx context.Context) (_node *Dsse, err error) 
 			Columns: []string{dsse.StatementColumn},
 			Bidi:    false,
 			Target: &sqlgraph.EdgeTarget{
-				IDSpec: &sqlgraph.FieldSpec{
-					Type:   field.TypeInt,
-					Column: statement.FieldID,
-				},
+				IDSpec: sqlgraph.NewFieldSpec(statement.FieldID, field.TypeInt),
 			},
 		}
 		_spec.Edges.Clear = append(_spec.Edges.Clear, edge)
@@ -688,10 +600,7 @@ func (duo *DsseUpdateOne) sqlSave(ctx context.Context) (_node *Dsse, err error) 
 			Columns: []string{dsse.StatementColumn},
 			Bidi:    false,
 			Target: &sqlgraph.EdgeTarget{
-				IDSpec: &sqlgraph.FieldSpec{
-					Type:   field.TypeInt,
-					Column: statement.FieldID,
-				},
+				IDSpec: sqlgraph.NewFieldSpec(statement.FieldID, field.TypeInt),
 			},
 		}
 		for _, k := range nodes {
@@ -707,10 +616,7 @@ func (duo *DsseUpdateOne) sqlSave(ctx context.Context) (_node *Dsse, err error) 
 			Columns: []string{dsse.SignaturesColumn},
 			Bidi:    false,
 			Target: &sqlgraph.EdgeTarget{
-				IDSpec: &sqlgraph.FieldSpec{
-					Type:   field.TypeInt,
-					Column: signature.FieldID,
-				},
+				IDSpec: sqlgraph.NewFieldSpec(signature.FieldID, field.TypeInt),
 			},
 		}
 		_spec.Edges.Clear = append(_spec.Edges.Clear, edge)
@@ -723,10 +629,7 @@ func (duo *DsseUpdateOne) sqlSave(ctx context.Context) (_node *Dsse, err error) 
 			Columns: []string{dsse.SignaturesColumn},
 			Bidi:    false,
 			Target: &sqlgraph.EdgeTarget{
-				IDSpec: &sqlgraph.FieldSpec{
-					Type:   field.TypeInt,
-					Column: signature.FieldID,
-				},
+				IDSpec: sqlgraph.NewFieldSpec(signature.FieldID, field.TypeInt),
 			},
 		}
 		for _, k := range nodes {
@@ -742,10 +645,7 @@ func (duo *DsseUpdateOne) sqlSave(ctx context.Context) (_node *Dsse, err error) 
 			Columns: []string{dsse.SignaturesColumn},
 			Bidi:    false,
 			Target: &sqlgraph.EdgeTarget{
-				IDSpec: &sqlgraph.FieldSpec{
-					Type:   field.TypeInt,
-					Column: signature.FieldID,
-				},
+				IDSpec: sqlgraph.NewFieldSpec(signature.FieldID, field.TypeInt),
 			},
 		}
 		for _, k := range nodes {
@@ -761,10 +661,7 @@ func (duo *DsseUpdateOne) sqlSave(ctx context.Context) (_node *Dsse, err error) 
 			Columns: []string{dsse.PayloadDigestsColumn},
 			Bidi:    false,
 			Target: &sqlgraph.EdgeTarget{
-				IDSpec: &sqlgraph.FieldSpec{
-					Type:   field.TypeInt,
-					Column: payloaddigest.FieldID,
-				},
+				IDSpec: sqlgraph.NewFieldSpec(payloaddigest.FieldID, field.TypeInt),
 			},
 		}
 		_spec.Edges.Clear = append(_spec.Edges.Clear, edge)
@@ -777,10 +674,7 @@ func (duo *DsseUpdateOne) sqlSave(ctx context.Context) (_node *Dsse, err error) 
 			Columns: []string{dsse.PayloadDigestsColumn},
 			Bidi:    false,
 			Target: &sqlgraph.EdgeTarget{
-				IDSpec: &sqlgraph.FieldSpec{
-					Type:   field.TypeInt,
-					Column: payloaddigest.FieldID,
-				},
+				IDSpec: sqlgraph.NewFieldSpec(payloaddigest.FieldID, field.TypeInt),
 			},
 		}
 		for _, k := range nodes {
@@ -796,10 +690,7 @@ func (duo *DsseUpdateOne) sqlSave(ctx context.Context) (_node *Dsse, err error) 
 			Columns: []string{dsse.PayloadDigestsColumn},
 			Bidi:    false,
 			Target: &sqlgraph.EdgeTarget{
-				IDSpec: &sqlgraph.FieldSpec{
-					Type:   field.TypeInt,
-					Column: payloaddigest.FieldID,
-				},
+				IDSpec: sqlgraph.NewFieldSpec(payloaddigest.FieldID, field.TypeInt),
 			},
 		}
 		for _, k := range nodes {
@@ -818,5 +709,6 @@ func (duo *DsseUpdateOne) sqlSave(ctx context.Context) (_node *Dsse, err error) 
 		}
 		return nil, err
 	}
+	duo.mutation.done = true
 	return _node, nil
 }

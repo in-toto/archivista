@@ -2,6 +2,11 @@
 
 package statement
 
+import (
+	"entgo.io/ent/dialect/sql"
+	"entgo.io/ent/dialect/sql/sqlgraph"
+)
+
 const (
 	// Label holds the string label denoting the statement type in the database.
 	Label = "statement"
@@ -60,3 +65,72 @@ var (
 	// PredicateValidator is a validator for the "predicate" field. It is called by the builders before save.
 	PredicateValidator func(string) error
 )
+
+// OrderOption defines the ordering options for the Statement queries.
+type OrderOption func(*sql.Selector)
+
+// ByID orders the results by the id field.
+func ByID(opts ...sql.OrderTermOption) OrderOption {
+	return sql.OrderByField(FieldID, opts...).ToFunc()
+}
+
+// ByPredicate orders the results by the predicate field.
+func ByPredicate(opts ...sql.OrderTermOption) OrderOption {
+	return sql.OrderByField(FieldPredicate, opts...).ToFunc()
+}
+
+// BySubjectsCount orders the results by subjects count.
+func BySubjectsCount(opts ...sql.OrderTermOption) OrderOption {
+	return func(s *sql.Selector) {
+		sqlgraph.OrderByNeighborsCount(s, newSubjectsStep(), opts...)
+	}
+}
+
+// BySubjects orders the results by subjects terms.
+func BySubjects(term sql.OrderTerm, terms ...sql.OrderTerm) OrderOption {
+	return func(s *sql.Selector) {
+		sqlgraph.OrderByNeighborTerms(s, newSubjectsStep(), append([]sql.OrderTerm{term}, terms...)...)
+	}
+}
+
+// ByAttestationCollectionsField orders the results by attestation_collections field.
+func ByAttestationCollectionsField(field string, opts ...sql.OrderTermOption) OrderOption {
+	return func(s *sql.Selector) {
+		sqlgraph.OrderByNeighborTerms(s, newAttestationCollectionsStep(), sql.OrderByField(field, opts...))
+	}
+}
+
+// ByDsseCount orders the results by dsse count.
+func ByDsseCount(opts ...sql.OrderTermOption) OrderOption {
+	return func(s *sql.Selector) {
+		sqlgraph.OrderByNeighborsCount(s, newDsseStep(), opts...)
+	}
+}
+
+// ByDsse orders the results by dsse terms.
+func ByDsse(term sql.OrderTerm, terms ...sql.OrderTerm) OrderOption {
+	return func(s *sql.Selector) {
+		sqlgraph.OrderByNeighborTerms(s, newDsseStep(), append([]sql.OrderTerm{term}, terms...)...)
+	}
+}
+func newSubjectsStep() *sqlgraph.Step {
+	return sqlgraph.NewStep(
+		sqlgraph.From(Table, FieldID),
+		sqlgraph.To(SubjectsInverseTable, FieldID),
+		sqlgraph.Edge(sqlgraph.O2M, false, SubjectsTable, SubjectsColumn),
+	)
+}
+func newAttestationCollectionsStep() *sqlgraph.Step {
+	return sqlgraph.NewStep(
+		sqlgraph.From(Table, FieldID),
+		sqlgraph.To(AttestationCollectionsInverseTable, FieldID),
+		sqlgraph.Edge(sqlgraph.O2O, false, AttestationCollectionsTable, AttestationCollectionsColumn),
+	)
+}
+func newDsseStep() *sqlgraph.Step {
+	return sqlgraph.NewStep(
+		sqlgraph.From(Table, FieldID),
+		sqlgraph.To(DsseInverseTable, FieldID),
+		sqlgraph.Edge(sqlgraph.O2M, true, DsseTable, DsseColumn),
+	)
+}

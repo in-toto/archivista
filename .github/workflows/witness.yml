@@ -1,0 +1,62 @@
+# Copyright 2023 The Archivista Contributors
+#
+# Licensed under the Apache License, Version 2.0 (the "License");
+# you may not use this file except in compliance with the License.
+# You may obtain a copy of the License at
+#
+#      http://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an "AS IS" BASIS,
+# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+# See the License for the specific language governing permissions and
+# limitations under the License.
+
+on:
+    workflow_call:
+        inputs:
+            pull_request:
+                required: true
+                type: boolean
+            command:
+                required: true
+                type: string
+            step:
+                required: true
+                type: string
+            attestations:
+                required: true
+                type: string
+
+permissions:
+  contents: read
+
+jobs:
+    witness:
+        runs-on: ubuntu-latest
+        permissions:
+          contents: read
+          id-token: write
+        steps:
+          - name: Harden Runner
+            uses: step-security/harden-runner@eb238b55efaa70779f274895e782ed17c84f2895 # v2.6.1
+            with:
+              egress-policy: audit
+
+          - uses: actions/checkout@b4ffde65f46336ab88eb53be808477a3936bae11 # v4.1.1
+          - uses: actions/setup-go@0c52d547c9bc32b1aa3301fd7a9cb496313a4491 # v5.0.0
+            with:
+              go-version: 1.21.x
+
+          - if: ${{ inputs.pull_request == false }}
+            uses: testifysec/witness-run-action@40aa4ef36fc431a37de7c3faebcb66513c03b934
+            with:
+              step: ${{ inputs.step }}
+              attestations: ${{ inputs.attestations }}
+              command: /bin/sh -c "${{ inputs.command }}"
+
+          - if: ${{ inputs.pull_request == true }}
+            run: ${{ inputs.command }}
+
+          - if: ${{ inputs.step == 'tests' }}
+            uses: codecov/codecov-action@eaaf4bedf32dbdc6b720b63067d99c4d77d6047d

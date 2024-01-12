@@ -10,19 +10,17 @@ import (
 	"entgo.io/ent/dialect/sql"
 	"entgo.io/ent/dialect/sql/sqlgraph"
 	"entgo.io/ent/schema/field"
-	"github.com/testifysec/archivista/ent/dsse"
-	"github.com/testifysec/archivista/ent/payloaddigest"
-	"github.com/testifysec/archivista/ent/predicate"
+	"github.com/in-toto/archivista/ent/dsse"
+	"github.com/in-toto/archivista/ent/payloaddigest"
+	"github.com/in-toto/archivista/ent/predicate"
 )
 
 // PayloadDigestQuery is the builder for querying PayloadDigest entities.
 type PayloadDigestQuery struct {
 	config
-	limit      *int
-	offset     *int
-	unique     *bool
-	order      []OrderFunc
-	fields     []string
+	ctx        *QueryContext
+	order      []payloaddigest.OrderOption
+	inters     []Interceptor
 	predicates []predicate.PayloadDigest
 	withDsse   *DsseQuery
 	withFKs    bool
@@ -39,34 +37,34 @@ func (pdq *PayloadDigestQuery) Where(ps ...predicate.PayloadDigest) *PayloadDige
 	return pdq
 }
 
-// Limit adds a limit step to the query.
+// Limit the number of records to be returned by this query.
 func (pdq *PayloadDigestQuery) Limit(limit int) *PayloadDigestQuery {
-	pdq.limit = &limit
+	pdq.ctx.Limit = &limit
 	return pdq
 }
 
-// Offset adds an offset step to the query.
+// Offset to start from.
 func (pdq *PayloadDigestQuery) Offset(offset int) *PayloadDigestQuery {
-	pdq.offset = &offset
+	pdq.ctx.Offset = &offset
 	return pdq
 }
 
 // Unique configures the query builder to filter duplicate records on query.
 // By default, unique is set to true, and can be disabled using this method.
 func (pdq *PayloadDigestQuery) Unique(unique bool) *PayloadDigestQuery {
-	pdq.unique = &unique
+	pdq.ctx.Unique = &unique
 	return pdq
 }
 
-// Order adds an order step to the query.
-func (pdq *PayloadDigestQuery) Order(o ...OrderFunc) *PayloadDigestQuery {
+// Order specifies how the records should be ordered.
+func (pdq *PayloadDigestQuery) Order(o ...payloaddigest.OrderOption) *PayloadDigestQuery {
 	pdq.order = append(pdq.order, o...)
 	return pdq
 }
 
 // QueryDsse chains the current query on the "dsse" edge.
 func (pdq *PayloadDigestQuery) QueryDsse() *DsseQuery {
-	query := &DsseQuery{config: pdq.config}
+	query := (&DsseClient{config: pdq.config}).Query()
 	query.path = func(ctx context.Context) (fromU *sql.Selector, err error) {
 		if err := pdq.prepareQuery(ctx); err != nil {
 			return nil, err
@@ -89,7 +87,7 @@ func (pdq *PayloadDigestQuery) QueryDsse() *DsseQuery {
 // First returns the first PayloadDigest entity from the query.
 // Returns a *NotFoundError when no PayloadDigest was found.
 func (pdq *PayloadDigestQuery) First(ctx context.Context) (*PayloadDigest, error) {
-	nodes, err := pdq.Limit(1).All(ctx)
+	nodes, err := pdq.Limit(1).All(setContextOp(ctx, pdq.ctx, "First"))
 	if err != nil {
 		return nil, err
 	}
@@ -112,7 +110,7 @@ func (pdq *PayloadDigestQuery) FirstX(ctx context.Context) *PayloadDigest {
 // Returns a *NotFoundError when no PayloadDigest ID was found.
 func (pdq *PayloadDigestQuery) FirstID(ctx context.Context) (id int, err error) {
 	var ids []int
-	if ids, err = pdq.Limit(1).IDs(ctx); err != nil {
+	if ids, err = pdq.Limit(1).IDs(setContextOp(ctx, pdq.ctx, "FirstID")); err != nil {
 		return
 	}
 	if len(ids) == 0 {
@@ -135,7 +133,7 @@ func (pdq *PayloadDigestQuery) FirstIDX(ctx context.Context) int {
 // Returns a *NotSingularError when more than one PayloadDigest entity is found.
 // Returns a *NotFoundError when no PayloadDigest entities are found.
 func (pdq *PayloadDigestQuery) Only(ctx context.Context) (*PayloadDigest, error) {
-	nodes, err := pdq.Limit(2).All(ctx)
+	nodes, err := pdq.Limit(2).All(setContextOp(ctx, pdq.ctx, "Only"))
 	if err != nil {
 		return nil, err
 	}
@@ -163,7 +161,7 @@ func (pdq *PayloadDigestQuery) OnlyX(ctx context.Context) *PayloadDigest {
 // Returns a *NotFoundError when no entities are found.
 func (pdq *PayloadDigestQuery) OnlyID(ctx context.Context) (id int, err error) {
 	var ids []int
-	if ids, err = pdq.Limit(2).IDs(ctx); err != nil {
+	if ids, err = pdq.Limit(2).IDs(setContextOp(ctx, pdq.ctx, "OnlyID")); err != nil {
 		return
 	}
 	switch len(ids) {
@@ -188,10 +186,12 @@ func (pdq *PayloadDigestQuery) OnlyIDX(ctx context.Context) int {
 
 // All executes the query and returns a list of PayloadDigests.
 func (pdq *PayloadDigestQuery) All(ctx context.Context) ([]*PayloadDigest, error) {
+	ctx = setContextOp(ctx, pdq.ctx, "All")
 	if err := pdq.prepareQuery(ctx); err != nil {
 		return nil, err
 	}
-	return pdq.sqlAll(ctx)
+	qr := querierAll[[]*PayloadDigest, *PayloadDigestQuery]()
+	return withInterceptors[[]*PayloadDigest](ctx, pdq, qr, pdq.inters)
 }
 
 // AllX is like All, but panics if an error occurs.
@@ -204,9 +204,12 @@ func (pdq *PayloadDigestQuery) AllX(ctx context.Context) []*PayloadDigest {
 }
 
 // IDs executes the query and returns a list of PayloadDigest IDs.
-func (pdq *PayloadDigestQuery) IDs(ctx context.Context) ([]int, error) {
-	var ids []int
-	if err := pdq.Select(payloaddigest.FieldID).Scan(ctx, &ids); err != nil {
+func (pdq *PayloadDigestQuery) IDs(ctx context.Context) (ids []int, err error) {
+	if pdq.ctx.Unique == nil && pdq.path != nil {
+		pdq.Unique(true)
+	}
+	ctx = setContextOp(ctx, pdq.ctx, "IDs")
+	if err = pdq.Select(payloaddigest.FieldID).Scan(ctx, &ids); err != nil {
 		return nil, err
 	}
 	return ids, nil
@@ -223,10 +226,11 @@ func (pdq *PayloadDigestQuery) IDsX(ctx context.Context) []int {
 
 // Count returns the count of the given query.
 func (pdq *PayloadDigestQuery) Count(ctx context.Context) (int, error) {
+	ctx = setContextOp(ctx, pdq.ctx, "Count")
 	if err := pdq.prepareQuery(ctx); err != nil {
 		return 0, err
 	}
-	return pdq.sqlCount(ctx)
+	return withInterceptors[int](ctx, pdq, querierCount[*PayloadDigestQuery](), pdq.inters)
 }
 
 // CountX is like Count, but panics if an error occurs.
@@ -240,10 +244,15 @@ func (pdq *PayloadDigestQuery) CountX(ctx context.Context) int {
 
 // Exist returns true if the query has elements in the graph.
 func (pdq *PayloadDigestQuery) Exist(ctx context.Context) (bool, error) {
-	if err := pdq.prepareQuery(ctx); err != nil {
-		return false, err
+	ctx = setContextOp(ctx, pdq.ctx, "Exist")
+	switch _, err := pdq.FirstID(ctx); {
+	case IsNotFound(err):
+		return false, nil
+	case err != nil:
+		return false, fmt.Errorf("ent: check existence: %w", err)
+	default:
+		return true, nil
 	}
-	return pdq.sqlExist(ctx)
 }
 
 // ExistX is like Exist, but panics if an error occurs.
@@ -263,22 +272,21 @@ func (pdq *PayloadDigestQuery) Clone() *PayloadDigestQuery {
 	}
 	return &PayloadDigestQuery{
 		config:     pdq.config,
-		limit:      pdq.limit,
-		offset:     pdq.offset,
-		order:      append([]OrderFunc{}, pdq.order...),
+		ctx:        pdq.ctx.Clone(),
+		order:      append([]payloaddigest.OrderOption{}, pdq.order...),
+		inters:     append([]Interceptor{}, pdq.inters...),
 		predicates: append([]predicate.PayloadDigest{}, pdq.predicates...),
 		withDsse:   pdq.withDsse.Clone(),
 		// clone intermediate query.
-		sql:    pdq.sql.Clone(),
-		path:   pdq.path,
-		unique: pdq.unique,
+		sql:  pdq.sql.Clone(),
+		path: pdq.path,
 	}
 }
 
 // WithDsse tells the query-builder to eager-load the nodes that are connected to
 // the "dsse" edge. The optional arguments are used to configure the query builder of the edge.
 func (pdq *PayloadDigestQuery) WithDsse(opts ...func(*DsseQuery)) *PayloadDigestQuery {
-	query := &DsseQuery{config: pdq.config}
+	query := (&DsseClient{config: pdq.config}).Query()
 	for _, opt := range opts {
 		opt(query)
 	}
@@ -301,16 +309,11 @@ func (pdq *PayloadDigestQuery) WithDsse(opts ...func(*DsseQuery)) *PayloadDigest
 //		Aggregate(ent.Count()).
 //		Scan(ctx, &v)
 func (pdq *PayloadDigestQuery) GroupBy(field string, fields ...string) *PayloadDigestGroupBy {
-	grbuild := &PayloadDigestGroupBy{config: pdq.config}
-	grbuild.fields = append([]string{field}, fields...)
-	grbuild.path = func(ctx context.Context) (prev *sql.Selector, err error) {
-		if err := pdq.prepareQuery(ctx); err != nil {
-			return nil, err
-		}
-		return pdq.sqlQuery(ctx), nil
-	}
+	pdq.ctx.Fields = append([]string{field}, fields...)
+	grbuild := &PayloadDigestGroupBy{build: pdq}
+	grbuild.flds = &pdq.ctx.Fields
 	grbuild.label = payloaddigest.Label
-	grbuild.flds, grbuild.scan = &grbuild.fields, grbuild.Scan
+	grbuild.scan = grbuild.Scan
 	return grbuild
 }
 
@@ -327,15 +330,30 @@ func (pdq *PayloadDigestQuery) GroupBy(field string, fields ...string) *PayloadD
 //		Select(payloaddigest.FieldAlgorithm).
 //		Scan(ctx, &v)
 func (pdq *PayloadDigestQuery) Select(fields ...string) *PayloadDigestSelect {
-	pdq.fields = append(pdq.fields, fields...)
-	selbuild := &PayloadDigestSelect{PayloadDigestQuery: pdq}
-	selbuild.label = payloaddigest.Label
-	selbuild.flds, selbuild.scan = &pdq.fields, selbuild.Scan
-	return selbuild
+	pdq.ctx.Fields = append(pdq.ctx.Fields, fields...)
+	sbuild := &PayloadDigestSelect{PayloadDigestQuery: pdq}
+	sbuild.label = payloaddigest.Label
+	sbuild.flds, sbuild.scan = &pdq.ctx.Fields, sbuild.Scan
+	return sbuild
+}
+
+// Aggregate returns a PayloadDigestSelect configured with the given aggregations.
+func (pdq *PayloadDigestQuery) Aggregate(fns ...AggregateFunc) *PayloadDigestSelect {
+	return pdq.Select().Aggregate(fns...)
 }
 
 func (pdq *PayloadDigestQuery) prepareQuery(ctx context.Context) error {
-	for _, f := range pdq.fields {
+	for _, inter := range pdq.inters {
+		if inter == nil {
+			return fmt.Errorf("ent: uninitialized interceptor (forgotten import ent/runtime?)")
+		}
+		if trv, ok := inter.(Traverser); ok {
+			if err := trv.Traverse(ctx, pdq); err != nil {
+				return err
+			}
+		}
+	}
+	for _, f := range pdq.ctx.Fields {
 		if !payloaddigest.ValidColumn(f) {
 			return &ValidationError{Name: f, err: fmt.Errorf("ent: invalid field %q for query", f)}
 		}
@@ -413,6 +431,9 @@ func (pdq *PayloadDigestQuery) loadDsse(ctx context.Context, query *DsseQuery, n
 		}
 		nodeids[fk] = append(nodeids[fk], nodes[i])
 	}
+	if len(ids) == 0 {
+		return nil
+	}
 	query.Where(dsse.IDIn(ids...))
 	neighbors, err := query.All(ctx)
 	if err != nil {
@@ -435,41 +456,22 @@ func (pdq *PayloadDigestQuery) sqlCount(ctx context.Context) (int, error) {
 	if len(pdq.modifiers) > 0 {
 		_spec.Modifiers = pdq.modifiers
 	}
-	_spec.Node.Columns = pdq.fields
-	if len(pdq.fields) > 0 {
-		_spec.Unique = pdq.unique != nil && *pdq.unique
+	_spec.Node.Columns = pdq.ctx.Fields
+	if len(pdq.ctx.Fields) > 0 {
+		_spec.Unique = pdq.ctx.Unique != nil && *pdq.ctx.Unique
 	}
 	return sqlgraph.CountNodes(ctx, pdq.driver, _spec)
 }
 
-func (pdq *PayloadDigestQuery) sqlExist(ctx context.Context) (bool, error) {
-	switch _, err := pdq.FirstID(ctx); {
-	case IsNotFound(err):
-		return false, nil
-	case err != nil:
-		return false, fmt.Errorf("ent: check existence: %w", err)
-	default:
-		return true, nil
-	}
-}
-
 func (pdq *PayloadDigestQuery) querySpec() *sqlgraph.QuerySpec {
-	_spec := &sqlgraph.QuerySpec{
-		Node: &sqlgraph.NodeSpec{
-			Table:   payloaddigest.Table,
-			Columns: payloaddigest.Columns,
-			ID: &sqlgraph.FieldSpec{
-				Type:   field.TypeInt,
-				Column: payloaddigest.FieldID,
-			},
-		},
-		From:   pdq.sql,
-		Unique: true,
-	}
-	if unique := pdq.unique; unique != nil {
+	_spec := sqlgraph.NewQuerySpec(payloaddigest.Table, payloaddigest.Columns, sqlgraph.NewFieldSpec(payloaddigest.FieldID, field.TypeInt))
+	_spec.From = pdq.sql
+	if unique := pdq.ctx.Unique; unique != nil {
 		_spec.Unique = *unique
+	} else if pdq.path != nil {
+		_spec.Unique = true
 	}
-	if fields := pdq.fields; len(fields) > 0 {
+	if fields := pdq.ctx.Fields; len(fields) > 0 {
 		_spec.Node.Columns = make([]string, 0, len(fields))
 		_spec.Node.Columns = append(_spec.Node.Columns, payloaddigest.FieldID)
 		for i := range fields {
@@ -485,10 +487,10 @@ func (pdq *PayloadDigestQuery) querySpec() *sqlgraph.QuerySpec {
 			}
 		}
 	}
-	if limit := pdq.limit; limit != nil {
+	if limit := pdq.ctx.Limit; limit != nil {
 		_spec.Limit = *limit
 	}
-	if offset := pdq.offset; offset != nil {
+	if offset := pdq.ctx.Offset; offset != nil {
 		_spec.Offset = *offset
 	}
 	if ps := pdq.order; len(ps) > 0 {
@@ -504,7 +506,7 @@ func (pdq *PayloadDigestQuery) querySpec() *sqlgraph.QuerySpec {
 func (pdq *PayloadDigestQuery) sqlQuery(ctx context.Context) *sql.Selector {
 	builder := sql.Dialect(pdq.driver.Dialect())
 	t1 := builder.Table(payloaddigest.Table)
-	columns := pdq.fields
+	columns := pdq.ctx.Fields
 	if len(columns) == 0 {
 		columns = payloaddigest.Columns
 	}
@@ -513,7 +515,7 @@ func (pdq *PayloadDigestQuery) sqlQuery(ctx context.Context) *sql.Selector {
 		selector = pdq.sql
 		selector.Select(selector.Columns(columns...)...)
 	}
-	if pdq.unique != nil && *pdq.unique {
+	if pdq.ctx.Unique != nil && *pdq.ctx.Unique {
 		selector.Distinct()
 	}
 	for _, p := range pdq.predicates {
@@ -522,12 +524,12 @@ func (pdq *PayloadDigestQuery) sqlQuery(ctx context.Context) *sql.Selector {
 	for _, p := range pdq.order {
 		p(selector)
 	}
-	if offset := pdq.offset; offset != nil {
+	if offset := pdq.ctx.Offset; offset != nil {
 		// limit is mandatory for offset clause. We start
 		// with default value, and override it below if needed.
 		selector.Offset(*offset).Limit(math.MaxInt32)
 	}
-	if limit := pdq.limit; limit != nil {
+	if limit := pdq.ctx.Limit; limit != nil {
 		selector.Limit(*limit)
 	}
 	return selector
@@ -535,13 +537,8 @@ func (pdq *PayloadDigestQuery) sqlQuery(ctx context.Context) *sql.Selector {
 
 // PayloadDigestGroupBy is the group-by builder for PayloadDigest entities.
 type PayloadDigestGroupBy struct {
-	config
 	selector
-	fields []string
-	fns    []AggregateFunc
-	// intermediate query (i.e. traversal path).
-	sql  *sql.Selector
-	path func(context.Context) (*sql.Selector, error)
+	build *PayloadDigestQuery
 }
 
 // Aggregate adds the given aggregation functions to the group-by query.
@@ -550,74 +547,77 @@ func (pdgb *PayloadDigestGroupBy) Aggregate(fns ...AggregateFunc) *PayloadDigest
 	return pdgb
 }
 
-// Scan applies the group-by query and scans the result into the given value.
+// Scan applies the selector query and scans the result into the given value.
 func (pdgb *PayloadDigestGroupBy) Scan(ctx context.Context, v any) error {
-	query, err := pdgb.path(ctx)
-	if err != nil {
+	ctx = setContextOp(ctx, pdgb.build.ctx, "GroupBy")
+	if err := pdgb.build.prepareQuery(ctx); err != nil {
 		return err
 	}
-	pdgb.sql = query
-	return pdgb.sqlScan(ctx, v)
+	return scanWithInterceptors[*PayloadDigestQuery, *PayloadDigestGroupBy](ctx, pdgb.build, pdgb, pdgb.build.inters, v)
 }
 
-func (pdgb *PayloadDigestGroupBy) sqlScan(ctx context.Context, v any) error {
-	for _, f := range pdgb.fields {
-		if !payloaddigest.ValidColumn(f) {
-			return &ValidationError{Name: f, err: fmt.Errorf("invalid field %q for group-by", f)}
-		}
+func (pdgb *PayloadDigestGroupBy) sqlScan(ctx context.Context, root *PayloadDigestQuery, v any) error {
+	selector := root.sqlQuery(ctx).Select()
+	aggregation := make([]string, 0, len(pdgb.fns))
+	for _, fn := range pdgb.fns {
+		aggregation = append(aggregation, fn(selector))
 	}
-	selector := pdgb.sqlQuery()
+	if len(selector.SelectedColumns()) == 0 {
+		columns := make([]string, 0, len(*pdgb.flds)+len(pdgb.fns))
+		for _, f := range *pdgb.flds {
+			columns = append(columns, selector.C(f))
+		}
+		columns = append(columns, aggregation...)
+		selector.Select(columns...)
+	}
+	selector.GroupBy(selector.Columns(*pdgb.flds...)...)
 	if err := selector.Err(); err != nil {
 		return err
 	}
 	rows := &sql.Rows{}
 	query, args := selector.Query()
-	if err := pdgb.driver.Query(ctx, query, args, rows); err != nil {
+	if err := pdgb.build.driver.Query(ctx, query, args, rows); err != nil {
 		return err
 	}
 	defer rows.Close()
 	return sql.ScanSlice(rows, v)
 }
 
-func (pdgb *PayloadDigestGroupBy) sqlQuery() *sql.Selector {
-	selector := pdgb.sql.Select()
-	aggregation := make([]string, 0, len(pdgb.fns))
-	for _, fn := range pdgb.fns {
-		aggregation = append(aggregation, fn(selector))
-	}
-	// If no columns were selected in a custom aggregation function, the default
-	// selection is the fields used for "group-by", and the aggregation functions.
-	if len(selector.SelectedColumns()) == 0 {
-		columns := make([]string, 0, len(pdgb.fields)+len(pdgb.fns))
-		for _, f := range pdgb.fields {
-			columns = append(columns, selector.C(f))
-		}
-		columns = append(columns, aggregation...)
-		selector.Select(columns...)
-	}
-	return selector.GroupBy(selector.Columns(pdgb.fields...)...)
-}
-
 // PayloadDigestSelect is the builder for selecting fields of PayloadDigest entities.
 type PayloadDigestSelect struct {
 	*PayloadDigestQuery
 	selector
-	// intermediate query (i.e. traversal path).
-	sql *sql.Selector
+}
+
+// Aggregate adds the given aggregation functions to the selector query.
+func (pds *PayloadDigestSelect) Aggregate(fns ...AggregateFunc) *PayloadDigestSelect {
+	pds.fns = append(pds.fns, fns...)
+	return pds
 }
 
 // Scan applies the selector query and scans the result into the given value.
 func (pds *PayloadDigestSelect) Scan(ctx context.Context, v any) error {
+	ctx = setContextOp(ctx, pds.ctx, "Select")
 	if err := pds.prepareQuery(ctx); err != nil {
 		return err
 	}
-	pds.sql = pds.PayloadDigestQuery.sqlQuery(ctx)
-	return pds.sqlScan(ctx, v)
+	return scanWithInterceptors[*PayloadDigestQuery, *PayloadDigestSelect](ctx, pds.PayloadDigestQuery, pds, pds.inters, v)
 }
 
-func (pds *PayloadDigestSelect) sqlScan(ctx context.Context, v any) error {
+func (pds *PayloadDigestSelect) sqlScan(ctx context.Context, root *PayloadDigestQuery, v any) error {
+	selector := root.sqlQuery(ctx)
+	aggregation := make([]string, 0, len(pds.fns))
+	for _, fn := range pds.fns {
+		aggregation = append(aggregation, fn(selector))
+	}
+	switch n := len(*pds.selector.flds); {
+	case n == 0 && len(aggregation) > 0:
+		selector.Select(aggregation...)
+	case n != 0 && len(aggregation) > 0:
+		selector.AppendSelect(aggregation...)
+	}
 	rows := &sql.Rows{}
-	query, args := pds.sql.Query()
+	query, args := selector.Query()
 	if err := pds.driver.Query(ctx, query, args, rows); err != nil {
 		return err
 	}

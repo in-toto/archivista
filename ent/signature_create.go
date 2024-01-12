@@ -9,9 +9,9 @@ import (
 
 	"entgo.io/ent/dialect/sql/sqlgraph"
 	"entgo.io/ent/schema/field"
-	"github.com/testifysec/archivista/ent/dsse"
-	"github.com/testifysec/archivista/ent/signature"
-	"github.com/testifysec/archivista/ent/timestamp"
+	"github.com/in-toto/archivista/ent/dsse"
+	"github.com/in-toto/archivista/ent/signature"
+	"github.com/in-toto/archivista/ent/timestamp"
 )
 
 // SignatureCreate is the builder for creating a Signature entity.
@@ -74,49 +74,7 @@ func (sc *SignatureCreate) Mutation() *SignatureMutation {
 
 // Save creates the Signature in the database.
 func (sc *SignatureCreate) Save(ctx context.Context) (*Signature, error) {
-	var (
-		err  error
-		node *Signature
-	)
-	if len(sc.hooks) == 0 {
-		if err = sc.check(); err != nil {
-			return nil, err
-		}
-		node, err = sc.sqlSave(ctx)
-	} else {
-		var mut Mutator = MutateFunc(func(ctx context.Context, m Mutation) (Value, error) {
-			mutation, ok := m.(*SignatureMutation)
-			if !ok {
-				return nil, fmt.Errorf("unexpected mutation type %T", m)
-			}
-			if err = sc.check(); err != nil {
-				return nil, err
-			}
-			sc.mutation = mutation
-			if node, err = sc.sqlSave(ctx); err != nil {
-				return nil, err
-			}
-			mutation.id = &node.ID
-			mutation.done = true
-			return node, err
-		})
-		for i := len(sc.hooks) - 1; i >= 0; i-- {
-			if sc.hooks[i] == nil {
-				return nil, fmt.Errorf("ent: uninitialized hook (forgotten import ent/runtime?)")
-			}
-			mut = sc.hooks[i](mut)
-		}
-		v, err := mut.Mutate(ctx, sc.mutation)
-		if err != nil {
-			return nil, err
-		}
-		nv, ok := v.(*Signature)
-		if !ok {
-			return nil, fmt.Errorf("unexpected node type %T returned from SignatureMutation", v)
-		}
-		node = nv
-	}
-	return node, err
+	return withHooks(ctx, sc.sqlSave, sc.mutation, sc.hooks)
 }
 
 // SaveX calls Save and panics if Save returns an error.
@@ -163,6 +121,9 @@ func (sc *SignatureCreate) check() error {
 }
 
 func (sc *SignatureCreate) sqlSave(ctx context.Context) (*Signature, error) {
+	if err := sc.check(); err != nil {
+		return nil, err
+	}
 	_node, _spec := sc.createSpec()
 	if err := sqlgraph.CreateNode(ctx, sc.driver, _spec); err != nil {
 		if sqlgraph.IsConstraintError(err) {
@@ -172,34 +133,22 @@ func (sc *SignatureCreate) sqlSave(ctx context.Context) (*Signature, error) {
 	}
 	id := _spec.ID.Value.(int64)
 	_node.ID = int(id)
+	sc.mutation.id = &_node.ID
+	sc.mutation.done = true
 	return _node, nil
 }
 
 func (sc *SignatureCreate) createSpec() (*Signature, *sqlgraph.CreateSpec) {
 	var (
 		_node = &Signature{config: sc.config}
-		_spec = &sqlgraph.CreateSpec{
-			Table: signature.Table,
-			ID: &sqlgraph.FieldSpec{
-				Type:   field.TypeInt,
-				Column: signature.FieldID,
-			},
-		}
+		_spec = sqlgraph.NewCreateSpec(signature.Table, sqlgraph.NewFieldSpec(signature.FieldID, field.TypeInt))
 	)
 	if value, ok := sc.mutation.KeyID(); ok {
-		_spec.Fields = append(_spec.Fields, &sqlgraph.FieldSpec{
-			Type:   field.TypeString,
-			Value:  value,
-			Column: signature.FieldKeyID,
-		})
+		_spec.SetField(signature.FieldKeyID, field.TypeString, value)
 		_node.KeyID = value
 	}
 	if value, ok := sc.mutation.Signature(); ok {
-		_spec.Fields = append(_spec.Fields, &sqlgraph.FieldSpec{
-			Type:   field.TypeString,
-			Value:  value,
-			Column: signature.FieldSignature,
-		})
+		_spec.SetField(signature.FieldSignature, field.TypeString, value)
 		_node.Signature = value
 	}
 	if nodes := sc.mutation.DsseIDs(); len(nodes) > 0 {
@@ -210,10 +159,7 @@ func (sc *SignatureCreate) createSpec() (*Signature, *sqlgraph.CreateSpec) {
 			Columns: []string{signature.DsseColumn},
 			Bidi:    false,
 			Target: &sqlgraph.EdgeTarget{
-				IDSpec: &sqlgraph.FieldSpec{
-					Type:   field.TypeInt,
-					Column: dsse.FieldID,
-				},
+				IDSpec: sqlgraph.NewFieldSpec(dsse.FieldID, field.TypeInt),
 			},
 		}
 		for _, k := range nodes {
@@ -230,10 +176,7 @@ func (sc *SignatureCreate) createSpec() (*Signature, *sqlgraph.CreateSpec) {
 			Columns: []string{signature.TimestampsColumn},
 			Bidi:    false,
 			Target: &sqlgraph.EdgeTarget{
-				IDSpec: &sqlgraph.FieldSpec{
-					Type:   field.TypeInt,
-					Column: timestamp.FieldID,
-				},
+				IDSpec: sqlgraph.NewFieldSpec(timestamp.FieldID, field.TypeInt),
 			},
 		}
 		for _, k := range nodes {
@@ -247,11 +190,15 @@ func (sc *SignatureCreate) createSpec() (*Signature, *sqlgraph.CreateSpec) {
 // SignatureCreateBulk is the builder for creating many Signature entities in bulk.
 type SignatureCreateBulk struct {
 	config
+	err      error
 	builders []*SignatureCreate
 }
 
 // Save creates the Signature entities in the database.
 func (scb *SignatureCreateBulk) Save(ctx context.Context) ([]*Signature, error) {
+	if scb.err != nil {
+		return nil, scb.err
+	}
 	specs := make([]*sqlgraph.CreateSpec, len(scb.builders))
 	nodes := make([]*Signature, len(scb.builders))
 	mutators := make([]Mutator, len(scb.builders))
@@ -267,8 +214,8 @@ func (scb *SignatureCreateBulk) Save(ctx context.Context) ([]*Signature, error) 
 					return nil, err
 				}
 				builder.mutation = mutation
-				nodes[i], specs[i] = builder.createSpec()
 				var err error
+				nodes[i], specs[i] = builder.createSpec()
 				if i < len(mutators)-1 {
 					_, err = mutators[i+1].Mutate(root, scb.builders[i+1].mutation)
 				} else {

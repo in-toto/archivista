@@ -10,10 +10,10 @@ import (
 	"entgo.io/ent/dialect/sql"
 	"entgo.io/ent/dialect/sql/sqlgraph"
 	"entgo.io/ent/schema/field"
-	"github.com/testifysec/archivista/ent/predicate"
-	"github.com/testifysec/archivista/ent/statement"
-	"github.com/testifysec/archivista/ent/subject"
-	"github.com/testifysec/archivista/ent/subjectdigest"
+	"github.com/in-toto/archivista/ent/predicate"
+	"github.com/in-toto/archivista/ent/statement"
+	"github.com/in-toto/archivista/ent/subject"
+	"github.com/in-toto/archivista/ent/subjectdigest"
 )
 
 // SubjectUpdate is the builder for updating Subject entities.
@@ -32,6 +32,14 @@ func (su *SubjectUpdate) Where(ps ...predicate.Subject) *SubjectUpdate {
 // SetName sets the "name" field.
 func (su *SubjectUpdate) SetName(s string) *SubjectUpdate {
 	su.mutation.SetName(s)
+	return su
+}
+
+// SetNillableName sets the "name" field if the given value is not nil.
+func (su *SubjectUpdate) SetNillableName(s *string) *SubjectUpdate {
+	if s != nil {
+		su.SetName(*s)
+	}
 	return su
 }
 
@@ -103,40 +111,7 @@ func (su *SubjectUpdate) ClearStatement() *SubjectUpdate {
 
 // Save executes the query and returns the number of nodes affected by the update operation.
 func (su *SubjectUpdate) Save(ctx context.Context) (int, error) {
-	var (
-		err      error
-		affected int
-	)
-	if len(su.hooks) == 0 {
-		if err = su.check(); err != nil {
-			return 0, err
-		}
-		affected, err = su.sqlSave(ctx)
-	} else {
-		var mut Mutator = MutateFunc(func(ctx context.Context, m Mutation) (Value, error) {
-			mutation, ok := m.(*SubjectMutation)
-			if !ok {
-				return nil, fmt.Errorf("unexpected mutation type %T", m)
-			}
-			if err = su.check(); err != nil {
-				return 0, err
-			}
-			su.mutation = mutation
-			affected, err = su.sqlSave(ctx)
-			mutation.done = true
-			return affected, err
-		})
-		for i := len(su.hooks) - 1; i >= 0; i-- {
-			if su.hooks[i] == nil {
-				return 0, fmt.Errorf("ent: uninitialized hook (forgotten import ent/runtime?)")
-			}
-			mut = su.hooks[i](mut)
-		}
-		if _, err := mut.Mutate(ctx, su.mutation); err != nil {
-			return 0, err
-		}
-	}
-	return affected, err
+	return withHooks(ctx, su.sqlSave, su.mutation, su.hooks)
 }
 
 // SaveX is like Save, but panics if an error occurs.
@@ -172,16 +147,10 @@ func (su *SubjectUpdate) check() error {
 }
 
 func (su *SubjectUpdate) sqlSave(ctx context.Context) (n int, err error) {
-	_spec := &sqlgraph.UpdateSpec{
-		Node: &sqlgraph.NodeSpec{
-			Table:   subject.Table,
-			Columns: subject.Columns,
-			ID: &sqlgraph.FieldSpec{
-				Type:   field.TypeInt,
-				Column: subject.FieldID,
-			},
-		},
+	if err := su.check(); err != nil {
+		return n, err
 	}
+	_spec := sqlgraph.NewUpdateSpec(subject.Table, subject.Columns, sqlgraph.NewFieldSpec(subject.FieldID, field.TypeInt))
 	if ps := su.mutation.predicates; len(ps) > 0 {
 		_spec.Predicate = func(selector *sql.Selector) {
 			for i := range ps {
@@ -190,11 +159,7 @@ func (su *SubjectUpdate) sqlSave(ctx context.Context) (n int, err error) {
 		}
 	}
 	if value, ok := su.mutation.Name(); ok {
-		_spec.Fields.Set = append(_spec.Fields.Set, &sqlgraph.FieldSpec{
-			Type:   field.TypeString,
-			Value:  value,
-			Column: subject.FieldName,
-		})
+		_spec.SetField(subject.FieldName, field.TypeString, value)
 	}
 	if su.mutation.SubjectDigestsCleared() {
 		edge := &sqlgraph.EdgeSpec{
@@ -204,10 +169,7 @@ func (su *SubjectUpdate) sqlSave(ctx context.Context) (n int, err error) {
 			Columns: []string{subject.SubjectDigestsColumn},
 			Bidi:    false,
 			Target: &sqlgraph.EdgeTarget{
-				IDSpec: &sqlgraph.FieldSpec{
-					Type:   field.TypeInt,
-					Column: subjectdigest.FieldID,
-				},
+				IDSpec: sqlgraph.NewFieldSpec(subjectdigest.FieldID, field.TypeInt),
 			},
 		}
 		_spec.Edges.Clear = append(_spec.Edges.Clear, edge)
@@ -220,10 +182,7 @@ func (su *SubjectUpdate) sqlSave(ctx context.Context) (n int, err error) {
 			Columns: []string{subject.SubjectDigestsColumn},
 			Bidi:    false,
 			Target: &sqlgraph.EdgeTarget{
-				IDSpec: &sqlgraph.FieldSpec{
-					Type:   field.TypeInt,
-					Column: subjectdigest.FieldID,
-				},
+				IDSpec: sqlgraph.NewFieldSpec(subjectdigest.FieldID, field.TypeInt),
 			},
 		}
 		for _, k := range nodes {
@@ -239,10 +198,7 @@ func (su *SubjectUpdate) sqlSave(ctx context.Context) (n int, err error) {
 			Columns: []string{subject.SubjectDigestsColumn},
 			Bidi:    false,
 			Target: &sqlgraph.EdgeTarget{
-				IDSpec: &sqlgraph.FieldSpec{
-					Type:   field.TypeInt,
-					Column: subjectdigest.FieldID,
-				},
+				IDSpec: sqlgraph.NewFieldSpec(subjectdigest.FieldID, field.TypeInt),
 			},
 		}
 		for _, k := range nodes {
@@ -258,10 +214,7 @@ func (su *SubjectUpdate) sqlSave(ctx context.Context) (n int, err error) {
 			Columns: []string{subject.StatementColumn},
 			Bidi:    false,
 			Target: &sqlgraph.EdgeTarget{
-				IDSpec: &sqlgraph.FieldSpec{
-					Type:   field.TypeInt,
-					Column: statement.FieldID,
-				},
+				IDSpec: sqlgraph.NewFieldSpec(statement.FieldID, field.TypeInt),
 			},
 		}
 		_spec.Edges.Clear = append(_spec.Edges.Clear, edge)
@@ -274,10 +227,7 @@ func (su *SubjectUpdate) sqlSave(ctx context.Context) (n int, err error) {
 			Columns: []string{subject.StatementColumn},
 			Bidi:    false,
 			Target: &sqlgraph.EdgeTarget{
-				IDSpec: &sqlgraph.FieldSpec{
-					Type:   field.TypeInt,
-					Column: statement.FieldID,
-				},
+				IDSpec: sqlgraph.NewFieldSpec(statement.FieldID, field.TypeInt),
 			},
 		}
 		for _, k := range nodes {
@@ -293,6 +243,7 @@ func (su *SubjectUpdate) sqlSave(ctx context.Context) (n int, err error) {
 		}
 		return 0, err
 	}
+	su.mutation.done = true
 	return n, nil
 }
 
@@ -307,6 +258,14 @@ type SubjectUpdateOne struct {
 // SetName sets the "name" field.
 func (suo *SubjectUpdateOne) SetName(s string) *SubjectUpdateOne {
 	suo.mutation.SetName(s)
+	return suo
+}
+
+// SetNillableName sets the "name" field if the given value is not nil.
+func (suo *SubjectUpdateOne) SetNillableName(s *string) *SubjectUpdateOne {
+	if s != nil {
+		suo.SetName(*s)
+	}
 	return suo
 }
 
@@ -376,6 +335,12 @@ func (suo *SubjectUpdateOne) ClearStatement() *SubjectUpdateOne {
 	return suo
 }
 
+// Where appends a list predicates to the SubjectUpdate builder.
+func (suo *SubjectUpdateOne) Where(ps ...predicate.Subject) *SubjectUpdateOne {
+	suo.mutation.Where(ps...)
+	return suo
+}
+
 // Select allows selecting one or more fields (columns) of the returned entity.
 // The default is selecting all fields defined in the entity schema.
 func (suo *SubjectUpdateOne) Select(field string, fields ...string) *SubjectUpdateOne {
@@ -385,46 +350,7 @@ func (suo *SubjectUpdateOne) Select(field string, fields ...string) *SubjectUpda
 
 // Save executes the query and returns the updated Subject entity.
 func (suo *SubjectUpdateOne) Save(ctx context.Context) (*Subject, error) {
-	var (
-		err  error
-		node *Subject
-	)
-	if len(suo.hooks) == 0 {
-		if err = suo.check(); err != nil {
-			return nil, err
-		}
-		node, err = suo.sqlSave(ctx)
-	} else {
-		var mut Mutator = MutateFunc(func(ctx context.Context, m Mutation) (Value, error) {
-			mutation, ok := m.(*SubjectMutation)
-			if !ok {
-				return nil, fmt.Errorf("unexpected mutation type %T", m)
-			}
-			if err = suo.check(); err != nil {
-				return nil, err
-			}
-			suo.mutation = mutation
-			node, err = suo.sqlSave(ctx)
-			mutation.done = true
-			return node, err
-		})
-		for i := len(suo.hooks) - 1; i >= 0; i-- {
-			if suo.hooks[i] == nil {
-				return nil, fmt.Errorf("ent: uninitialized hook (forgotten import ent/runtime?)")
-			}
-			mut = suo.hooks[i](mut)
-		}
-		v, err := mut.Mutate(ctx, suo.mutation)
-		if err != nil {
-			return nil, err
-		}
-		nv, ok := v.(*Subject)
-		if !ok {
-			return nil, fmt.Errorf("unexpected node type %T returned from SubjectMutation", v)
-		}
-		node = nv
-	}
-	return node, err
+	return withHooks(ctx, suo.sqlSave, suo.mutation, suo.hooks)
 }
 
 // SaveX is like Save, but panics if an error occurs.
@@ -460,16 +386,10 @@ func (suo *SubjectUpdateOne) check() error {
 }
 
 func (suo *SubjectUpdateOne) sqlSave(ctx context.Context) (_node *Subject, err error) {
-	_spec := &sqlgraph.UpdateSpec{
-		Node: &sqlgraph.NodeSpec{
-			Table:   subject.Table,
-			Columns: subject.Columns,
-			ID: &sqlgraph.FieldSpec{
-				Type:   field.TypeInt,
-				Column: subject.FieldID,
-			},
-		},
+	if err := suo.check(); err != nil {
+		return _node, err
 	}
+	_spec := sqlgraph.NewUpdateSpec(subject.Table, subject.Columns, sqlgraph.NewFieldSpec(subject.FieldID, field.TypeInt))
 	id, ok := suo.mutation.ID()
 	if !ok {
 		return nil, &ValidationError{Name: "id", err: errors.New(`ent: missing "Subject.id" for update`)}
@@ -495,11 +415,7 @@ func (suo *SubjectUpdateOne) sqlSave(ctx context.Context) (_node *Subject, err e
 		}
 	}
 	if value, ok := suo.mutation.Name(); ok {
-		_spec.Fields.Set = append(_spec.Fields.Set, &sqlgraph.FieldSpec{
-			Type:   field.TypeString,
-			Value:  value,
-			Column: subject.FieldName,
-		})
+		_spec.SetField(subject.FieldName, field.TypeString, value)
 	}
 	if suo.mutation.SubjectDigestsCleared() {
 		edge := &sqlgraph.EdgeSpec{
@@ -509,10 +425,7 @@ func (suo *SubjectUpdateOne) sqlSave(ctx context.Context) (_node *Subject, err e
 			Columns: []string{subject.SubjectDigestsColumn},
 			Bidi:    false,
 			Target: &sqlgraph.EdgeTarget{
-				IDSpec: &sqlgraph.FieldSpec{
-					Type:   field.TypeInt,
-					Column: subjectdigest.FieldID,
-				},
+				IDSpec: sqlgraph.NewFieldSpec(subjectdigest.FieldID, field.TypeInt),
 			},
 		}
 		_spec.Edges.Clear = append(_spec.Edges.Clear, edge)
@@ -525,10 +438,7 @@ func (suo *SubjectUpdateOne) sqlSave(ctx context.Context) (_node *Subject, err e
 			Columns: []string{subject.SubjectDigestsColumn},
 			Bidi:    false,
 			Target: &sqlgraph.EdgeTarget{
-				IDSpec: &sqlgraph.FieldSpec{
-					Type:   field.TypeInt,
-					Column: subjectdigest.FieldID,
-				},
+				IDSpec: sqlgraph.NewFieldSpec(subjectdigest.FieldID, field.TypeInt),
 			},
 		}
 		for _, k := range nodes {
@@ -544,10 +454,7 @@ func (suo *SubjectUpdateOne) sqlSave(ctx context.Context) (_node *Subject, err e
 			Columns: []string{subject.SubjectDigestsColumn},
 			Bidi:    false,
 			Target: &sqlgraph.EdgeTarget{
-				IDSpec: &sqlgraph.FieldSpec{
-					Type:   field.TypeInt,
-					Column: subjectdigest.FieldID,
-				},
+				IDSpec: sqlgraph.NewFieldSpec(subjectdigest.FieldID, field.TypeInt),
 			},
 		}
 		for _, k := range nodes {
@@ -563,10 +470,7 @@ func (suo *SubjectUpdateOne) sqlSave(ctx context.Context) (_node *Subject, err e
 			Columns: []string{subject.StatementColumn},
 			Bidi:    false,
 			Target: &sqlgraph.EdgeTarget{
-				IDSpec: &sqlgraph.FieldSpec{
-					Type:   field.TypeInt,
-					Column: statement.FieldID,
-				},
+				IDSpec: sqlgraph.NewFieldSpec(statement.FieldID, field.TypeInt),
 			},
 		}
 		_spec.Edges.Clear = append(_spec.Edges.Clear, edge)
@@ -579,10 +483,7 @@ func (suo *SubjectUpdateOne) sqlSave(ctx context.Context) (_node *Subject, err e
 			Columns: []string{subject.StatementColumn},
 			Bidi:    false,
 			Target: &sqlgraph.EdgeTarget{
-				IDSpec: &sqlgraph.FieldSpec{
-					Type:   field.TypeInt,
-					Column: statement.FieldID,
-				},
+				IDSpec: sqlgraph.NewFieldSpec(statement.FieldID, field.TypeInt),
 			},
 		}
 		for _, k := range nodes {
@@ -601,5 +502,6 @@ func (suo *SubjectUpdateOne) sqlSave(ctx context.Context) (_node *Subject, err e
 		}
 		return nil, err
 	}
+	suo.mutation.done = true
 	return _node, nil
 }

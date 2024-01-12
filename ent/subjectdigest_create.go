@@ -9,8 +9,8 @@ import (
 
 	"entgo.io/ent/dialect/sql/sqlgraph"
 	"entgo.io/ent/schema/field"
-	"github.com/testifysec/archivista/ent/subject"
-	"github.com/testifysec/archivista/ent/subjectdigest"
+	"github.com/in-toto/archivista/ent/subject"
+	"github.com/in-toto/archivista/ent/subjectdigest"
 )
 
 // SubjectDigestCreate is the builder for creating a SubjectDigest entity.
@@ -58,49 +58,7 @@ func (sdc *SubjectDigestCreate) Mutation() *SubjectDigestMutation {
 
 // Save creates the SubjectDigest in the database.
 func (sdc *SubjectDigestCreate) Save(ctx context.Context) (*SubjectDigest, error) {
-	var (
-		err  error
-		node *SubjectDigest
-	)
-	if len(sdc.hooks) == 0 {
-		if err = sdc.check(); err != nil {
-			return nil, err
-		}
-		node, err = sdc.sqlSave(ctx)
-	} else {
-		var mut Mutator = MutateFunc(func(ctx context.Context, m Mutation) (Value, error) {
-			mutation, ok := m.(*SubjectDigestMutation)
-			if !ok {
-				return nil, fmt.Errorf("unexpected mutation type %T", m)
-			}
-			if err = sdc.check(); err != nil {
-				return nil, err
-			}
-			sdc.mutation = mutation
-			if node, err = sdc.sqlSave(ctx); err != nil {
-				return nil, err
-			}
-			mutation.id = &node.ID
-			mutation.done = true
-			return node, err
-		})
-		for i := len(sdc.hooks) - 1; i >= 0; i-- {
-			if sdc.hooks[i] == nil {
-				return nil, fmt.Errorf("ent: uninitialized hook (forgotten import ent/runtime?)")
-			}
-			mut = sdc.hooks[i](mut)
-		}
-		v, err := mut.Mutate(ctx, sdc.mutation)
-		if err != nil {
-			return nil, err
-		}
-		nv, ok := v.(*SubjectDigest)
-		if !ok {
-			return nil, fmt.Errorf("unexpected node type %T returned from SubjectDigestMutation", v)
-		}
-		node = nv
-	}
-	return node, err
+	return withHooks(ctx, sdc.sqlSave, sdc.mutation, sdc.hooks)
 }
 
 // SaveX calls Save and panics if Save returns an error.
@@ -147,6 +105,9 @@ func (sdc *SubjectDigestCreate) check() error {
 }
 
 func (sdc *SubjectDigestCreate) sqlSave(ctx context.Context) (*SubjectDigest, error) {
+	if err := sdc.check(); err != nil {
+		return nil, err
+	}
 	_node, _spec := sdc.createSpec()
 	if err := sqlgraph.CreateNode(ctx, sdc.driver, _spec); err != nil {
 		if sqlgraph.IsConstraintError(err) {
@@ -156,34 +117,22 @@ func (sdc *SubjectDigestCreate) sqlSave(ctx context.Context) (*SubjectDigest, er
 	}
 	id := _spec.ID.Value.(int64)
 	_node.ID = int(id)
+	sdc.mutation.id = &_node.ID
+	sdc.mutation.done = true
 	return _node, nil
 }
 
 func (sdc *SubjectDigestCreate) createSpec() (*SubjectDigest, *sqlgraph.CreateSpec) {
 	var (
 		_node = &SubjectDigest{config: sdc.config}
-		_spec = &sqlgraph.CreateSpec{
-			Table: subjectdigest.Table,
-			ID: &sqlgraph.FieldSpec{
-				Type:   field.TypeInt,
-				Column: subjectdigest.FieldID,
-			},
-		}
+		_spec = sqlgraph.NewCreateSpec(subjectdigest.Table, sqlgraph.NewFieldSpec(subjectdigest.FieldID, field.TypeInt))
 	)
 	if value, ok := sdc.mutation.Algorithm(); ok {
-		_spec.Fields = append(_spec.Fields, &sqlgraph.FieldSpec{
-			Type:   field.TypeString,
-			Value:  value,
-			Column: subjectdigest.FieldAlgorithm,
-		})
+		_spec.SetField(subjectdigest.FieldAlgorithm, field.TypeString, value)
 		_node.Algorithm = value
 	}
 	if value, ok := sdc.mutation.Value(); ok {
-		_spec.Fields = append(_spec.Fields, &sqlgraph.FieldSpec{
-			Type:   field.TypeString,
-			Value:  value,
-			Column: subjectdigest.FieldValue,
-		})
+		_spec.SetField(subjectdigest.FieldValue, field.TypeString, value)
 		_node.Value = value
 	}
 	if nodes := sdc.mutation.SubjectIDs(); len(nodes) > 0 {
@@ -194,10 +143,7 @@ func (sdc *SubjectDigestCreate) createSpec() (*SubjectDigest, *sqlgraph.CreateSp
 			Columns: []string{subjectdigest.SubjectColumn},
 			Bidi:    false,
 			Target: &sqlgraph.EdgeTarget{
-				IDSpec: &sqlgraph.FieldSpec{
-					Type:   field.TypeInt,
-					Column: subject.FieldID,
-				},
+				IDSpec: sqlgraph.NewFieldSpec(subject.FieldID, field.TypeInt),
 			},
 		}
 		for _, k := range nodes {
@@ -212,11 +158,15 @@ func (sdc *SubjectDigestCreate) createSpec() (*SubjectDigest, *sqlgraph.CreateSp
 // SubjectDigestCreateBulk is the builder for creating many SubjectDigest entities in bulk.
 type SubjectDigestCreateBulk struct {
 	config
+	err      error
 	builders []*SubjectDigestCreate
 }
 
 // Save creates the SubjectDigest entities in the database.
 func (sdcb *SubjectDigestCreateBulk) Save(ctx context.Context) ([]*SubjectDigest, error) {
+	if sdcb.err != nil {
+		return nil, sdcb.err
+	}
 	specs := make([]*sqlgraph.CreateSpec, len(sdcb.builders))
 	nodes := make([]*SubjectDigest, len(sdcb.builders))
 	mutators := make([]Mutator, len(sdcb.builders))
@@ -232,8 +182,8 @@ func (sdcb *SubjectDigestCreateBulk) Save(ctx context.Context) ([]*SubjectDigest
 					return nil, err
 				}
 				builder.mutation = mutation
-				nodes[i], specs[i] = builder.createSpec()
 				var err error
+				nodes[i], specs[i] = builder.createSpec()
 				if i < len(mutators)-1 {
 					_, err = mutators[i+1].Mutate(root, sdcb.builders[i+1].mutation)
 				} else {

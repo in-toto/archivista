@@ -17,7 +17,7 @@ package metadatastorage
 import (
 	"context"
 
-	"github.com/testifysec/archivista/ent"
+	"github.com/in-toto/archivista/ent"
 )
 
 type ParserFunc func([]byte) (Storer, error)

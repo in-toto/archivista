@@ -6,9 +6,10 @@ import (
 	"fmt"
 	"strings"
 
+	"entgo.io/ent"
 	"entgo.io/ent/dialect/sql"
-	"github.com/testifysec/archivista/ent/attestation"
-	"github.com/testifysec/archivista/ent/attestationcollection"
+	"github.com/in-toto/archivista/ent/attestation"
+	"github.com/in-toto/archivista/ent/attestationcollection"
 )
 
 // Attestation is the model entity for the Attestation schema.
@@ -22,6 +23,7 @@ type Attestation struct {
 	// The values are being populated by the AttestationQuery when eager-loading is set.
 	Edges                               AttestationEdges `json:"edges"`
 	attestation_collection_attestations *int
+	selectValues                        sql.SelectValues
 }
 
 // AttestationEdges holds the relations/edges for other nodes in the graph.
@@ -32,7 +34,7 @@ type AttestationEdges struct {
 	// type was loaded (or requested) in eager-loading or not.
 	loadedTypes [1]bool
 	// totalCount holds the count of the edges above.
-	totalCount [1]*int
+	totalCount [1]map[string]int
 }
 
 // AttestationCollectionOrErr returns the AttestationCollection value or an error if the edge
@@ -60,7 +62,7 @@ func (*Attestation) scanValues(columns []string) ([]any, error) {
 		case attestation.ForeignKeys[0]: // attestation_collection_attestations
 			values[i] = new(sql.NullInt64)
 		default:
-			return nil, fmt.Errorf("unexpected column %q for type Attestation", columns[i])
+			values[i] = new(sql.UnknownType)
 		}
 	}
 	return values, nil
@@ -93,21 +95,29 @@ func (a *Attestation) assignValues(columns []string, values []any) error {
 				a.attestation_collection_attestations = new(int)
 				*a.attestation_collection_attestations = int(value.Int64)
 			}
+		default:
+			a.selectValues.Set(columns[i], values[i])
 		}
 	}
 	return nil
 }
 
+// Value returns the ent.Value that was dynamically selected and assigned to the Attestation.
+// This includes values selected through modifiers, order, etc.
+func (a *Attestation) Value(name string) (ent.Value, error) {
+	return a.selectValues.Get(name)
+}
+
 // QueryAttestationCollection queries the "attestation_collection" edge of the Attestation entity.
 func (a *Attestation) QueryAttestationCollection() *AttestationCollectionQuery {
-	return (&AttestationClient{config: a.config}).QueryAttestationCollection(a)
+	return NewAttestationClient(a.config).QueryAttestationCollection(a)
 }
 
 // Update returns a builder for updating this Attestation.
 // Note that you need to call Attestation.Unwrap() before calling this method if this Attestation
 // was returned from a transaction, and the transaction was committed or rolled back.
 func (a *Attestation) Update() *AttestationUpdateOne {
-	return (&AttestationClient{config: a.config}).UpdateOne(a)
+	return NewAttestationClient(a.config).UpdateOne(a)
 }
 
 // Unwrap unwraps the Attestation entity that was returned from a transaction after it was closed,
@@ -134,9 +144,3 @@ func (a *Attestation) String() string {
 
 // Attestations is a parsable slice of Attestation.
 type Attestations []*Attestation
-
-func (a Attestations) config(cfg config) {
-	for _i := range a {
-		a[_i].config = cfg
-	}
-}

@@ -6,9 +6,10 @@ import (
 	"fmt"
 	"strings"
 
+	"entgo.io/ent"
 	"entgo.io/ent/dialect/sql"
-	"github.com/testifysec/archivista/ent/dsse"
-	"github.com/testifysec/archivista/ent/signature"
+	"github.com/in-toto/archivista/ent/dsse"
+	"github.com/in-toto/archivista/ent/signature"
 )
 
 // Signature is the model entity for the Signature schema.
@@ -24,6 +25,7 @@ type Signature struct {
 	// The values are being populated by the SignatureQuery when eager-loading is set.
 	Edges           SignatureEdges `json:"edges"`
 	dsse_signatures *int
+	selectValues    sql.SelectValues
 }
 
 // SignatureEdges holds the relations/edges for other nodes in the graph.
@@ -36,7 +38,9 @@ type SignatureEdges struct {
 	// type was loaded (or requested) in eager-loading or not.
 	loadedTypes [2]bool
 	// totalCount holds the count of the edges above.
-	totalCount [2]*int
+	totalCount [2]map[string]int
+
+	namedTimestamps map[string][]*Timestamp
 }
 
 // DsseOrErr returns the Dsse value or an error if the edge
@@ -73,7 +77,7 @@ func (*Signature) scanValues(columns []string) ([]any, error) {
 		case signature.ForeignKeys[0]: // dsse_signatures
 			values[i] = new(sql.NullInt64)
 		default:
-			return nil, fmt.Errorf("unexpected column %q for type Signature", columns[i])
+			values[i] = new(sql.UnknownType)
 		}
 	}
 	return values, nil
@@ -112,26 +116,34 @@ func (s *Signature) assignValues(columns []string, values []any) error {
 				s.dsse_signatures = new(int)
 				*s.dsse_signatures = int(value.Int64)
 			}
+		default:
+			s.selectValues.Set(columns[i], values[i])
 		}
 	}
 	return nil
 }
 
+// Value returns the ent.Value that was dynamically selected and assigned to the Signature.
+// This includes values selected through modifiers, order, etc.
+func (s *Signature) Value(name string) (ent.Value, error) {
+	return s.selectValues.Get(name)
+}
+
 // QueryDsse queries the "dsse" edge of the Signature entity.
 func (s *Signature) QueryDsse() *DsseQuery {
-	return (&SignatureClient{config: s.config}).QueryDsse(s)
+	return NewSignatureClient(s.config).QueryDsse(s)
 }
 
 // QueryTimestamps queries the "timestamps" edge of the Signature entity.
 func (s *Signature) QueryTimestamps() *TimestampQuery {
-	return (&SignatureClient{config: s.config}).QueryTimestamps(s)
+	return NewSignatureClient(s.config).QueryTimestamps(s)
 }
 
 // Update returns a builder for updating this Signature.
 // Note that you need to call Signature.Unwrap() before calling this method if this Signature
 // was returned from a transaction, and the transaction was committed or rolled back.
 func (s *Signature) Update() *SignatureUpdateOne {
-	return (&SignatureClient{config: s.config}).UpdateOne(s)
+	return NewSignatureClient(s.config).UpdateOne(s)
 }
 
 // Unwrap unwraps the Signature entity that was returned from a transaction after it was closed,
@@ -159,11 +171,29 @@ func (s *Signature) String() string {
 	return builder.String()
 }
 
-// Signatures is a parsable slice of Signature.
-type Signatures []*Signature
+// NamedTimestamps returns the Timestamps named value or an error if the edge was not
+// loaded in eager-loading with this name.
+func (s *Signature) NamedTimestamps(name string) ([]*Timestamp, error) {
+	if s.Edges.namedTimestamps == nil {
+		return nil, &NotLoadedError{edge: name}
+	}
+	nodes, ok := s.Edges.namedTimestamps[name]
+	if !ok {
+		return nil, &NotLoadedError{edge: name}
+	}
+	return nodes, nil
+}
 
-func (s Signatures) config(cfg config) {
-	for _i := range s {
-		s[_i].config = cfg
+func (s *Signature) appendNamedTimestamps(name string, edges ...*Timestamp) {
+	if s.Edges.namedTimestamps == nil {
+		s.Edges.namedTimestamps = make(map[string][]*Timestamp)
+	}
+	if len(edges) == 0 {
+		s.Edges.namedTimestamps[name] = []*Timestamp{}
+	} else {
+		s.Edges.namedTimestamps[name] = append(s.Edges.namedTimestamps[name], edges...)
 	}
 }
+
+// Signatures is a parsable slice of Signature.
+type Signatures []*Signature

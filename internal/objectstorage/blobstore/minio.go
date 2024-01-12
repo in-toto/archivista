@@ -18,10 +18,10 @@ import (
 	"bytes"
 	"context"
 	"fmt"
+	"github.com/minio/minio-go/v7"
 	"io"
 
-	"github.com/minio/minio-go"
-	"github.com/minio/minio-go/pkg/credentials"
+	"github.com/minio/minio-go/v7/pkg/credentials"
 )
 
 type Store struct {
@@ -31,40 +31,40 @@ type Store struct {
 }
 
 // PutBlob stores the attestation blob into the backend store
-func (store *Store) PutBlob(idx string, obj []byte) error {
+func (store *Store) PutBlob(ctx context.Context, idx string, obj []byte) error {
 	opt := minio.PutObjectOptions{}
 	size := int64(len(obj))
-	n, err := store.client.PutObject(store.bucket, idx, bytes.NewReader(obj), size, opt)
+	n, err := store.client.PutObject(ctx, store.bucket, idx, bytes.NewReader(obj), size, opt)
 	if err != nil {
 		return fmt.Errorf("failed to put blob: %v", err)
-	} else if n != size {
-		return fmt.Errorf("failed to upload full blob: size %d != uploaded size %d", size, n)
+	} else if n.Size != size {
+		return fmt.Errorf("failed to upload full blob: size %d != uploaded size %d", size, n.Size)
 	}
 	return nil
 }
 
 // New returns a reader/writer for storing/retrieving attestations
-func New(ctx context.Context, endpoint, accessKeyId, secretAccessKeyId, bucketName string, useTLS bool) (*Store, <-chan error, error) {
+func New(ctx context.Context, endpoint string, creds *credentials.Credentials, bucketName string, useTLS bool) (*Store, <-chan error, error) {
 	errCh := make(chan error)
 	go func() {
 		<-ctx.Done()
 		close(errCh)
 	}()
 
-	c, err := minio.NewWithOptions(endpoint, &minio.Options{
-		Creds:  credentials.NewStaticV4(accessKeyId, secretAccessKeyId, ""),
+	c, err := minio.New(endpoint, &minio.Options{
+		Creds:  creds,
 		Secure: useTLS,
 	})
 	if err != nil {
 		return nil, errCh, err
 	}
 
-	exists, err := c.BucketExists(bucketName)
+	exists, err := c.BucketExists(ctx, bucketName)
 	if !exists || err != nil {
 		return nil, errCh, fmt.Errorf("failed to find bucket exists: %v", err)
 	}
 
-	loc, err := c.GetBucketLocation(bucketName)
+	loc, err := c.GetBucketLocation(ctx, bucketName)
 	if err != nil {
 		return nil, errCh, err
 	}
@@ -77,9 +77,9 @@ func New(ctx context.Context, endpoint, accessKeyId, secretAccessKeyId, bucketNa
 }
 
 func (s *Store) Get(ctx context.Context, gitoid string) (io.ReadCloser, error) {
-	return s.client.GetObjectWithContext(ctx, s.bucket, gitoid, minio.GetObjectOptions{})
+	return s.client.GetObject(ctx, s.bucket, gitoid, minio.GetObjectOptions{})
 }
 
 func (s *Store) Store(ctx context.Context, gitoid string, payload []byte) error {
-	return s.PutBlob(gitoid, payload)
+	return s.PutBlob(ctx, gitoid, payload)
 }

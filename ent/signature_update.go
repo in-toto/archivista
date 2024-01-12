@@ -10,10 +10,10 @@ import (
 	"entgo.io/ent/dialect/sql"
 	"entgo.io/ent/dialect/sql/sqlgraph"
 	"entgo.io/ent/schema/field"
-	"github.com/testifysec/archivista/ent/dsse"
-	"github.com/testifysec/archivista/ent/predicate"
-	"github.com/testifysec/archivista/ent/signature"
-	"github.com/testifysec/archivista/ent/timestamp"
+	"github.com/in-toto/archivista/ent/dsse"
+	"github.com/in-toto/archivista/ent/predicate"
+	"github.com/in-toto/archivista/ent/signature"
+	"github.com/in-toto/archivista/ent/timestamp"
 )
 
 // SignatureUpdate is the builder for updating Signature entities.
@@ -35,9 +35,25 @@ func (su *SignatureUpdate) SetKeyID(s string) *SignatureUpdate {
 	return su
 }
 
+// SetNillableKeyID sets the "key_id" field if the given value is not nil.
+func (su *SignatureUpdate) SetNillableKeyID(s *string) *SignatureUpdate {
+	if s != nil {
+		su.SetKeyID(*s)
+	}
+	return su
+}
+
 // SetSignature sets the "signature" field.
 func (su *SignatureUpdate) SetSignature(s string) *SignatureUpdate {
 	su.mutation.SetSignature(s)
+	return su
+}
+
+// SetNillableSignature sets the "signature" field if the given value is not nil.
+func (su *SignatureUpdate) SetNillableSignature(s *string) *SignatureUpdate {
+	if s != nil {
+		su.SetSignature(*s)
+	}
 	return su
 }
 
@@ -109,40 +125,7 @@ func (su *SignatureUpdate) RemoveTimestamps(t ...*Timestamp) *SignatureUpdate {
 
 // Save executes the query and returns the number of nodes affected by the update operation.
 func (su *SignatureUpdate) Save(ctx context.Context) (int, error) {
-	var (
-		err      error
-		affected int
-	)
-	if len(su.hooks) == 0 {
-		if err = su.check(); err != nil {
-			return 0, err
-		}
-		affected, err = su.sqlSave(ctx)
-	} else {
-		var mut Mutator = MutateFunc(func(ctx context.Context, m Mutation) (Value, error) {
-			mutation, ok := m.(*SignatureMutation)
-			if !ok {
-				return nil, fmt.Errorf("unexpected mutation type %T", m)
-			}
-			if err = su.check(); err != nil {
-				return 0, err
-			}
-			su.mutation = mutation
-			affected, err = su.sqlSave(ctx)
-			mutation.done = true
-			return affected, err
-		})
-		for i := len(su.hooks) - 1; i >= 0; i-- {
-			if su.hooks[i] == nil {
-				return 0, fmt.Errorf("ent: uninitialized hook (forgotten import ent/runtime?)")
-			}
-			mut = su.hooks[i](mut)
-		}
-		if _, err := mut.Mutate(ctx, su.mutation); err != nil {
-			return 0, err
-		}
-	}
-	return affected, err
+	return withHooks(ctx, su.sqlSave, su.mutation, su.hooks)
 }
 
 // SaveX is like Save, but panics if an error occurs.
@@ -183,16 +166,10 @@ func (su *SignatureUpdate) check() error {
 }
 
 func (su *SignatureUpdate) sqlSave(ctx context.Context) (n int, err error) {
-	_spec := &sqlgraph.UpdateSpec{
-		Node: &sqlgraph.NodeSpec{
-			Table:   signature.Table,
-			Columns: signature.Columns,
-			ID: &sqlgraph.FieldSpec{
-				Type:   field.TypeInt,
-				Column: signature.FieldID,
-			},
-		},
+	if err := su.check(); err != nil {
+		return n, err
 	}
+	_spec := sqlgraph.NewUpdateSpec(signature.Table, signature.Columns, sqlgraph.NewFieldSpec(signature.FieldID, field.TypeInt))
 	if ps := su.mutation.predicates; len(ps) > 0 {
 		_spec.Predicate = func(selector *sql.Selector) {
 			for i := range ps {
@@ -201,18 +178,10 @@ func (su *SignatureUpdate) sqlSave(ctx context.Context) (n int, err error) {
 		}
 	}
 	if value, ok := su.mutation.KeyID(); ok {
-		_spec.Fields.Set = append(_spec.Fields.Set, &sqlgraph.FieldSpec{
-			Type:   field.TypeString,
-			Value:  value,
-			Column: signature.FieldKeyID,
-		})
+		_spec.SetField(signature.FieldKeyID, field.TypeString, value)
 	}
 	if value, ok := su.mutation.Signature(); ok {
-		_spec.Fields.Set = append(_spec.Fields.Set, &sqlgraph.FieldSpec{
-			Type:   field.TypeString,
-			Value:  value,
-			Column: signature.FieldSignature,
-		})
+		_spec.SetField(signature.FieldSignature, field.TypeString, value)
 	}
 	if su.mutation.DsseCleared() {
 		edge := &sqlgraph.EdgeSpec{
@@ -222,10 +191,7 @@ func (su *SignatureUpdate) sqlSave(ctx context.Context) (n int, err error) {
 			Columns: []string{signature.DsseColumn},
 			Bidi:    false,
 			Target: &sqlgraph.EdgeTarget{
-				IDSpec: &sqlgraph.FieldSpec{
-					Type:   field.TypeInt,
-					Column: dsse.FieldID,
-				},
+				IDSpec: sqlgraph.NewFieldSpec(dsse.FieldID, field.TypeInt),
 			},
 		}
 		_spec.Edges.Clear = append(_spec.Edges.Clear, edge)
@@ -238,10 +204,7 @@ func (su *SignatureUpdate) sqlSave(ctx context.Context) (n int, err error) {
 			Columns: []string{signature.DsseColumn},
 			Bidi:    false,
 			Target: &sqlgraph.EdgeTarget{
-				IDSpec: &sqlgraph.FieldSpec{
-					Type:   field.TypeInt,
-					Column: dsse.FieldID,
-				},
+				IDSpec: sqlgraph.NewFieldSpec(dsse.FieldID, field.TypeInt),
 			},
 		}
 		for _, k := range nodes {
@@ -257,10 +220,7 @@ func (su *SignatureUpdate) sqlSave(ctx context.Context) (n int, err error) {
 			Columns: []string{signature.TimestampsColumn},
 			Bidi:    false,
 			Target: &sqlgraph.EdgeTarget{
-				IDSpec: &sqlgraph.FieldSpec{
-					Type:   field.TypeInt,
-					Column: timestamp.FieldID,
-				},
+				IDSpec: sqlgraph.NewFieldSpec(timestamp.FieldID, field.TypeInt),
 			},
 		}
 		_spec.Edges.Clear = append(_spec.Edges.Clear, edge)
@@ -273,10 +233,7 @@ func (su *SignatureUpdate) sqlSave(ctx context.Context) (n int, err error) {
 			Columns: []string{signature.TimestampsColumn},
 			Bidi:    false,
 			Target: &sqlgraph.EdgeTarget{
-				IDSpec: &sqlgraph.FieldSpec{
-					Type:   field.TypeInt,
-					Column: timestamp.FieldID,
-				},
+				IDSpec: sqlgraph.NewFieldSpec(timestamp.FieldID, field.TypeInt),
 			},
 		}
 		for _, k := range nodes {
@@ -292,10 +249,7 @@ func (su *SignatureUpdate) sqlSave(ctx context.Context) (n int, err error) {
 			Columns: []string{signature.TimestampsColumn},
 			Bidi:    false,
 			Target: &sqlgraph.EdgeTarget{
-				IDSpec: &sqlgraph.FieldSpec{
-					Type:   field.TypeInt,
-					Column: timestamp.FieldID,
-				},
+				IDSpec: sqlgraph.NewFieldSpec(timestamp.FieldID, field.TypeInt),
 			},
 		}
 		for _, k := range nodes {
@@ -311,6 +265,7 @@ func (su *SignatureUpdate) sqlSave(ctx context.Context) (n int, err error) {
 		}
 		return 0, err
 	}
+	su.mutation.done = true
 	return n, nil
 }
 
@@ -328,9 +283,25 @@ func (suo *SignatureUpdateOne) SetKeyID(s string) *SignatureUpdateOne {
 	return suo
 }
 
+// SetNillableKeyID sets the "key_id" field if the given value is not nil.
+func (suo *SignatureUpdateOne) SetNillableKeyID(s *string) *SignatureUpdateOne {
+	if s != nil {
+		suo.SetKeyID(*s)
+	}
+	return suo
+}
+
 // SetSignature sets the "signature" field.
 func (suo *SignatureUpdateOne) SetSignature(s string) *SignatureUpdateOne {
 	suo.mutation.SetSignature(s)
+	return suo
+}
+
+// SetNillableSignature sets the "signature" field if the given value is not nil.
+func (suo *SignatureUpdateOne) SetNillableSignature(s *string) *SignatureUpdateOne {
+	if s != nil {
+		suo.SetSignature(*s)
+	}
 	return suo
 }
 
@@ -400,6 +371,12 @@ func (suo *SignatureUpdateOne) RemoveTimestamps(t ...*Timestamp) *SignatureUpdat
 	return suo.RemoveTimestampIDs(ids...)
 }
 
+// Where appends a list predicates to the SignatureUpdate builder.
+func (suo *SignatureUpdateOne) Where(ps ...predicate.Signature) *SignatureUpdateOne {
+	suo.mutation.Where(ps...)
+	return suo
+}
+
 // Select allows selecting one or more fields (columns) of the returned entity.
 // The default is selecting all fields defined in the entity schema.
 func (suo *SignatureUpdateOne) Select(field string, fields ...string) *SignatureUpdateOne {
@@ -409,46 +386,7 @@ func (suo *SignatureUpdateOne) Select(field string, fields ...string) *Signature
 
 // Save executes the query and returns the updated Signature entity.
 func (suo *SignatureUpdateOne) Save(ctx context.Context) (*Signature, error) {
-	var (
-		err  error
-		node *Signature
-	)
-	if len(suo.hooks) == 0 {
-		if err = suo.check(); err != nil {
-			return nil, err
-		}
-		node, err = suo.sqlSave(ctx)
-	} else {
-		var mut Mutator = MutateFunc(func(ctx context.Context, m Mutation) (Value, error) {
-			mutation, ok := m.(*SignatureMutation)
-			if !ok {
-				return nil, fmt.Errorf("unexpected mutation type %T", m)
-			}
-			if err = suo.check(); err != nil {
-				return nil, err
-			}
-			suo.mutation = mutation
-			node, err = suo.sqlSave(ctx)
-			mutation.done = true
-			return node, err
-		})
-		for i := len(suo.hooks) - 1; i >= 0; i-- {
-			if suo.hooks[i] == nil {
-				return nil, fmt.Errorf("ent: uninitialized hook (forgotten import ent/runtime?)")
-			}
-			mut = suo.hooks[i](mut)
-		}
-		v, err := mut.Mutate(ctx, suo.mutation)
-		if err != nil {
-			return nil, err
-		}
-		nv, ok := v.(*Signature)
-		if !ok {
-			return nil, fmt.Errorf("unexpected node type %T returned from SignatureMutation", v)
-		}
-		node = nv
-	}
-	return node, err
+	return withHooks(ctx, suo.sqlSave, suo.mutation, suo.hooks)
 }
 
 // SaveX is like Save, but panics if an error occurs.
@@ -489,16 +427,10 @@ func (suo *SignatureUpdateOne) check() error {
 }
 
 func (suo *SignatureUpdateOne) sqlSave(ctx context.Context) (_node *Signature, err error) {
-	_spec := &sqlgraph.UpdateSpec{
-		Node: &sqlgraph.NodeSpec{
-			Table:   signature.Table,
-			Columns: signature.Columns,
-			ID: &sqlgraph.FieldSpec{
-				Type:   field.TypeInt,
-				Column: signature.FieldID,
-			},
-		},
+	if err := suo.check(); err != nil {
+		return _node, err
 	}
+	_spec := sqlgraph.NewUpdateSpec(signature.Table, signature.Columns, sqlgraph.NewFieldSpec(signature.FieldID, field.TypeInt))
 	id, ok := suo.mutation.ID()
 	if !ok {
 		return nil, &ValidationError{Name: "id", err: errors.New(`ent: missing "Signature.id" for update`)}
@@ -524,18 +456,10 @@ func (suo *SignatureUpdateOne) sqlSave(ctx context.Context) (_node *Signature, e
 		}
 	}
 	if value, ok := suo.mutation.KeyID(); ok {
-		_spec.Fields.Set = append(_spec.Fields.Set, &sqlgraph.FieldSpec{
-			Type:   field.TypeString,
-			Value:  value,
-			Column: signature.FieldKeyID,
-		})
+		_spec.SetField(signature.FieldKeyID, field.TypeString, value)
 	}
 	if value, ok := suo.mutation.Signature(); ok {
-		_spec.Fields.Set = append(_spec.Fields.Set, &sqlgraph.FieldSpec{
-			Type:   field.TypeString,
-			Value:  value,
-			Column: signature.FieldSignature,
-		})
+		_spec.SetField(signature.FieldSignature, field.TypeString, value)
 	}
 	if suo.mutation.DsseCleared() {
 		edge := &sqlgraph.EdgeSpec{
@@ -545,10 +469,7 @@ func (suo *SignatureUpdateOne) sqlSave(ctx context.Context) (_node *Signature, e
 			Columns: []string{signature.DsseColumn},
 			Bidi:    false,
 			Target: &sqlgraph.EdgeTarget{
-				IDSpec: &sqlgraph.FieldSpec{
-					Type:   field.TypeInt,
-					Column: dsse.FieldID,
-				},
+				IDSpec: sqlgraph.NewFieldSpec(dsse.FieldID, field.TypeInt),
 			},
 		}
 		_spec.Edges.Clear = append(_spec.Edges.Clear, edge)
@@ -561,10 +482,7 @@ func (suo *SignatureUpdateOne) sqlSave(ctx context.Context) (_node *Signature, e
 			Columns: []string{signature.DsseColumn},
 			Bidi:    false,
 			Target: &sqlgraph.EdgeTarget{
-				IDSpec: &sqlgraph.FieldSpec{
-					Type:   field.TypeInt,
-					Column: dsse.FieldID,
-				},
+				IDSpec: sqlgraph.NewFieldSpec(dsse.FieldID, field.TypeInt),
 			},
 		}
 		for _, k := range nodes {
@@ -580,10 +498,7 @@ func (suo *SignatureUpdateOne) sqlSave(ctx context.Context) (_node *Signature, e
 			Columns: []string{signature.TimestampsColumn},
 			Bidi:    false,
 			Target: &sqlgraph.EdgeTarget{
-				IDSpec: &sqlgraph.FieldSpec{
-					Type:   field.TypeInt,
-					Column: timestamp.FieldID,
-				},
+				IDSpec: sqlgraph.NewFieldSpec(timestamp.FieldID, field.TypeInt),
 			},
 		}
 		_spec.Edges.Clear = append(_spec.Edges.Clear, edge)
@@ -596,10 +511,7 @@ func (suo *SignatureUpdateOne) sqlSave(ctx context.Context) (_node *Signature, e
 			Columns: []string{signature.TimestampsColumn},
 			Bidi:    false,
 			Target: &sqlgraph.EdgeTarget{
-				IDSpec: &sqlgraph.FieldSpec{
-					Type:   field.TypeInt,
-					Column: timestamp.FieldID,
-				},
+				IDSpec: sqlgraph.NewFieldSpec(timestamp.FieldID, field.TypeInt),
 			},
 		}
 		for _, k := range nodes {
@@ -615,10 +527,7 @@ func (suo *SignatureUpdateOne) sqlSave(ctx context.Context) (_node *Signature, e
 			Columns: []string{signature.TimestampsColumn},
 			Bidi:    false,
 			Target: &sqlgraph.EdgeTarget{
-				IDSpec: &sqlgraph.FieldSpec{
-					Type:   field.TypeInt,
-					Column: timestamp.FieldID,
-				},
+				IDSpec: sqlgraph.NewFieldSpec(timestamp.FieldID, field.TypeInt),
 			},
 		}
 		for _, k := range nodes {
@@ -637,5 +546,6 @@ func (suo *SignatureUpdateOne) sqlSave(ctx context.Context) (_node *Signature, e
 		}
 		return nil, err
 	}
+	suo.mutation.done = true
 	return _node, nil
 }

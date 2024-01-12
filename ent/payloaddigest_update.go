@@ -10,9 +10,9 @@ import (
 	"entgo.io/ent/dialect/sql"
 	"entgo.io/ent/dialect/sql/sqlgraph"
 	"entgo.io/ent/schema/field"
-	"github.com/testifysec/archivista/ent/dsse"
-	"github.com/testifysec/archivista/ent/payloaddigest"
-	"github.com/testifysec/archivista/ent/predicate"
+	"github.com/in-toto/archivista/ent/dsse"
+	"github.com/in-toto/archivista/ent/payloaddigest"
+	"github.com/in-toto/archivista/ent/predicate"
 )
 
 // PayloadDigestUpdate is the builder for updating PayloadDigest entities.
@@ -34,9 +34,25 @@ func (pdu *PayloadDigestUpdate) SetAlgorithm(s string) *PayloadDigestUpdate {
 	return pdu
 }
 
+// SetNillableAlgorithm sets the "algorithm" field if the given value is not nil.
+func (pdu *PayloadDigestUpdate) SetNillableAlgorithm(s *string) *PayloadDigestUpdate {
+	if s != nil {
+		pdu.SetAlgorithm(*s)
+	}
+	return pdu
+}
+
 // SetValue sets the "value" field.
 func (pdu *PayloadDigestUpdate) SetValue(s string) *PayloadDigestUpdate {
 	pdu.mutation.SetValue(s)
+	return pdu
+}
+
+// SetNillableValue sets the "value" field if the given value is not nil.
+func (pdu *PayloadDigestUpdate) SetNillableValue(s *string) *PayloadDigestUpdate {
+	if s != nil {
+		pdu.SetValue(*s)
+	}
 	return pdu
 }
 
@@ -72,40 +88,7 @@ func (pdu *PayloadDigestUpdate) ClearDsse() *PayloadDigestUpdate {
 
 // Save executes the query and returns the number of nodes affected by the update operation.
 func (pdu *PayloadDigestUpdate) Save(ctx context.Context) (int, error) {
-	var (
-		err      error
-		affected int
-	)
-	if len(pdu.hooks) == 0 {
-		if err = pdu.check(); err != nil {
-			return 0, err
-		}
-		affected, err = pdu.sqlSave(ctx)
-	} else {
-		var mut Mutator = MutateFunc(func(ctx context.Context, m Mutation) (Value, error) {
-			mutation, ok := m.(*PayloadDigestMutation)
-			if !ok {
-				return nil, fmt.Errorf("unexpected mutation type %T", m)
-			}
-			if err = pdu.check(); err != nil {
-				return 0, err
-			}
-			pdu.mutation = mutation
-			affected, err = pdu.sqlSave(ctx)
-			mutation.done = true
-			return affected, err
-		})
-		for i := len(pdu.hooks) - 1; i >= 0; i-- {
-			if pdu.hooks[i] == nil {
-				return 0, fmt.Errorf("ent: uninitialized hook (forgotten import ent/runtime?)")
-			}
-			mut = pdu.hooks[i](mut)
-		}
-		if _, err := mut.Mutate(ctx, pdu.mutation); err != nil {
-			return 0, err
-		}
-	}
-	return affected, err
+	return withHooks(ctx, pdu.sqlSave, pdu.mutation, pdu.hooks)
 }
 
 // SaveX is like Save, but panics if an error occurs.
@@ -146,16 +129,10 @@ func (pdu *PayloadDigestUpdate) check() error {
 }
 
 func (pdu *PayloadDigestUpdate) sqlSave(ctx context.Context) (n int, err error) {
-	_spec := &sqlgraph.UpdateSpec{
-		Node: &sqlgraph.NodeSpec{
-			Table:   payloaddigest.Table,
-			Columns: payloaddigest.Columns,
-			ID: &sqlgraph.FieldSpec{
-				Type:   field.TypeInt,
-				Column: payloaddigest.FieldID,
-			},
-		},
+	if err := pdu.check(); err != nil {
+		return n, err
 	}
+	_spec := sqlgraph.NewUpdateSpec(payloaddigest.Table, payloaddigest.Columns, sqlgraph.NewFieldSpec(payloaddigest.FieldID, field.TypeInt))
 	if ps := pdu.mutation.predicates; len(ps) > 0 {
 		_spec.Predicate = func(selector *sql.Selector) {
 			for i := range ps {
@@ -164,18 +141,10 @@ func (pdu *PayloadDigestUpdate) sqlSave(ctx context.Context) (n int, err error) 
 		}
 	}
 	if value, ok := pdu.mutation.Algorithm(); ok {
-		_spec.Fields.Set = append(_spec.Fields.Set, &sqlgraph.FieldSpec{
-			Type:   field.TypeString,
-			Value:  value,
-			Column: payloaddigest.FieldAlgorithm,
-		})
+		_spec.SetField(payloaddigest.FieldAlgorithm, field.TypeString, value)
 	}
 	if value, ok := pdu.mutation.Value(); ok {
-		_spec.Fields.Set = append(_spec.Fields.Set, &sqlgraph.FieldSpec{
-			Type:   field.TypeString,
-			Value:  value,
-			Column: payloaddigest.FieldValue,
-		})
+		_spec.SetField(payloaddigest.FieldValue, field.TypeString, value)
 	}
 	if pdu.mutation.DsseCleared() {
 		edge := &sqlgraph.EdgeSpec{
@@ -185,10 +154,7 @@ func (pdu *PayloadDigestUpdate) sqlSave(ctx context.Context) (n int, err error) 
 			Columns: []string{payloaddigest.DsseColumn},
 			Bidi:    false,
 			Target: &sqlgraph.EdgeTarget{
-				IDSpec: &sqlgraph.FieldSpec{
-					Type:   field.TypeInt,
-					Column: dsse.FieldID,
-				},
+				IDSpec: sqlgraph.NewFieldSpec(dsse.FieldID, field.TypeInt),
 			},
 		}
 		_spec.Edges.Clear = append(_spec.Edges.Clear, edge)
@@ -201,10 +167,7 @@ func (pdu *PayloadDigestUpdate) sqlSave(ctx context.Context) (n int, err error) 
 			Columns: []string{payloaddigest.DsseColumn},
 			Bidi:    false,
 			Target: &sqlgraph.EdgeTarget{
-				IDSpec: &sqlgraph.FieldSpec{
-					Type:   field.TypeInt,
-					Column: dsse.FieldID,
-				},
+				IDSpec: sqlgraph.NewFieldSpec(dsse.FieldID, field.TypeInt),
 			},
 		}
 		for _, k := range nodes {
@@ -220,6 +183,7 @@ func (pdu *PayloadDigestUpdate) sqlSave(ctx context.Context) (n int, err error) 
 		}
 		return 0, err
 	}
+	pdu.mutation.done = true
 	return n, nil
 }
 
@@ -237,9 +201,25 @@ func (pduo *PayloadDigestUpdateOne) SetAlgorithm(s string) *PayloadDigestUpdateO
 	return pduo
 }
 
+// SetNillableAlgorithm sets the "algorithm" field if the given value is not nil.
+func (pduo *PayloadDigestUpdateOne) SetNillableAlgorithm(s *string) *PayloadDigestUpdateOne {
+	if s != nil {
+		pduo.SetAlgorithm(*s)
+	}
+	return pduo
+}
+
 // SetValue sets the "value" field.
 func (pduo *PayloadDigestUpdateOne) SetValue(s string) *PayloadDigestUpdateOne {
 	pduo.mutation.SetValue(s)
+	return pduo
+}
+
+// SetNillableValue sets the "value" field if the given value is not nil.
+func (pduo *PayloadDigestUpdateOne) SetNillableValue(s *string) *PayloadDigestUpdateOne {
+	if s != nil {
+		pduo.SetValue(*s)
+	}
 	return pduo
 }
 
@@ -273,6 +253,12 @@ func (pduo *PayloadDigestUpdateOne) ClearDsse() *PayloadDigestUpdateOne {
 	return pduo
 }
 
+// Where appends a list predicates to the PayloadDigestUpdate builder.
+func (pduo *PayloadDigestUpdateOne) Where(ps ...predicate.PayloadDigest) *PayloadDigestUpdateOne {
+	pduo.mutation.Where(ps...)
+	return pduo
+}
+
 // Select allows selecting one or more fields (columns) of the returned entity.
 // The default is selecting all fields defined in the entity schema.
 func (pduo *PayloadDigestUpdateOne) Select(field string, fields ...string) *PayloadDigestUpdateOne {
@@ -282,46 +268,7 @@ func (pduo *PayloadDigestUpdateOne) Select(field string, fields ...string) *Payl
 
 // Save executes the query and returns the updated PayloadDigest entity.
 func (pduo *PayloadDigestUpdateOne) Save(ctx context.Context) (*PayloadDigest, error) {
-	var (
-		err  error
-		node *PayloadDigest
-	)
-	if len(pduo.hooks) == 0 {
-		if err = pduo.check(); err != nil {
-			return nil, err
-		}
-		node, err = pduo.sqlSave(ctx)
-	} else {
-		var mut Mutator = MutateFunc(func(ctx context.Context, m Mutation) (Value, error) {
-			mutation, ok := m.(*PayloadDigestMutation)
-			if !ok {
-				return nil, fmt.Errorf("unexpected mutation type %T", m)
-			}
-			if err = pduo.check(); err != nil {
-				return nil, err
-			}
-			pduo.mutation = mutation
-			node, err = pduo.sqlSave(ctx)
-			mutation.done = true
-			return node, err
-		})
-		for i := len(pduo.hooks) - 1; i >= 0; i-- {
-			if pduo.hooks[i] == nil {
-				return nil, fmt.Errorf("ent: uninitialized hook (forgotten import ent/runtime?)")
-			}
-			mut = pduo.hooks[i](mut)
-		}
-		v, err := mut.Mutate(ctx, pduo.mutation)
-		if err != nil {
-			return nil, err
-		}
-		nv, ok := v.(*PayloadDigest)
-		if !ok {
-			return nil, fmt.Errorf("unexpected node type %T returned from PayloadDigestMutation", v)
-		}
-		node = nv
-	}
-	return node, err
+	return withHooks(ctx, pduo.sqlSave, pduo.mutation, pduo.hooks)
 }
 
 // SaveX is like Save, but panics if an error occurs.
@@ -362,16 +309,10 @@ func (pduo *PayloadDigestUpdateOne) check() error {
 }
 
 func (pduo *PayloadDigestUpdateOne) sqlSave(ctx context.Context) (_node *PayloadDigest, err error) {
-	_spec := &sqlgraph.UpdateSpec{
-		Node: &sqlgraph.NodeSpec{
-			Table:   payloaddigest.Table,
-			Columns: payloaddigest.Columns,
-			ID: &sqlgraph.FieldSpec{
-				Type:   field.TypeInt,
-				Column: payloaddigest.FieldID,
-			},
-		},
+	if err := pduo.check(); err != nil {
+		return _node, err
 	}
+	_spec := sqlgraph.NewUpdateSpec(payloaddigest.Table, payloaddigest.Columns, sqlgraph.NewFieldSpec(payloaddigest.FieldID, field.TypeInt))
 	id, ok := pduo.mutation.ID()
 	if !ok {
 		return nil, &ValidationError{Name: "id", err: errors.New(`ent: missing "PayloadDigest.id" for update`)}
@@ -397,18 +338,10 @@ func (pduo *PayloadDigestUpdateOne) sqlSave(ctx context.Context) (_node *Payload
 		}
 	}
 	if value, ok := pduo.mutation.Algorithm(); ok {
-		_spec.Fields.Set = append(_spec.Fields.Set, &sqlgraph.FieldSpec{
-			Type:   field.TypeString,
-			Value:  value,
-			Column: payloaddigest.FieldAlgorithm,
-		})
+		_spec.SetField(payloaddigest.FieldAlgorithm, field.TypeString, value)
 	}
 	if value, ok := pduo.mutation.Value(); ok {
-		_spec.Fields.Set = append(_spec.Fields.Set, &sqlgraph.FieldSpec{
-			Type:   field.TypeString,
-			Value:  value,
-			Column: payloaddigest.FieldValue,
-		})
+		_spec.SetField(payloaddigest.FieldValue, field.TypeString, value)
 	}
 	if pduo.mutation.DsseCleared() {
 		edge := &sqlgraph.EdgeSpec{
@@ -418,10 +351,7 @@ func (pduo *PayloadDigestUpdateOne) sqlSave(ctx context.Context) (_node *Payload
 			Columns: []string{payloaddigest.DsseColumn},
 			Bidi:    false,
 			Target: &sqlgraph.EdgeTarget{
-				IDSpec: &sqlgraph.FieldSpec{
-					Type:   field.TypeInt,
-					Column: dsse.FieldID,
-				},
+				IDSpec: sqlgraph.NewFieldSpec(dsse.FieldID, field.TypeInt),
 			},
 		}
 		_spec.Edges.Clear = append(_spec.Edges.Clear, edge)
@@ -434,10 +364,7 @@ func (pduo *PayloadDigestUpdateOne) sqlSave(ctx context.Context) (_node *Payload
 			Columns: []string{payloaddigest.DsseColumn},
 			Bidi:    false,
 			Target: &sqlgraph.EdgeTarget{
-				IDSpec: &sqlgraph.FieldSpec{
-					Type:   field.TypeInt,
-					Column: dsse.FieldID,
-				},
+				IDSpec: sqlgraph.NewFieldSpec(dsse.FieldID, field.TypeInt),
 			},
 		}
 		for _, k := range nodes {
@@ -456,5 +383,6 @@ func (pduo *PayloadDigestUpdateOne) sqlSave(ctx context.Context) (_node *Payload
 		}
 		return nil, err
 	}
+	pduo.mutation.done = true
 	return _node, nil
 }

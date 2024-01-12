@@ -18,6 +18,7 @@ import (
 	"errors"
 	"os"
 	"strings"
+	"time"
 
 	"github.com/kelseyhightower/envconfig"
 	"github.com/sirupsen/logrus"
@@ -28,15 +29,21 @@ type Config struct {
 	LogLevel         string   `default:"INFO" desc:"Log level" split_words:"true"`
 	CORSAllowOrigins []string `default:"" desc:"Comma separated list of origins to allow CORS requests from" split_words:"true"`
 
-	EnableSPIFFE             bool   `default:"TRUE" desc:"*** Enable SPIFFE support" split_words:"true"`
-	SPIFFEAddress            string `default:"unix:///tmp/spire-agent/public/api.sock" desc:"SPIFFE server address" split_words:"true"`
-	SPIFFETrustedServerId    string `default:"" desc:"Trusted SPIFFE server ID; defaults to any" split_words:"true"`
-	SQLStoreConnectionString string `default:"root:example@tcp(db)/testify" desc:"SQL store connection string" split_words:"true"`
+	EnableSPIFFE          bool   `default:"TRUE" desc:"*** Enable SPIFFE support" split_words:"true"`
+	SPIFFEAddress         string `default:"unix:///tmp/spire-agent/public/api.sock" desc:"SPIFFE server address" split_words:"true"`
+	SPIFFETrustedServerId string `default:"" desc:"Trusted SPIFFE server ID; defaults to any" split_words:"true"`
+
+	SQLStoreConnectionString      string        `default:"root:example@tcp(db)/testify" desc:"SQL store connection string" split_words:"true"`
+	SQLStoreBackend               string        `default:"MYSQL" desc:"SQL backend to use. Options are MYSQL, PSQL" split_words:"true"`
+	SQLStoreMaxIdleConnections    int           `default:"10" desc:"Maximum number of connections in the idle connection pool" split_words:"true"`
+	SQLStoreMaxOpenConnections    int           `default:"100" desc:"Maximum number of open connections to the database" split_words:"true"`
+	SQLStoreConnectionMaxLifetime time.Duration `default:"3m" desc:"Maximum amount of time a connection may be reused" split_words:"true"`
 
 	StorageBackend             string `default:"" desc:"Backend to use for attestation storage. Options are FILE, BLOB, or empty string for disabled." split_words:"true"`
 	FileServeOn                string `default:"" desc:"What address to serve files on. Only valid when using FILE storage backend." split_words:"true"`
 	FileDir                    string `default:"/tmp/archivista/" desc:"Directory to store and serve files. Only valid when using FILE storage backend." split_words:"true"`
 	BlobStoreEndpoint          string `default:"127.0.0.1:9000" desc:"URL endpoint for blob storage. Only valid when using BLOB storage backend." split_words:"true"`
+	BlobStoreCredentialType    string `default:"ACCESS_KEY" desc:"Blob store credential type. Options are IAM or ACCESS_KEY" split_words:"true"`
 	BlobStoreAccessKeyId       string `default:"" desc:"Blob store access key id. Only valid when using BLOB storage backend." split_words:"true"`
 	BlobStoreSecretAccessKeyId string `default:"" desc:"Blob store secret access key id. Only valid when using BLOB storage backend." split_words:"true"`
 	BlobStoreUseTLS            bool   `default:"TRUE" desc:"Use TLS for BLOB storage backend. Only valid when using BLOB storage backend." split_words:"true"`

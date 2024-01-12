@@ -9,8 +9,8 @@ import (
 
 	"entgo.io/ent/dialect/sql/sqlgraph"
 	"entgo.io/ent/schema/field"
-	"github.com/testifysec/archivista/ent/dsse"
-	"github.com/testifysec/archivista/ent/payloaddigest"
+	"github.com/in-toto/archivista/ent/dsse"
+	"github.com/in-toto/archivista/ent/payloaddigest"
 )
 
 // PayloadDigestCreate is the builder for creating a PayloadDigest entity.
@@ -58,49 +58,7 @@ func (pdc *PayloadDigestCreate) Mutation() *PayloadDigestMutation {
 
 // Save creates the PayloadDigest in the database.
 func (pdc *PayloadDigestCreate) Save(ctx context.Context) (*PayloadDigest, error) {
-	var (
-		err  error
-		node *PayloadDigest
-	)
-	if len(pdc.hooks) == 0 {
-		if err = pdc.check(); err != nil {
-			return nil, err
-		}
-		node, err = pdc.sqlSave(ctx)
-	} else {
-		var mut Mutator = MutateFunc(func(ctx context.Context, m Mutation) (Value, error) {
-			mutation, ok := m.(*PayloadDigestMutation)
-			if !ok {
-				return nil, fmt.Errorf("unexpected mutation type %T", m)
-			}
-			if err = pdc.check(); err != nil {
-				return nil, err
-			}
-			pdc.mutation = mutation
-			if node, err = pdc.sqlSave(ctx); err != nil {
-				return nil, err
-			}
-			mutation.id = &node.ID
-			mutation.done = true
-			return node, err
-		})
-		for i := len(pdc.hooks) - 1; i >= 0; i-- {
-			if pdc.hooks[i] == nil {
-				return nil, fmt.Errorf("ent: uninitialized hook (forgotten import ent/runtime?)")
-			}
-			mut = pdc.hooks[i](mut)
-		}
-		v, err := mut.Mutate(ctx, pdc.mutation)
-		if err != nil {
-			return nil, err
-		}
-		nv, ok := v.(*PayloadDigest)
-		if !ok {
-			return nil, fmt.Errorf("unexpected node type %T returned from PayloadDigestMutation", v)
-		}
-		node = nv
-	}
-	return node, err
+	return withHooks(ctx, pdc.sqlSave, pdc.mutation, pdc.hooks)
 }
 
 // SaveX calls Save and panics if Save returns an error.
@@ -147,6 +105,9 @@ func (pdc *PayloadDigestCreate) check() error {
 }
 
 func (pdc *PayloadDigestCreate) sqlSave(ctx context.Context) (*PayloadDigest, error) {
+	if err := pdc.check(); err != nil {
+		return nil, err
+	}
 	_node, _spec := pdc.createSpec()
 	if err := sqlgraph.CreateNode(ctx, pdc.driver, _spec); err != nil {
 		if sqlgraph.IsConstraintError(err) {
@@ -156,34 +117,22 @@ func (pdc *PayloadDigestCreate) sqlSave(ctx context.Context) (*PayloadDigest, er
 	}
 	id := _spec.ID.Value.(int64)
 	_node.ID = int(id)
+	pdc.mutation.id = &_node.ID
+	pdc.mutation.done = true
 	return _node, nil
 }
 
 func (pdc *PayloadDigestCreate) createSpec() (*PayloadDigest, *sqlgraph.CreateSpec) {
 	var (
 		_node = &PayloadDigest{config: pdc.config}
-		_spec = &sqlgraph.CreateSpec{
-			Table: payloaddigest.Table,
-			ID: &sqlgraph.FieldSpec{
-				Type:   field.TypeInt,
-				Column: payloaddigest.FieldID,
-			},
-		}
+		_spec = sqlgraph.NewCreateSpec(payloaddigest.Table, sqlgraph.NewFieldSpec(payloaddigest.FieldID, field.TypeInt))
 	)
 	if value, ok := pdc.mutation.Algorithm(); ok {
-		_spec.Fields = append(_spec.Fields, &sqlgraph.FieldSpec{
-			Type:   field.TypeString,
-			Value:  value,
-			Column: payloaddigest.FieldAlgorithm,
-		})
+		_spec.SetField(payloaddigest.FieldAlgorithm, field.TypeString, value)
 		_node.Algorithm = value
 	}
 	if value, ok := pdc.mutation.Value(); ok {
-		_spec.Fields = append(_spec.Fields, &sqlgraph.FieldSpec{
-			Type:   field.TypeString,
-			Value:  value,
-			Column: payloaddigest.FieldValue,
-		})
+		_spec.SetField(payloaddigest.FieldValue, field.TypeString, value)
 		_node.Value = value
 	}
 	if nodes := pdc.mutation.DsseIDs(); len(nodes) > 0 {
@@ -194,10 +143,7 @@ func (pdc *PayloadDigestCreate) createSpec() (*PayloadDigest, *sqlgraph.CreateSp
 			Columns: []string{payloaddigest.DsseColumn},
 			Bidi:    false,
 			Target: &sqlgraph.EdgeTarget{
-				IDSpec: &sqlgraph.FieldSpec{
-					Type:   field.TypeInt,
-					Column: dsse.FieldID,
-				},
+				IDSpec: sqlgraph.NewFieldSpec(dsse.FieldID, field.TypeInt),
 			},
 		}
 		for _, k := range nodes {
@@ -212,11 +158,15 @@ func (pdc *PayloadDigestCreate) createSpec() (*PayloadDigest, *sqlgraph.CreateSp
 // PayloadDigestCreateBulk is the builder for creating many PayloadDigest entities in bulk.
 type PayloadDigestCreateBulk struct {
 	config
+	err      error
 	builders []*PayloadDigestCreate
 }
 
 // Save creates the PayloadDigest entities in the database.
 func (pdcb *PayloadDigestCreateBulk) Save(ctx context.Context) ([]*PayloadDigest, error) {
+	if pdcb.err != nil {
+		return nil, pdcb.err
+	}
 	specs := make([]*sqlgraph.CreateSpec, len(pdcb.builders))
 	nodes := make([]*PayloadDigest, len(pdcb.builders))
 	mutators := make([]Mutator, len(pdcb.builders))
@@ -232,8 +182,8 @@ func (pdcb *PayloadDigestCreateBulk) Save(ctx context.Context) ([]*PayloadDigest
 					return nil, err
 				}
 				builder.mutation = mutation
-				nodes[i], specs[i] = builder.createSpec()
 				var err error
+				nodes[i], specs[i] = builder.createSpec()
 				if i < len(mutators)-1 {
 					_, err = mutators[i+1].Mutate(root, pdcb.builders[i+1].mutation)
 				} else {

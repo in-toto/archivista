@@ -9,10 +9,10 @@ import (
 
 	"entgo.io/ent/dialect/sql/sqlgraph"
 	"entgo.io/ent/schema/field"
-	"github.com/testifysec/archivista/ent/dsse"
-	"github.com/testifysec/archivista/ent/payloaddigest"
-	"github.com/testifysec/archivista/ent/signature"
-	"github.com/testifysec/archivista/ent/statement"
+	"github.com/in-toto/archivista/ent/dsse"
+	"github.com/in-toto/archivista/ent/payloaddigest"
+	"github.com/in-toto/archivista/ent/signature"
+	"github.com/in-toto/archivista/ent/statement"
 )
 
 // DsseCreate is the builder for creating a Dsse entity.
@@ -90,49 +90,7 @@ func (dc *DsseCreate) Mutation() *DsseMutation {
 
 // Save creates the Dsse in the database.
 func (dc *DsseCreate) Save(ctx context.Context) (*Dsse, error) {
-	var (
-		err  error
-		node *Dsse
-	)
-	if len(dc.hooks) == 0 {
-		if err = dc.check(); err != nil {
-			return nil, err
-		}
-		node, err = dc.sqlSave(ctx)
-	} else {
-		var mut Mutator = MutateFunc(func(ctx context.Context, m Mutation) (Value, error) {
-			mutation, ok := m.(*DsseMutation)
-			if !ok {
-				return nil, fmt.Errorf("unexpected mutation type %T", m)
-			}
-			if err = dc.check(); err != nil {
-				return nil, err
-			}
-			dc.mutation = mutation
-			if node, err = dc.sqlSave(ctx); err != nil {
-				return nil, err
-			}
-			mutation.id = &node.ID
-			mutation.done = true
-			return node, err
-		})
-		for i := len(dc.hooks) - 1; i >= 0; i-- {
-			if dc.hooks[i] == nil {
-				return nil, fmt.Errorf("ent: uninitialized hook (forgotten import ent/runtime?)")
-			}
-			mut = dc.hooks[i](mut)
-		}
-		v, err := mut.Mutate(ctx, dc.mutation)
-		if err != nil {
-			return nil, err
-		}
-		nv, ok := v.(*Dsse)
-		if !ok {
-			return nil, fmt.Errorf("unexpected node type %T returned from DsseMutation", v)
-		}
-		node = nv
-	}
-	return node, err
+	return withHooks(ctx, dc.sqlSave, dc.mutation, dc.hooks)
 }
 
 // SaveX calls Save and panics if Save returns an error.
@@ -179,6 +137,9 @@ func (dc *DsseCreate) check() error {
 }
 
 func (dc *DsseCreate) sqlSave(ctx context.Context) (*Dsse, error) {
+	if err := dc.check(); err != nil {
+		return nil, err
+	}
 	_node, _spec := dc.createSpec()
 	if err := sqlgraph.CreateNode(ctx, dc.driver, _spec); err != nil {
 		if sqlgraph.IsConstraintError(err) {
@@ -188,34 +149,22 @@ func (dc *DsseCreate) sqlSave(ctx context.Context) (*Dsse, error) {
 	}
 	id := _spec.ID.Value.(int64)
 	_node.ID = int(id)
+	dc.mutation.id = &_node.ID
+	dc.mutation.done = true
 	return _node, nil
 }
 
 func (dc *DsseCreate) createSpec() (*Dsse, *sqlgraph.CreateSpec) {
 	var (
 		_node = &Dsse{config: dc.config}
-		_spec = &sqlgraph.CreateSpec{
-			Table: dsse.Table,
-			ID: &sqlgraph.FieldSpec{
-				Type:   field.TypeInt,
-				Column: dsse.FieldID,
-			},
-		}
+		_spec = sqlgraph.NewCreateSpec(dsse.Table, sqlgraph.NewFieldSpec(dsse.FieldID, field.TypeInt))
 	)
 	if value, ok := dc.mutation.GitoidSha256(); ok {
-		_spec.Fields = append(_spec.Fields, &sqlgraph.FieldSpec{
-			Type:   field.TypeString,
-			Value:  value,
-			Column: dsse.FieldGitoidSha256,
-		})
+		_spec.SetField(dsse.FieldGitoidSha256, field.TypeString, value)
 		_node.GitoidSha256 = value
 	}
 	if value, ok := dc.mutation.PayloadType(); ok {
-		_spec.Fields = append(_spec.Fields, &sqlgraph.FieldSpec{
-			Type:   field.TypeString,
-			Value:  value,
-			Column: dsse.FieldPayloadType,
-		})
+		_spec.SetField(dsse.FieldPayloadType, field.TypeString, value)
 		_node.PayloadType = value
 	}
 	if nodes := dc.mutation.StatementIDs(); len(nodes) > 0 {
@@ -226,10 +175,7 @@ func (dc *DsseCreate) createSpec() (*Dsse, *sqlgraph.CreateSpec) {
 			Columns: []string{dsse.StatementColumn},
 			Bidi:    false,
 			Target: &sqlgraph.EdgeTarget{
-				IDSpec: &sqlgraph.FieldSpec{
-					Type:   field.TypeInt,
-					Column: statement.FieldID,
-				},
+				IDSpec: sqlgraph.NewFieldSpec(statement.FieldID, field.TypeInt),
 			},
 		}
 		for _, k := range nodes {
@@ -246,10 +192,7 @@ func (dc *DsseCreate) createSpec() (*Dsse, *sqlgraph.CreateSpec) {
 			Columns: []string{dsse.SignaturesColumn},
 			Bidi:    false,
 			Target: &sqlgraph.EdgeTarget{
-				IDSpec: &sqlgraph.FieldSpec{
-					Type:   field.TypeInt,
-					Column: signature.FieldID,
-				},
+				IDSpec: sqlgraph.NewFieldSpec(signature.FieldID, field.TypeInt),
 			},
 		}
 		for _, k := range nodes {
@@ -265,10 +208,7 @@ func (dc *DsseCreate) createSpec() (*Dsse, *sqlgraph.CreateSpec) {
 			Columns: []string{dsse.PayloadDigestsColumn},
 			Bidi:    false,
 			Target: &sqlgraph.EdgeTarget{
-				IDSpec: &sqlgraph.FieldSpec{
-					Type:   field.TypeInt,
-					Column: payloaddigest.FieldID,
-				},
+				IDSpec: sqlgraph.NewFieldSpec(payloaddigest.FieldID, field.TypeInt),
 			},
 		}
 		for _, k := range nodes {
@@ -282,11 +222,15 @@ func (dc *DsseCreate) createSpec() (*Dsse, *sqlgraph.CreateSpec) {
 // DsseCreateBulk is the builder for creating many Dsse entities in bulk.
 type DsseCreateBulk struct {
 	config
+	err      error
 	builders []*DsseCreate
 }
 
 // Save creates the Dsse entities in the database.
 func (dcb *DsseCreateBulk) Save(ctx context.Context) ([]*Dsse, error) {
+	if dcb.err != nil {
+		return nil, dcb.err
+	}
 	specs := make([]*sqlgraph.CreateSpec, len(dcb.builders))
 	nodes := make([]*Dsse, len(dcb.builders))
 	mutators := make([]Mutator, len(dcb.builders))
@@ -302,8 +246,8 @@ func (dcb *DsseCreateBulk) Save(ctx context.Context) ([]*Dsse, error) {
 					return nil, err
 				}
 				builder.mutation = mutation
-				nodes[i], specs[i] = builder.createSpec()
 				var err error
+				nodes[i], specs[i] = builder.createSpec()
 				if i < len(mutators)-1 {
 					_, err = mutators[i+1].Mutate(root, dcb.builders[i+1].mutation)
 				} else {

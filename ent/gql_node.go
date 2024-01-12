@@ -4,7 +4,6 @@ package ent
 
 import (
 	"context"
-	"encoding/json"
 	"fmt"
 	"sync"
 	"sync/atomic"
@@ -15,423 +14,49 @@ import (
 	"entgo.io/ent/dialect/sql/schema"
 	"github.com/99designs/gqlgen/graphql"
 	"github.com/hashicorp/go-multierror"
-	"github.com/testifysec/archivista/ent/attestation"
-	"github.com/testifysec/archivista/ent/attestationcollection"
-	"github.com/testifysec/archivista/ent/dsse"
-	"github.com/testifysec/archivista/ent/payloaddigest"
-	"github.com/testifysec/archivista/ent/signature"
-	"github.com/testifysec/archivista/ent/statement"
-	"github.com/testifysec/archivista/ent/subject"
-	"github.com/testifysec/archivista/ent/subjectdigest"
-	"github.com/testifysec/archivista/ent/timestamp"
+	"github.com/in-toto/archivista/ent/attestation"
+	"github.com/in-toto/archivista/ent/attestationcollection"
+	"github.com/in-toto/archivista/ent/dsse"
+	"github.com/in-toto/archivista/ent/payloaddigest"
+	"github.com/in-toto/archivista/ent/signature"
+	"github.com/in-toto/archivista/ent/statement"
+	"github.com/in-toto/archivista/ent/subject"
+	"github.com/in-toto/archivista/ent/subjectdigest"
+	"github.com/in-toto/archivista/ent/timestamp"
 	"golang.org/x/sync/semaphore"
 )
 
 // Noder wraps the basic Node method.
 type Noder interface {
-	Node(context.Context) (*Node, error)
+	IsNode()
 }
 
-// Node in the graph.
-type Node struct {
-	ID     int      `json:"id,omitempty"`     // node id.
-	Type   string   `json:"type,omitempty"`   // node type.
-	Fields []*Field `json:"fields,omitempty"` // node fields.
-	Edges  []*Edge  `json:"edges,omitempty"`  // node edges.
-}
+// IsNode implements the Node interface check for GQLGen.
+func (n *Attestation) IsNode() {}
 
-// Field of a node.
-type Field struct {
-	Type  string `json:"type,omitempty"`  // field type.
-	Name  string `json:"name,omitempty"`  // field name (as in struct).
-	Value string `json:"value,omitempty"` // stringified value.
-}
+// IsNode implements the Node interface check for GQLGen.
+func (n *AttestationCollection) IsNode() {}
 
-// Edges between two nodes.
-type Edge struct {
-	Type string `json:"type,omitempty"` // edge type.
-	Name string `json:"name,omitempty"` // edge name.
-	IDs  []int  `json:"ids,omitempty"`  // node ids (where this edge point to).
-}
+// IsNode implements the Node interface check for GQLGen.
+func (n *Dsse) IsNode() {}
 
-func (a *Attestation) Node(ctx context.Context) (node *Node, err error) {
-	node = &Node{
-		ID:     a.ID,
-		Type:   "Attestation",
-		Fields: make([]*Field, 1),
-		Edges:  make([]*Edge, 1),
-	}
-	var buf []byte
-	if buf, err = json.Marshal(a.Type); err != nil {
-		return nil, err
-	}
-	node.Fields[0] = &Field{
-		Type:  "string",
-		Name:  "type",
-		Value: string(buf),
-	}
-	node.Edges[0] = &Edge{
-		Type: "AttestationCollection",
-		Name: "attestation_collection",
-	}
-	err = a.QueryAttestationCollection().
-		Select(attestationcollection.FieldID).
-		Scan(ctx, &node.Edges[0].IDs)
-	if err != nil {
-		return nil, err
-	}
-	return node, nil
-}
+// IsNode implements the Node interface check for GQLGen.
+func (n *PayloadDigest) IsNode() {}
 
-func (ac *AttestationCollection) Node(ctx context.Context) (node *Node, err error) {
-	node = &Node{
-		ID:     ac.ID,
-		Type:   "AttestationCollection",
-		Fields: make([]*Field, 1),
-		Edges:  make([]*Edge, 2),
-	}
-	var buf []byte
-	if buf, err = json.Marshal(ac.Name); err != nil {
-		return nil, err
-	}
-	node.Fields[0] = &Field{
-		Type:  "string",
-		Name:  "name",
-		Value: string(buf),
-	}
-	node.Edges[0] = &Edge{
-		Type: "Attestation",
-		Name: "attestations",
-	}
-	err = ac.QueryAttestations().
-		Select(attestation.FieldID).
-		Scan(ctx, &node.Edges[0].IDs)
-	if err != nil {
-		return nil, err
-	}
-	node.Edges[1] = &Edge{
-		Type: "Statement",
-		Name: "statement",
-	}
-	err = ac.QueryStatement().
-		Select(statement.FieldID).
-		Scan(ctx, &node.Edges[1].IDs)
-	if err != nil {
-		return nil, err
-	}
-	return node, nil
-}
+// IsNode implements the Node interface check for GQLGen.
+func (n *Signature) IsNode() {}
 
-func (d *Dsse) Node(ctx context.Context) (node *Node, err error) {
-	node = &Node{
-		ID:     d.ID,
-		Type:   "Dsse",
-		Fields: make([]*Field, 2),
-		Edges:  make([]*Edge, 3),
-	}
-	var buf []byte
-	if buf, err = json.Marshal(d.GitoidSha256); err != nil {
-		return nil, err
-	}
-	node.Fields[0] = &Field{
-		Type:  "string",
-		Name:  "gitoid_sha256",
-		Value: string(buf),
-	}
-	if buf, err = json.Marshal(d.PayloadType); err != nil {
-		return nil, err
-	}
-	node.Fields[1] = &Field{
-		Type:  "string",
-		Name:  "payload_type",
-		Value: string(buf),
-	}
-	node.Edges[0] = &Edge{
-		Type: "Statement",
-		Name: "statement",
-	}
-	err = d.QueryStatement().
-		Select(statement.FieldID).
-		Scan(ctx, &node.Edges[0].IDs)
-	if err != nil {
-		return nil, err
-	}
-	node.Edges[1] = &Edge{
-		Type: "Signature",
-		Name: "signatures",
-	}
-	err = d.QuerySignatures().
-		Select(signature.FieldID).
-		Scan(ctx, &node.Edges[1].IDs)
-	if err != nil {
-		return nil, err
-	}
-	node.Edges[2] = &Edge{
-		Type: "PayloadDigest",
-		Name: "payload_digests",
-	}
-	err = d.QueryPayloadDigests().
-		Select(payloaddigest.FieldID).
-		Scan(ctx, &node.Edges[2].IDs)
-	if err != nil {
-		return nil, err
-	}
-	return node, nil
-}
+// IsNode implements the Node interface check for GQLGen.
+func (n *Statement) IsNode() {}
 
-func (pd *PayloadDigest) Node(ctx context.Context) (node *Node, err error) {
-	node = &Node{
-		ID:     pd.ID,
-		Type:   "PayloadDigest",
-		Fields: make([]*Field, 2),
-		Edges:  make([]*Edge, 1),
-	}
-	var buf []byte
-	if buf, err = json.Marshal(pd.Algorithm); err != nil {
-		return nil, err
-	}
-	node.Fields[0] = &Field{
-		Type:  "string",
-		Name:  "algorithm",
-		Value: string(buf),
-	}
-	if buf, err = json.Marshal(pd.Value); err != nil {
-		return nil, err
-	}
-	node.Fields[1] = &Field{
-		Type:  "string",
-		Name:  "value",
-		Value: string(buf),
-	}
-	node.Edges[0] = &Edge{
-		Type: "Dsse",
-		Name: "dsse",
-	}
-	err = pd.QueryDsse().
-		Select(dsse.FieldID).
-		Scan(ctx, &node.Edges[0].IDs)
-	if err != nil {
-		return nil, err
-	}
-	return node, nil
-}
+// IsNode implements the Node interface check for GQLGen.
+func (n *Subject) IsNode() {}
 
-func (s *Signature) Node(ctx context.Context) (node *Node, err error) {
-	node = &Node{
-		ID:     s.ID,
-		Type:   "Signature",
-		Fields: make([]*Field, 2),
-		Edges:  make([]*Edge, 2),
-	}
-	var buf []byte
-	if buf, err = json.Marshal(s.KeyID); err != nil {
-		return nil, err
-	}
-	node.Fields[0] = &Field{
-		Type:  "string",
-		Name:  "key_id",
-		Value: string(buf),
-	}
-	if buf, err = json.Marshal(s.Signature); err != nil {
-		return nil, err
-	}
-	node.Fields[1] = &Field{
-		Type:  "string",
-		Name:  "signature",
-		Value: string(buf),
-	}
-	node.Edges[0] = &Edge{
-		Type: "Dsse",
-		Name: "dsse",
-	}
-	err = s.QueryDsse().
-		Select(dsse.FieldID).
-		Scan(ctx, &node.Edges[0].IDs)
-	if err != nil {
-		return nil, err
-	}
-	node.Edges[1] = &Edge{
-		Type: "Timestamp",
-		Name: "timestamps",
-	}
-	err = s.QueryTimestamps().
-		Select(timestamp.FieldID).
-		Scan(ctx, &node.Edges[1].IDs)
-	if err != nil {
-		return nil, err
-	}
-	return node, nil
-}
+// IsNode implements the Node interface check for GQLGen.
+func (n *SubjectDigest) IsNode() {}
 
-func (s *Statement) Node(ctx context.Context) (node *Node, err error) {
-	node = &Node{
-		ID:     s.ID,
-		Type:   "Statement",
-		Fields: make([]*Field, 1),
-		Edges:  make([]*Edge, 3),
-	}
-	var buf []byte
-	if buf, err = json.Marshal(s.Predicate); err != nil {
-		return nil, err
-	}
-	node.Fields[0] = &Field{
-		Type:  "string",
-		Name:  "predicate",
-		Value: string(buf),
-	}
-	node.Edges[0] = &Edge{
-		Type: "Subject",
-		Name: "subjects",
-	}
-	err = s.QuerySubjects().
-		Select(subject.FieldID).
-		Scan(ctx, &node.Edges[0].IDs)
-	if err != nil {
-		return nil, err
-	}
-	node.Edges[1] = &Edge{
-		Type: "AttestationCollection",
-		Name: "attestation_collections",
-	}
-	err = s.QueryAttestationCollections().
-		Select(attestationcollection.FieldID).
-		Scan(ctx, &node.Edges[1].IDs)
-	if err != nil {
-		return nil, err
-	}
-	node.Edges[2] = &Edge{
-		Type: "Dsse",
-		Name: "dsse",
-	}
-	err = s.QueryDsse().
-		Select(dsse.FieldID).
-		Scan(ctx, &node.Edges[2].IDs)
-	if err != nil {
-		return nil, err
-	}
-	return node, nil
-}
-
-func (s *Subject) Node(ctx context.Context) (node *Node, err error) {
-	node = &Node{
-		ID:     s.ID,
-		Type:   "Subject",
-		Fields: make([]*Field, 1),
-		Edges:  make([]*Edge, 2),
-	}
-	var buf []byte
-	if buf, err = json.Marshal(s.Name); err != nil {
-		return nil, err
-	}
-	node.Fields[0] = &Field{
-		Type:  "string",
-		Name:  "name",
-		Value: string(buf),
-	}
-	node.Edges[0] = &Edge{
-		Type: "SubjectDigest",
-		Name: "subject_digests",
-	}
-	err = s.QuerySubjectDigests().
-		Select(subjectdigest.FieldID).
-		Scan(ctx, &node.Edges[0].IDs)
-	if err != nil {
-		return nil, err
-	}
-	node.Edges[1] = &Edge{
-		Type: "Statement",
-		Name: "statement",
-	}
-	err = s.QueryStatement().
-		Select(statement.FieldID).
-		Scan(ctx, &node.Edges[1].IDs)
-	if err != nil {
-		return nil, err
-	}
-	return node, nil
-}
-
-func (sd *SubjectDigest) Node(ctx context.Context) (node *Node, err error) {
-	node = &Node{
-		ID:     sd.ID,
-		Type:   "SubjectDigest",
-		Fields: make([]*Field, 2),
-		Edges:  make([]*Edge, 1),
-	}
-	var buf []byte
-	if buf, err = json.Marshal(sd.Algorithm); err != nil {
-		return nil, err
-	}
-	node.Fields[0] = &Field{
-		Type:  "string",
-		Name:  "algorithm",
-		Value: string(buf),
-	}
-	if buf, err = json.Marshal(sd.Value); err != nil {
-		return nil, err
-	}
-	node.Fields[1] = &Field{
-		Type:  "string",
-		Name:  "value",
-		Value: string(buf),
-	}
-	node.Edges[0] = &Edge{
-		Type: "Subject",
-		Name: "subject",
-	}
-	err = sd.QuerySubject().
-		Select(subject.FieldID).
-		Scan(ctx, &node.Edges[0].IDs)
-	if err != nil {
-		return nil, err
-	}
-	return node, nil
-}
-
-func (t *Timestamp) Node(ctx context.Context) (node *Node, err error) {
-	node = &Node{
-		ID:     t.ID,
-		Type:   "Timestamp",
-		Fields: make([]*Field, 2),
-		Edges:  make([]*Edge, 1),
-	}
-	var buf []byte
-	if buf, err = json.Marshal(t.Type); err != nil {
-		return nil, err
-	}
-	node.Fields[0] = &Field{
-		Type:  "string",
-		Name:  "type",
-		Value: string(buf),
-	}
-	if buf, err = json.Marshal(t.Timestamp); err != nil {
-		return nil, err
-	}
-	node.Fields[1] = &Field{
-		Type:  "time.Time",
-		Name:  "timestamp",
-		Value: string(buf),
-	}
-	node.Edges[0] = &Edge{
-		Type: "Signature",
-		Name: "signature",
-	}
-	err = t.QuerySignature().
-		Select(signature.FieldID).
-		Scan(ctx, &node.Edges[0].IDs)
-	if err != nil {
-		return nil, err
-	}
-	return node, nil
-}
-
-func (c *Client) Node(ctx context.Context, id int) (*Node, error) {
-	n, err := c.Noder(ctx, id)
-	if err != nil {
-		return nil, err
-	}
-	return n.Node(ctx)
-}
+// IsNode implements the Node interface check for GQLGen.
+func (n *Timestamp) IsNode() {}
 
 var errNodeInvalidID = &NotFoundError{"node"}
 

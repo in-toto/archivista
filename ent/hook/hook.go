@@ -6,7 +6,7 @@ import (
 	"context"
 	"fmt"
 
-	"github.com/testifysec/archivista/ent"
+	"github.com/in-toto/archivista/ent"
 )
 
 // The AttestationFunc type is an adapter to allow the use of ordinary
@@ -15,11 +15,10 @@ type AttestationFunc func(context.Context, *ent.AttestationMutation) (ent.Value,
 
 // Mutate calls f(ctx, m).
 func (f AttestationFunc) Mutate(ctx context.Context, m ent.Mutation) (ent.Value, error) {
-	mv, ok := m.(*ent.AttestationMutation)
-	if !ok {
-		return nil, fmt.Errorf("unexpected mutation type %T. expect *ent.AttestationMutation", m)
+	if mv, ok := m.(*ent.AttestationMutation); ok {
+		return f(ctx, mv)
 	}
-	return f(ctx, mv)
+	return nil, fmt.Errorf("unexpected mutation type %T. expect *ent.AttestationMutation", m)
 }
 
 // The AttestationCollectionFunc type is an adapter to allow the use of ordinary
@@ -28,11 +27,10 @@ type AttestationCollectionFunc func(context.Context, *ent.AttestationCollectionM
 
 // Mutate calls f(ctx, m).
 func (f AttestationCollectionFunc) Mutate(ctx context.Context, m ent.Mutation) (ent.Value, error) {
-	mv, ok := m.(*ent.AttestationCollectionMutation)
-	if !ok {
-		return nil, fmt.Errorf("unexpected mutation type %T. expect *ent.AttestationCollectionMutation", m)
+	if mv, ok := m.(*ent.AttestationCollectionMutation); ok {
+		return f(ctx, mv)
 	}
-	return f(ctx, mv)
+	return nil, fmt.Errorf("unexpected mutation type %T. expect *ent.AttestationCollectionMutation", m)
 }
 
 // The DsseFunc type is an adapter to allow the use of ordinary
@@ -41,11 +39,10 @@ type DsseFunc func(context.Context, *ent.DsseMutation) (ent.Value, error)
 
 // Mutate calls f(ctx, m).
 func (f DsseFunc) Mutate(ctx context.Context, m ent.Mutation) (ent.Value, error) {
-	mv, ok := m.(*ent.DsseMutation)
-	if !ok {
-		return nil, fmt.Errorf("unexpected mutation type %T. expect *ent.DsseMutation", m)
+	if mv, ok := m.(*ent.DsseMutation); ok {
+		return f(ctx, mv)
 	}
-	return f(ctx, mv)
+	return nil, fmt.Errorf("unexpected mutation type %T. expect *ent.DsseMutation", m)
 }
 
 // The PayloadDigestFunc type is an adapter to allow the use of ordinary
@@ -54,11 +51,10 @@ type PayloadDigestFunc func(context.Context, *ent.PayloadDigestMutation) (ent.Va
 
 // Mutate calls f(ctx, m).
 func (f PayloadDigestFunc) Mutate(ctx context.Context, m ent.Mutation) (ent.Value, error) {
-	mv, ok := m.(*ent.PayloadDigestMutation)
-	if !ok {
-		return nil, fmt.Errorf("unexpected mutation type %T. expect *ent.PayloadDigestMutation", m)
+	if mv, ok := m.(*ent.PayloadDigestMutation); ok {
+		return f(ctx, mv)
 	}
-	return f(ctx, mv)
+	return nil, fmt.Errorf("unexpected mutation type %T. expect *ent.PayloadDigestMutation", m)
 }
 
 // The SignatureFunc type is an adapter to allow the use of ordinary
@@ -67,11 +63,10 @@ type SignatureFunc func(context.Context, *ent.SignatureMutation) (ent.Value, err
 
 // Mutate calls f(ctx, m).
 func (f SignatureFunc) Mutate(ctx context.Context, m ent.Mutation) (ent.Value, error) {
-	mv, ok := m.(*ent.SignatureMutation)
-	if !ok {
-		return nil, fmt.Errorf("unexpected mutation type %T. expect *ent.SignatureMutation", m)
+	if mv, ok := m.(*ent.SignatureMutation); ok {
+		return f(ctx, mv)
 	}
-	return f(ctx, mv)
+	return nil, fmt.Errorf("unexpected mutation type %T. expect *ent.SignatureMutation", m)
 }
 
 // The StatementFunc type is an adapter to allow the use of ordinary
@@ -80,11 +75,10 @@ type StatementFunc func(context.Context, *ent.StatementMutation) (ent.Value, err
 
 // Mutate calls f(ctx, m).
 func (f StatementFunc) Mutate(ctx context.Context, m ent.Mutation) (ent.Value, error) {
-	mv, ok := m.(*ent.StatementMutation)
-	if !ok {
-		return nil, fmt.Errorf("unexpected mutation type %T. expect *ent.StatementMutation", m)
+	if mv, ok := m.(*ent.StatementMutation); ok {
+		return f(ctx, mv)
 	}
-	return f(ctx, mv)
+	return nil, fmt.Errorf("unexpected mutation type %T. expect *ent.StatementMutation", m)
 }
 
 // The SubjectFunc type is an adapter to allow the use of ordinary
@@ -93,11 +87,10 @@ type SubjectFunc func(context.Context, *ent.SubjectMutation) (ent.Value, error)
 
 // Mutate calls f(ctx, m).
 func (f SubjectFunc) Mutate(ctx context.Context, m ent.Mutation) (ent.Value, error) {
-	mv, ok := m.(*ent.SubjectMutation)
-	if !ok {
-		return nil, fmt.Errorf("unexpected mutation type %T. expect *ent.SubjectMutation", m)
+	if mv, ok := m.(*ent.SubjectMutation); ok {
+		return f(ctx, mv)
 	}
-	return f(ctx, mv)
+	return nil, fmt.Errorf("unexpected mutation type %T. expect *ent.SubjectMutation", m)
 }
 
 // The SubjectDigestFunc type is an adapter to allow the use of ordinary
@@ -106,11 +99,10 @@ type SubjectDigestFunc func(context.Context, *ent.SubjectDigestMutation) (ent.Va
 
 // Mutate calls f(ctx, m).
 func (f SubjectDigestFunc) Mutate(ctx context.Context, m ent.Mutation) (ent.Value, error) {
-	mv, ok := m.(*ent.SubjectDigestMutation)
-	if !ok {
-		return nil, fmt.Errorf("unexpected mutation type %T. expect *ent.SubjectDigestMutation", m)
+	if mv, ok := m.(*ent.SubjectDigestMutation); ok {
+		return f(ctx, mv)
 	}
-	return f(ctx, mv)
+	return nil, fmt.Errorf("unexpected mutation type %T. expect *ent.SubjectDigestMutation", m)
 }
 
 // The TimestampFunc type is an adapter to allow the use of ordinary
@@ -119,11 +111,10 @@ type TimestampFunc func(context.Context, *ent.TimestampMutation) (ent.Value, err
 
 // Mutate calls f(ctx, m).
 func (f TimestampFunc) Mutate(ctx context.Context, m ent.Mutation) (ent.Value, error) {
-	mv, ok := m.(*ent.TimestampMutation)
-	if !ok {
-		return nil, fmt.Errorf("unexpected mutation type %T. expect *ent.TimestampMutation", m)
+	if mv, ok := m.(*ent.TimestampMutation); ok {
+		return f(ctx, mv)
 	}
-	return f(ctx, mv)
+	return nil, fmt.Errorf("unexpected mutation type %T. expect *ent.TimestampMutation", m)
 }
 
 // Condition is a hook condition function.

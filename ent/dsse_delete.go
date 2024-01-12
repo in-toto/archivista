@@ -4,13 +4,12 @@ package ent
 
 import (
 	"context"
-	"fmt"
 
 	"entgo.io/ent/dialect/sql"
 	"entgo.io/ent/dialect/sql/sqlgraph"
 	"entgo.io/ent/schema/field"
-	"github.com/testifysec/archivista/ent/dsse"
-	"github.com/testifysec/archivista/ent/predicate"
+	"github.com/in-toto/archivista/ent/dsse"
+	"github.com/in-toto/archivista/ent/predicate"
 )
 
 // DsseDelete is the builder for deleting a Dsse entity.
@@ -28,34 +27,7 @@ func (dd *DsseDelete) Where(ps ...predicate.Dsse) *DsseDelete {
 
 // Exec executes the deletion query and returns how many vertices were deleted.
 func (dd *DsseDelete) Exec(ctx context.Context) (int, error) {
-	var (
-		err      error
-		affected int
-	)
-	if len(dd.hooks) == 0 {
-		affected, err = dd.sqlExec(ctx)
-	} else {
-		var mut Mutator = MutateFunc(func(ctx context.Context, m Mutation) (Value, error) {
-			mutation, ok := m.(*DsseMutation)
-			if !ok {
-				return nil, fmt.Errorf("unexpected mutation type %T", m)
-			}
-			dd.mutation = mutation
-			affected, err = dd.sqlExec(ctx)
-			mutation.done = true
-			return affected, err
-		})
-		for i := len(dd.hooks) - 1; i >= 0; i-- {
-			if dd.hooks[i] == nil {
-				return 0, fmt.Errorf("ent: uninitialized hook (forgotten import ent/runtime?)")
-			}
-			mut = dd.hooks[i](mut)
-		}
-		if _, err := mut.Mutate(ctx, dd.mutation); err != nil {
-			return 0, err
-		}
-	}
-	return affected, err
+	return withHooks(ctx, dd.sqlExec, dd.mutation, dd.hooks)
 }
 
 // ExecX is like Exec, but panics if an error occurs.
@@ -68,15 +40,7 @@ func (dd *DsseDelete) ExecX(ctx context.Context) int {
 }
 
 func (dd *DsseDelete) sqlExec(ctx context.Context) (int, error) {
-	_spec := &sqlgraph.DeleteSpec{
-		Node: &sqlgraph.NodeSpec{
-			Table: dsse.Table,
-			ID: &sqlgraph.FieldSpec{
-				Type:   field.TypeInt,
-				Column: dsse.FieldID,
-			},
-		},
-	}
+	_spec := sqlgraph.NewDeleteSpec(dsse.Table, sqlgraph.NewFieldSpec(dsse.FieldID, field.TypeInt))
 	if ps := dd.mutation.predicates; len(ps) > 0 {
 		_spec.Predicate = func(selector *sql.Selector) {
 			for i := range ps {
@@ -88,12 +52,19 @@ func (dd *DsseDelete) sqlExec(ctx context.Context) (int, error) {
 	if err != nil && sqlgraph.IsConstraintError(err) {
 		err = &ConstraintError{msg: err.Error(), wrap: err}
 	}
+	dd.mutation.done = true
 	return affected, err
 }
 
 // DsseDeleteOne is the builder for deleting a single Dsse entity.
 type DsseDeleteOne struct {
 	dd *DsseDelete
+}
+
+// Where appends a list predicates to the DsseDelete builder.
+func (ddo *DsseDeleteOne) Where(ps ...predicate.Dsse) *DsseDeleteOne {
+	ddo.dd.mutation.Where(ps...)
+	return ddo
 }
 
 // Exec executes the deletion query.
@@ -111,5 +82,7 @@ func (ddo *DsseDeleteOne) Exec(ctx context.Context) error {
 
 // ExecX is like Exec, but panics if an error occurs.
 func (ddo *DsseDeleteOne) ExecX(ctx context.Context) {
-	ddo.dd.ExecX(ctx)
+	if err := ddo.Exec(ctx); err != nil {
+		panic(err)
+	}
 }

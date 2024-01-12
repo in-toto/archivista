@@ -18,7 +18,7 @@ builds:
       - "-s -w"
       - "-extldflags=-zrelro"
       - "-extldflags=-znow"
-      - "-extldflags -w -X 'github.com/testifysec/archivista/cmd.Version={{.Tag}}-{{.ShortCommit}}'"
+      - "-extldflags -w -X 'github.com/in-toto/archivista/cmd.Version={{.Tag}}-{{.ShortCommit}}'"
     env:
       - "CGO_ENABLED=0"
       - "GO111MODULE=on"
@@ -37,7 +37,7 @@ builds:
       - "-s -w"
       - "-extldflags=-zrelro"
       - "-extldflags=-znow"
-      - "-extldflags -w -X 'github.com/testifysec/archivistactl/cmd.Version={{.Tag}}-{{.ShortCommit}}'"
+      - "-extldflags -w -X 'github.com/in-toto/archivistactl/cmd.Version={{.Tag}}-{{.ShortCommit}}'"
     env:
       - "CGO_ENABLED=0"
       - "GO111MODULE=on"
@@ -75,7 +75,7 @@ release:
   github:
     owner: "{{ .Env.GITHUB_REPOSITORY_OWNER }}"
 kos:
-  - repository: ghcr.io/testifysec/archivista
+  - repository: ghcr.io/in-toto/archivista
     id: archivista
     build: archivista
     tags:
@@ -86,7 +86,7 @@ kos:
     platforms:
     - linux/amd64
     - linux/arm64
-  - repository: ghcr.io/testifysec/archivistactl
+  - repository: ghcr.io/in-toto/archivistactl
     id: archivistactl
     build: archivistactl
     tags:

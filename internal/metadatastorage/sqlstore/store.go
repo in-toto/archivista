@@ -12,7 +12,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-package mysqlstore
+package sqlstore
 
 import (
 	"context"
@@ -22,17 +22,14 @@ import (
 	"fmt"
 	"time"
 
-	"ariga.io/sqlcomment"
-	"entgo.io/ent/dialect/sql"
 	"github.com/digitorus/timestamp"
-	"github.com/go-sql-driver/mysql"
+	"github.com/in-toto/archivista/ent"
+	"github.com/in-toto/archivista/internal/metadatastorage"
+	"github.com/in-toto/archivista/internal/metadatastorage/parserregistry"
+	"github.com/in-toto/go-witness/cryptoutil"
+	"github.com/in-toto/go-witness/dsse"
+	"github.com/in-toto/go-witness/intoto"
 	"github.com/sirupsen/logrus"
-	"github.com/testifysec/archivista/ent"
-	"github.com/testifysec/archivista/internal/metadatastorage"
-	"github.com/testifysec/archivista/internal/metadatastorage/parserregistry"
-	"github.com/testifysec/go-witness/cryptoutil"
-	"github.com/testifysec/go-witness/dsse"
-	"github.com/testifysec/go-witness/intoto"
 )
 
 // mysql has a limit of 65536 parameters in a single query. each subject has ~2 parameters [statment id and name],
@@ -47,34 +44,7 @@ type Store struct {
 	client *ent.Client
 }
 
-func New(ctx context.Context, connectionstring string) (*Store, <-chan error, error) {
-	dbConfig, err := mysql.ParseDSN(connectionstring)
-	if err != nil {
-		return nil, nil, err
-	}
-
-	dbConfig.ParseTime = true
-	connectionstring = dbConfig.FormatDSN()
-	drv, err := sql.Open("mysql", connectionstring)
-	if err != nil {
-		return nil, nil, err
-	}
-	sqlcommentDrv := sqlcomment.NewDriver(drv,
-		sqlcomment.WithDriverVerTag(),
-		sqlcomment.WithTags(sqlcomment.Tags{
-			sqlcomment.KeyApplication: "archivista",
-			sqlcomment.KeyFramework:   "net/http",
-		}),
-	)
-
-	// TODO make sure these take affect in sqlcommentDrv
-	db := drv.DB()
-	db.SetMaxIdleConns(10)
-	db.SetMaxOpenConns(100)
-	db.SetConnMaxLifetime(3 * time.Minute)
-
-	client := ent.NewClient(ent.Driver(sqlcommentDrv))
-
+func New(ctx context.Context, client *ent.Client) (*Store, <-chan error, error) {
 	errCh := make(chan error)
 
 	go func() {

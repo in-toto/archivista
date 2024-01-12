@@ -10,9 +10,9 @@ import (
 	"entgo.io/ent/dialect/sql"
 	"entgo.io/ent/dialect/sql/sqlgraph"
 	"entgo.io/ent/schema/field"
-	"github.com/testifysec/archivista/ent/predicate"
-	"github.com/testifysec/archivista/ent/subject"
-	"github.com/testifysec/archivista/ent/subjectdigest"
+	"github.com/in-toto/archivista/ent/predicate"
+	"github.com/in-toto/archivista/ent/subject"
+	"github.com/in-toto/archivista/ent/subjectdigest"
 )
 
 // SubjectDigestUpdate is the builder for updating SubjectDigest entities.
@@ -34,9 +34,25 @@ func (sdu *SubjectDigestUpdate) SetAlgorithm(s string) *SubjectDigestUpdate {
 	return sdu
 }
 
+// SetNillableAlgorithm sets the "algorithm" field if the given value is not nil.
+func (sdu *SubjectDigestUpdate) SetNillableAlgorithm(s *string) *SubjectDigestUpdate {
+	if s != nil {
+		sdu.SetAlgorithm(*s)
+	}
+	return sdu
+}
+
 // SetValue sets the "value" field.
 func (sdu *SubjectDigestUpdate) SetValue(s string) *SubjectDigestUpdate {
 	sdu.mutation.SetValue(s)
+	return sdu
+}
+
+// SetNillableValue sets the "value" field if the given value is not nil.
+func (sdu *SubjectDigestUpdate) SetNillableValue(s *string) *SubjectDigestUpdate {
+	if s != nil {
+		sdu.SetValue(*s)
+	}
 	return sdu
 }
 
@@ -72,40 +88,7 @@ func (sdu *SubjectDigestUpdate) ClearSubject() *SubjectDigestUpdate {
 
 // Save executes the query and returns the number of nodes affected by the update operation.
 func (sdu *SubjectDigestUpdate) Save(ctx context.Context) (int, error) {
-	var (
-		err      error
-		affected int
-	)
-	if len(sdu.hooks) == 0 {
-		if err = sdu.check(); err != nil {
-			return 0, err
-		}
-		affected, err = sdu.sqlSave(ctx)
-	} else {
-		var mut Mutator = MutateFunc(func(ctx context.Context, m Mutation) (Value, error) {
-			mutation, ok := m.(*SubjectDigestMutation)
-			if !ok {
-				return nil, fmt.Errorf("unexpected mutation type %T", m)
-			}
-			if err = sdu.check(); err != nil {
-				return 0, err
-			}
-			sdu.mutation = mutation
-			affected, err = sdu.sqlSave(ctx)
-			mutation.done = true
-			return affected, err
-		})
-		for i := len(sdu.hooks) - 1; i >= 0; i-- {
-			if sdu.hooks[i] == nil {
-				return 0, fmt.Errorf("ent: uninitialized hook (forgotten import ent/runtime?)")
-			}
-			mut = sdu.hooks[i](mut)
-		}
-		if _, err := mut.Mutate(ctx, sdu.mutation); err != nil {
-			return 0, err
-		}
-	}
-	return affected, err
+	return withHooks(ctx, sdu.sqlSave, sdu.mutation, sdu.hooks)
 }
 
 // SaveX is like Save, but panics if an error occurs.
@@ -146,16 +129,10 @@ func (sdu *SubjectDigestUpdate) check() error {
 }
 
 func (sdu *SubjectDigestUpdate) sqlSave(ctx context.Context) (n int, err error) {
-	_spec := &sqlgraph.UpdateSpec{
-		Node: &sqlgraph.NodeSpec{
-			Table:   subjectdigest.Table,
-			Columns: subjectdigest.Columns,
-			ID: &sqlgraph.FieldSpec{
-				Type:   field.TypeInt,
-				Column: subjectdigest.FieldID,
-			},
-		},
+	if err := sdu.check(); err != nil {
+		return n, err
 	}
+	_spec := sqlgraph.NewUpdateSpec(subjectdigest.Table, subjectdigest.Columns, sqlgraph.NewFieldSpec(subjectdigest.FieldID, field.TypeInt))
 	if ps := sdu.mutation.predicates; len(ps) > 0 {
 		_spec.Predicate = func(selector *sql.Selector) {
 			for i := range ps {
@@ -164,18 +141,10 @@ func (sdu *SubjectDigestUpdate) sqlSave(ctx context.Context) (n int, err error) 
 		}
 	}
 	if value, ok := sdu.mutation.Algorithm(); ok {
-		_spec.Fields.Set = append(_spec.Fields.Set, &sqlgraph.FieldSpec{
-			Type:   field.TypeString,
-			Value:  value,
-			Column: subjectdigest.FieldAlgorithm,
-		})
+		_spec.SetField(subjectdigest.FieldAlgorithm, field.TypeString, value)
 	}
 	if value, ok := sdu.mutation.Value(); ok {
-		_spec.Fields.Set = append(_spec.Fields.Set, &sqlgraph.FieldSpec{
-			Type:   field.TypeString,
-			Value:  value,
-			Column: subjectdigest.FieldValue,
-		})
+		_spec.SetField(subjectdigest.FieldValue, field.TypeString, value)
 	}
 	if sdu.mutation.SubjectCleared() {
 		edge := &sqlgraph.EdgeSpec{
@@ -185,10 +154,7 @@ func (sdu *SubjectDigestUpdate) sqlSave(ctx context.Context) (n int, err error) 
 			Columns: []string{subjectdigest.SubjectColumn},
 			Bidi:    false,
 			Target: &sqlgraph.EdgeTarget{
-				IDSpec: &sqlgraph.FieldSpec{
-					Type:   field.TypeInt,
-					Column: subject.FieldID,
-				},
+				IDSpec: sqlgraph.NewFieldSpec(subject.FieldID, field.TypeInt),
 			},
 		}
 		_spec.Edges.Clear = append(_spec.Edges.Clear, edge)
@@ -201,10 +167,7 @@ func (sdu *SubjectDigestUpdate) sqlSave(ctx context.Context) (n int, err error) 
 			Columns: []string{subjectdigest.SubjectColumn},
 			Bidi:    false,
 			Target: &sqlgraph.EdgeTarget{
-				IDSpec: &sqlgraph.FieldSpec{
-					Type:   field.TypeInt,
-					Column: subject.FieldID,
-				},
+				IDSpec: sqlgraph.NewFieldSpec(subject.FieldID, field.TypeInt),
 			},
 		}
 		for _, k := range nodes {
@@ -220,6 +183,7 @@ func (sdu *SubjectDigestUpdate) sqlSave(ctx context.Context) (n int, err error) 
 		}
 		return 0, err
 	}
+	sdu.mutation.done = true
 	return n, nil
 }
 
@@ -237,9 +201,25 @@ func (sduo *SubjectDigestUpdateOne) SetAlgorithm(s string) *SubjectDigestUpdateO
 	return sduo
 }
 
+// SetNillableAlgorithm sets the "algorithm" field if the given value is not nil.
+func (sduo *SubjectDigestUpdateOne) SetNillableAlgorithm(s *string) *SubjectDigestUpdateOne {
+	if s != nil {
+		sduo.SetAlgorithm(*s)
+	}
+	return sduo
+}
+
 // SetValue sets the "value" field.
 func (sduo *SubjectDigestUpdateOne) SetValue(s string) *SubjectDigestUpdateOne {
 	sduo.mutation.SetValue(s)
+	return sduo
+}
+
+// SetNillableValue sets the "value" field if the given value is not nil.
+func (sduo *SubjectDigestUpdateOne) SetNillableValue(s *string) *SubjectDigestUpdateOne {
+	if s != nil {
+		sduo.SetValue(*s)
+	}
 	return sduo
 }
 
@@ -273,6 +253,12 @@ func (sduo *SubjectDigestUpdateOne) ClearSubject() *SubjectDigestUpdateOne {
 	return sduo
 }
 
+// Where appends a list predicates to the SubjectDigestUpdate builder.
+func (sduo *SubjectDigestUpdateOne) Where(ps ...predicate.SubjectDigest) *SubjectDigestUpdateOne {
+	sduo.mutation.Where(ps...)
+	return sduo
+}
+
 // Select allows selecting one or more fields (columns) of the returned entity.
 // The default is selecting all fields defined in the entity schema.
 func (sduo *SubjectDigestUpdateOne) Select(field string, fields ...string) *SubjectDigestUpdateOne {
@@ -282,46 +268,7 @@ func (sduo *SubjectDigestUpdateOne) Select(field string, fields ...string) *Subj
 
 // Save executes the query and returns the updated SubjectDigest entity.
 func (sduo *SubjectDigestUpdateOne) Save(ctx context.Context) (*SubjectDigest, error) {
-	var (
-		err  error
-		node *SubjectDigest
-	)
-	if len(sduo.hooks) == 0 {
-		if err = sduo.check(); err != nil {
-			return nil, err
-		}
-		node, err = sduo.sqlSave(ctx)
-	} else {
-		var mut Mutator = MutateFunc(func(ctx context.Context, m Mutation) (Value, error) {
-			mutation, ok := m.(*SubjectDigestMutation)
-			if !ok {
-				return nil, fmt.Errorf("unexpected mutation type %T", m)
-			}
-			if err = sduo.check(); err != nil {
-				return nil, err
-			}
-			sduo.mutation = mutation
-			node, err = sduo.sqlSave(ctx)
-			mutation.done = true
-			return node, err
-		})
-		for i := len(sduo.hooks) - 1; i >= 0; i-- {
-			if sduo.hooks[i] == nil {
-				return nil, fmt.Errorf("ent: uninitialized hook (forgotten import ent/runtime?)")
-			}
-			mut = sduo.hooks[i](mut)
-		}
-		v, err := mut.Mutate(ctx, sduo.mutation)
-		if err != nil {
-			return nil, err
-		}
-		nv, ok := v.(*SubjectDigest)
-		if !ok {
-			return nil, fmt.Errorf("unexpected node type %T returned from SubjectDigestMutation", v)
-		}
-		node = nv
-	}
-	return node, err
+	return withHooks(ctx, sduo.sqlSave, sduo.mutation, sduo.hooks)
 }
 
 // SaveX is like Save, but panics if an error occurs.
@@ -362,16 +309,10 @@ func (sduo *SubjectDigestUpdateOne) check() error {
 }
 
 func (sduo *SubjectDigestUpdateOne) sqlSave(ctx context.Context) (_node *SubjectDigest, err error) {
-	_spec := &sqlgraph.UpdateSpec{
-		Node: &sqlgraph.NodeSpec{
-			Table:   subjectdigest.Table,
-			Columns: subjectdigest.Columns,
-			ID: &sqlgraph.FieldSpec{
-				Type:   field.TypeInt,
-				Column: subjectdigest.FieldID,
-			},
-		},
+	if err := sduo.check(); err != nil {
+		return _node, err
 	}
+	_spec := sqlgraph.NewUpdateSpec(subjectdigest.Table, subjectdigest.Columns, sqlgraph.NewFieldSpec(subjectdigest.FieldID, field.TypeInt))
 	id, ok := sduo.mutation.ID()
 	if !ok {
 		return nil, &ValidationError{Name: "id", err: errors.New(`ent: missing "SubjectDigest.id" for update`)}
@@ -397,18 +338,10 @@ func (sduo *SubjectDigestUpdateOne) sqlSave(ctx context.Context) (_node *Subject
 		}
 	}
 	if value, ok := sduo.mutation.Algorithm(); ok {
-		_spec.Fields.Set = append(_spec.Fields.Set, &sqlgraph.FieldSpec{
-			Type:   field.TypeString,
-			Value:  value,
-			Column: subjectdigest.FieldAlgorithm,
-		})
+		_spec.SetField(subjectdigest.FieldAlgorithm, field.TypeString, value)
 	}
 	if value, ok := sduo.mutation.Value(); ok {
-		_spec.Fields.Set = append(_spec.Fields.Set, &sqlgraph.FieldSpec{
-			Type:   field.TypeString,
-			Value:  value,
-			Column: subjectdigest.FieldValue,
-		})
+		_spec.SetField(subjectdigest.FieldValue, field.TypeString, value)
 	}
 	if sduo.mutation.SubjectCleared() {
 		edge := &sqlgraph.EdgeSpec{
@@ -418,10 +351,7 @@ func (sduo *SubjectDigestUpdateOne) sqlSave(ctx context.Context) (_node *Subject
 			Columns: []string{subjectdigest.SubjectColumn},
 			Bidi:    false,
 			Target: &sqlgraph.EdgeTarget{
-				IDSpec: &sqlgraph.FieldSpec{
-					Type:   field.TypeInt,
-					Column: subject.FieldID,
-				},
+				IDSpec: sqlgraph.NewFieldSpec(subject.FieldID, field.TypeInt),
 			},
 		}
 		_spec.Edges.Clear = append(_spec.Edges.Clear, edge)
@@ -434,10 +364,7 @@ func (sduo *SubjectDigestUpdateOne) sqlSave(ctx context.Context) (_node *Subject
 			Columns: []string{subjectdigest.SubjectColumn},
 			Bidi:    false,
 			Target: &sqlgraph.EdgeTarget{
-				IDSpec: &sqlgraph.FieldSpec{
-					Type:   field.TypeInt,
-					Column: subject.FieldID,
-				},
+				IDSpec: sqlgraph.NewFieldSpec(subject.FieldID, field.TypeInt),
 			},
 		}
 		for _, k := range nodes {
@@ -456,5 +383,6 @@ func (sduo *SubjectDigestUpdateOne) sqlSave(ctx context.Context) (_node *Subject
 		}
 		return nil, err
 	}
+	sduo.mutation.done = true
 	return _node, nil
 }
