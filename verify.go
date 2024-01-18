@@ -21,18 +21,18 @@ import (
 	"fmt"
 	"io"
 
-	"github.com/testifysec/go-witness/cryptoutil"
-	"github.com/testifysec/go-witness/dsse"
-	"github.com/testifysec/go-witness/policy"
-	"github.com/testifysec/go-witness/source"
-	"github.com/testifysec/go-witness/timestamp"
+	"github.com/in-toto/go-witness/cryptoutil"
+	"github.com/in-toto/go-witness/dsse"
+	"github.com/in-toto/go-witness/policy"
+	"github.com/in-toto/go-witness/source"
+	"github.com/in-toto/go-witness/timestamp"
 )
 
 func VerifySignature(r io.Reader, verifiers ...cryptoutil.Verifier) (dsse.Envelope, error) {
 	decoder := json.NewDecoder(r)
 	envelope := dsse.Envelope{}
 	if err := decoder.Decode(&envelope); err != nil {
-		return envelope, fmt.Errorf("failed to parse dsse envelope: %v", err)
+		return envelope, fmt.Errorf("failed to parse dsse envelope: %w", err)
 	}
 
 	_, err := envelope.Verify(dsse.VerifyWithVerifiers(verifiers...))
@@ -40,10 +40,13 @@ func VerifySignature(r io.Reader, verifiers ...cryptoutil.Verifier) (dsse.Envelo
 }
 
 type verifyOptions struct {
-	policyEnvelope   dsse.Envelope
-	policyVerifiers  []cryptoutil.Verifier
-	collectionSource source.Sourcer
-	subjectDigests   []string
+	policyTimestampAuthorities []dsse.TimestampVerifier
+	policyCARoots              []*x509.Certificate
+	policyCAIntermediates      []*x509.Certificate
+	policyEnvelope             dsse.Envelope
+	policyVerifiers            []cryptoutil.Verifier
+	collectionSource           source.Sourcer
+	subjectDigests             []string
 }
 
 type VerifyOption func(*verifyOptions)
@@ -64,6 +67,18 @@ func VerifyWithCollectionSource(source source.Sourcer) VerifyOption {
 	}
 }
 
+func VerifyWithPolicyTimestampAuthorities(authorities []dsse.TimestampVerifier) VerifyOption {
+	return func(vo *verifyOptions) {
+		vo.policyTimestampAuthorities = authorities
+	}
+}
+
+func VerifyWithPolicyCARoots(roots []*x509.Certificate) VerifyOption {
+	return func(vo *verifyOptions) {
+		vo.policyCARoots = roots
+	}
+}
+
 // Verify verifies a set of attestations against a provided policy. The set of attestations that satisfy the policy will be returned
 // if verifiation is successful.
 func Verify(ctx context.Context, policyEnvelope dsse.Envelope, policyVerifiers []cryptoutil.Verifier, opts ...VerifyOption) (map[string][]source.VerifiedCollection, error) {
@@ -76,7 +91,7 @@ func Verify(ctx context.Context, policyEnvelope dsse.Envelope, policyVerifiers [
 		opt(&vo)
 	}
 
-	if _, err := vo.policyEnvelope.Verify(dsse.VerifyWithVerifiers(vo.policyVerifiers...)); err != nil {
+	if _, err := vo.policyEnvelope.Verify(dsse.VerifyWithVerifiers(vo.policyVerifiers...), dsse.VerifyWithTimestampVerifiers(vo.policyTimestampAuthorities...), dsse.VerifyWithRoots(vo.policyCARoots...), dsse.VerifyWithIntermediates(vo.policyCAIntermediates...)); err != nil {
 		return nil, fmt.Errorf("could not verify policy: %w", err)
 	}
 

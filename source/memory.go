@@ -21,7 +21,7 @@ import (
 	"io"
 	"os"
 
-	"github.com/testifysec/go-witness/dsse"
+	"github.com/in-toto/go-witness/dsse"
 )
 
 type ErrDuplicateReference string

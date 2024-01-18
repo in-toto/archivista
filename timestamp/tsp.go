@@ -26,7 +26,7 @@ import (
 
 	"github.com/digitorus/pkcs7"
 	"github.com/digitorus/timestamp"
-	"github.com/testifysec/go-witness/cryptoutil"
+	"github.com/in-toto/go-witness/cryptoutil"
 )
 
 type TSPTimestamper struct {

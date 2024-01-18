@@ -17,21 +17,21 @@ package witness
 // all of the following imports are here so that each of the package's init functions run appropriately
 import (
 	// attestors
-	_ "github.com/testifysec/go-witness/attestation/aws-iid"
-	_ "github.com/testifysec/go-witness/attestation/commandrun"
-	_ "github.com/testifysec/go-witness/attestation/environment"
-	_ "github.com/testifysec/go-witness/attestation/gcp-iit"
-	_ "github.com/testifysec/go-witness/attestation/git"
-	_ "github.com/testifysec/go-witness/attestation/github"
-	_ "github.com/testifysec/go-witness/attestation/gitlab"
-	_ "github.com/testifysec/go-witness/attestation/jwt"
-	_ "github.com/testifysec/go-witness/attestation/maven"
-	_ "github.com/testifysec/go-witness/attestation/oci"
-	_ "github.com/testifysec/go-witness/attestation/sarif"
+	_ "github.com/in-toto/go-witness/attestation/aws-iid"
+	_ "github.com/in-toto/go-witness/attestation/commandrun"
+	_ "github.com/in-toto/go-witness/attestation/environment"
+	_ "github.com/in-toto/go-witness/attestation/gcp-iit"
+	_ "github.com/in-toto/go-witness/attestation/git"
+	_ "github.com/in-toto/go-witness/attestation/github"
+	_ "github.com/in-toto/go-witness/attestation/gitlab"
+	_ "github.com/in-toto/go-witness/attestation/jwt"
+	_ "github.com/in-toto/go-witness/attestation/maven"
+	_ "github.com/in-toto/go-witness/attestation/oci"
+	_ "github.com/in-toto/go-witness/attestation/sarif"
 
 	// signer providers
-	_ "github.com/testifysec/go-witness/signer/file"
-	_ "github.com/testifysec/go-witness/signer/fulcio"
-	_ "github.com/testifysec/go-witness/signer/spiffe"
-	_ "github.com/testifysec/go-witness/signer/vault"
+	_ "github.com/in-toto/go-witness/signer/file"
+	_ "github.com/in-toto/go-witness/signer/fulcio"
+	_ "github.com/in-toto/go-witness/signer/spiffe"
+	_ "github.com/in-toto/go-witness/signer/vault"
 )

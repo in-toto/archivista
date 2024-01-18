@@ -19,14 +19,13 @@ import (
 	"path/filepath"
 	"testing"
 
-	"github.com/stretchr/testify/assert"
+	"github.com/in-toto/go-witness/attestation"
 	"github.com/stretchr/testify/require"
-	"github.com/testifysec/go-witness/attestation"
 )
 
-func writeTempPomXml(t *testing.T) (string, error) {
+func writeTempPomXml(t *testing.T, path string) (string, error) {
 	tmpDir := t.TempDir()
-	pomPath := filepath.Join(tmpDir, "pom.xml")
+	pomPath := filepath.Join(tmpDir, path)
 	file, err := os.Create(pomPath)
 	if err != nil {
 		return "", err
@@ -41,13 +40,39 @@ func writeTempPomXml(t *testing.T) (string, error) {
 }
 
 func TestMaven(t *testing.T) {
-	pomPath, err := writeTempPomXml(t)
-	require.NoError(t, err)
-	attestor := New(WithPom(pomPath))
-	ctx, err := attestation.NewContext([]attestation.Attestor{attestor})
-	require.NoError(t, err)
-	err = attestor.Attest(ctx)
-	assert.NoError(t, err)
+	workingDir := t.TempDir()
+
+	tests := []struct {
+		name    string
+		pomPath string
+	}{
+		{"no pom specified", ""},
+		{"regular pom with custom name", "custom-pom.xml"},
+		{"effective pom", "effective-pom.xml"},
+	}
+
+	for _, test := range tests {
+		var p string
+		var err error
+		if test.pomPath != "" {
+			p, err = writeTempPomXml(t, test.pomPath)
+			if err != nil {
+				t.Fatal(err)
+			}
+		} else {
+			p, err = writeTempPomXml(t, "pom.xml")
+			if err != nil {
+				t.Fatal(err)
+			}
+		}
+
+		t.Run(test.name, func(t *testing.T) {
+			ctx, err := attestation.NewContext([]attestation.Attestor{}, attestation.WithWorkingDir(workingDir))
+			require.NoError(t, err)
+			a := New(WithPom(p))
+			require.NoError(t, a.Attest(ctx))
+		})
+	}
 }
 
 const testPomXml = `<?xml version="1.0" encoding="UTF-8"?>

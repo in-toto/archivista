@@ -31,16 +31,16 @@ import (
 	"strings"
 	"time"
 
+	"github.com/in-toto/go-witness/cryptoutil"
+	"github.com/in-toto/go-witness/log"
+	"github.com/in-toto/go-witness/registry"
+	"github.com/in-toto/go-witness/signer"
 	"github.com/mattn/go-isatty"
 	fulciopb "github.com/sigstore/fulcio/pkg/generated/protobuf"
 	"github.com/sigstore/sigstore/pkg/cryptoutils"
 	"github.com/sigstore/sigstore/pkg/oauthflow"
 	"github.com/sigstore/sigstore/pkg/signature"
 	sigo "github.com/sigstore/sigstore/pkg/signature/options"
-	"github.com/testifysec/go-witness/cryptoutil"
-	"github.com/testifysec/go-witness/log"
-	"github.com/testifysec/go-witness/registry"
-	"github.com/testifysec/go-witness/signer"
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/credentials"
 	"google.golang.org/grpc/credentials/insecure"
@@ -93,7 +93,7 @@ func init() {
 		),
 		registry.StringConfigOption(
 			"token",
-			"Raw token to use for authentication",
+			"Raw token string to use for authentication to fulcio (cannot be used in conjunction with --fulcio-token-path)",
 			"",
 			func(sp signer.SignerProvider, token string) (signer.SignerProvider, error) {
 				fsp, ok := sp.(FulcioSignerProvider)
@@ -105,14 +105,44 @@ func init() {
 				return fsp, nil
 			},
 		),
+		registry.StringConfigOption(
+			"oidc-redirect-url",
+			"OIDC redirect URL (Optional). The default oidc-redirect-url is 'http://localhost:0/auth/callback'.",
+			"",
+			func(sp signer.SignerProvider, oidcRedirectUrl string) (signer.SignerProvider, error) {
+				fsp, ok := sp.(FulcioSignerProvider)
+				if !ok {
+					return sp, fmt.Errorf("provided signer provider is not a fulcio signer provider")
+				}
+        
+        WithOidcRedirectUrl(oidcRedirectUrl)(&fsp)
+        return fsp, nil
+			},
+		),
+		registry.StringConfigOption(
+			"token-path",
+			"Path to the file containing a raw token to use for authentication to fulcio (cannot be used in conjunction with --fulcio-token)",
+			"",
+			func(sp signer.SignerProvider, tokenPath string) (signer.SignerProvider, error) {
+				fsp, ok := sp.(FulcioSignerProvider)
+				if !ok {
+					return sp, fmt.Errorf("provided signer provider is not a fulcio signer provider")
+				}
+
+				WithTokenPath(tokenPath)(&fsp)
+				return fsp, nil
+			},
+		),
 	)
 }
 
 type FulcioSignerProvider struct {
-	FulcioURL    string
-	OidcIssuer   string
-	OidcClientID string
-	Token        string
+	FulcioURL        string
+	OidcIssuer       string
+	OidcClientID     string
+	Token            string
+  	TokenPath        string
+	OidcRedirectUrl  string
 }
 
 type Option func(*FulcioSignerProvider)
@@ -138,6 +168,19 @@ func WithOidcClientID(oidcClientID string) Option {
 func WithToken(tokenOption string) Option {
 	return func(fsp *FulcioSignerProvider) {
 		fsp.Token = tokenOption
+	}
+}
+
+
+func WithOidcRedirectUrl(oidcRedirectUrl string) Option {
+	return func(fsp *FulcioSignerProvider) {
+		fsp.OidcRedirectUrl = oidcRedirectUrl
+	}
+}
+
+func WithTokenPath(tokenPathOption string) Option {
+	return func(fsp *FulcioSignerProvider) {
+		fsp.TokenPath = tokenPathOption
 	}
 }
 
@@ -194,7 +237,7 @@ func (fsp FulcioSignerProvider) Signer(ctx context.Context) (cryptoutil.Signer, 
 	var raw string
 
 	switch {
-	case fsp.Token == "" && os.Getenv("GITHUB_ACTIONS") == "true":
+	case fsp.Token == "" && fsp.TokenPath == "" && os.Getenv("GITHUB_ACTIONS") == "true":
 		tokenURL := os.Getenv("ACTIONS_ID_TOKEN_REQUEST_URL")
 		if tokenURL == "" {
 			return nil, errors.New("ACTIONS_ID_TOKEN_REQUEST_URL is not set")
@@ -209,12 +252,20 @@ func (fsp FulcioSignerProvider) Signer(ctx context.Context) (cryptoutil.Signer, 
 		if err != nil {
 			return nil, err
 		}
-
-	case fsp.Token != "":
+	// we want to fail if both flags used (they're mutually exclusive)
+	case fsp.TokenPath != "" && fsp.Token != "":
+		return nil, errors.New("only one of --fulcio-token-path or --fulcio-raw-token can be used")
+	case fsp.Token != "" && fsp.TokenPath == "":
 		raw = fsp.Token
+	case fsp.TokenPath != "" && fsp.Token == "":
+		f, err := os.ReadFile(fsp.TokenPath)
+		if err != nil {
+			return nil, fmt.Errorf("failed to read fulcio token from filepath %s: %w", fsp.TokenPath, err)
+		}
 
+		raw = string(f)
 	case fsp.Token == "" && isatty.IsTerminal(os.Stdin.Fd()):
-		tok, err := oauthflow.OIDConnect(fsp.OidcIssuer, fsp.OidcClientID, "", "", oauthflow.DefaultIDTokenGetter)
+		tok, err := oauthflow.OIDConnect(fsp.OidcIssuer, fsp.OidcClientID, "", fsp.OidcRedirectUrl, oauthflow.DefaultIDTokenGetter)
 		if err != nil {
 			return nil, err
 		}
@@ -281,7 +332,7 @@ func (fsp FulcioSignerProvider) Signer(ctx context.Context) (cryptoutil.Signer, 
 func getCert(ctx context.Context, key *rsa.PrivateKey, fc fulciopb.CAClient, token string) (*fulciopb.SigningCertificate, error) {
 	t, err := jwt.ParseSigned(token)
 	if err != nil {
-		return nil, err
+		return nil, fmt.Errorf("Failed to parse jwt token for fulcio: %w", err)
 	}
 
 	var claims struct {

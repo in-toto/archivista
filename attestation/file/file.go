@@ -21,8 +21,8 @@ import (
 	"path/filepath"
 
 	"github.com/edwarnicke/gitoid"
-	"github.com/testifysec/go-witness/cryptoutil"
-	"github.com/testifysec/go-witness/log"
+	"github.com/in-toto/go-witness/cryptoutil"
+	"github.com/in-toto/go-witness/log"
 )
 
 // recordArtifacts will walk basePath and record the digests of each file with each of the functions in hashes.

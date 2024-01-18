@@ -18,7 +18,7 @@ import (
 	"encoding/json"
 	"io"
 
-	"github.com/testifysec/go-witness/dsse"
+	"github.com/in-toto/go-witness/dsse"
 )
 
 func Sign(r io.Reader, dataType string, w io.Writer, opts ...dsse.SignOption) error {

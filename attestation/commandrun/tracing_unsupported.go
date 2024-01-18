@@ -20,7 +20,7 @@ import (
 	"errors"
 	"os/exec"
 
-	"github.com/testifysec/go-witness/attestation"
+	"github.com/in-toto/go-witness/attestation"
 )
 
 func enableTracing(c *exec.Cmd) {

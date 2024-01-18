@@ -37,7 +37,7 @@ type ConfigOption[T any, TOption Option] struct {
 	setter      func(T, TOption) (T, error)
 }
 
-func (co ConfigOption[T, TOption]) Name() string {
+func (co *ConfigOption[T, TOption]) Name() string {
 	if len(co.prefix) == 0 {
 		return co.name
 	}
@@ -49,15 +49,15 @@ func (co *ConfigOption[T, TOption]) SetPrefix(prefix string) {
 	co.prefix = prefix
 }
 
-func (co ConfigOption[T, TOption]) DefaultVal() TOption {
+func (co *ConfigOption[T, TOption]) DefaultVal() TOption {
 	return co.defaultVal
 }
 
-func (co ConfigOption[T, TOption]) Description() string {
+func (co *ConfigOption[T, TOption]) Description() string {
 	return co.description
 }
 
-func (co ConfigOption[T, TOption]) Setter() func(T, TOption) (T, error) {
+func (co *ConfigOption[T, TOption]) Setter() func(T, TOption) (T, error) {
 	return co.setter
 }
 

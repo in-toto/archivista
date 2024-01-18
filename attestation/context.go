@@ -21,8 +21,8 @@ import (
 	"os"
 	"time"
 
-	"github.com/testifysec/go-witness/cryptoutil"
-	"github.com/testifysec/go-witness/log"
+	"github.com/in-toto/go-witness/cryptoutil"
+	"github.com/in-toto/go-witness/log"
 )
 
 type RunType string
@@ -185,7 +185,7 @@ func (ctx *AttestationContext) runAttestor(attestor Attestor) error {
 	log.Infof("Starting %v attestor...", attestor.Name())
 	startTime := time.Now()
 	if err := attestor.Attest(ctx); err != nil {
-		log.Errorf("Error running %v attestor: %v", attestor.Name(), err)
+		log.Errorf("Error running %v attestor: %w", attestor.Name(), err)
 		ctx.completedAttestors = append(ctx.completedAttestors, CompletedAttestor{
 			Attestor:  attestor,
 			StartTime: startTime,

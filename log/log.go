@@ -14,6 +14,10 @@
 
 package log
 
+import (
+	"fmt"
+)
+
 var log Logger = SilentLogger{}
 
 // Logger is used by witness library code to print out relevant information at runtime.
@@ -40,7 +44,8 @@ func GetLogger() Logger {
 }
 
 func Errorf(format string, args ...interface{}) {
-	log.Errorf(format, args...)
+	err := fmt.Errorf(format, args...)
+	log.Error(err)
 }
 
 func Error(args ...interface{}) {
@@ -48,6 +53,15 @@ func Error(args ...interface{}) {
 }
 
 func Warnf(format string, args ...interface{}) {
+	// We want to wrap the error if there is one.
+	for _, a := range args {
+		if _, ok := a.(error); ok {
+			err := fmt.Errorf(format, args...)
+			log.Warn(err)
+			return
+		}
+	}
+
 	log.Warnf(format, args...)
 }
 
@@ -56,6 +70,14 @@ func Warn(args ...interface{}) {
 }
 
 func Debugf(format string, args ...interface{}) {
+	for _, a := range args {
+		if _, ok := a.(error); ok {
+			err := fmt.Errorf(format, args...)
+			log.Debug(err)
+			return
+		}
+	}
+
 	log.Debugf(format, args...)
 }
 

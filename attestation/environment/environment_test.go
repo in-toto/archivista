@@ -18,8 +18,8 @@ import (
 	"os"
 	"testing"
 
+	"github.com/in-toto/go-witness/attestation"
 	"github.com/stretchr/testify/require"
-	"github.com/testifysec/go-witness/attestation"
 )
 
 func TestEnvironment(t *testing.T) {

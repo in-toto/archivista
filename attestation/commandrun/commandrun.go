@@ -20,9 +20,9 @@ import (
 	"os"
 	"os/exec"
 
-	"github.com/testifysec/go-witness/attestation"
-	"github.com/testifysec/go-witness/attestation/environment"
-	"github.com/testifysec/go-witness/cryptoutil"
+	"github.com/in-toto/go-witness/attestation"
+	"github.com/in-toto/go-witness/attestation/environment"
+	"github.com/in-toto/go-witness/cryptoutil"
 )
 
 const (

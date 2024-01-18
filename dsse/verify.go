@@ -21,7 +21,8 @@ import (
 	"io"
 	"time"
 
-	"github.com/testifysec/go-witness/cryptoutil"
+	"github.com/in-toto/go-witness/cryptoutil"
+	"github.com/in-toto/go-witness/log"
 )
 
 type TimestampVerifier interface {
@@ -115,6 +116,8 @@ func (e Envelope) Verify(opts ...VerificationOption) ([]PassedVerifier, error) {
 				if verifier, err := verifyX509Time(cert, sigIntermediates, options.roots, pae, sig.Signature, time.Now()); err == nil {
 					matchingSigFound = true
 					passedVerifiers = append(passedVerifiers, PassedVerifier{Verifier: verifier})
+				} else {
+					log.Debugf("failed to verify with timestamp verifier: %w", err)
 				}
 			} else {
 				var passedVerifier cryptoutil.Verifier
@@ -130,7 +133,10 @@ func (e Envelope) Verify(opts ...VerificationOption) ([]PassedVerifier, error) {
 						if verifier, err := verifyX509Time(cert, sigIntermediates, options.roots, pae, sig.Signature, timestamp); err == nil {
 							passedVerifier = verifier
 							passedTimestampVerifiers = append(passedTimestampVerifiers, timestampVerifier)
+						} else {
+							log.Debugf("failed to verify with timestamp verifier: %w", err)
 						}
+
 					}
 				}
 
@@ -159,7 +165,7 @@ func (e Envelope) Verify(opts ...VerificationOption) ([]PassedVerifier, error) {
 	}
 
 	if len(passedVerifiers) < options.threshold {
-		return passedVerifiers, ErrThresholdNotMet{Theshold: options.threshold, Acutal: len(passedVerifiers)}
+		return passedVerifiers, ErrThresholdNotMet{Theshold: options.threshold, Actual: len(passedVerifiers)}
 	}
 
 	return passedVerifiers, nil

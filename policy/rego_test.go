@@ -17,9 +17,9 @@ package policy
 import (
 	"testing"
 
+	"github.com/in-toto/go-witness/attestation/git"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
-	"github.com/testifysec/go-witness/attestation/git"
 )
 
 func TestRegoPolicy(t *testing.T) {

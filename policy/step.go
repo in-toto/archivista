@@ -18,10 +18,11 @@ import (
 	"fmt"
 	"strings"
 
-	"github.com/testifysec/go-witness/attestation"
-	"github.com/testifysec/go-witness/source"
+	"github.com/in-toto/go-witness/attestation"
+	"github.com/in-toto/go-witness/source"
 )
 
+// +kubebuilder:object:generate=true
 type Step struct {
 	Name          string        `json:"name"`
 	Functionaries []Functionary `json:"functionaries"`
@@ -29,17 +30,20 @@ type Step struct {
 	ArtifactsFrom []string      `json:"artifactsFrom,omitempty"`
 }
 
+// +kubebuilder:object:generate=true
 type Functionary struct {
 	Type           string         `json:"type"`
 	CertConstraint CertConstraint `json:"certConstraint,omitempty"`
 	PublicKeyID    string         `json:"publickeyid,omitempty"`
 }
 
+// +kubebuilder:object:generate=true
 type Attestation struct {
 	Type         string       `json:"type"`
 	RegoPolicies []RegoPolicy `json:"regopolicies"`
 }
 
+// +kubebuilder:object:generate=true
 type RegoPolicy struct {
 	Module []byte `json:"module"`
 	Name   string `json:"name"`

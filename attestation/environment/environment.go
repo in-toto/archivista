@@ -20,7 +20,7 @@ import (
 	"runtime"
 	"strings"
 
-	"github.com/testifysec/go-witness/attestation"
+	"github.com/in-toto/go-witness/attestation"
 )
 
 const (

@@ -18,9 +18,9 @@ import (
 	"context"
 	"encoding/json"
 
-	"github.com/testifysec/go-witness/attestation"
-	"github.com/testifysec/go-witness/dsse"
-	"github.com/testifysec/go-witness/intoto"
+	"github.com/in-toto/go-witness/attestation"
+	"github.com/in-toto/go-witness/dsse"
+	"github.com/in-toto/go-witness/intoto"
 )
 
 type CollectionEnvelope struct {

@@ -19,12 +19,12 @@ import (
 	"encoding/json"
 	"fmt"
 
-	"github.com/testifysec/go-witness/attestation"
-	"github.com/testifysec/go-witness/attestation/environment"
-	"github.com/testifysec/go-witness/attestation/git"
-	"github.com/testifysec/go-witness/cryptoutil"
-	"github.com/testifysec/go-witness/dsse"
-	"github.com/testifysec/go-witness/intoto"
+	"github.com/in-toto/go-witness/attestation"
+	"github.com/in-toto/go-witness/attestation/environment"
+	"github.com/in-toto/go-witness/attestation/git"
+	"github.com/in-toto/go-witness/cryptoutil"
+	"github.com/in-toto/go-witness/dsse"
+	"github.com/in-toto/go-witness/intoto"
 )
 
 type runOptions struct {

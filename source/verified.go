@@ -17,9 +17,9 @@ package source
 import (
 	"context"
 
-	"github.com/testifysec/go-witness/cryptoutil"
-	"github.com/testifysec/go-witness/dsse"
-	"github.com/testifysec/go-witness/log"
+	"github.com/in-toto/go-witness/cryptoutil"
+	"github.com/in-toto/go-witness/dsse"
+	"github.com/in-toto/go-witness/log"
 )
 
 type VerifiedCollection struct {
@@ -50,7 +50,7 @@ func (s *VerifiedSource) Search(ctx context.Context, collectionName string, subj
 	for _, toVerify := range unverified {
 		envelopeVerifiers, err := toVerify.Envelope.Verify(s.verifyOpts...)
 		if err != nil {
-			log.Debugf("(verified source) skipping envelope: couldn't verify enveloper's signature with the policy's verifiers: %+v", err)
+			log.Debugf("(verified source) skipping envelope: couldn't verify enveloper's signature with the policy's verifiers: %w", err)
 			continue
 		}
 

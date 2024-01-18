@@ -19,7 +19,7 @@ import (
 	"fmt"
 	"time"
 
-	"github.com/testifysec/go-witness/cryptoutil"
+	"github.com/in-toto/go-witness/cryptoutil"
 )
 
 const CollectionType = "https://witness.testifysec.com/attestation-collection/v0.1"

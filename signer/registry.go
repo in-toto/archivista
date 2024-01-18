@@ -17,13 +17,11 @@ package signer
 import (
 	"context"
 
-	"github.com/testifysec/go-witness/cryptoutil"
-	"github.com/testifysec/go-witness/registry"
+	"github.com/in-toto/go-witness/cryptoutil"
+	"github.com/in-toto/go-witness/registry"
 )
 
-var (
-	signerRegistry = registry.New[SignerProvider]()
-)
+var signerRegistry = registry.New[SignerProvider]()
 
 type SignerProvider interface {
 	Signer(context.Context) (cryptoutil.Signer, error)

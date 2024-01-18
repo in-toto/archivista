@@ -18,10 +18,10 @@ import (
 	"context"
 	"fmt"
 
+	"github.com/in-toto/go-witness/cryptoutil"
+	"github.com/in-toto/go-witness/registry"
+	"github.com/in-toto/go-witness/signer"
 	"github.com/spiffe/go-spiffe/v2/workloadapi"
-	"github.com/testifysec/go-witness/cryptoutil"
-	"github.com/testifysec/go-witness/registry"
-	"github.com/testifysec/go-witness/signer"
 )
 
 func init() {

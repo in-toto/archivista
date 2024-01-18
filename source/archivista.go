@@ -17,7 +17,7 @@ package source
 import (
 	"context"
 
-	"github.com/testifysec/go-witness/archivista"
+	"github.com/in-toto/go-witness/archivista"
 )
 
 type ArchivistaSource struct {

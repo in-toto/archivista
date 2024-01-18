@@ -21,10 +21,10 @@ import (
 	"os"
 	"strings"
 
+	"github.com/in-toto/go-witness/attestation"
+	"github.com/in-toto/go-witness/cryptoutil"
+	"github.com/in-toto/go-witness/log"
 	"github.com/owenrumney/go-sarif/sarif"
-	"github.com/testifysec/go-witness/attestation"
-	"github.com/testifysec/go-witness/cryptoutil"
-	"github.com/testifysec/go-witness/log"
 )
 
 const (
@@ -71,7 +71,7 @@ func (a *Attestor) RunType() attestation.RunType {
 
 func (a *Attestor) Attest(ctx *attestation.AttestationContext) error {
 	if err := a.getCandidate(ctx); err != nil {
-		log.Debugf("(attestation/sarif) error getting candidate: %v", err)
+		log.Debugf("(attestation/sarif) error getting candidate: %w", err)
 		return err
 	}
 
@@ -113,7 +113,7 @@ func (a *Attestor) getCandidate(ctx *attestation.AttestationContext) error {
 
 		//check to see if we can unmarshal into sarif type
 		if err := json.Unmarshal(reportBytes, &a.Report); err != nil {
-			log.Debugf("(attestation/sarif) error unmarshaling report: %v", err)
+			log.Debugf("(attestation/sarif) error unmarshaling report: %w", err)
 			continue
 		}
 

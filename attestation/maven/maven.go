@@ -21,15 +21,17 @@ import (
 	"io"
 	"os"
 
-	"github.com/testifysec/go-witness/attestation"
-	"github.com/testifysec/go-witness/cryptoutil"
-	"github.com/testifysec/go-witness/log"
+	"github.com/in-toto/go-witness/attestation"
+	"github.com/in-toto/go-witness/cryptoutil"
+	"github.com/in-toto/go-witness/log"
+	"github.com/in-toto/go-witness/registry"
 )
 
 const (
-	Name    = "maven"
-	Type    = "https://witness.dev/attestations/maven/v0.1"
-	RunType = attestation.PreMaterialRunType
+	Name           = "maven"
+	Type           = "https://witness.dev/attestations/maven/v0.1"
+	RunType        = attestation.PreMaterialRunType
+	defaultPomPath = "pom.xml"
 )
 
 // This is a hacky way to create a compile time error in case the attestor
@@ -42,7 +44,22 @@ var (
 func init() {
 	attestation.RegisterAttestation(Name, Type, RunType, func() attestation.Attestor {
 		return New()
-	})
+	},
+		registry.StringConfigOption(
+			"pom-path",
+			fmt.Sprintf("The path to the Project Object Model (POM) XML file used for task being attested (default \"%s\").", defaultPomPath),
+			defaultPomPath,
+			func(a attestation.Attestor, pomPath string) (attestation.Attestor, error) {
+				mavAttestor, ok := a.(*Attestor)
+				if !ok {
+					return a, fmt.Errorf("unexpected attestor type: %T is not a maven attestor", a)
+				}
+
+				WithPom(pomPath)(mavAttestor)
+				return mavAttestor, nil
+			},
+		),
+	)
 }
 
 type Attestor struct {
@@ -73,7 +90,7 @@ func WithPom(path string) Option {
 
 func New(opts ...Option) *Attestor {
 	attestor := &Attestor{
-		pomPath: "pom.xml",
+		pomPath: defaultPomPath,
 	}
 
 	for _, opt := range opts {
@@ -121,14 +138,14 @@ func (a *Attestor) Subjects() map[string]cryptoutil.DigestSet {
 	if ds, err := cryptoutil.CalculateDigestSetFromBytes([]byte(projectSubject), hashes); err == nil {
 		subjects[projectSubject] = ds
 	} else {
-		log.Debugf("(attestation/maven) failed to record %v subject: %v", projectSubject, err)
+		log.Debugf("(attestation/maven) failed to record %v subject: %w", projectSubject, err)
 	}
 
 	for _, dep := range a.Dependencies {
 		depSubject := fmt.Sprintf("dependency:%v/%v@%v", dep.GroupId, dep.ArtifactId, dep.Version)
 		depDigest, err := cryptoutil.CalculateDigestSetFromBytes([]byte(depSubject), hashes)
 		if err != nil {
-			log.Debugf("(attestation/maven) failed to record %v subject: %v", depSubject, err)
+			log.Debugf("(attestation/maven) failed to record %v subject: %w", depSubject, err)
 		}
 
 		subjects[depSubject] = depDigest

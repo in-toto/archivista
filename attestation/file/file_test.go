@@ -20,8 +20,8 @@ import (
 	"path/filepath"
 	"testing"
 
+	"github.com/in-toto/go-witness/cryptoutil"
 	"github.com/stretchr/testify/require"
-	"github.com/testifysec/go-witness/cryptoutil"
 )
 
 func TestBrokenSymlink(t *testing.T) {

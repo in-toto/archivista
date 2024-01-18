@@ -16,11 +16,14 @@ package intoto
 
 import (
 	"encoding/json"
-	"github.com/testifysec/go-witness/cryptoutil"
+
+	"github.com/in-toto/go-witness/cryptoutil"
 )
 
-const StatementType = "https://in-toto.io/Statement/v0.1"
-const PayloadType = "application/vnd.in-toto+json"
+const (
+	StatementType = "https://in-toto.io/Statement/v0.1"
+	PayloadType   = "application/vnd.in-toto+json"
+)
 
 type Subject struct {
 	Name   string            `json:"name"`

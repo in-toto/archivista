@@ -27,9 +27,9 @@ import (
 	"github.com/aws/aws-sdk-go/aws"
 	"github.com/aws/aws-sdk-go/aws/ec2metadata"
 	"github.com/aws/aws-sdk-go/aws/session"
-	"github.com/testifysec/go-witness/attestation"
-	"github.com/testifysec/go-witness/cryptoutil"
-	"github.com/testifysec/go-witness/log"
+	"github.com/in-toto/go-witness/attestation"
+	"github.com/in-toto/go-witness/cryptoutil"
+	"github.com/in-toto/go-witness/log"
 )
 
 const (
@@ -42,8 +42,8 @@ const (
 const (
 	docPath = "instance-identity/document"
 	sigPath = "instance-identity/signature"
-	//https://docs.aws.amazon.com/AWSEC2/latest/UserGuide/verify-signature.html
-	//The following AWS public certificate is for all AWS Regions, except Hong Kong, Bahrain, China, and GovCloud.
+	// https://docs.aws.amazon.com/AWSEC2/latest/UserGuide/verify-signature.html
+	// The following AWS public certificate is for all AWS Regions, except Hong Kong, Bahrain, China, and GovCloud.
 	awsCACertPEM = `-----BEGIN CERTIFICATE-----
 MIIDIjCCAougAwIBAgIJAKnL4UEDMN/FMA0GCSqGSIb3DQEBBQUAMGoxCzAJBgNV
 BAYTAlVTMRMwEQYDVQQIEwpXYXNoaW5ndG9uMRAwDgYDVQQHEwdTZWF0dGxlMRgw
@@ -134,12 +134,12 @@ func (a *Attestor) getIID() error {
 	svc := ec2metadata.New(&a.session, a.conf)
 	iid, err := svc.GetDynamicData(docPath)
 	if err != nil {
-		return fmt.Errorf("failed to get instance identity document: %v", err)
+		return fmt.Errorf("failed to get instance identity document: %w", err)
 	}
 
 	sig, err := svc.GetDynamicData(sigPath)
 	if err != nil {
-		return fmt.Errorf("failed to get signature: %v", err)
+		return fmt.Errorf("failed to get signature: %w", err)
 	}
 
 	a.RawIID = iid
@@ -147,7 +147,7 @@ func (a *Attestor) getIID() error {
 
 	err = json.Unmarshal([]byte(a.RawIID), &a.EC2InstanceIdentityDocument)
 	if err != nil {
-		return fmt.Errorf("failed to unmarshal iid: %v", err)
+		return fmt.Errorf("failed to unmarshal iid: %w", err)
 	}
 
 	return nil
@@ -161,17 +161,17 @@ func (a *Attestor) Verify() error {
 	docHash := sha256.Sum256([]byte(a.RawIID))
 	sigBytes, err := base64.StdEncoding.DecodeString(a.RawSig)
 	if err != nil {
-		return fmt.Errorf("failed to decode signature: %v", err)
+		return fmt.Errorf("failed to decode signature: %w", err)
 	}
 
 	pubKey, err := getAWSCAPublicKey()
 	if err != nil {
-		return fmt.Errorf("failed to get AWS public key: %v", err)
+		return fmt.Errorf("failed to get AWS public key: %w", err)
 	}
 
 	pubKeyBytes, err := x509.MarshalPKIXPublicKey(pubKey)
 	if err != nil {
-		return fmt.Errorf("failed to marshal public key: %v", err)
+		return fmt.Errorf("failed to marshal public key: %w", err)
 	}
 
 	pem := pem.EncodeToMemory(&pem.Block{
@@ -182,12 +182,12 @@ func (a *Attestor) Verify() error {
 	a.PublicKey = string(pem)
 
 	if err != nil {
-		return fmt.Errorf("failed to encode public key: %v", err)
+		return fmt.Errorf("failed to encode public key: %w", err)
 	}
 
 	err = rsa.VerifyPKCS1v15(pubKey, crypto.SHA256, docHash[:], sigBytes)
 	if err != nil {
-		log.Debugf("(attestation/aws-iid) failed to verify signature: %v", err)
+		log.Debugf("(attestation/aws-iid) failed to verify signature: %w", err)
 		return nil
 	}
 
@@ -200,25 +200,25 @@ func (a *Attestor) Subjects() map[string]cryptoutil.DigestSet {
 	if ds, err := cryptoutil.CalculateDigestSetFromBytes([]byte(a.EC2InstanceIdentityDocument.InstanceID), hashes); err == nil {
 		subjects[fmt.Sprintf("instanceid:%s", a.EC2InstanceIdentityDocument.InstanceID)] = ds
 	} else {
-		log.Debugf("(attestation/aws) failed to record aws instanceid subject: %v", err)
+		log.Debugf("(attestation/aws) failed to record aws instanceid subject: %w", err)
 	}
 
 	if ds, err := cryptoutil.CalculateDigestSetFromBytes([]byte(a.EC2InstanceIdentityDocument.AccountID), hashes); err == nil {
 		subjects[fmt.Sprintf("accountid:%s", a.EC2InstanceIdentityDocument.AccountID)] = ds
 	} else {
-		log.Debugf("(attestation/aws) failed to record aws accountid subject: %v", err)
+		log.Debugf("(attestation/aws) failed to record aws accountid subject: %w", err)
 	}
 
 	if ds, err := cryptoutil.CalculateDigestSetFromBytes([]byte(a.EC2InstanceIdentityDocument.ImageID), hashes); err == nil {
 		subjects[fmt.Sprintf("imageid:%s", a.EC2InstanceIdentityDocument.ImageID)] = ds
 	} else {
-		log.Debugf("(attestation/aws) failed to record aws imageid subject: %v", err)
+		log.Debugf("(attestation/aws) failed to record aws imageid subject: %w", err)
 	}
 
 	if ds, err := cryptoutil.CalculateDigestSetFromBytes([]byte(a.EC2InstanceIdentityDocument.PrivateIP), hashes); err == nil {
 		subjects[fmt.Sprintf("privateip:%s", a.EC2InstanceIdentityDocument.PrivateIP)] = ds
 	} else {
-		log.Debugf("(attestation/aws) failed to record aws privateip subject: %v", err)
+		log.Debugf("(attestation/aws) failed to record aws privateip subject: %w", err)
 	}
 
 	return subjects
@@ -232,7 +232,7 @@ func getAWSCAPublicKey() (*rsa.PublicKey, error) {
 
 	cert, err := x509.ParseCertificate(block.Bytes)
 	if err != nil {
-		return nil, fmt.Errorf("failed to parse certificate: %v", err)
+		return nil, fmt.Errorf("failed to parse certificate: %w", err)
 	}
 
 	return cert.PublicKey.(*rsa.PublicKey), nil

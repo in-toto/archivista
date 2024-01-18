@@ -32,11 +32,11 @@ func (e ErrNoMatchingSigs) Error() string {
 
 type ErrThresholdNotMet struct {
 	Theshold int
-	Acutal   int
+	Actual   int
 }
 
 func (e ErrThresholdNotMet) Error() string {
-	return fmt.Sprintf("envelope did not meet verifier threshold. expected %v valid verifiers but got %v", e.Theshold, e.Acutal)
+	return fmt.Sprintf("envelope did not meet verifier threshold. expected %v valid verifiers but got %v", e.Theshold, e.Actual)
 }
 
 type ErrInvalidThreshold int

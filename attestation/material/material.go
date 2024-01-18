@@ -17,9 +17,9 @@ package material
 import (
 	"encoding/json"
 
-	"github.com/testifysec/go-witness/attestation"
-	"github.com/testifysec/go-witness/attestation/file"
-	"github.com/testifysec/go-witness/cryptoutil"
+	"github.com/in-toto/go-witness/attestation"
+	"github.com/in-toto/go-witness/attestation/file"
+	"github.com/in-toto/go-witness/cryptoutil"
 )
 
 const (
@@ -47,15 +47,15 @@ type Attestor struct {
 	materials map[string]cryptoutil.DigestSet
 }
 
-func (a Attestor) Name() string {
+func (a *Attestor) Name() string {
 	return Name
 }
 
-func (a Attestor) Type() string {
+func (a *Attestor) Type() string {
 	return Type
 }
 
-func (rc *Attestor) RunType() attestation.RunType {
+func (a *Attestor) RunType() attestation.RunType {
 	return RunType
 }
 

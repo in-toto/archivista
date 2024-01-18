@@ -23,10 +23,10 @@ import (
 	"strings"
 	"testing"
 
+	"github.com/in-toto/go-witness/attestation"
+	"github.com/in-toto/go-witness/cryptoutil"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
-	"github.com/testifysec/go-witness/attestation"
-	"github.com/testifysec/go-witness/cryptoutil"
 )
 
 func TestFromDigestMap(t *testing.T) {
@@ -36,7 +36,8 @@ func TestFromDigestMap(t *testing.T) {
 	testDigestSet["test"] = testDigest
 	result := fromDigestMap(testDigestSet)
 	assert.Len(t, result, 1)
-	assert.True(t, result["test"].Digest.Equal(testDigest))
+	digest := result["test"].Digest
+	assert.True(t, digest.Equal(testDigest))
 }
 
 func TestAttestorName(t *testing.T) {

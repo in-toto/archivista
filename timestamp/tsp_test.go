@@ -20,9 +20,9 @@ import (
 	"crypto/x509"
 	"testing"
 
+	"github.com/in-toto/go-witness/cryptoutil"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
-	"github.com/testifysec/go-witness/cryptoutil"
 )
 
 const (

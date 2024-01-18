@@ -20,9 +20,9 @@ import (
 	"encoding/json"
 	"fmt"
 
+	"github.com/in-toto/go-witness/attestation"
 	"github.com/open-policy-agent/opa/ast"
 	"github.com/open-policy-agent/opa/rego"
-	"github.com/testifysec/go-witness/attestation"
 )
 
 func EvaluateRegoPolicy(attestor attestation.Attestor, policies []RegoPolicy) error {

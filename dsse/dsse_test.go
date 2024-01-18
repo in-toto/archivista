@@ -28,9 +28,9 @@ import (
 	"testing"
 	"time"
 
+	"github.com/in-toto/go-witness/cryptoutil"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
-	"github.com/testifysec/go-witness/cryptoutil"
 )
 
 func createRsaKey() (*rsa.PrivateKey, *rsa.PublicKey, error) {
@@ -217,7 +217,7 @@ func TestThreshold(t *testing.T) {
 	assert.ElementsMatch(t, approvedVerifiers, expectedVerifiers)
 
 	approvedVerifiers, err = env.Verify(VerifyWithVerifiers(verifiers...), VerifyWithThreshold(10))
-	require.ErrorIs(t, err, ErrThresholdNotMet{Acutal: 5, Theshold: 10})
+	require.ErrorIs(t, err, ErrThresholdNotMet{Actual: 5, Theshold: 10})
 	assert.ElementsMatch(t, approvedVerifiers, expectedVerifiers)
 
 	_, err = env.Verify(VerifyWithVerifiers(verifiers...), VerifyWithThreshold(-10))

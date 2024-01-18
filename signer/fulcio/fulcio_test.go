@@ -24,6 +24,7 @@ import (
 	"fmt"
 	"log"
 	"net"
+	"os"
 	"strings"
 	"testing"
 	"time"
@@ -33,6 +34,7 @@ import (
 	fulciopb "github.com/sigstore/fulcio/pkg/generated/protobuf"
 	"github.com/stretchr/testify/require"
 	"go.step.sm/crypto/jose"
+	"path/filepath"
 
 	"google.golang.org/grpc"
 	"gopkg.in/square/go-jose.v2/jwt"
@@ -198,6 +200,25 @@ func TestSigner(t *testing.T) {
 	_, err = provider.Signer(ctx)
 	//this should be a tranport err since we cant actually test on 443 which is the default
 	require.ErrorContains(t, err, "lookup test")
+
+	// Test signer with token read from file
+	// NOTE: this function could be refactored to accept a fileSystem or io.Reader so reading the file can be mocked,
+	// but unsure if this is the way we want to go for now
+	wd, err := os.Getwd()
+	if err != nil {
+		t.Fatalf("failed to get working directory: %v", err)
+	}
+	rootDir := filepath.Dir(filepath.Dir(wd))
+	tp := filepath.Join(rootDir, "hack", "test.token")
+
+	provider = New(WithFulcioURL(fmt.Sprintf("http://%v:%v", hostname, port)), WithTokenPath(tp))
+	_, err = provider.Signer(ctx)
+	require.NoError(t, err)
+
+	// Test signer with both token read from file and raw token
+	provider = New(WithFulcioURL(fmt.Sprintf("http://%v:%v", hostname, port)), WithTokenPath(tp), WithToken(token))
+	_, err = provider.Signer(ctx)
+	require.ErrorContains(t, err, "only one of --fulcio-token-path or --fulcio-raw-token can be used")
 }
 
 func generateCertChain(t *testing.T) []string {

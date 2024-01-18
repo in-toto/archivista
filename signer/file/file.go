@@ -20,9 +20,9 @@ import (
 	"fmt"
 	"os"
 
-	"github.com/testifysec/go-witness/cryptoutil"
-	"github.com/testifysec/go-witness/registry"
-	"github.com/testifysec/go-witness/signer"
+	"github.com/in-toto/go-witness/cryptoutil"
+	"github.com/in-toto/go-witness/registry"
+	"github.com/in-toto/go-witness/signer"
 )
 
 func init() {
@@ -110,20 +110,20 @@ func New(opts ...Option) FileSignerProvider {
 func (fsp FileSignerProvider) Signer(ctx context.Context) (cryptoutil.Signer, error) {
 	keyFile, err := os.Open(fsp.KeyPath)
 	if err != nil {
-		return nil, fmt.Errorf("failed to open key file: %v", err)
+		return nil, fmt.Errorf("failed to open key file: %w", err)
 	}
 
 	defer keyFile.Close()
 	key, err := cryptoutil.TryParseKeyFromReader(keyFile)
 	if err != nil {
-		return nil, fmt.Errorf("failed to load key: %v", err)
+		return nil, fmt.Errorf("failed to load key: %w", err)
 	}
 
 	signerOpts := []cryptoutil.SignerOption{}
 	if fsp.CertPath != "" {
 		leaf, err := loadCert(fsp.CertPath)
 		if err != nil {
-			return nil, fmt.Errorf("failed to load certificate: %v", err)
+			return nil, fmt.Errorf("failed to load certificate: %w", err)
 		}
 
 		signerOpts = append(signerOpts, cryptoutil.SignWithCertificate(leaf))
@@ -134,7 +134,7 @@ func (fsp FileSignerProvider) Signer(ctx context.Context) (cryptoutil.Signer, er
 		for _, path := range fsp.IntermediatePaths {
 			cert, err := loadCert(path)
 			if err != nil {
-				return nil, fmt.Errorf("failed to load intermediate: %v", err)
+				return nil, fmt.Errorf("failed to load intermediate: %w", err)
 			}
 
 			intermediates = append(intermediates, cert)
@@ -149,7 +149,7 @@ func (fsp FileSignerProvider) Signer(ctx context.Context) (cryptoutil.Signer, er
 func loadCert(path string) (*x509.Certificate, error) {
 	certFile, err := os.Open(path)
 	if err != nil {
-		return nil, fmt.Errorf("failed to load certificate: %v", err)
+		return nil, fmt.Errorf("failed to load certificate: %w", err)
 	}
 
 	defer certFile.Close()

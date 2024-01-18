@@ -20,10 +20,10 @@ import (
 	"os"
 	"strings"
 
-	"github.com/testifysec/go-witness/attestation"
-	"github.com/testifysec/go-witness/attestation/jwt"
-	"github.com/testifysec/go-witness/cryptoutil"
-	"github.com/testifysec/go-witness/log"
+	"github.com/in-toto/go-witness/attestation"
+	"github.com/in-toto/go-witness/attestation/jwt"
+	"github.com/in-toto/go-witness/cryptoutil"
+	"github.com/in-toto/go-witness/log"
 )
 
 const (
@@ -122,19 +122,19 @@ func (a *Attestor) Subjects() map[string]cryptoutil.DigestSet {
 	if ds, err := cryptoutil.CalculateDigestSetFromBytes([]byte(a.PipelineUrl), hashes); err == nil {
 		subjects[fmt.Sprintf("pipelineurl:%v", a.PipelineUrl)] = ds
 	} else {
-		log.Debugf("(attestation/gitlab) failed to record gitlab pipelineurl subject: %v", err)
+		log.Debugf("(attestation/gitlab) failed to record gitlab pipelineurl subject: %w", err)
 	}
 
 	if ds, err := cryptoutil.CalculateDigestSetFromBytes([]byte(a.JobUrl), hashes); err == nil {
 		subjects[fmt.Sprintf("joburl:%v", a.JobUrl)] = ds
 	} else {
-		log.Debugf("(attestation/gitlab) failed to record gitlab joburl subject: %v", err)
+		log.Debugf("(attestation/gitlab) failed to record gitlab joburl subject: %w", err)
 	}
 
 	if ds, err := cryptoutil.CalculateDigestSetFromBytes([]byte(a.ProjectUrl), hashes); err == nil {
 		subjects[fmt.Sprintf("projecturl:%v", a.ProjectUrl)] = ds
 	} else {
-		log.Debugf("(attestation/gitlab) failed to record gitlab projecturl subject: %v", err)
+		log.Debugf("(attestation/gitlab) failed to record gitlab projecturl subject: %w", err)
 	}
 
 	return subjects

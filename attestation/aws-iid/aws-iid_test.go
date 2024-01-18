@@ -24,14 +24,14 @@ import (
 
 	"github.com/aws/aws-sdk-go/aws"
 	"github.com/aws/aws-sdk-go/aws/session"
+	"github.com/in-toto/go-witness/attestation"
+	"github.com/in-toto/go-witness/cryptoutil"
 	"github.com/stretchr/testify/require"
-	"github.com/testifysec/go-witness/attestation"
-	"github.com/testifysec/go-witness/cryptoutil"
 )
 
 const iid = `{
     "devpayProductCodes" : null,
-    "marketplaceProductCodes" : [ "1abc2defghijklm3nopqrs4tu" ], 
+    "marketplaceProductCodes" : [ "1abc2defghijklm3nopqrs4tu" ],
     "availabilityZone" : "us-west-2b",
     "privateIp" : "10.158.112.84",
     "version" : "2017-09-30",

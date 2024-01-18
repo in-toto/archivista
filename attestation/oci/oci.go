@@ -26,9 +26,9 @@ import (
 	"os"
 	"strings"
 
-	"github.com/testifysec/go-witness/attestation"
-	"github.com/testifysec/go-witness/cryptoutil"
-	"github.com/testifysec/go-witness/log"
+	"github.com/in-toto/go-witness/attestation"
+	"github.com/in-toto/go-witness/cryptoutil"
+	"github.com/in-toto/go-witness/log"
 )
 
 const (
@@ -99,7 +99,7 @@ func (m *Manifest) getImageID(ctx *attestation.AttestationContext, tarFilePath s
 
 			imageID, err := cryptoutil.CalculateDigestSetFromBytes(b, ctx.Hashes())
 			if err != nil {
-				log.Debugf("(attestation/oci) error calculating image id: %v", err)
+				log.Debugf("(attestation/oci) error calculating image id: %w", err)
 				return nil, err
 			}
 
@@ -127,18 +127,18 @@ func (a *Attestor) RunType() attestation.RunType {
 
 func (a *Attestor) Attest(ctx *attestation.AttestationContext) error {
 	if err := a.getCandidate(ctx); err != nil {
-		log.Debugf("(attestation/oci) error getting candidate: %v", err)
+		log.Debugf("(attestation/oci) error getting candidate: %w", err)
 		return err
 	}
 
 	if err := a.parseMaifest(ctx); err != nil {
-		log.Debugf("(attestation/oci) error parsing manifest: %v", err)
+		log.Debugf("(attestation/oci) error parsing manifest: %w", err)
 		return err
 	}
 
 	imageID, err := a.Manifest[0].getImageID(ctx, a.tarFilePath)
 	if err != nil {
-		log.Debugf("(attestation/oci) error getting image id: %v", err)
+		log.Debugf("(attestation/oci) error getting image id: %w", err)
 		return err
 	}
 
@@ -241,7 +241,7 @@ func (a *Attestor) Subjects() map[string]cryptoutil.DigestSet {
 	for _, tag := range a.ImageTags {
 		hash, err := cryptoutil.CalculateDigestSetFromBytes([]byte(tag), hashes)
 		if err != nil {
-			log.Debugf("(attestation/oci) error calculating image tag: %v", err)
+			log.Debugf("(attestation/oci) error calculating image tag: %w", err)
 			continue
 		}
 		subj[fmt.Sprintf("imagetag:%s", tag)] = hash
