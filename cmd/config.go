@@ -20,11 +20,11 @@ import (
 	"os"
 	"strings"
 
+	"github.com/in-toto/go-witness/log"
+	"github.com/in-toto/witness/options"
 	"github.com/spf13/cobra"
 	"github.com/spf13/pflag"
 	"github.com/spf13/viper"
-	"github.com/testifysec/go-witness/log"
-	"github.com/testifysec/witness/options"
 )
 
 func initConfig(rootCmd *cobra.Command, rootOptions *options.RootOptions) error {
@@ -44,7 +44,7 @@ func initConfig(rootCmd *cobra.Command, rootOptions *options.RootOptions) error 
 	}
 
 	if err := v.ReadInConfig(); err != nil {
-		return fmt.Errorf("failed to read config file: %s", err)
+		return fmt.Errorf("failed to read config file: %w", err)
 	}
 
 	//Currently we do not accept configuration for root commands
@@ -64,14 +64,14 @@ func initConfig(rootCmd *cobra.Command, rootOptions *options.RootOptions) error 
 					if len(configValue) > 0 {
 						configValueStr := strings.Join(configValue, ",")
 						if err := flags.Set(f.Name, configValueStr); err != nil {
-							log.Errorf("failed to set config value: %s", err)
+							log.Errorf("failed to set config value: %w", err)
 						}
 					}
 				} else {
 					configValue := v.GetString(configKey)
 					if configValue != "" {
 						if err := flags.Set(f.Name, configValue); err != nil {
-							log.Errorf("failed to set config value: %s", err)
+							log.Errorf("failed to set config value: %w", err)
 						}
 					}
 				}

@@ -4,7 +4,7 @@ builds:
       - "-s -w"
       - "-extldflags=-zrelro"
       - "-extldflags=-znow"
-      - "-extldflags -w -X 'github.com/testifysec/witness/cmd.Version={{.Tag}}-{{.ShortCommit}}'"
+      - "-extldflags -w -X 'github.com/in-toto/witness/cmd.Version={{.Tag}}-{{.ShortCommit}}'"
     env:
       - "CGO_ENABLED=0"
       - "GO111MODULE=on"
@@ -21,6 +21,14 @@ gomod:
   proxy: false
 source:
   enabled: true
+signs:
+  - cmd: cosign
+    args:
+      - "sign-blob"
+      - "--output-signature=${signature}"
+      - "${artifact}"
+      - "--yes" # needed on cosign 2.0.0+
+    artifacts: all
 changelog:
   use: github
   groups:
@@ -40,7 +48,7 @@ release:
   github:
     owner: "{{ .Env.GITHUB_REPOSITORY_OWNER }}"
 kos:
-  - repository: ghcr.io/testifysec/witness
+  - repository: ghcr.io/in-toto/witness
     tags:
     - '{{.Version}}'
     bare: true
@@ -49,3 +57,11 @@ kos:
     platforms:
     - linux/amd64
     - linux/arm64
+    sbom: spdx
+docker_signs:
+  - artifacts: manifests
+    cmd: cosign
+    args:
+      - "sign"
+      - "${artifact}"
+      - "--yes" # needed on cosign 2.0.0+

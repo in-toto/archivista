@@ -10,10 +10,11 @@ witness run [cmd] [flags]
 
 ```
       --archivista-server string                      URL of the Archivista server to store or retrieve attestations (default "https://archivista.testifysec.io")
-  -a, --attestations strings                          Attestations to record (default [environment,git])
+  -a, --attestations strings                          Attestations to record ('product' and 'material' are always recorded) (default [environment,git])
       --attestor-product-exclude-glob string          Pattern to use when recording products. Files that match this pattern will be excluded as subjects on the attestation.
       --attestor-product-include-glob string          Pattern to use when recording products. Files that match this pattern will be included as subjects on the attestation. (default "*")
       --enable-archivista                             Use Archivista to store or retrieve attestations
+      --hashes strings                                Hashes selected for digest calculation. Defaults to SHA256 (default [sha256])
   -h, --help                                          help for run
   -o, --outfile string                                File to which to write signed data.  Defaults to stdout
       --signer-file-cert-path string                  Path to the file containing the certificate for the private key
@@ -21,7 +22,9 @@ witness run [cmd] [flags]
   -k, --signer-file-key-path string                   Path to the file containing the private key
       --signer-fulcio-oidc-client-id string           OIDC client ID to use for authentication
       --signer-fulcio-oidc-issuer string              OIDC issuer to use for authentication
-      --signer-fulcio-token string                    Raw token to use for authentication
+      --signer-fulcio-oidc-redirect-url string        OIDC redirect URL (Optional). The default oidc-redirect-url is 'http://localhost:0/auth/callback'.
+      --signer-fulcio-token string                    Raw token string to use for authentication to fulcio (cannot be used in conjunction with --fulcio-token-path)
+      --signer-fulcio-token-path string               Path to the file containing a raw token to use for authentication to fulcio (cannot be used in conjunction with --fulcio-token)
       --signer-fulcio-url string                      Fulcio address to sign with
       --signer-spiffe-socket-path string              Path to the SPIFFE Workload API Socket
       --signer-vault-altnames strings                 Alt names to use for the generated certificate. All alt names must be allowed by the vault role policy

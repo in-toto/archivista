@@ -18,14 +18,12 @@ import (
 	"fmt"
 	"os"
 
+	"github.com/in-toto/go-witness/log"
+	"github.com/in-toto/witness/options"
 	"github.com/spf13/cobra"
-	"github.com/testifysec/go-witness/log"
-	"github.com/testifysec/witness/options"
 )
 
-var (
-	ro = &options.RootOptions{}
-)
+var ro = &options.RootOptions{}
 
 func New() *cobra.Command {
 	cmd := &cobra.Command{
@@ -71,7 +69,7 @@ func loadOutfile(outFilePath string) (*os.File, error) {
 	if outFilePath != "" {
 		out, err = os.Create(outFilePath)
 		if err != nil {
-			return nil, fmt.Errorf("failed to create output file: %v", err)
+			return nil, fmt.Errorf("failed to create output file: %w", err)
 		}
 	}
 

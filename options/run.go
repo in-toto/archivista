@@ -15,9 +15,9 @@
 package options
 
 import (
+	"github.com/in-toto/go-witness/attestation"
+	"github.com/in-toto/go-witness/log"
 	"github.com/spf13/cobra"
-	"github.com/testifysec/go-witness/attestation"
-	"github.com/testifysec/go-witness/log"
 )
 
 type RunOptions struct {
@@ -25,6 +25,7 @@ type RunOptions struct {
 	ArchivistaOptions  ArchivistaOptions
 	WorkingDir         string
 	Attestations       []string
+	Hashes             []string
 	OutFilePath        string
 	StepName           string
 	Tracing            bool
@@ -36,7 +37,8 @@ func (ro *RunOptions) AddFlags(cmd *cobra.Command) {
 	ro.SignerOptions.AddFlags(cmd)
 	ro.ArchivistaOptions.AddFlags(cmd)
 	cmd.Flags().StringVarP(&ro.WorkingDir, "workingdir", "d", "", "Directory from which commands will run")
-	cmd.Flags().StringSliceVarP(&ro.Attestations, "attestations", "a", []string{"environment", "git"}, "Attestations to record")
+	cmd.Flags().StringSliceVarP(&ro.Attestations, "attestations", "a", []string{"environment", "git"}, "Attestations to record ('product' and 'material' are always recorded)")
+	cmd.Flags().StringSliceVar(&ro.Hashes, "hashes", []string{"sha256"}, "Hashes selected for digest calculation. Defaults to SHA256")
 	cmd.Flags().StringVarP(&ro.OutFilePath, "outfile", "o", "", "File to which to write signed data.  Defaults to stdout")
 	cmd.Flags().StringVarP(&ro.StepName, "step", "s", "", "Name of the step being run")
 	cmd.Flags().BoolVar(&ro.Tracing, "trace", false, "Enable tracing for the command")
@@ -53,14 +55,14 @@ type ArchivistaOptions struct {
 
 func (o *ArchivistaOptions) AddFlags(cmd *cobra.Command) {
 	cmd.Flags().BoolVar(&o.Enable, "enable-archivista", false, "Use Archivista to store or retrieve attestations")
-	cmd.Flags().BoolVar(&o.Enable, "enable-archivist", false, "Use Archivist to store or retrieve attestations (deprecated)")
+	cmd.Flags().BoolVar(&o.Enable, "enable-archivist", false, "Use Archivista to store or retrieve attestations (deprecated)")
 	if err := cmd.Flags().MarkHidden("enable-archivist"); err != nil {
-		log.Debugf("failed to hide enable-archivist flag: %v", err)
+		log.Errorf("failed to hide enable-archivist flag: %w", err)
 	}
 
 	cmd.Flags().StringVar(&o.Url, "archivista-server", "https://archivista.testifysec.io", "URL of the Archivista server to store or retrieve attestations")
 	cmd.Flags().StringVar(&o.Url, "archivist-server", "https://archivista.testifysec.io", "URL of the Archivista server to store or retrieve attestations (deprecated)")
 	if err := cmd.Flags().MarkHidden("archivist-server"); err != nil {
-		log.Debugf("failed to hide archivist-server flag: %v", err)
+		log.Debugf("failed to hide archivist-server flag: %w", err)
 	}
 }

@@ -19,12 +19,12 @@ import (
 	"fmt"
 	"os"
 
+	witness "github.com/in-toto/go-witness"
+	"github.com/in-toto/go-witness/cryptoutil"
+	"github.com/in-toto/go-witness/dsse"
+	"github.com/in-toto/go-witness/timestamp"
+	"github.com/in-toto/witness/options"
 	"github.com/spf13/cobra"
-	witness "github.com/testifysec/go-witness"
-	"github.com/testifysec/go-witness/cryptoutil"
-	"github.com/testifysec/go-witness/dsse"
-	"github.com/testifysec/go-witness/timestamp"
-	"github.com/testifysec/witness/options"
 )
 
 func SignCmd() *cobra.Command {
@@ -42,7 +42,7 @@ func SignCmd() *cobra.Command {
 		RunE: func(cmd *cobra.Command, args []string) error {
 			signers, err := loadSigners(cmd.Context(), so.SignerOptions, signerProvidersFromFlags(cmd.Flags()))
 			if err != nil {
-				return fmt.Errorf("failed to load signer: %v", err)
+				return fmt.Errorf("failed to load signer: %w", err)
 			}
 
 			return runSign(cmd.Context(), so, signers...)
@@ -71,7 +71,7 @@ func runSign(ctx context.Context, so options.SignOptions, signers ...cryptoutil.
 
 	inFile, err := os.Open(so.InFilePath)
 	if err != nil {
-		return fmt.Errorf("failed to open file to sign: %v", err)
+		return fmt.Errorf("failed to open file to sign: %w", err)
 	}
 
 	outFile, err := loadOutfile(so.OutFilePath)

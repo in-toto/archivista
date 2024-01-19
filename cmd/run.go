@@ -16,22 +16,23 @@ package cmd
 
 import (
 	"context"
+	"crypto"
 	"encoding/json"
 	"fmt"
 
+	witness "github.com/in-toto/go-witness"
+	"github.com/in-toto/go-witness/archivista"
+	"github.com/in-toto/go-witness/attestation"
+	"github.com/in-toto/go-witness/attestation/commandrun"
+	"github.com/in-toto/go-witness/attestation/material"
+	"github.com/in-toto/go-witness/attestation/product"
+	"github.com/in-toto/go-witness/cryptoutil"
+	"github.com/in-toto/go-witness/dsse"
+	"github.com/in-toto/go-witness/log"
+	"github.com/in-toto/go-witness/registry"
+	"github.com/in-toto/go-witness/timestamp"
+	"github.com/in-toto/witness/options"
 	"github.com/spf13/cobra"
-	witness "github.com/testifysec/go-witness"
-	"github.com/testifysec/go-witness/archivista"
-	"github.com/testifysec/go-witness/attestation"
-	"github.com/testifysec/go-witness/attestation/commandrun"
-	"github.com/testifysec/go-witness/attestation/material"
-	"github.com/testifysec/go-witness/attestation/product"
-	"github.com/testifysec/go-witness/cryptoutil"
-	"github.com/testifysec/go-witness/dsse"
-	"github.com/testifysec/go-witness/log"
-	"github.com/testifysec/go-witness/registry"
-	"github.com/testifysec/go-witness/timestamp"
-	"github.com/testifysec/witness/options"
 )
 
 func RunCmd() *cobra.Command {
@@ -84,12 +85,26 @@ func runRun(ctx context.Context, ro options.RunOptions, args []string, signers .
 		attestors = append(attestors, commandrun.New(commandrun.WithCommand(args), commandrun.WithTracing(ro.Tracing)))
 	}
 
-	addtlAttestors, err := attestation.Attestors(ro.Attestations)
-	if err != nil {
-		return fmt.Errorf("failed to create attestors := %w", err)
+	for _, a := range ro.Attestations {
+		duplicate := false
+		for _, att := range attestors {
+			if a != att.Name() {
+			} else {
+				log.Warnf("Attestator %s already declared, skipping", a)
+				duplicate = true
+				break
+			}
+		}
+
+		if !duplicate {
+			attestor, err := attestation.GetAttestor(a)
+			if err != nil {
+				return fmt.Errorf("failed to create attestor: %w", err)
+			}
+			attestors = append(attestors, attestor)
+		}
 	}
 
-	attestors = append(attestors, addtlAttestors...)
 	for _, attestor := range attestors {
 		setters, ok := ro.AttestorOptSetters[attestor.Name()]
 		if !ok {
@@ -102,15 +117,23 @@ func runRun(ctx context.Context, ro options.RunOptions, args []string, signers .
 		}
 	}
 
+	var roHashes []crypto.Hash
+	for _, hashStr := range ro.Hashes {
+		hash, err := cryptoutil.HashFromString(hashStr)
+		if err != nil {
+			return fmt.Errorf("failed to parse hash: %w", err)
+		}
+		roHashes = append(roHashes, hash)
+	}
+
 	defer out.Close()
 	result, err := witness.Run(
 		ro.StepName,
 		signers[0],
 		witness.RunWithAttestors(attestors),
-		witness.RunWithAttestationOpts(attestation.WithWorkingDir(ro.WorkingDir)),
+		witness.RunWithAttestationOpts(attestation.WithWorkingDir(ro.WorkingDir), attestation.WithHashes(roHashes)),
 		witness.RunWithTimestampers(timestampers...),
 	)
-
 	if err != nil {
 		return err
 	}
@@ -127,9 +150,9 @@ func runRun(ctx context.Context, ro options.RunOptions, args []string, signers .
 	if ro.ArchivistaOptions.Enable {
 		archivistaClient := archivista.New(ro.ArchivistaOptions.Url)
 		if gitoid, err := archivistaClient.Store(ctx, result.SignedEnvelope); err != nil {
-			return fmt.Errorf("failed to store artifact in archivist: %w", err)
+			return fmt.Errorf("failed to store artifact in archivista: %w", err)
 		} else {
-			log.Infof("Stored in archivist as %v\n", gitoid)
+			log.Infof("Stored in archivista as %v\n", gitoid)
 		}
 	}
 
