@@ -49,7 +49,6 @@ var (
 				defer file.Close()
 				out = file
 			}
-
 			return api.DownloadWithWriter(cmd.Context(), archivistaUrl, args[0], out)
 		},
 	}
@@ -60,7 +59,12 @@ var (
 		SilenceUsage: true,
 		Args:         cobra.ExactArgs(1),
 		RunE: func(cmd *cobra.Command, args []string) error {
-			results, err := api.GraphQlQuery[retrieveSubjectResults](cmd.Context(), archivistaUrl, retrieveSubjectsQuery, retrieveSubjectVars{Gitoid: args[0]})
+			results, err := api.GraphQlQuery[api.RetrieveSubjectResults](
+				cmd.Context(),
+				archivistaUrl,
+				api.RetrieveSubjectsQuery,
+				api.RetrieveSubjectVars{Gitoid: args[0]},
+			)
 			if err != nil {
 				return err
 			}
@@ -78,7 +82,7 @@ func init() {
 	envelopeCmd.Flags().StringVarP(&outFile, "out", "o", "", "File to write the envelope out to. Defaults to stdout")
 }
 
-func printSubjects(results retrieveSubjectResults) {
+func printSubjects(results api.RetrieveSubjectResults) {
 	for _, edge := range results.Subjects.Edges {
 		digestStrings := make([]string, 0, len(edge.Node.SubjectDigests))
 		for _, digest := range edge.Node.SubjectDigests {
@@ -88,43 +92,3 @@ func printSubjects(results retrieveSubjectResults) {
 		rootCmd.Printf("Name: %s\nDigests: %s\n", edge.Node.Name, strings.Join(digestStrings, ", "))
 	}
 }
-
-type retrieveSubjectVars struct {
-	Gitoid string `json:"gitoid"`
-}
-
-type retrieveSubjectResults struct {
-	Subjects struct {
-		Edges []struct {
-			Node struct {
-				Name           string `json:"name"`
-				SubjectDigests []struct {
-					Algorithm string `json:"algorithm"`
-					Value     string `json:"value"`
-				} `json:"subjectDigests"`
-			} `json:"node"`
-		} `json:"edges"`
-	} `json:"subjects"`
-}
-
-const retrieveSubjectsQuery = `query($gitoid: String!) {
-	subjects(
-		where: {
-			hasStatementWith:{
-        hasDsseWith:{
-          gitoidSha256: $gitoid
-        }
-      }
-		}
-	) {
-		edges {
-      node{
-        name
-        subjectDigests{
-          algorithm
-          value
-        }
-      }
-    }
-  }
-}`

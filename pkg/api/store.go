@@ -1,4 +1,4 @@
-// Copyright 2023 The Witness Contributors
+// Copyright 2023 The Archivista Contributors
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -30,18 +30,22 @@ type StoreResponse struct {
 	Gitoid string `json:"gitoid"`
 }
 
-func Store(ctx context.Context, baseUrl string, envelope dsse.Envelope) (StoreResponse, error) {
+func Store(ctx context.Context, baseURL string, envelope dsse.Envelope) (StoreResponse, error) {
 	buf := &bytes.Buffer{}
 	enc := json.NewEncoder(buf)
 	if err := enc.Encode(envelope); err != nil {
 		return StoreResponse{}, err
 	}
 
-	return StoreWithReader(ctx, baseUrl, buf)
+	return StoreWithReader(ctx, baseURL, buf)
 }
 
-func StoreWithReader(ctx context.Context, baseUrl string, r io.Reader) (StoreResponse, error) {
-	uploadPath, err := url.JoinPath(baseUrl, "upload")
+func StoreWithReader(ctx context.Context, baseURL string, r io.Reader) (StoreResponse, error) {
+	return StoreWithReaderWithHTTPClient(ctx, &http.Client{}, baseURL, r)
+}
+
+func StoreWithReaderWithHTTPClient(ctx context.Context, client *http.Client, baseURL string, r io.Reader) (StoreResponse, error) {
+	uploadPath, err := url.JoinPath(baseURL, "upload")
 	if err != nil {
 		return StoreResponse{}, err
 	}

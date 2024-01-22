@@ -24,7 +24,7 @@ import (
 	"github.com/stretchr/testify/suite"
 )
 
-// Test Suite: UT APIStore
+// Test Suite: UT APIGraphQL
 type UTAPIGraphQLSuite struct {
 	suite.Suite
 }
@@ -34,7 +34,6 @@ func TestAPIGraphQLSuite(t *testing.T) {
 }
 
 func (ut *UTAPIGraphQLSuite) Test_Store() {
-
 	testServer := httptest.NewServer(
 		http.HandlerFunc(
 			func(w http.ResponseWriter, r *http.Request) {
@@ -62,7 +61,6 @@ func (ut *UTAPIGraphQLSuite) Test_Store() {
 }
 
 func (ut *UTAPIGraphQLSuite) Test_Store_NoServer() {
-
 	ctx := context.TODO()
 
 	type testSubjectVar struct {
@@ -72,13 +70,17 @@ func (ut *UTAPIGraphQLSuite) Test_Store_NoServer() {
 	type testSubjectResult struct {
 		Data string `json:"data"`
 	}
-	result, err := api.GraphQlQuery[testSubjectResult](ctx, "http://invalid-archivista", `query`, testSubjectVar{Gitoid: "test_Gitoid"})
+	result, err := api.GraphQlQuery[testSubjectResult](
+		ctx,
+		"http://invalid-archivista",
+		`query`,
+		testSubjectVar{Gitoid: "test_Gitoid"},
+	)
 	ut.Error(err)
 	ut.Equal(testSubjectResult{Data: ""}, result)
 }
 
 func (ut *UTAPIGraphQLSuite) Test_Store_BadStatusCode_NoMsg() {
-
 	testServer := httptest.NewServer(
 		http.HandlerFunc(
 			func(w http.ResponseWriter, r *http.Request) {
@@ -102,7 +104,6 @@ func (ut *UTAPIGraphQLSuite) Test_Store_BadStatusCode_NoMsg() {
 }
 
 func (ut *UTAPIGraphQLSuite) Test_Store_InvalidData() {
-
 	testServer := httptest.NewServer(
 		http.HandlerFunc(
 			func(w http.ResponseWriter, r *http.Request) {
@@ -130,7 +131,6 @@ func (ut *UTAPIGraphQLSuite) Test_Store_InvalidData() {
 }
 
 func (ut *UTAPIGraphQLSuite) Test_Store_QLReponseWithErrors() {
-
 	testServer := httptest.NewServer(
 		http.HandlerFunc(
 			func(w http.ResponseWriter, r *http.Request) {

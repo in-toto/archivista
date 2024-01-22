@@ -25,19 +25,56 @@ import (
 	"net/url"
 )
 
-type graphQLError struct {
-	Message string `json:"message"`
-}
+const RetrieveSubjectsQuery = `query($gitoid: String!) {
+	subjects(
+		where: {
+			hasStatementWith:{
+        hasDsseWith:{
+          gitoidSha256: $gitoid
+        }
+      }
+		}
+	) {
+		edges {
+      node{
+        name
+        subjectDigests{
+          algorithm
+          value
+        }
+      }
+    }
+  }
+}`
 
-type graphQLResponse[T any] struct {
-	Data   T              `json:"data,omitempty"`
-	Errors []graphQLError `json:"errors,omitempty"`
-}
-
-type graphQLRequestBody[TVars any] struct {
-	Query     string `json:"query"`
-	Variables TVars  `json:"variables,omitempty"`
-}
+const SearchQuery = `query($algo: String!, $digest: String!) {
+  dsses(
+    where: {
+      hasStatementWith: {
+        hasSubjectsWith: {
+          hasSubjectDigestsWith: {
+            value: $digest,
+            algorithm: $algo
+          }
+        }
+      }
+    }
+  ) {
+    edges {
+      node {
+        gitoidSha256
+        statement {
+          attestationCollections {
+            name
+            attestations {
+              type
+            }
+          }
+        }
+      }
+    }
+  }
+}`
 
 func GraphQlQuery[TRes any, TVars any](ctx context.Context, baseUrl, query string, vars TVars) (TRes, error) {
 	var response TRes
@@ -46,7 +83,7 @@ func GraphQlQuery[TRes any, TVars any](ctx context.Context, baseUrl, query strin
 		return response, err
 	}
 
-	requestBody := graphQLRequestBody[TVars]{
+	requestBody := GraphQLRequestBodyGeneric[TVars]{
 		Query:     query,
 		Variables: vars,
 	}
@@ -56,7 +93,7 @@ func GraphQlQuery[TRes any, TVars any](ctx context.Context, baseUrl, query strin
 		return response, err
 	}
 
-	req, err := http.NewRequestWithContext(ctx, "POST", queryUrl, bytes.NewReader(reqBody))
+	req, err := http.NewRequestWithContext(ctx, http.MethodPost, queryUrl, bytes.NewReader(reqBody))
 	if err != nil {
 		return response, err
 	}
@@ -79,7 +116,7 @@ func GraphQlQuery[TRes any, TVars any](ctx context.Context, baseUrl, query strin
 	}
 
 	dec := json.NewDecoder(res.Body)
-	gqlRes := graphQLResponse[TRes]{}
+	gqlRes := GraphQLResponseGeneric[TRes]{}
 	if err := dec.Decode(&gqlRes); err != nil {
 		return response, err
 	}

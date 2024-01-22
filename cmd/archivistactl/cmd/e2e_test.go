@@ -53,7 +53,6 @@ func (e2e *E2EStoreSuite) TearDownTest() {
 
 // Run the E2E tests
 func (e2e *E2EStoreSuite) Test_E2E() {
-
 	// Define tests for supported dbs
 	testDBCases := []string{"mysql", "pgsql"}
 
@@ -208,5 +207,4 @@ func (e2e *E2EStoreSuite) Test_E2E() {
 			}
 		}
 	}
-
 }

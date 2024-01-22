@@ -35,7 +35,7 @@ clean: ## Clean up the dev server
 
 .PHONY: test
 test: ## Run tests
-	@go test ./... -covermode atomic -coverprofile=cover.out -v
+	@go test ./... -covermode atomic -coverprofile=cover.out -v -failfast
 
 .PHONY: coverage
 coverage:  ## Show html coverage
