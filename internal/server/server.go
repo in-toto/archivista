@@ -101,31 +101,31 @@ func (s *Server) Router() *mux.Router {
 // @Success 200 {object} api.StoreResponse
 // @Tags attestation
 // @Router /v1/upload [post]
-func (s *Server) Upload(ctx context.Context, r io.Reader) (api.StoreResponse, error) {
+func (s *Server) Upload(ctx context.Context, r io.Reader) (api.UploadResponse, error) {
 	payload, err := io.ReadAll(r)
 	if err != nil {
-		return api.StoreResponse{}, err
+		return api.UploadResponse{}, err
 	}
 
 	gid, err := gitoid.New(bytes.NewReader(payload), gitoid.WithContentLength(int64(len(payload))), gitoid.WithSha256())
 	if err != nil {
 		logrus.Errorf("failed to generate gitoid: %v", err)
-		return api.StoreResponse{}, err
+		return api.UploadResponse{}, err
 	}
 
 	if s.objectStore != nil {
 		if err := s.objectStore.Store(ctx, gid.String(), payload); err != nil {
 			logrus.Errorf("received error from object store: %+v", err)
-			return api.StoreResponse{}, err
+			return api.UploadResponse{}, err
 		}
 	}
 
 	if err := s.metadataStore.Store(ctx, gid.String(), payload); err != nil {
 		logrus.Errorf("received error from metadata store: %+v", err)
-		return api.StoreResponse{}, err
+		return api.UploadResponse{}, err
 	}
 
-	return api.StoreResponse{Gitoid: gid.String()}, nil
+	return api.UploadResponse{Gitoid: gid.String()}, nil
 }
 
 // @Summary Store
