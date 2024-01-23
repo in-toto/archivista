@@ -64,16 +64,16 @@ func (s *Server) Store(ctx context.Context, r io.Reader) (api.StoreResponse, err
 		return api.StoreResponse{}, err
 	}
 
-	if err := s.metadataStore.Store(ctx, gid.String(), payload); err != nil {
-		logrus.Errorf("received error from metadata store: %+v", err)
-		return api.StoreResponse{}, err
-	}
-
 	if s.objectStore != nil {
 		if err := s.objectStore.Store(ctx, gid.String(), payload); err != nil {
 			logrus.Errorf("received error from object store: %+v", err)
 			return api.StoreResponse{}, err
 		}
+	}
+
+	if err := s.metadataStore.Store(ctx, gid.String(), payload); err != nil {
+		logrus.Errorf("received error from metadata store: %+v", err)
+		return api.StoreResponse{}, err
 	}
 
 	return api.StoreResponse{Gitoid: gid.String()}, nil
