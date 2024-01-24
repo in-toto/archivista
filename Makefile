@@ -51,7 +51,7 @@ lint:  ## Run linter
 
 .PHONY: docs
 docs:  ## Generate swagger docs
-	@go install github.com/swaggo/swag/cmd/swag@latest
+	@go install github.com/swaggo/swag/cmd/swag@v1.16.2
 	@swag init -o docs -d internal/server -g server.go -pd
 
 .PHONY: db-migrations
