@@ -1,0 +1,133 @@
+definitions:
+  api.StoreResponse:
+    properties:
+      gitoid:
+        type: string
+    type: object
+  archivista.Resolver:
+    type: object
+  dsse.Envelope:
+    properties:
+      payload:
+        items:
+          type: integer
+        type: array
+      payloadType:
+        type: string
+      signatures:
+        items:
+          $ref: '#/definitions/dsse.Signature'
+        type: array
+    type: object
+  dsse.Signature:
+    properties:
+      certificate:
+        items:
+          type: integer
+        type: array
+      intermediates:
+        items:
+          items:
+            type: integer
+          type: array
+        type: array
+      keyid:
+        type: string
+      sig:
+        items:
+          type: integer
+        type: array
+      timestamps:
+        items:
+          $ref: '#/definitions/dsse.SignatureTimestamp'
+        type: array
+    type: object
+  dsse.SignatureTimestamp:
+    properties:
+      data:
+        items:
+          type: integer
+        type: array
+      type:
+        $ref: '#/definitions/dsse.SignatureTimestampType'
+    type: object
+  dsse.SignatureTimestampType:
+    enum:
+    - tsp
+    type: string
+    x-enum-varnames:
+    - TimestampRFC3161
+info:
+  contact:
+    name: Archivista Contributors
+    url: https://github.com/in-toto/archivista/issues/new
+  description: Archivista API
+  license:
+    url: https://opensource.org/licenses/Apache-2
+  title: Archivista API
+  version: v1
+paths:
+  /donwload/{gitoid}:
+    post:
+      deprecated: true
+      description: download an attestation
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/dsse.Envelope'
+      summary: Download
+  /upload:
+    post:
+      deprecated: true
+      description: stores an attestation
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/api.StoreResponse'
+      summary: Store
+  /v1/donwload/{gitoid}:
+    post:
+      description: download an attestation
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/dsse.Envelope'
+      summary: Download
+      tags:
+      - attestation
+  /v1/query:
+    post:
+      description: GraphQL query
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/archivista.Resolver'
+      summary: Query GraphQL
+      tags:
+      - graphql
+  /v1/upload:
+    post:
+      description: stores an attestation
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/api.StoreResponse'
+      summary: Store
+      tags:
+      - attestation
+swagger: "2.0"

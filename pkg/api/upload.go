@@ -26,52 +26,65 @@ import (
 	"github.com/in-toto/go-witness/dsse"
 )
 
-type StoreResponse struct {
+type UploadResponse struct {
 	Gitoid string `json:"gitoid"`
 }
 
+// Deprecated: Use UploadResponse instead. It will be removed in version >= v0.6.0
+type StoreResponse = UploadResponse
+
+// Deprecated: Use Upload instead. It will be removed in version >= v0.6.0
 func Store(ctx context.Context, baseUrl string, envelope dsse.Envelope) (StoreResponse, error) {
+	return Upload(ctx, baseUrl, envelope)
+}
+
+func Upload(ctx context.Context, baseUrl string, envelope dsse.Envelope) (StoreResponse, error) {
 	buf := &bytes.Buffer{}
 	enc := json.NewEncoder(buf)
 	if err := enc.Encode(envelope); err != nil {
 		return StoreResponse{}, err
 	}
 
-	return StoreWithReader(ctx, baseUrl, buf)
+	return UploadWithReader(ctx, baseUrl, buf)
 }
 
+// Deprecated: Use UploadWithReader instead. It will be removed in version >= v0.6.0
 func StoreWithReader(ctx context.Context, baseUrl string, r io.Reader) (StoreResponse, error) {
+	return UploadWithReader(ctx, baseUrl, r)
+}
+
+func UploadWithReader(ctx context.Context, baseUrl string, r io.Reader) (StoreResponse, error) {
 	uploadPath, err := url.JoinPath(baseUrl, "upload")
 	if err != nil {
-		return StoreResponse{}, err
+		return UploadResponse{}, err
 	}
 
 	req, err := http.NewRequestWithContext(ctx, "POST", uploadPath, r)
 	if err != nil {
-		return StoreResponse{}, err
+		return UploadResponse{}, err
 	}
 
 	req.Header.Set("Content-Type", "application/json")
 	hc := &http.Client{}
 	resp, err := hc.Do(req)
 	if err != nil {
-		return StoreResponse{}, err
+		return UploadResponse{}, err
 	}
 
 	defer resp.Body.Close()
 	bodyBytes, err := io.ReadAll(resp.Body)
 	if err != nil {
-		return StoreResponse{}, err
+		return UploadResponse{}, err
 	}
 
 	if resp.StatusCode != http.StatusOK {
-		return StoreResponse{}, errors.New(string(bodyBytes))
+		return UploadResponse{}, errors.New(string(bodyBytes))
 	}
 
-	storeResp := StoreResponse{}
-	if err := json.Unmarshal(bodyBytes, &storeResp); err != nil {
-		return StoreResponse{}, err
+	uploadResp := UploadResponse{}
+	if err := json.Unmarshal(bodyBytes, &uploadResp); err != nil {
+		return UploadResponse{}, err
 	}
 
-	return storeResp, nil
+	return uploadResp, nil
 }
