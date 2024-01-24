@@ -143,7 +143,7 @@ func (s *Server) UploadHandler(w http.ResponseWriter, r *http.Request) {
 	defer r.Body.Close()
 	resp, err := s.Upload(r.Context(), r.Body)
 	if err != nil {
-		http.Error(w, err.Error(), http.StatusBadRequest)
+		http.Error(w, err.Error(), http.StatusInternalServerError)
 		return
 	}
 
@@ -193,16 +193,21 @@ func (s *Server) DownloadHandler(w http.ResponseWriter, r *http.Request) {
 	}
 
 	vars := mux.Vars(r)
+	if vars == nil {
+		http.Error(w, "gitoid parameter is required", http.StatusBadRequest)
+		return
+	}
+
 	attestationReader, err := s.Download(r.Context(), vars["gitoid"])
 	if err != nil {
-		http.Error(w, err.Error(), http.StatusBadRequest)
+		http.Error(w, err.Error(), http.StatusInternalServerError)
 		return
 	}
 
 	defer attestationReader.Close()
 	if _, err := io.Copy(w, attestationReader); err != nil {
 		logrus.Errorf("failed to copy attestation to response: %+v", err)
-		w.WriteHeader(http.StatusBadRequest)
+		w.WriteHeader(http.StatusInternalServerError)
 		return
 	}
 

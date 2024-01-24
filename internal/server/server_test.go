@@ -15,9 +15,12 @@
 package server
 
 import (
+	"bytes"
 	"context"
 	"errors"
 	"io"
+	"net/http"
+	"net/http/httptest"
 	"strings"
 	"testing"
 
@@ -218,6 +221,47 @@ func (ut *UTServerSuite) Test_Upload_FailedMetadatStprage() {
 	ut.Equal(api.UploadResponse{}, resp)
 }
 
+func (ut *UTServerSuite) Test_UploadHandler() {
+
+	w := httptest.NewRecorder()
+	requestBody := []byte("fakePayload")
+	request := httptest.NewRequest(http.MethodPost, "/v1/upload", bytes.NewBuffer(requestBody))
+
+	ut.mockedStorerGetter.On("Store").Return(nil) // mock Get() to return nil
+	ut.mockedStorer.On("Store").Return(nil)       // mock Store() to return nil
+
+	ut.testServer.UploadHandler(w, request)
+	ut.Equal(http.StatusOK, w.Code)
+}
+
+func (ut *UTServerSuite) Test_UploadHandler_WrongMethod() {
+
+	w := httptest.NewRecorder()
+	requestBody := []byte("fakePayload")
+	request := httptest.NewRequest(http.MethodGet, "/upload", bytes.NewBuffer(requestBody))
+
+	ut.mockedStorerGetter.On("Store").Return(nil) // mock Get() to return nil
+	ut.mockedStorer.On("Store").Return(nil)       // mock Store() to return nil
+
+	ut.testServer.UploadHandler(w, request)
+	ut.Equal(http.StatusBadRequest, w.Code)
+	ut.Contains(w.Body.String(), "is an unsupported method")
+}
+
+func (ut *UTServerSuite) Test_UploadHandler_FailureUpload() {
+
+	w := httptest.NewRecorder()
+	requestBody := []byte("fakePayload")
+	request := httptest.NewRequest(http.MethodPost, "/upload", bytes.NewBuffer(requestBody))
+
+	ut.mockedStorerGetter.On("Store").Return(errors.New("BAD S3")) // mock Get() to return nil
+	ut.mockedStorer.On("Store").Return(nil)                        // mock Store() to return nil
+
+	ut.testServer.UploadHandler(w, request)
+	ut.Equal(http.StatusInternalServerError, w.Code)
+	ut.Contains(w.Body.String(), "BAD S3")
+}
+
 func (ut *UTServerSuite) Test_Download() {
 	ctx := context.TODO()
 	ut.mockedStorerGetter.On("Get").Return(nil) // mock Get() to return nil
@@ -258,4 +302,51 @@ func (ut *UTServerSuite) Test_Download_ObjectStorageError() {
 
 	_, err := ut.testServer.Download(ctx, "fakeGitoid")
 	ut.ErrorContains(err, "BAD S3")
+}
+
+func (ut *UTServerSuite) Test_DownloadHandler() {
+	w := httptest.NewRecorder()
+	request := httptest.NewRequest(http.MethodGet, "/v1/download", nil)
+	request = mux.SetURLVars(request, map[string]string{"gitoid": "fakeGitoid"})
+
+	ut.mockedStorerGetter.On("Get").Return(nil) // mock Get() to return nil
+
+	ut.testServer.DownloadHandler(w, request)
+	ut.Equal(http.StatusOK, w.Code)
+	ut.Equal("testData", w.Body.String())
+}
+
+func (ut *UTServerSuite) Test_DownloadHandler_BadMethod() {
+	w := httptest.NewRecorder()
+	request := httptest.NewRequest(http.MethodPost, "/v1/download", nil)
+	request = mux.SetURLVars(request, map[string]string{"gitoid": "fakeGitoid"})
+
+	ut.mockedStorerGetter.On("Get").Return(nil) // mock Get() to return nil
+
+	ut.testServer.DownloadHandler(w, request)
+	ut.Equal(http.StatusBadRequest, w.Code)
+	ut.Contains(w.Body.String(), "POST is an unsupported method")
+}
+
+func (ut *UTServerSuite) Test_DownloadHandler_MissingGitOID() {
+	w := httptest.NewRecorder()
+	request := httptest.NewRequest(http.MethodGet, "/v1/download", nil)
+
+	ut.mockedStorerGetter.On("Get").Return(nil) // mock Get() to return nil
+
+	ut.testServer.DownloadHandler(w, request)
+	ut.Equal(http.StatusBadRequest, w.Code)
+	ut.Contains(w.Body.String(), "gitoid parameter is required")
+}
+
+func (ut *UTServerSuite) Test_DownloadHandler_ObjectStorageFailed() {
+	w := httptest.NewRecorder()
+	request := httptest.NewRequest(http.MethodGet, "/v1/download", nil)
+	request = mux.SetURLVars(request, map[string]string{"gitoid": "fakeGitoid"})
+
+	ut.mockedStorerGetter.On("Get").Return(errors.New("BAD S3")) // mock Get() to return nil
+
+	ut.testServer.DownloadHandler(w, request)
+	ut.Equal(http.StatusInternalServerError, w.Code)
+	ut.Contains(w.Body.String(), "BAD S3")
 }
