@@ -61,7 +61,7 @@ func New(metadataStore Storer, objectStore StorerGetter, cfg *config.Config, sql
 	r := mux.NewRouter()
 	s := &Server{metadataStore, objectStore, nil}
 
-	// TODO: remove from future version (v0.5.0) endpoint with version
+	// TODO: remove from future version (v0.6.0) endpoint with version
 	r.HandleFunc("/download/{gitoid}", s.DownloadHandler)
 	r.HandleFunc("/upload", s.UploadHandler)
 	if cfg.EnableGraphql {
@@ -95,7 +95,7 @@ func (s *Server) Router() *mux.Router {
 	return s.router
 }
 
-// @Summary Store
+// @Summary Upload
 // @Description stores an attestation
 // @Produce  json
 // @Success 200 {object} api.StoreResponse
@@ -128,7 +128,7 @@ func (s *Server) Upload(ctx context.Context, r io.Reader) (api.UploadResponse, e
 	return api.UploadResponse{Gitoid: gid.String()}, nil
 }
 
-// @Summary Store
+// @Summary Upload
 // @Description stores an attestation
 // @Produce  json
 // @Success 200 {object} api.StoreResponse
@@ -162,7 +162,7 @@ func (s *Server) UploadHandler(w http.ResponseWriter, r *http.Request) {
 // @Produce  json
 // @Success 200 {object} dsse.Envelope
 // @Tags attestation
-// @Router /v1/donwload/{gitoid} [post]
+// @Router /v1/download/{gitoid} [post]
 func (s *Server) Download(ctx context.Context, gitoid string) (io.ReadCloser, error) {
 	if len(strings.TrimSpace(gitoid)) == 0 {
 		return nil, errors.New("gitoid parameter is required")
@@ -185,7 +185,7 @@ func (s *Server) Download(ctx context.Context, gitoid string) (io.ReadCloser, er
 // @Produce  json
 // @Success 200 {object} dsse.Envelope
 // @Deprecated
-// @Router /donwload/{gitoid} [post]
+// @Router /download/{gitoid} [post]
 func (s *Server) DownloadHandler(w http.ResponseWriter, r *http.Request) {
 	if r.Method != http.MethodGet {
 		http.Error(w, fmt.Sprintf("%s is an unsupported method", r.Method), http.StatusBadRequest)
