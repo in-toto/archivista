@@ -13,14 +13,23 @@
         "version": "v1"
     },
     "paths": {
-        "/donwload/{gitoid}": {
-            "post": {
+        "/download/{gitoid}": {
+            "get": {
                 "description": "download an attestation",
                 "produces": [
                     "application/json"
                 ],
                 "summary": "Download",
                 "deprecated": true,
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "gitoid",
+                        "name": "gitoid",
+                        "in": "path",
+                        "required": true
+                    }
+                ],
                 "responses": {
                     "200": {
                         "description": "OK",
@@ -37,7 +46,7 @@
                 "produces": [
                     "application/json"
                 ],
-                "summary": "Store",
+                "summary": "Upload",
                 "deprecated": true,
                 "responses": {
                     "200": {
@@ -49,8 +58,8 @@
                 }
             }
         },
-        "/v1/donwload/{gitoid}": {
-            "post": {
+        "/v1/download/{gitoid}": {
+            "get": {
                 "description": "download an attestation",
                 "produces": [
                     "application/json"
@@ -59,6 +68,15 @@
                     "attestation"
                 ],
                 "summary": "Download",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "gitoid",
+                        "name": "gitoid",
+                        "in": "path",
+                        "required": true
+                    }
+                ],
                 "responses": {
                     "200": {
                         "description": "OK",
@@ -98,7 +116,7 @@
                 "tags": [
                     "attestation"
                 ],
-                "summary": "Store",
+                "summary": "Upload",
                 "responses": {
                     "200": {
                         "description": "OK",

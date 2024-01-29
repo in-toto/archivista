@@ -160,9 +160,10 @@ func (s *Server) UploadHandler(w http.ResponseWriter, r *http.Request) {
 // @Summary Download
 // @Description download an attestation
 // @Produce  json
+// @Param gitoid path string true "gitoid"
 // @Success 200 {object} dsse.Envelope
 // @Tags attestation
-// @Router /v1/download/{gitoid} [post]
+// @Router /v1/download/{gitoid} [get]
 func (s *Server) Download(ctx context.Context, gitoid string) (io.ReadCloser, error) {
 	if len(strings.TrimSpace(gitoid)) == 0 {
 		return nil, errors.New("gitoid parameter is required")
@@ -183,9 +184,10 @@ func (s *Server) Download(ctx context.Context, gitoid string) (io.ReadCloser, er
 // @Summary Download
 // @Description download an attestation
 // @Produce  json
+// @Param gitoid path string true "gitoid"
 // @Success 200 {object} dsse.Envelope
 // @Deprecated
-// @Router /download/{gitoid} [post]
+// @Router /download/{gitoid} [get]
 func (s *Server) DownloadHandler(w http.ResponseWriter, r *http.Request) {
 	if r.Method != http.MethodGet {
 		http.Error(w, fmt.Sprintf("%s is an unsupported method", r.Method), http.StatusBadRequest)

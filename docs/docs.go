@@ -21,14 +21,23 @@ const docTemplate = `{
     "host": "{{.Host}}",
     "basePath": "{{.BasePath}}",
     "paths": {
-        "/donwload/{gitoid}": {
-            "post": {
+        "/download/{gitoid}": {
+            "get": {
                 "description": "download an attestation",
                 "produces": [
                     "application/json"
                 ],
                 "summary": "Download",
                 "deprecated": true,
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "gitoid",
+                        "name": "gitoid",
+                        "in": "path",
+                        "required": true
+                    }
+                ],
                 "responses": {
                     "200": {
                         "description": "OK",
@@ -45,7 +54,7 @@ const docTemplate = `{
                 "produces": [
                     "application/json"
                 ],
-                "summary": "Store",
+                "summary": "Upload",
                 "deprecated": true,
                 "responses": {
                     "200": {
@@ -57,8 +66,8 @@ const docTemplate = `{
                 }
             }
         },
-        "/v1/donwload/{gitoid}": {
-            "post": {
+        "/v1/download/{gitoid}": {
+            "get": {
                 "description": "download an attestation",
                 "produces": [
                     "application/json"
@@ -67,6 +76,15 @@ const docTemplate = `{
                     "attestation"
                 ],
                 "summary": "Download",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "gitoid",
+                        "name": "gitoid",
+                        "in": "path",
+                        "required": true
+                    }
+                ],
                 "responses": {
                     "200": {
                         "description": "OK",
@@ -106,7 +124,7 @@ const docTemplate = `{
                 "tags": [
                     "attestation"
                 ],
-                "summary": "Store",
+                "summary": "Upload",
                 "responses": {
                     "200": {
                         "description": "OK",
