@@ -84,6 +84,16 @@ paths:
           description: OK
           schema:
             $ref: '#/definitions/dsse.Envelope'
+        "400":
+          description: Bad Request
+          schema:
+            type: string
+        "404":
+          description: Not Found
+        "500":
+          description: Internal Server Error
+          schema:
+            type: string
       summary: Download
   /upload:
     post:
@@ -113,6 +123,16 @@ paths:
           description: OK
           schema:
             $ref: '#/definitions/dsse.Envelope'
+        "400":
+          description: Bad Request
+          schema:
+            type: string
+        "404":
+          description: Not Found
+        "500":
+          description: Internal Server Error
+          schema:
+            type: string
       summary: Download
       tags:
       - attestation

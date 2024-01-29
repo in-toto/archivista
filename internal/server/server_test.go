@@ -31,9 +31,15 @@ import (
 	"github.com/stretchr/testify/suite"
 )
 
+// Mock StorerMock
 type StorerMock struct {
 	mock.Mock
 	Storer
+}
+
+func (m *StorerMock) Store(context.Context, string, []byte) error {
+	args := m.Called()
+	return args.Error(0)
 }
 
 type StorerGetterMock struct {
@@ -41,11 +47,52 @@ type StorerGetterMock struct {
 	StorerGetter
 }
 
+// Mock StorerGetter
+func (m *StorerGetterMock) Store(context.Context, string, []byte) error {
+	args := m.Called()
+	return args.Error(0)
+}
+
+func (m *StorerGetterMock) Get(context.Context, string) (io.ReadCloser, error) {
+	args := m.Called()
+	stringReader := strings.NewReader("testData")
+	stringReadCloser := io.NopCloser(stringReader)
+	return stringReadCloser, args.Error(0)
+}
+
+// Mock ResponseRecorderMock
+type ResponseRecorderMock struct {
+	mock.Mock
+	Code      int
+	HeaderMap http.Header
+	Body      *bytes.Buffer
+	Flushed   bool
+}
+
+func (m *ResponseRecorderMock) Write([]byte) (int, error) {
+	args := m.Called()
+	return args.Int(0), args.Error(1)
+}
+
+func (rw *ResponseRecorderMock) Header() http.Header {
+	return http.Header{}
+}
+
+func (rw *ResponseRecorderMock) WriteHeader(code int) {
+	rw.Code = code
+}
+
+func (rw *ResponseRecorderMock) WriteString(str string) (int, error) {
+	return 0, nil
+}
+
+// Define test Suite
 type UTServerSuite struct {
 	suite.Suite
-	mockedStorer       *StorerMock
-	mockedStorerGetter *StorerGetterMock
-	testServer         Server
+	mockedStorer          *StorerMock
+	mockedStorerGetter    *StorerGetterMock
+	mockedResposeRecorder *ResponseRecorderMock
+	testServer            Server
 }
 
 func TestUTServerSuite(t *testing.T) {
@@ -55,6 +102,7 @@ func TestUTServerSuite(t *testing.T) {
 func (ut *UTServerSuite) SetupTest() {
 	ut.mockedStorer = new(StorerMock)
 	ut.mockedStorerGetter = new(StorerGetterMock)
+	ut.mockedResposeRecorder = new(ResponseRecorderMock)
 	ut.testServer = Server{ut.mockedStorer, ut.mockedStorerGetter, nil}
 }
 
@@ -151,26 +199,6 @@ func (ut *UTServerSuite) Test_New_GraphqlWebClientEnable_False() {
 	ut.Contains(allPaths, "/v1/query")
 	ut.NotContains(allPaths, "/")
 	ut.Contains(allPaths, "/swagger/")
-}
-
-// Mock StorerGetter.Store()
-func (m *StorerGetterMock) Store(context.Context, string, []byte) error {
-	args := m.Called()
-	return args.Error(0)
-}
-
-// Mock StorerGetter.Get()
-func (m *StorerGetterMock) Get(context.Context, string) (io.ReadCloser, error) {
-	args := m.Called()
-	stringReader := strings.NewReader("testData")
-	stringReadCloser := io.NopCloser(stringReader)
-	return stringReadCloser, args.Error(0)
-}
-
-// Mock StorerMock.Store()
-func (m *StorerMock) Store(context.Context, string, []byte) error {
-	args := m.Called()
-	return args.Error(0)
 }
 
 func (ut *UTServerSuite) Test_Upload() {
@@ -272,22 +300,6 @@ func (ut *UTServerSuite) Test_Download() {
 	ut.Equal("testData", string(data))
 }
 
-func (ut *UTServerSuite) Test_Download_EmptyGitoid() {
-	ctx := context.TODO()
-	ut.mockedStorerGetter.On("Get").Return(nil) // mock Get() to return nil
-
-	_, err := ut.testServer.Download(ctx, "")
-	ut.ErrorContains(err, "gitoid parameter is required")
-}
-
-func (ut *UTServerSuite) Test_Download_EmptyGitoidTrimmed() {
-	ctx := context.TODO()
-	ut.mockedStorerGetter.On("Get").Return(nil) // mock Get() to return nil
-
-	_, err := ut.testServer.Download(ctx, "           ")
-	ut.ErrorContains(err, "gitoid parameter is required")
-}
-
 func (ut *UTServerSuite) Test_Download_NoObjectStorage() {
 	ctx := context.TODO()
 	ut.testServer.objectStore = nil
@@ -339,6 +351,18 @@ func (ut *UTServerSuite) Test_DownloadHandler_MissingGitOID() {
 	ut.Contains(w.Body.String(), "gitoid parameter is required")
 }
 
+func (ut *UTServerSuite) Test_DownloadHandler_GitOIDEmpty() {
+	w := httptest.NewRecorder()
+	request := httptest.NewRequest(http.MethodGet, "/v1/download", nil)
+	request = mux.SetURLVars(request, map[string]string{"gitoid": ""})
+
+	ut.mockedStorerGetter.On("Get").Return(nil) // mock Get() to return nil
+
+	ut.testServer.DownloadHandler(w, request)
+	ut.Equal(http.StatusBadRequest, w.Code)
+	ut.Contains(w.Body.String(), "gitoid parameter is required")
+}
+
 func (ut *UTServerSuite) Test_DownloadHandler_ObjectStorageFailed() {
 	w := httptest.NewRecorder()
 	request := httptest.NewRequest(http.MethodGet, "/v1/download", nil)
@@ -349,4 +373,16 @@ func (ut *UTServerSuite) Test_DownloadHandler_ObjectStorageFailed() {
 	ut.testServer.DownloadHandler(w, request)
 	ut.Equal(http.StatusInternalServerError, w.Code)
 	ut.Contains(w.Body.String(), "BAD S3")
+}
+
+func (ut *UTServerSuite) Test_DownloadHandler_NotFound() {
+	request := httptest.NewRequest(http.MethodGet, "/v1/download", nil)
+	request = mux.SetURLVars(request, map[string]string{"gitoid": "fakeGitoid"})
+
+	ut.mockedStorerGetter.On("Get").Return(nil) // mock Get() to return nil
+	ut.mockedResposeRecorder.On("Write").Return(404, errors.New("Not Found"))
+
+	ut.testServer.DownloadHandler(ut.mockedResposeRecorder, request)
+	ut.Equal(http.StatusNotFound, ut.mockedResposeRecorder.Code)
+	ut.Nil(ut.mockedResposeRecorder.Body)
 }

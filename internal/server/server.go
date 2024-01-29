@@ -162,13 +162,12 @@ func (s *Server) UploadHandler(w http.ResponseWriter, r *http.Request) {
 // @Produce  json
 // @Param gitoid path string true "gitoid"
 // @Success 200 {object} dsse.Envelope
+// @Failure 500 {object} string
+// @Failure 404 {object} nil
+// @Failure 400 {object} string
 // @Tags attestation
 // @Router /v1/download/{gitoid} [get]
 func (s *Server) Download(ctx context.Context, gitoid string) (io.ReadCloser, error) {
-	if len(strings.TrimSpace(gitoid)) == 0 {
-		return nil, errors.New("gitoid parameter is required")
-	}
-
 	if s.objectStore == nil {
 		return nil, errors.New("object store unavailable")
 	}
@@ -186,6 +185,9 @@ func (s *Server) Download(ctx context.Context, gitoid string) (io.ReadCloser, er
 // @Produce  json
 // @Param gitoid path string true "gitoid"
 // @Success 200 {object} dsse.Envelope
+// @Failure 500 {object} string
+// @Failure 404 {object} nil
+// @Failure 400 {object} string
 // @Deprecated
 // @Router /download/{gitoid} [get]
 func (s *Server) DownloadHandler(w http.ResponseWriter, r *http.Request) {
@@ -199,6 +201,10 @@ func (s *Server) DownloadHandler(w http.ResponseWriter, r *http.Request) {
 		http.Error(w, "gitoid parameter is required", http.StatusBadRequest)
 		return
 	}
+	if len(strings.TrimSpace(vars["gitoid"])) == 0 {
+		http.Error(w, "gitoid parameter is required", http.StatusBadRequest)
+		return
+	}
 
 	attestationReader, err := s.Download(r.Context(), vars["gitoid"])
 	if err != nil {
@@ -209,7 +215,7 @@ func (s *Server) DownloadHandler(w http.ResponseWriter, r *http.Request) {
 	defer attestationReader.Close()
 	if _, err := io.Copy(w, attestationReader); err != nil {
 		logrus.Errorf("failed to copy attestation to response: %+v", err)
-		w.WriteHeader(http.StatusInternalServerError)
+		w.WriteHeader(http.StatusNotFound)
 		return
 	}
 
