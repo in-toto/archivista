@@ -67,10 +67,16 @@ info:
   title: Archivista API
   version: v1
 paths:
-  /donwload/{gitoid}:
-    post:
+  /download/{gitoid}:
+    get:
       deprecated: true
       description: download an attestation
+      parameters:
+      - description: gitoid
+        in: path
+        name: gitoid
+        required: true
+        type: string
       produces:
       - application/json
       responses:
@@ -78,6 +84,16 @@ paths:
           description: OK
           schema:
             $ref: '#/definitions/dsse.Envelope'
+        "400":
+          description: Bad Request
+          schema:
+            type: string
+        "404":
+          description: Not Found
+        "500":
+          description: Internal Server Error
+          schema:
+            type: string
       summary: Download
   /upload:
     post:
@@ -90,10 +106,16 @@ paths:
           description: OK
           schema:
             $ref: '#/definitions/api.StoreResponse'
-      summary: Store
-  /v1/donwload/{gitoid}:
-    post:
+      summary: Upload
+  /v1/download/{gitoid}:
+    get:
       description: download an attestation
+      parameters:
+      - description: gitoid
+        in: path
+        name: gitoid
+        required: true
+        type: string
       produces:
       - application/json
       responses:
@@ -101,6 +123,16 @@ paths:
           description: OK
           schema:
             $ref: '#/definitions/dsse.Envelope'
+        "400":
+          description: Bad Request
+          schema:
+            type: string
+        "404":
+          description: Not Found
+        "500":
+          description: Internal Server Error
+          schema:
+            type: string
       summary: Download
       tags:
       - attestation
@@ -127,7 +159,7 @@ paths:
           description: OK
           schema:
             $ref: '#/definitions/api.StoreResponse'
-      summary: Store
+      summary: Upload
       tags:
       - attestation
 swagger: "2.0"

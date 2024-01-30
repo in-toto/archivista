@@ -160,14 +160,14 @@ func (s *Server) UploadHandler(w http.ResponseWriter, r *http.Request) {
 // @Summary Download
 // @Description download an attestation
 // @Produce  json
+// @Param gitoid path string true "gitoid"
 // @Success 200 {object} dsse.Envelope
+// @Failure 500 {object} string
+// @Failure 404 {object} nil
+// @Failure 400 {object} string
 // @Tags attestation
-// @Router /v1/download/{gitoid} [post]
+// @Router /v1/download/{gitoid} [get]
 func (s *Server) Download(ctx context.Context, gitoid string) (io.ReadCloser, error) {
-	if len(strings.TrimSpace(gitoid)) == 0 {
-		return nil, errors.New("gitoid parameter is required")
-	}
-
 	if s.objectStore == nil {
 		return nil, errors.New("object store unavailable")
 	}
@@ -183,9 +183,13 @@ func (s *Server) Download(ctx context.Context, gitoid string) (io.ReadCloser, er
 // @Summary Download
 // @Description download an attestation
 // @Produce  json
+// @Param gitoid path string true "gitoid"
 // @Success 200 {object} dsse.Envelope
+// @Failure 500 {object} string
+// @Failure 404 {object} nil
+// @Failure 400 {object} string
 // @Deprecated
-// @Router /download/{gitoid} [post]
+// @Router /download/{gitoid} [get]
 func (s *Server) DownloadHandler(w http.ResponseWriter, r *http.Request) {
 	if r.Method != http.MethodGet {
 		http.Error(w, fmt.Sprintf("%s is an unsupported method", r.Method), http.StatusBadRequest)
@@ -194,6 +198,10 @@ func (s *Server) DownloadHandler(w http.ResponseWriter, r *http.Request) {
 
 	vars := mux.Vars(r)
 	if vars == nil {
+		http.Error(w, "gitoid parameter is required", http.StatusBadRequest)
+		return
+	}
+	if len(strings.TrimSpace(vars["gitoid"])) == 0 {
 		http.Error(w, "gitoid parameter is required", http.StatusBadRequest)
 		return
 	}
@@ -207,7 +215,7 @@ func (s *Server) DownloadHandler(w http.ResponseWriter, r *http.Request) {
 	defer attestationReader.Close()
 	if _, err := io.Copy(w, attestationReader); err != nil {
 		logrus.Errorf("failed to copy attestation to response: %+v", err)
-		w.WriteHeader(http.StatusInternalServerError)
+		w.WriteHeader(http.StatusNotFound)
 		return
 	}
 
