@@ -80,7 +80,7 @@ Archivista is configured through environment variables currently.
 | ARCHIVISTA_SQL_STORE_CONNECTION_STRING     | root:example@tcp(db)/testify | SQL store connection string                                                                   |
 | ARCHIVISTA_STORAGE_BACKEND                 |                              | Backend to use for attestation storage. Options are FILE, BLOB, or empty string for disabled. |
 | ARCHIVISTA_FILE_SERVE_ON                   |                              | What address to serve files on. Only valid when using FILE storage backend.                   |
-| ARCHIVISTA_FILE_DIR                        | /tmp/archivista/              | Directory to store and serve files. Only valid when using FILE storage backend.               |
+| ARCHIVISTA_FILE_DIR                        | /tmp/archivista/              | Directory to store and serve files. Only valid when using FILE storage backend.              |
 | ARCHIVISTA_BLOB_STORE_ENDPOINT             | 127.0.0.1:9000               | URL endpoint for blob storage. Only valid when using BLOB storage backend.                    |
 | ARCHIVISTA_BLOB_STORE_CREDENTIAL_TYPE      |                              | Blob store credential type. Options are IAM or ACCESS_KEY.                                    |
 | ARCHIVISTA_BLOB_STORE_ACCESS_KEY_ID        |                              | Blob store access key id. Only valid when using BLOB storage backend.                         |
@@ -89,6 +89,8 @@ Archivista is configured through environment variables currently.
 | ARCHIVISTA_BLOB_STORE_BUCKET_NAME          |                              | Bucket to use for storage.  Only valid when using BLOB storage backend.                       |
 | ARCHIVISTA_ENABLE_GRAPHQL                  | TRUE                         | Enable GraphQL Endpoint                                                                       |
 | ARCHIVISTA_GRAPHQL_WEB_CLIENT_ENABLE       | TRUE                         | Enable GraphiQL, the GraphQL web client                                                       |
+| ARCHIVISTA_ENABLE_ARTIFACT_STORE           | FALSE                        | Enable Artifact Store Endpoints                                                               |
+| ARCHIVISTA_ARTIFACT_STORE_CONFIG           | /tmp/artifacts/config.yaml   | Location of the config describing available artifacts                                         |
 
 
 ## Using Archivista
