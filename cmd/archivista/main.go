@@ -108,7 +108,7 @@ func main() {
 	// ********************************************************************************
 	now = time.Now()
 
-	// initialize witness distro store
+	// initialize the artifact store
 	if cfg.EnableArtifactStore {
 		wds, err := artifactstore.New(artifactstore.WithConfigFile(cfg.ArtifactStoreConfig))
 		if err != nil {
