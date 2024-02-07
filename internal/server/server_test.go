@@ -415,7 +415,7 @@ func (ut *UTServerSuite) Test_AllArtifactsHandler() {
 func (ut *UTServerSuite) Test_ArtifactAllVersionsHandler() {
 	w := httptest.NewRecorder()
 	request := httptest.NewRequest(http.MethodGet, "/v1/artifacts/witness", nil)
-	request = mux.SetURLVars(request, map[string]string{"artifact": "witness"})
+	request = mux.SetURLVars(request, map[string]string{"name": "witness"})
 
 	ut.testServer.ArtifactAllVersionsHandler(w, request)
 	ut.Equal(http.StatusOK, w.Code)
@@ -426,7 +426,7 @@ func (ut *UTServerSuite) Test_ArtifactAllVersionsHandler() {
 func (ut *UTServerSuite) Test_ArtifactVersionHandler() {
 	w := httptest.NewRecorder()
 	request := httptest.NewRequest(http.MethodGet, "/v1/artifacts/witness/v0.1.0", nil)
-	request = mux.SetURLVars(request, map[string]string{"artifact": "witness", "version": "v0.1.0"})
+	request = mux.SetURLVars(request, map[string]string{"name": "witness", "version": "v0.1.0"})
 
 	ut.testServer.ArtifactVersionHandler(w, request)
 	ut.Equal(http.StatusOK, w.Code)
@@ -436,7 +436,7 @@ func (ut *UTServerSuite) Test_ArtifactVersionHandler() {
 func (ut *UTServerSuite) Test_ArtifactVersionHandler_NotFound() {
 	w := httptest.NewRecorder()
 	request := httptest.NewRequest(http.MethodGet, "/v1/artifacts/witness/v0.3.0", nil)
-	request = mux.SetURLVars(request, map[string]string{"artifact": "witness", "version": "v0.3.0"})
+	request = mux.SetURLVars(request, map[string]string{"name": "witness", "version": "v0.3.0"})
 
 	ut.testServer.ArtifactVersionHandler(w, request)
 	ut.Equal(http.StatusNotFound, w.Code)
@@ -446,7 +446,7 @@ func (ut *UTServerSuite) Test_ArtifactVersionHandler_NotFound() {
 func (ut *UTServerSuite) Test_DownloadArtifactHandler() {
 	w := httptest.NewRecorder()
 	request := httptest.NewRequest(http.MethodGet, "/v1/download/artifact/witness/v0.1.0/linux-x64", nil)
-	request = mux.SetURLVars(request, map[string]string{"artifact": "witness", "version": "v0.1.0", "distribution": "linux-x64"})
+	request = mux.SetURLVars(request, map[string]string{"name": "witness", "version": "v0.1.0", "distribution": "linux-x64"})
 
 	ut.testServer.DownloadArtifactHandler(w, request)
 	ut.Equal(http.StatusOK, w.Code)
@@ -456,7 +456,7 @@ func (ut *UTServerSuite) Test_DownloadArtifactHandler() {
 func (ut *UTServerSuite) Test_DownloadArtifactHandler_NotFound() {
 	w := httptest.NewRecorder()
 	request := httptest.NewRequest(http.MethodGet, "/v1/download/artifact/witness/v0.1.0/linux-arm", nil)
-	request = mux.SetURLVars(request, map[string]string{"artifact": "witness", "version": "v0.1.0", "distribution": "linux-arm"})
+	request = mux.SetURLVars(request, map[string]string{"name": "witness", "version": "v0.1.0", "distribution": "linux-arm"})
 
 	ut.testServer.DownloadArtifactHandler(w, request)
 	ut.Equal(http.StatusNotFound, w.Code)
