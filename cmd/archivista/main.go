@@ -32,6 +32,7 @@ import (
 
 	nested "github.com/antonfisher/nested-logrus-formatter"
 	"github.com/gorilla/handlers"
+	"github.com/in-toto/archivista/internal/artifactstore"
 	"github.com/in-toto/archivista/internal/config"
 	"github.com/in-toto/archivista/internal/metadatastorage/sqlstore"
 	"github.com/in-toto/archivista/internal/objectstorage/blobstore"
@@ -56,6 +57,7 @@ func main() {
 	defer cancel()
 
 	startTime := time.Now()
+	serverOpts := make([]server.Option, 0)
 
 	logrus.Infof("executing phase 1: get config from environment (time since start: %s)", time.Since(startTime))
 	now := time.Now()
@@ -81,6 +83,7 @@ func main() {
 	if err != nil {
 		logrus.Fatalf("error initializing storage clients: %+v", err)
 	}
+	serverOpts = append(serverOpts, server.WithObjectStore(fileStore))
 
 	entClient, err := sqlstore.NewEntClient(
 		cfg.SQLStoreBackend,
@@ -96,6 +99,7 @@ func main() {
 	if err != nil {
 		logrus.Fatalf("error initializing mysql client: %+v", err)
 	}
+	serverOpts = append(serverOpts, server.WithMetadataStore(sqlStore))
 
 	logrus.WithField("duration", time.Since(now)).Infof("completed phase 3: initializing storage clients")
 
@@ -104,9 +108,23 @@ func main() {
 	// ********************************************************************************
 	now = time.Now()
 
+	// initialize the artifact store
+	if cfg.EnableArtifactStore {
+		wds, err := artifactstore.New(artifactstore.WithConfigFile(cfg.ArtifactStoreConfig))
+		if err != nil {
+			logrus.Fatalf("could not create the artifact store: %+v", err)
+		}
+
+		serverOpts = append(serverOpts, server.WithArtifactStore(wds))
+	}
+
 	// initialize the server
 	sqlClient := sqlStore.GetClient()
-	server := server.New(sqlStore, fileStore, cfg, sqlClient)
+	serverOpts = append(serverOpts, server.WithEntSqlClient(sqlClient))
+	server, err := server.New(cfg, serverOpts...)
+	if err != nil {
+		logrus.Fatalf("could not create archivista server: %+v", err)
+	}
 
 	listenAddress := cfg.ListenOn
 	listenAddress = strings.ToLower(strings.TrimSpace(listenAddress))

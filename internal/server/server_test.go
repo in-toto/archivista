@@ -21,10 +21,13 @@ import (
 	"io"
 	"net/http"
 	"net/http/httptest"
+	"os"
+	"path/filepath"
 	"strings"
 	"testing"
 
 	"github.com/gorilla/mux"
+	"github.com/in-toto/archivista/internal/artifactstore"
 	"github.com/in-toto/archivista/internal/config"
 	"github.com/in-toto/archivista/pkg/api"
 	"github.com/stretchr/testify/mock"
@@ -103,20 +106,26 @@ func (ut *UTServerSuite) SetupTest() {
 	ut.mockedStorer = new(StorerMock)
 	ut.mockedStorerGetter = new(StorerGetterMock)
 	ut.mockedResposeRecorder = new(ResponseRecorderMock)
-	ut.testServer = Server{ut.mockedStorer, ut.mockedStorerGetter, nil}
+	ut.testServer = Server{
+		metadataStore: ut.mockedStorer,
+		objectStore:   ut.mockedStorerGetter,
+		artifactStore: ut.testArtifactStore(),
+	}
 }
 
 func (ut *UTServerSuite) Test_New() {
 	cfg := new(config.Config)
 	cfg.EnableGraphql = true
 	cfg.GraphqlWebClientEnable = true
-	ut.testServer = New(ut.mockedStorer, ut.mockedStorerGetter, cfg, nil)
+	var err error
+	ut.testServer, err = New(cfg, WithMetadataStore(ut.mockedStorer), WithObjectStore(ut.mockedStorerGetter))
+	ut.NoError(err)
 	ut.NotNil(ut.testServer)
 	router := ut.testServer.Router()
 	ut.NotNil(router)
 
 	allPaths := []string{}
-	err := router.Walk(func(route *mux.Route, router *mux.Router, ancestors []*mux.Route) error {
+	err = router.Walk(func(route *mux.Route, router *mux.Router, ancestors []*mux.Route) error {
 		pathTemplate, err := route.GetPathTemplate()
 		if err != nil {
 			ut.FailNow(err.Error())
@@ -124,6 +133,7 @@ func (ut *UTServerSuite) Test_New() {
 		allPaths = append(allPaths, pathTemplate)
 		return nil
 	})
+
 	if err != nil {
 		ut.FailNow(err.Error())
 	}
@@ -141,13 +151,15 @@ func (ut *UTServerSuite) Test_New_EnableGraphQL_False() {
 	cfg := new(config.Config)
 	cfg.EnableGraphql = false
 	cfg.GraphqlWebClientEnable = true
-	ut.testServer = New(ut.mockedStorer, ut.mockedStorerGetter, cfg, nil)
+	var err error
+	ut.testServer, err = New(cfg, WithMetadataStore(ut.mockedStorer), WithObjectStore(ut.mockedStorerGetter))
+	ut.NoError(err)
 	ut.NotNil(ut.testServer)
 	router := ut.testServer.Router()
 	ut.NotNil(router)
 
 	allPaths := []string{}
-	err := router.Walk(func(route *mux.Route, router *mux.Router, ancestors []*mux.Route) error {
+	err = router.Walk(func(route *mux.Route, router *mux.Router, ancestors []*mux.Route) error {
 		pathTemplate, err := route.GetPathTemplate()
 		if err != nil {
 			ut.FailNow(err.Error())
@@ -173,13 +185,15 @@ func (ut *UTServerSuite) Test_New_GraphqlWebClientEnable_False() {
 	cfg := new(config.Config)
 	cfg.EnableGraphql = true
 	cfg.GraphqlWebClientEnable = false
-	ut.testServer = New(ut.mockedStorer, ut.mockedStorerGetter, cfg, nil)
+	var err error
+	ut.testServer, err = New(cfg, WithMetadataStore(ut.mockedStorer), WithObjectStore(ut.mockedStorerGetter))
+	ut.NoError(err)
 	ut.NotNil(ut.testServer)
 	router := ut.testServer.Router()
 	ut.NotNil(router)
 
 	allPaths := []string{}
-	err := router.Walk(func(route *mux.Route, router *mux.Router, ancestors []*mux.Route) error {
+	err = router.Walk(func(route *mux.Route, router *mux.Router, ancestors []*mux.Route) error {
 		pathTemplate, err := route.GetPathTemplate()
 		if err != nil {
 			ut.FailNow(err.Error())
@@ -385,4 +399,94 @@ func (ut *UTServerSuite) Test_DownloadHandler_NotFound() {
 	ut.testServer.DownloadHandler(ut.mockedResposeRecorder, request)
 	ut.Equal(http.StatusNotFound, ut.mockedResposeRecorder.Code)
 	ut.Nil(ut.mockedResposeRecorder.Body)
+}
+
+func (ut *UTServerSuite) Test_AllArtifactsHandler() {
+	w := httptest.NewRecorder()
+	request := httptest.NewRequest(http.MethodGet, "/v1/artifacts", nil)
+
+	ut.testServer.AllArtifactsHandler(w, request)
+	ut.Equal(http.StatusOK, w.Code)
+	ut.Contains(w.Body.String(), "witness")
+	ut.Contains(w.Body.String(), "v0.1.0")
+	ut.Contains(w.Body.String(), "linux-x64")
+}
+
+func (ut *UTServerSuite) Test_ArtifactAllVersionsHandler() {
+	w := httptest.NewRecorder()
+	request := httptest.NewRequest(http.MethodGet, "/v1/artifacts/witness", nil)
+	request = mux.SetURLVars(request, map[string]string{"name": "witness"})
+
+	ut.testServer.ArtifactAllVersionsHandler(w, request)
+	ut.Equal(http.StatusOK, w.Code)
+	ut.Contains(w.Body.String(), "v0.1.0")
+	ut.Contains(w.Body.String(), "linux-x64")
+}
+
+func (ut *UTServerSuite) Test_ArtifactVersionHandler() {
+	w := httptest.NewRecorder()
+	request := httptest.NewRequest(http.MethodGet, "/v1/artifacts/witness/v0.1.0", nil)
+	request = mux.SetURLVars(request, map[string]string{"name": "witness", "version": "v0.1.0"})
+
+	ut.testServer.ArtifactVersionHandler(w, request)
+	ut.Equal(http.StatusOK, w.Code)
+	ut.Contains(w.Body.String(), "linux-x64")
+}
+
+func (ut *UTServerSuite) Test_ArtifactVersionHandler_NotFound() {
+	w := httptest.NewRecorder()
+	request := httptest.NewRequest(http.MethodGet, "/v1/artifacts/witness/v0.3.0", nil)
+	request = mux.SetURLVars(request, map[string]string{"name": "witness", "version": "v0.3.0"})
+
+	ut.testServer.ArtifactVersionHandler(w, request)
+	ut.Equal(http.StatusNotFound, w.Code)
+	ut.Contains(w.Body.String(), "version not found")
+}
+
+func (ut *UTServerSuite) Test_DownloadArtifactHandler() {
+	w := httptest.NewRecorder()
+	request := httptest.NewRequest(http.MethodGet, "/v1/download/artifact/witness/v0.1.0/linux-x64", nil)
+	request = mux.SetURLVars(request, map[string]string{"name": "witness", "version": "v0.1.0", "distribution": "linux-x64"})
+
+	ut.testServer.DownloadArtifactHandler(w, request)
+	ut.Equal(http.StatusOK, w.Code)
+	ut.Contains(w.Body.String(), "test")
+}
+
+func (ut *UTServerSuite) Test_DownloadArtifactHandler_NotFound() {
+	w := httptest.NewRecorder()
+	request := httptest.NewRequest(http.MethodGet, "/v1/download/artifact/witness/v0.1.0/linux-arm", nil)
+	request = mux.SetURLVars(request, map[string]string{"name": "witness", "version": "v0.1.0", "distribution": "linux-arm"})
+
+	ut.testServer.DownloadArtifactHandler(w, request)
+	ut.Equal(http.StatusNotFound, w.Code)
+	ut.Contains(w.Body.String(), "distribution of artifact not found")
+}
+
+func (ut *UTServerSuite) testArtifactStore() artifactstore.Store {
+	testDir := ut.T().TempDir()
+	testDistroFilePath := filepath.Join(testDir, "witness-v0.1.0-linux-x64")
+	ut.NoError(os.WriteFile(testDistroFilePath, []byte("test"), 0644))
+
+	config := artifactstore.Config{
+		Artifacts: map[string]artifactstore.Artifact{
+			"witness": {
+				Versions: map[string]artifactstore.Version{
+					"v0.1.0": {
+						Description: "some description",
+						Distributions: map[string]artifactstore.Distribution{
+							"linux-x64": {
+								SHA256Digest: "9f86d081884c7d659a2feaa0c55ad015a3bf4f1b2b0b822cd15d6c15b0f00a08",
+								FileLocation: testDistroFilePath,
+							},
+						},
+					},
+				},
+			},
+		},
+	}
+
+	wds, err := artifactstore.New(artifactstore.WithConfig(config))
+	ut.NoError(err)
+	return wds
 }
