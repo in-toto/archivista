@@ -112,7 +112,7 @@ func main() {
 	if cfg.EnableArtifactStore {
 		wds, err := artifactstore.New(artifactstore.WithConfigFile(cfg.ArtifactStoreConfig))
 		if err != nil {
-			logrus.Fatalf("could not load witness distro store: %+v", err)
+			logrus.Fatalf("could not create the artifact store: %+v", err)
 		}
 
 		serverOpts = append(serverOpts, server.WithArtifactStore(wds))
