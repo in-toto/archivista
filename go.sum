@@ -113,8 +113,8 @@ github.com/hashicorp/golang-lru/v2 v2.0.3 h1:kmRrRLlInXvng0SmLxmQpQkpbYAvcXm7NPD
 github.com/hashicorp/golang-lru/v2 v2.0.3/go.mod h1:QeFd9opnmA6QUJc5vARoKUSoFhyfM2/ZepoAG6RGpeM=
 github.com/hashicorp/hcl/v2 v2.13.0 h1:0Apadu1w6M11dyGFxWnmhhcMjkbAiKCv7G1r/2QgCNc=
 github.com/hashicorp/hcl/v2 v2.13.0/go.mod h1:e4z5nxYlWNPdDSNYX+ph14EvWYMFm3eP0zIUqPc2jr0=
-github.com/in-toto/go-witness v0.2.2 h1:oyiqyzzKwX8j5zjBVdxoo0LxjMV13ujOF0l/hu5uYp8=
-github.com/in-toto/go-witness v0.2.2/go.mod h1:b5ocF+eHUYnQgQncM6nK0g5TIoUzA94gs50fS7g+uNk=
+github.com/in-toto/go-witness v0.2.3 h1:KjiaRHxW2VSyouXUW0Zrpc+7LXfFKilB86a1lqNDsAU=
+github.com/in-toto/go-witness v0.2.3/go.mod h1:b5ocF+eHUYnQgQncM6nK0g5TIoUzA94gs50fS7g+uNk=
 github.com/inconshreveable/mousetrap v1.1.0 h1:wN+x4NVGpMsO7ErUn/mUI3vEoE6Jt13X2s0bqwp9tc8=
 github.com/inconshreveable/mousetrap v1.1.0/go.mod h1:vpF70FUmC8bwa3OWnCshd2FqLfsEA9PFc4w1p2J65bw=
 github.com/josharian/intern v1.0.0 h1:vlS4z54oSdjm0bgjRigI+G1HpF+tI+9rE5LLzOg8HmY=
