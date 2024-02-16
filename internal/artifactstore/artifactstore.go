@@ -112,7 +112,7 @@ func verifyConfig(as Store) error {
 					continue
 				}
 
-				digestSet, err := cryptoutil.CalculateDigestSetFromFile(distro.FileLocation, []crypto.Hash{crypto.SHA256})
+				digestSet, err := cryptoutil.CalculateDigestSetFromFile(distro.FileLocation, []cryptoutil.DigestValue{{Hash: crypto.SHA256}})
 				if err != nil {
 					errs = append(errs, fmt.Errorf("could not calculate sha256 digest for %v version %v-%v: %w", artifactName, versionString, distroString, err))
 				}
