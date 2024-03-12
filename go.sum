@@ -1,12 +1,12 @@
-ariga.io/atlas v0.14.1-0.20230918065911-83ad451a4935 h1:JnYs/y8RJ3+MiIUp+3RgyyeO48VHLAZimqiaZYnMKk8=
-ariga.io/atlas v0.14.1-0.20230918065911-83ad451a4935/go.mod h1:isZrlzJ5cpoCoKFoY9knZug7Lq4pP1cm8g3XciLZ0Pw=
+ariga.io/atlas v0.19.1-0.20240203083654-5948b60a8e43 h1:GwdJbXydHCYPedeeLt4x/lrlIISQ4JTH1mRWuE5ZZ14=
+ariga.io/atlas v0.19.1-0.20240203083654-5948b60a8e43/go.mod h1:uj3pm+hUTVN/X5yfdBexHlZv+1Xu5u5ZbZx7+CDavNU=
 ariga.io/sqlcomment v0.1.0 h1:8kQPlVe3sXpTloEFlpX5dhFAXB28i6rwq9ktqqnPx70=
 ariga.io/sqlcomment v0.1.0/go.mod h1:NT1IZMfBTQl1MUU5wgVONmnDqFRqtZrdDRgAXfc1g5k=
 cloud.google.com/go v0.26.0/go.mod h1:aQUYkXzVsufM+DwF1aE+0xfcU+56JwCaLick0ClmMTw=
 entgo.io/contrib v0.4.5 h1:BFaOHwFLE8WZjVJadP0XHCIaxgcC1BAtUvAyw7M/GHk=
 entgo.io/contrib v0.4.5/go.mod h1:wpZyq2DJgthugFvDBlaqMXj9mV4/9ebyGEn7xlTVQqE=
-entgo.io/ent v0.12.5 h1:KREM5E4CSoej4zeGa88Ou/gfturAnpUv0mzAjch1sj4=
-entgo.io/ent v0.12.5/go.mod h1:Y3JVAjtlIk8xVZYSn3t3mf8xlZIn5SAOXZQxD6kKI+Q=
+entgo.io/ent v0.13.1 h1:uD8QwN1h6SNphdCCzmkMN3feSUzNnVvV/WIkHKMbzOE=
+entgo.io/ent v0.13.1/go.mod h1:qCEmo+biw3ccBn9OyL4ZK5dfpwg++l1Gxwac5B1206A=
 github.com/99designs/gqlgen v0.17.44 h1:OS2wLk/67Y+vXM75XHbwRnNYJcbuJd4OBL76RX3NQQA=
 github.com/99designs/gqlgen v0.17.44/go.mod h1:UTCu3xpK2mLI5qcMNw+HKDiEL77it/1XtAjisC4sLwM=
 github.com/BurntSushi/toml v0.3.1/go.mod h1:xHWCNGjB5oqiDr8zfno3MHue2Ht5sIBksp03qcyfWMU=
