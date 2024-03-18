@@ -107,7 +107,7 @@ GET /download/:gitoid: - Downloads an attestation with provided gitoid from Arch
 
 Additionally Archivista exposes a GraphQL API. By default the GraphQL playground is enabled and available at root.
 
-`archivistactl` is a CLI tool in this repository that is available to interact with an Archivista instance. `archivistctl`
+`archivistactl` is a CLI tool in this repository that is available to interact with an Archivista instance. `archivistactl`
 is capable of uploading and downloading attestations as well as doing some basic queries such as finding all
 attestations with a specified subject and retrieving all subjects for a specified attestation.
 
