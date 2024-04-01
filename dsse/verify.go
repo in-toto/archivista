@@ -18,23 +18,19 @@ import (
 	"bytes"
 	"context"
 	"crypto/x509"
-	"io"
 	"time"
 
 	"github.com/in-toto/go-witness/cryptoutil"
 	"github.com/in-toto/go-witness/log"
+	"github.com/in-toto/go-witness/timestamp"
 )
-
-type TimestampVerifier interface {
-	Verify(context.Context, io.Reader, io.Reader) (time.Time, error)
-}
 
 type verificationOptions struct {
 	roots              []*x509.Certificate
 	intermediates      []*x509.Certificate
 	verifiers          []cryptoutil.Verifier
 	threshold          int
-	timestampVerifiers []TimestampVerifier
+	timestampVerifiers []timestamp.TimestampVerifier
 }
 
 type VerificationOption func(*verificationOptions)
@@ -63,7 +59,7 @@ func VerifyWithThreshold(threshold int) VerificationOption {
 	}
 }
 
-func VerifyWithTimestampVerifiers(verifiers ...TimestampVerifier) VerificationOption {
+func VerifyWithTimestampVerifiers(verifiers ...timestamp.TimestampVerifier) VerificationOption {
 	return func(vo *verificationOptions) {
 		vo.timestampVerifiers = verifiers
 	}
@@ -71,7 +67,7 @@ func VerifyWithTimestampVerifiers(verifiers ...TimestampVerifier) VerificationOp
 
 type PassedVerifier struct {
 	Verifier                 cryptoutil.Verifier
-	PassedTimestampVerifiers []TimestampVerifier
+	PassedTimestampVerifiers []timestamp.TimestampVerifier
 }
 
 func (e Envelope) Verify(opts ...VerificationOption) ([]PassedVerifier, error) {
@@ -121,7 +117,7 @@ func (e Envelope) Verify(opts ...VerificationOption) ([]PassedVerifier, error) {
 				}
 			} else {
 				var passedVerifier cryptoutil.Verifier
-				passedTimestampVerifiers := []TimestampVerifier{}
+				passedTimestampVerifiers := []timestamp.TimestampVerifier{}
 
 				for _, timestampVerifier := range options.timestampVerifiers {
 					for _, sigTimestamp := range sig.Timestamps {

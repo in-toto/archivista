@@ -76,7 +76,12 @@ func (v *RSAVerifier) Verify(data io.Reader, sig []byte) error {
 		Hash:       v.hash,
 	}
 
-	return rsa.VerifyPSS(v.pub, v.hash, digest, sig, pssOpts)
+	// AWS KMS introduces the chance that attestations get signed by PKCS1v15 instead of PSS
+	if err := rsa.VerifyPSS(v.pub, v.hash, digest, sig, pssOpts); err != nil {
+		return rsa.VerifyPKCS1v15(v.pub, v.hash, digest, sig)
+	}
+
+	return nil
 }
 
 func (v *RSAVerifier) Bytes() ([]byte, error) {

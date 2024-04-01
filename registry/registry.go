@@ -81,7 +81,6 @@ func (r Registry[T]) AllEntries() []Entry[T] {
 	}
 
 	return results
-
 }
 
 // NewEntity creates a new entity with the the default options set

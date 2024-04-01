@@ -22,15 +22,12 @@ import (
 	"io"
 
 	"github.com/in-toto/go-witness/cryptoutil"
+	"github.com/in-toto/go-witness/timestamp"
 )
-
-type Timestamper interface {
-	Timestamp(context.Context, io.Reader) ([]byte, error)
-}
 
 type signOptions struct {
 	signers      []cryptoutil.Signer
-	timestampers []Timestamper
+	timestampers []timestamp.Timestamper
 }
 
 type SignOption func(*signOptions)
@@ -41,7 +38,7 @@ func SignWithSigners(signers ...cryptoutil.Signer) SignOption {
 	}
 }
 
-func SignWithTimestampers(timestampers ...Timestamper) SignOption {
+func SignWithTimestampers(timestampers ...timestamp.Timestamper) SignOption {
 	return func(so *signOptions) {
 		so.timestampers = timestampers
 	}

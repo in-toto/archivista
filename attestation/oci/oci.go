@@ -231,7 +231,7 @@ func (a *Attestor) parseMaifest(ctx *attestation.AttestationContext) error {
 }
 
 func (a *Attestor) Subjects() map[string]cryptoutil.DigestSet {
-	hashes := []crypto.Hash{crypto.SHA256}
+	hashes := []cryptoutil.DigestValue{{Hash: crypto.SHA256}}
 	subj := make(map[string]cryptoutil.DigestSet)
 	subj[fmt.Sprintf("manifestdigest:%s", a.ManifestDigest[cryptoutil.DigestValue{Hash: crypto.SHA256}])] = a.ManifestDigest
 	subj[fmt.Sprintf("tardigest:%s", a.TarDigest[cryptoutil.DigestValue{Hash: crypto.SHA256}])] = a.TarDigest

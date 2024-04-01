@@ -17,8 +17,9 @@ package fulcio
 import (
 	"context"
 	"crypto"
+	"crypto/ecdsa"
+	"crypto/elliptic"
 	"crypto/rand"
-	"crypto/rsa"
 	"crypto/tls"
 	"crypto/x509"
 	"encoding/pem"
@@ -114,9 +115,9 @@ func init() {
 				if !ok {
 					return sp, fmt.Errorf("provided signer provider is not a fulcio signer provider")
 				}
-        
-        WithOidcRedirectUrl(oidcRedirectUrl)(&fsp)
-        return fsp, nil
+
+				WithOidcRedirectUrl(oidcRedirectUrl)(&fsp)
+				return fsp, nil
 			},
 		),
 		registry.StringConfigOption(
@@ -137,12 +138,12 @@ func init() {
 }
 
 type FulcioSignerProvider struct {
-	FulcioURL        string
-	OidcIssuer       string
-	OidcClientID     string
-	Token            string
-  	TokenPath        string
-	OidcRedirectUrl  string
+	FulcioURL       string
+	OidcIssuer      string
+	OidcClientID    string
+	Token           string
+	TokenPath       string
+	OidcRedirectUrl string
 }
 
 type Option func(*FulcioSignerProvider)
@@ -170,7 +171,6 @@ func WithToken(tokenOption string) Option {
 		fsp.Token = tokenOption
 	}
 }
-
 
 func WithOidcRedirectUrl(oidcRedirectUrl string) Option {
 	return func(fsp *FulcioSignerProvider) {
@@ -229,7 +229,7 @@ func (fsp FulcioSignerProvider) Signer(ctx context.Context) (cryptoutil.Signer, 
 		return nil, err
 	}
 
-	key, err := rsa.GenerateKey(rand.Reader, 4096)
+	key, err := ecdsa.GenerateKey(elliptic.P384(), rand.Reader)
 	if err != nil {
 		return nil, err
 	}
@@ -316,7 +316,7 @@ func (fsp FulcioSignerProvider) Signer(ctx context.Context) (cryptoutil.Signer, 
 		}
 	}
 
-	ss := cryptoutil.NewRSASigner(key, crypto.SHA256)
+	ss := cryptoutil.NewECDSASigner(key, crypto.SHA256)
 	if ss == nil {
 		return nil, errors.New("failed to create RSA signer")
 	}
@@ -329,10 +329,10 @@ func (fsp FulcioSignerProvider) Signer(ctx context.Context) (cryptoutil.Signer, 
 	return witnessSigner, nil
 }
 
-func getCert(ctx context.Context, key *rsa.PrivateKey, fc fulciopb.CAClient, token string) (*fulciopb.SigningCertificate, error) {
+func getCert(ctx context.Context, key *ecdsa.PrivateKey, fc fulciopb.CAClient, token string) (*fulciopb.SigningCertificate, error) {
 	t, err := jwt.ParseSigned(token)
 	if err != nil {
-		return nil, fmt.Errorf("Failed to parse jwt token for fulcio: %w", err)
+		return nil, fmt.Errorf("failed to parse jwt token for fulcio: %w", err)
 	}
 
 	var claims struct {
@@ -398,6 +398,7 @@ func getCert(ctx context.Context, key *rsa.PrivateKey, fc fulciopb.CAClient, tok
 
 	sc, err := fc.CreateSigningCertificate(ctx, cscr)
 	if err != nil {
+		log.Info("Failed creating signing certificate")
 		return nil, err
 	}
 

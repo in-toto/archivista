@@ -133,7 +133,7 @@ func (a *Attestor) Attest(ctx *attestation.AttestationContext) error {
 
 func (a *Attestor) Subjects() map[string]cryptoutil.DigestSet {
 	subjects := make(map[string]cryptoutil.DigestSet)
-	hashes := []crypto.Hash{crypto.SHA256}
+	hashes := []cryptoutil.DigestValue{{Hash: crypto.SHA256}}
 	projectSubject := fmt.Sprintf("project:%v/%v@%v", a.GroupId, a.ArtifactId, a.Version)
 	if ds, err := cryptoutil.CalculateDigestSetFromBytes([]byte(projectSubject), hashes); err == nil {
 		subjects[projectSubject] = ds

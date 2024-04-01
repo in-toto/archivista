@@ -80,7 +80,7 @@ func init() {
 
 type Attestor struct {
 	ec2metadata.EC2InstanceIdentityDocument
-	hashes    []crypto.Hash
+	hashes    []cryptoutil.DigestValue
 	session   session.Session
 	conf      *aws.Config
 	RawIID    string `json:"rawiid"`
@@ -195,7 +195,7 @@ func (a *Attestor) Verify() error {
 }
 
 func (a *Attestor) Subjects() map[string]cryptoutil.DigestSet {
-	hashes := []crypto.Hash{crypto.SHA256}
+	hashes := []cryptoutil.DigestValue{{Hash: crypto.SHA256}}
 	subjects := make(map[string]cryptoutil.DigestSet)
 	if ds, err := cryptoutil.CalculateDigestSetFromBytes([]byte(a.EC2InstanceIdentityDocument.InstanceID), hashes); err == nil {
 		subjects[fmt.Sprintf("instanceid:%s", a.EC2InstanceIdentityDocument.InstanceID)] = ds

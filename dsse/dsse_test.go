@@ -16,19 +16,17 @@ package dsse
 
 import (
 	"bytes"
-	"context"
 	"crypto"
 	"crypto/rand"
 	"crypto/rsa"
 	"crypto/x509"
 	"crypto/x509/pkix"
-	"fmt"
-	"io"
 	"math/big"
 	"testing"
 	"time"
 
 	"github.com/in-toto/go-witness/cryptoutil"
+	"github.com/in-toto/go-witness/timestamp"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 )
@@ -235,17 +233,17 @@ func TestTimestamp(t *testing.T) {
 	require.NoError(t, err)
 	v, err := s.Verifier()
 	require.NoError(t, err)
-	expectedTimestampers := []dummyTimestamper{
-		{t: time.Now()},
-		{t: time.Now().Add(12 * time.Hour)},
+	expectedTimestampers := []timestamp.FakeTimestamper{
+		{T: time.Now()},
+		{T: time.Now().Add(12 * time.Hour)},
 	}
-	unexpectedTimestampers := []dummyTimestamper{
-		{t: time.Now().Add(36 * time.Hour)},
-		{t: time.Now().Add(128 * time.Hour)},
+	unexpectedTimestampers := []timestamp.FakeTimestamper{
+		{T: time.Now().Add(36 * time.Hour)},
+		{T: time.Now().Add(128 * time.Hour)},
 	}
 
-	allTimestampers := make([]Timestamper, 0)
-	allTimestampVerifiers := make([]TimestampVerifier, 0)
+	allTimestampers := make([]timestamp.Timestamper, 0)
+	allTimestampVerifiers := make([]timestamp.TimestampVerifier, 0)
 	for _, expected := range expectedTimestampers {
 		allTimestampers = append(allTimestampers, expected)
 		allTimestampVerifiers = append(allTimestampVerifiers, expected)
@@ -264,25 +262,4 @@ func TestTimestamp(t *testing.T) {
 	assert.Len(t, approvedVerifiers, 1)
 	assert.Len(t, approvedVerifiers[0].PassedTimestampVerifiers, len(expectedTimestampers))
 	assert.ElementsMatch(t, approvedVerifiers[0].PassedTimestampVerifiers, expectedTimestampers)
-}
-
-type dummyTimestamper struct {
-	t time.Time
-}
-
-func (dt dummyTimestamper) Timestamp(context.Context, io.Reader) ([]byte, error) {
-	return []byte(dt.t.Format(time.RFC3339)), nil
-}
-
-func (dt dummyTimestamper) Verify(ctx context.Context, ts io.Reader, sig io.Reader) (time.Time, error) {
-	b, err := io.ReadAll(ts)
-	if err != nil {
-		return time.Time{}, err
-	}
-
-	if string(b) != dt.t.Format(time.RFC3339) {
-		return time.Time{}, fmt.Errorf("mismatched time")
-	}
-
-	return dt.t, nil
 }

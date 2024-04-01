@@ -34,6 +34,9 @@ import (
 	"github.com/stretchr/testify/require"
 
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+
+	// imported for TestPubKeyVerifiers -- so aws will be recognized as a supported provider
+	_ "github.com/in-toto/go-witness/signer/kms/aws"
 )
 
 func init() {
@@ -383,4 +386,79 @@ func newDummyVerifiedSourcer(verifiedCollections []source.VerifiedCollection) *d
 
 func (s *dummyVerifiedSourcer) Search(ctx context.Context, collectionName string, subjectDigests, attestations []string) ([]source.VerifiedCollection, error) {
 	return s.verifiedCollections, nil
+}
+
+func TestPubKeyVerifiers(t *testing.T) {
+	const numTestKeys = 5
+	type testVerifier struct {
+		keyID    string
+		verifier cryptoutil.Verifier
+		keyBytes []byte
+	}
+
+	testVerifiers := make([]testVerifier, 0, numTestKeys)
+	for i := 0; i < numTestKeys; i++ {
+		_, verifier, keyBytes, err := createTestKey()
+		require.NoError(t, err)
+		keyID, err := verifier.KeyID()
+		require.NoError(t, err)
+		testVerifiers = append(testVerifiers, testVerifier{
+			keyID,
+			verifier,
+			keyBytes,
+		})
+	}
+
+	mismatchedKeyIDVerifiers := make([]testVerifier, numTestKeys)
+	copy(mismatchedKeyIDVerifiers, testVerifiers)
+	mismatchedKeyIDVerifiers[numTestKeys-2].keyID = mismatchedKeyIDVerifiers[numTestKeys-2].keyID + "uhoh"
+
+	testCases := []struct {
+		name          string
+		testVerifiers []testVerifier
+		expectedErr   error
+		expectedLen   int
+	}{
+		{
+			name:          "all pubkeys",
+			testVerifiers: testVerifiers,
+			expectedErr:   nil,
+			expectedLen:   len(testVerifiers),
+		},
+		{
+			name:          "key id mismatch",
+			testVerifiers: mismatchedKeyIDVerifiers,
+			expectedErr:   ErrKeyIDMismatch{},
+			expectedLen:   len(mismatchedKeyIDVerifiers),
+		},
+		{
+			name: "pubkeys with kms",
+			testVerifiers: append(testVerifiers, testVerifier{
+				keyID: "awskms:///1234abcd-12ab-34cd-56ef-1234567890ab",
+			}),
+			expectedErr: nil,
+			expectedLen: len(testVerifiers) + 1,
+		},
+	}
+
+	for _, testCase := range testCases {
+		t.Run(testCase.name, func(t *testing.T) {
+			p := Policy{PublicKeys: map[string]PublicKey{}}
+			for _, v := range testCase.testVerifiers {
+				p.PublicKeys[v.keyID] = PublicKey{
+					KeyID: v.keyID,
+					Key:   v.keyBytes,
+				}
+			}
+
+			verifiers, err := p.PublicKeyVerifiers()
+			if testCase.expectedErr == nil {
+				assert.NoError(t, err)
+				assert.Len(t, verifiers, testCase.expectedLen)
+			} else {
+				assert.Error(t, err)
+				assert.IsType(t, testCase.expectedErr, err)
+			}
+		})
+	}
 }

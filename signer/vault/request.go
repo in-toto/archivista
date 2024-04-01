@@ -48,7 +48,7 @@ type issueResponse struct {
 	LeaseID       string            `json:"lease_id"`
 	Renewable     bool              `json:"renewable"`
 	LeaseDuration int               `json:"lease_duration"`
-	Warnings      string            `json:"warnings"`
+	Warnings      []string          `json:"warnings"`
 	Data          issueResponseData `json:"data"`
 }
 

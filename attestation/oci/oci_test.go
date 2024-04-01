@@ -92,7 +92,7 @@ func TestAttestor_Attest(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	hashes := []crypto.Hash{crypto.SHA256}
+	hashes := []cryptoutil.DigestValue{{Hash: crypto.SHA256}}
 
 	tarDigest, err := cryptoutil.CalculateDigestSetFromBytes([]byte(decoded), hashes)
 	if err != nil {

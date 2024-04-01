@@ -118,7 +118,7 @@ func (a *Attestor) Attest(ctx *attestation.AttestationContext) error {
 
 func (a *Attestor) Subjects() map[string]cryptoutil.DigestSet {
 	subjects := make(map[string]cryptoutil.DigestSet)
-	hashes := []crypto.Hash{crypto.SHA256}
+	hashes := []cryptoutil.DigestValue{{Hash: crypto.SHA256}}
 	if ds, err := cryptoutil.CalculateDigestSetFromBytes([]byte(a.PipelineUrl), hashes); err == nil {
 		subjects[fmt.Sprintf("pipelineurl:%v", a.PipelineUrl)] = ds
 	} else {

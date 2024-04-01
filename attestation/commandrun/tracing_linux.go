@@ -18,7 +18,6 @@ package commandrun
 
 import (
 	"bytes"
-	"crypto"
 	"fmt"
 	"os"
 	"os/exec"
@@ -42,7 +41,7 @@ type ptraceContext struct {
 	mainProgram          string
 	processes            map[int]*ProcessInfo
 	exitCode             int
-	hash                 []crypto.Hash
+	hash                 []cryptoutil.DigestValue
 	environmentBlockList map[string]struct{}
 }
 

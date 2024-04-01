@@ -15,12 +15,10 @@
 package file
 
 import (
-	"crypto"
 	"io/fs"
 	"os"
 	"path/filepath"
 
-	"github.com/edwarnicke/gitoid"
 	"github.com/in-toto/go-witness/cryptoutil"
 	"github.com/in-toto/go-witness/log"
 )
@@ -28,7 +26,7 @@ import (
 // recordArtifacts will walk basePath and record the digests of each file with each of the functions in hashes.
 // If file already exists in baseArtifacts and the two artifacts are equal the artifact will not be in the
 // returned map of artifacts.
-func RecordArtifacts(basePath string, baseArtifacts map[string]cryptoutil.DigestSet, hashes []crypto.Hash, visitedSymlinks map[string]struct{}) (map[string]cryptoutil.DigestSet, error) {
+func RecordArtifacts(basePath string, baseArtifacts map[string]cryptoutil.DigestSet, hashes []cryptoutil.DigestValue, visitedSymlinks map[string]struct{}) (map[string]cryptoutil.DigestSet, error) {
 	artifacts := make(map[string]cryptoutil.DigestSet)
 	err := filepath.Walk(basePath, func(path string, info fs.FileInfo, err error) error {
 		if err != nil {
@@ -79,31 +77,6 @@ func RecordArtifacts(basePath string, baseArtifacts map[string]cryptoutil.Digest
 		if err != nil {
 			return err
 		}
-
-		fileReader, err := os.Open(path)
-		if err != nil {
-			return err
-		}
-
-		goidSha1, err := gitoid.New(fileReader)
-		if err != nil {
-			return err
-		}
-
-		goidSha256, err := gitoid.New(fileReader, gitoid.WithSha256())
-		if err != nil {
-			return err
-		}
-
-		artifact[cryptoutil.DigestValue{
-			Hash:   crypto.SHA1,
-			GitOID: true,
-		}] = goidSha1.URI()
-
-		artifact[cryptoutil.DigestValue{
-			Hash:   crypto.SHA256,
-			GitOID: true,
-		}] = goidSha256.URI()
 
 		if shouldRecord(relPath, artifact, baseArtifacts) {
 			artifacts[relPath] = artifact

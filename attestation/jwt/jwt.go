@@ -93,23 +93,23 @@ func (a *Attestor) Attest(ctx *attestation.AttestationContext) error {
 
 	parsed, err := jwt.ParseSigned(a.token)
 	if err != nil {
-		return err
+		return fmt.Errorf("error parsing token: %w", err)
 	}
 
 	resp, err := http.Get(a.jwksUrl)
 	if err != nil {
-		return err
+		return fmt.Errorf("error fetching jwks: %w", err)
 	}
 
 	defer resp.Body.Close()
 	jwks := jose.JSONWebKeySet{}
 	decoder := json.NewDecoder(resp.Body)
 	if err := decoder.Decode(&jwks); err != nil {
-		return err
+		return fmt.Errorf("error decoding jwks: %w", err)
 	}
 
 	if err := parsed.Claims(jwks, &a.Claims); err != nil {
-		return err
+		return fmt.Errorf("error parsing claims: %w", err)
 	}
 
 	keyID := ""

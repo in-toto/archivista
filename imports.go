@@ -25,8 +25,10 @@ import (
 	_ "github.com/in-toto/go-witness/attestation/github"
 	_ "github.com/in-toto/go-witness/attestation/gitlab"
 	_ "github.com/in-toto/go-witness/attestation/jwt"
+	_ "github.com/in-toto/go-witness/attestation/material"
 	_ "github.com/in-toto/go-witness/attestation/maven"
 	_ "github.com/in-toto/go-witness/attestation/oci"
+	_ "github.com/in-toto/go-witness/attestation/product"
 	_ "github.com/in-toto/go-witness/attestation/sarif"
 
 	// signer providers

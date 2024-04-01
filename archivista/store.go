@@ -22,7 +22,7 @@ import (
 )
 
 func (c *Client) Store(ctx context.Context, env dsse.Envelope) (string, error) {
-	resp, err := archivistaapi.Store(ctx, c.url, env)
+	resp, err := archivistaapi.Upload(ctx, c.url, env)
 	if err != nil {
 		return "", err
 	}

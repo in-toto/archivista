@@ -115,9 +115,10 @@ type CommandRun struct {
 
 func (rc *CommandRun) Attest(ctx *attestation.AttestationContext) error {
 	if len(rc.Cmd) == 0 {
-		return attestation.ErrInvalidOption{
-			Option: "Cmd",
-			Reason: "CommandRun attestation requires a command to run",
+		return attestation.ErrAttestor{
+			Name:    rc.Name(),
+			RunType: rc.RunType(),
+			Reason:  "CommandRun attestation requires a command to run",
 		}
 	}
 

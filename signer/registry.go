@@ -21,7 +21,10 @@ import (
 	"github.com/in-toto/go-witness/registry"
 )
 
-var signerRegistry = registry.New[SignerProvider]()
+var (
+	signerRegistry   = registry.New[SignerProvider]()
+	verifierRegistry = registry.New[VerifierProvider]()
+)
 
 type SignerProvider interface {
 	Signer(context.Context) (cryptoutil.Signer, error)
@@ -37,4 +40,22 @@ func RegistryEntries() []registry.Entry[SignerProvider] {
 
 func NewSignerProvider(name string, opts ...func(SignerProvider) (SignerProvider, error)) (SignerProvider, error) {
 	return signerRegistry.NewEntity(name, opts...)
+}
+
+// NOTE: This is a temporary interface, and should not be used. It will be deprecated in a future release.
+// The same applies to the functions that use this interface.
+type VerifierProvider interface {
+	Verifier(context.Context) (cryptoutil.Verifier, error)
+}
+
+func RegisterVerifier(name string, factory func() VerifierProvider, opts ...registry.Configurer) {
+	verifierRegistry.Register(name, factory, opts...)
+}
+
+func VerifierRegistryEntries() []registry.Entry[VerifierProvider] {
+	return verifierRegistry.AllEntries()
+}
+
+func NewVerifierProvider(name string, opts ...func(VerifierProvider) (VerifierProvider, error)) (VerifierProvider, error) {
+	return verifierRegistry.NewEntity(name, opts...)
 }

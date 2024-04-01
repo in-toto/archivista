@@ -75,6 +75,14 @@ type DigestValue struct {
 	GitOID bool
 }
 
+func (dv DigestValue) New() hash.Hash {
+	if dv.GitOID {
+		return &gitoidHasher{hash: dv.Hash, buf: &bytes.Buffer{}}
+	}
+
+	return dv.Hash.New()
+}
+
 type DigestSet map[DigestValue]string
 
 func HashToString(h crypto.Hash) (string, error) {
@@ -142,13 +150,13 @@ func NewDigestSet(digestsByName map[string]string) (DigestSet, error) {
 	return ds, nil
 }
 
-func CalculateDigestSet(r io.Reader, hashes []crypto.Hash) (DigestSet, error) {
+func CalculateDigestSet(r io.Reader, digestValues []DigestValue) (DigestSet, error) {
 	digestSet := make(DigestSet)
 	writers := []io.Writer{}
-	hashfuncs := map[crypto.Hash]hash.Hash{}
-	for _, hash := range hashes {
-		hashfunc := hash.New()
-		hashfuncs[hash] = hashfunc
+	hashfuncs := map[DigestValue]hash.Hash{}
+	for _, digestValue := range digestValues {
+		hashfunc := digestValue.New()
+		hashfuncs[digestValue] = hashfunc
 		writers = append(writers, hashfunc)
 	}
 
@@ -157,21 +165,26 @@ func CalculateDigestSet(r io.Reader, hashes []crypto.Hash) (DigestSet, error) {
 		return digestSet, err
 	}
 
-	for hash, hashfunc := range hashfuncs {
-		digestValue := DigestValue{
-			Hash:   hash,
-			GitOID: false,
+	for digestValue, hashfunc := range hashfuncs {
+		// gitoids are somewhat special... we're using a custom implementation of hash.Hash
+		// to wrap the gitoid library. Sum will return a gitoid URI, so we don't want to hex
+		// encode it as it's already a string with a hex encoded hash.
+		if digestValue.GitOID {
+			digestSet[digestValue] = string(hashfunc.Sum(nil))
+			continue
 		}
+
 		digestSet[digestValue] = string(HexEncode(hashfunc.Sum(nil)))
 	}
+
 	return digestSet, nil
 }
 
-func CalculateDigestSetFromBytes(data []byte, hashes []crypto.Hash) (DigestSet, error) {
+func CalculateDigestSetFromBytes(data []byte, hashes []DigestValue) (DigestSet, error) {
 	return CalculateDigestSet(bytes.NewReader(data), hashes)
 }
 
-func CalculateDigestSetFromFile(path string, hashes []crypto.Hash) (DigestSet, error) {
+func CalculateDigestSetFromFile(path string, hashes []DigestValue) (DigestSet, error) {
 	file, err := os.Open(path)
 	if err != nil {
 		return DigestSet{}, err

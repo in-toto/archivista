@@ -29,6 +29,7 @@ import (
 	"time"
 
 	"github.com/in-toto/go-witness/cryptoutil"
+	"github.com/sigstore/fulcio/pkg/certificate"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 )
@@ -268,6 +269,415 @@ func TestConstraintCheck(t *testing.T) {
 				URIs:          []string{"spiffe://example.com/step2"},
 			},
 			Expected: false,
+		},
+	}
+
+	for _, c := range cases {
+		err := c.Constraint.Check(verifier, trustBundles)
+		assert.Equal(t, c.Expected, err == nil, fmt.Sprintf("Constraint: %v, Errors: %s", c.Constraint, err))
+	}
+}
+
+func TestIdentityExtensionsCheck(t *testing.T) {
+	testCertSubject := pkix.Name{
+		CommonName:   "step1.example.com",
+		Organization: []string{"example"},
+	}
+	testCertEmails := []string{"example@example.com"}
+	testCertDNSNames := []string{""}
+	testCertURI, _ := url.Parse("")
+	testCertURIs := []*url.URL{testCertURI}
+	testertValidity := 1 * time.Hour
+	testCertPublicKeyAlgorithm := x509.Ed25519
+	testExtensions, _ := certificate.Extensions{
+		Issuer: "https://accounts.google.com",
+	}.Render()
+	testCertTemplate := &x509.Certificate{
+		Subject:         testCertSubject,
+		EmailAddresses:  testCertEmails,
+		DNSNames:        testCertDNSNames,
+		URIs:            testCertURIs,
+		ExtraExtensions: testExtensions,
+	}
+
+	testIdentityCert, testIntermediateCert, testRootCert, err := createTestCert(testCertTemplate, testCertPublicKeyAlgorithm, testertValidity)
+	require.NoError(t, err)
+	verifier, err := cryptoutil.NewX509Verifier(testIdentityCert, []*x509.Certificate{testIntermediateCert}, []*x509.Certificate{testRootCert}, time.Time{})
+	require.NoError(t, err)
+	trustBundles := map[string]TrustBundle{
+		"example": {
+			Root:          testRootCert,
+			Intermediates: []*x509.Certificate{testIntermediateCert},
+		},
+	}
+
+	cases := []constraintCheckCase{
+		{
+			Cert: testIdentityCert,
+			Constraint: CertConstraint{
+				CommonName:    "*",
+				Organizations: []string{"*"},
+				Emails:        []string{"example@example.com"},
+				Roots:         []string{"example"},
+				Extensions: certificate.Extensions{
+					Issuer: "https://accounts.google.com",
+				},
+			},
+			Expected: true,
+		},
+		{
+			Cert: testIdentityCert,
+			Constraint: CertConstraint{
+				CommonName:    "*",
+				Organizations: []string{"*"},
+				Emails:        []string{"example@example.com"},
+				Roots:         []string{"example"},
+				Extensions: certificate.Extensions{
+					Issuer: "https://accounts.g00gle.com",
+				},
+			},
+			Expected: false,
+		},
+		{
+			Cert: testIdentityCert,
+			Constraint: CertConstraint{
+				CommonName:    "*",
+				Organizations: []string{"*"},
+				Emails:        []string{"example@example.com"},
+				Roots:         []string{"example"},
+				Extensions: certificate.Extensions{
+					Issuer: "*.google.com",
+				},
+			},
+			Expected: true,
+		},
+	}
+
+	for _, c := range cases {
+		err := c.Constraint.Check(verifier, trustBundles)
+		assert.Equal(t, c.Expected, err == nil, fmt.Sprintf("Constraint: %v, Errors: %s", c.Constraint, err))
+	}
+}
+
+func TestWorkflowExtensionsCheck(t *testing.T) {
+	testCertSubject := pkix.Name{
+		CommonName:   "step1.example.com",
+		Organization: []string{"example"},
+	}
+	testCertEmails := []string{""}
+	testCertDNSNames := []string{""}
+	testCertURI, _ := url.Parse("https://github.com/testifysec/swf/.github/workflows/witness.yml@refs/heads/main")
+	testCertURIs := []*url.URL{testCertURI}
+	testertValidity := 1 * time.Hour
+	testCertPublicKeyAlgorithm := x509.Ed25519
+	testExtensions, _ := certificate.Extensions{
+		Issuer:                              "https://token.actions.githubusercontent.com",
+		GithubWorkflowTrigger:               "push",
+		GithubWorkflowSHA:                   "5447bd853eb2e7220dc4f36682972654b93e63ac",
+		GithubWorkflowName:                  "pipeline",
+		GithubWorkflowRepository:            "testifysec/swf",
+		GithubWorkflowRef:                   "refs/heads/main",
+		BuildSignerURI:                      "https://github.com/testifysec/swf/.github/workflows/witness.yml@refs/heads/main",
+		BuildSignerDigest:                   "5447bd853eb2e7220dc4f36682972654b93e63ac",
+		RunnerEnvironment:                   "github-hosted",
+		SourceRepositoryURI:                 "https://github.com/testifysec/swf",
+		SourceRepositoryDigest:              "5447bd853eb2e7220dc4f36682972654b93e63ac",
+		SourceRepositoryRef:                 "refs/heads/main",
+		SourceRepositoryIdentifier:          "706339980",
+		SourceRepositoryOwnerURI:            "https://github.com/testifysec",
+		SourceRepositoryOwnerIdentifier:     "87545603",
+		BuildConfigURI:                      "https://github.com/testifysec/swf/.github/workflows/pipeline.yml@refs/heads/main",
+		BuildConfigDigest:                   "5447bd853eb2e7220dc4f36682972654b93e63ac",
+		BuildTrigger:                        "push",
+		RunInvocationURI:                    "https://github.com/testifysec/swf/actions/runs/7879307166/attempts/1",
+		SourceRepositoryVisibilityAtSigning: "public",
+	}.Render()
+	testCertTemplate := &x509.Certificate{
+		Subject:         testCertSubject,
+		EmailAddresses:  testCertEmails,
+		DNSNames:        testCertDNSNames,
+		URIs:            testCertURIs,
+		ExtraExtensions: testExtensions,
+	}
+
+	testWorkflowCert, testIntermediateCert, testRootCert, err := createTestCert(testCertTemplate, testCertPublicKeyAlgorithm, testertValidity)
+	require.NoError(t, err)
+	verifier, err := cryptoutil.NewX509Verifier(testWorkflowCert, []*x509.Certificate{testIntermediateCert}, []*x509.Certificate{testRootCert}, time.Time{})
+	require.NoError(t, err)
+	trustBundles := map[string]TrustBundle{
+		"example": {
+			Root:          testRootCert,
+			Intermediates: []*x509.Certificate{testIntermediateCert},
+		},
+	}
+
+	cases := []constraintCheckCase{
+		{
+			Cert: testWorkflowCert,
+			Constraint: CertConstraint{
+				CommonName:    "*",
+				Organizations: []string{"*"},
+				Emails:        []string{""},
+				URIs:          []string{"*"},
+				Roots:         []string{"example"},
+				Extensions: certificate.Extensions{
+					Issuer: "https://token.actions.githubusercontent.com",
+				},
+			},
+			Expected: true,
+		},
+		{
+			Cert: testWorkflowCert,
+			Constraint: CertConstraint{
+				CommonName:    "*",
+				Organizations: []string{"*"},
+				Emails:        []string{""},
+				URIs:          []string{"*"},
+				Roots:         []string{"example"},
+				Extensions: certificate.Extensions{
+					Issuer:                              "https://token.actions.githubusercontent.com",
+					GithubWorkflowTrigger:               "push",
+					GithubWorkflowSHA:                   "5447bd853eb2e7220dc4f36682972654b93e63ac",
+					GithubWorkflowName:                  "pipeline",
+					GithubWorkflowRepository:            "testifysec/swf",
+					GithubWorkflowRef:                   "refs/heads/main",
+					BuildSignerURI:                      "https://github.com/testifysec/swf/.github/workflows/witness.yml@refs/heads/main",
+					BuildSignerDigest:                   "5447bd853eb2e7220dc4f36682972654b93e63ac",
+					RunnerEnvironment:                   "github-hosted",
+					SourceRepositoryURI:                 "https://github.com/testifysec/swf",
+					SourceRepositoryDigest:              "5447bd853eb2e7220dc4f36682972654b93e63ac",
+					SourceRepositoryRef:                 "refs/heads/main",
+					SourceRepositoryIdentifier:          "706339980",
+					SourceRepositoryOwnerURI:            "https://github.com/testifysec",
+					SourceRepositoryOwnerIdentifier:     "87545603",
+					BuildConfigURI:                      "https://github.com/testifysec/swf/.github/workflows/pipeline.yml@refs/heads/main",
+					BuildConfigDigest:                   "5447bd853eb2e7220dc4f36682972654b93e63ac",
+					BuildTrigger:                        "push",
+					RunInvocationURI:                    "https://github.com/testifysec/swf/actions/runs/7879307166/attempts/1",
+					SourceRepositoryVisibilityAtSigning: "public",
+				},
+			},
+			Expected: true,
+		},
+		{
+			Cert: testWorkflowCert,
+			Constraint: CertConstraint{
+				CommonName:    "*",
+				Organizations: []string{"*"},
+				Emails:        []string{""},
+				URIs:          []string{"*"},
+				Roots:         []string{"example"},
+				Extensions: certificate.Extensions{
+					Issuer:                              "*",
+					GithubWorkflowTrigger:               "*",
+					GithubWorkflowSHA:                   "*",
+					GithubWorkflowName:                  "*",
+					GithubWorkflowRepository:            "*",
+					GithubWorkflowRef:                   "*",
+					BuildSignerURI:                      "*",
+					BuildSignerDigest:                   "*",
+					RunnerEnvironment:                   "*",
+					SourceRepositoryURI:                 "*",
+					SourceRepositoryDigest:              "*",
+					SourceRepositoryRef:                 "*",
+					SourceRepositoryIdentifier:          "*",
+					SourceRepositoryOwnerURI:            "*",
+					SourceRepositoryOwnerIdentifier:     "*",
+					BuildConfigURI:                      "*",
+					BuildConfigDigest:                   "*",
+					BuildTrigger:                        "*",
+					RunInvocationURI:                    "*",
+					SourceRepositoryVisibilityAtSigning: "*",
+				},
+			},
+			Expected: true,
+		},
+		{
+			Cert: testWorkflowCert,
+			Constraint: CertConstraint{
+				CommonName:    "*",
+				Organizations: []string{"*"},
+				Emails:        []string{""},
+				URIs:          []string{"https://github.com/testifysec/swf/.github/workflows/witness.yml@refs/heads/main"},
+				Roots:         []string{"example"},
+				Extensions: certificate.Extensions{
+					Issuer:                              "https://token.actions.githubusercontent.com",
+					BuildSignerURI:                      "https://github.com/testifysec/swf/.github/workflows/witness.yml@*",
+					RunnerEnvironment:                   "*hosted*",
+					SourceRepositoryURI:                 "https://github.com/testifysec/swf",
+					SourceRepositoryOwnerURI:            "https://github.com/testifysec",
+					BuildConfigURI:                      "https://github.com/testifysec/swf/.github/workflows/pipeline.yml@*",
+					RunInvocationURI:                    "https://github.com/testifysec/swf/actions/runs/*/attempts/*",
+					SourceRepositoryVisibilityAtSigning: "public",
+				},
+			},
+			Expected: true,
+		},
+		{
+			Cert: testWorkflowCert,
+			Constraint: CertConstraint{
+				CommonName:    "*",
+				Organizations: []string{"*"},
+				Emails:        []string{""},
+				URIs:          []string{"https://github.com/testifysec/swf/.github/workflows/witness.yml@refs/heads/main"},
+				Roots:         []string{"example"},
+				Extensions: certificate.Extensions{
+					Issuer: "*.google.com",
+				},
+			},
+			Expected: false,
+		},
+	}
+
+	for _, c := range cases {
+		err := c.Constraint.Check(verifier, trustBundles)
+		assert.Equal(t, c.Expected, err == nil, fmt.Sprintf("Constraint: %v, Errors: %s", c.Constraint, err))
+	}
+}
+
+func TestNonDeprecatedFulcioCertExtensionsCheck(t *testing.T) {
+	testCertSubject := pkix.Name{
+		CommonName:   "step1.example.com",
+		Organization: []string{"example"},
+	}
+	testCertEmails := []string{""}
+	testCertDNSNames := []string{""}
+	testCertURI, _ := url.Parse("https://github.com/testifysec/swf/.github/workflows/witness.yml@refs/heads/main")
+	testCertURIs := []*url.URL{testCertURI}
+	testertValidity := 1 * time.Hour
+	testCertPublicKeyAlgorithm := x509.Ed25519
+	testExtensions, err := certificate.Extensions{
+		Issuer:                              "https://token.actions.githubusercontent.com",
+		BuildSignerURI:                      "https://github.com/testifysec/swf/.github/workflows/witness.yml@refs/heads/main",
+		BuildSignerDigest:                   "5447bd853eb2e7220dc4f36682972654b93e63ac",
+		RunnerEnvironment:                   "github-hosted",
+		SourceRepositoryURI:                 "https://github.com/testifysec/swf",
+		SourceRepositoryDigest:              "5447bd853eb2e7220dc4f36682972654b93e63ac",
+		SourceRepositoryRef:                 "refs/heads/main",
+		SourceRepositoryIdentifier:          "706339980",
+		SourceRepositoryOwnerURI:            "https://github.com/testifysec",
+		SourceRepositoryOwnerIdentifier:     "87545603",
+		BuildConfigURI:                      "https://github.com/testifysec/swf/.github/workflows/pipeline.yml@refs/heads/main",
+		BuildConfigDigest:                   "5447bd853eb2e7220dc4f36682972654b93e63ac",
+		BuildTrigger:                        "push",
+		RunInvocationURI:                    "https://github.com/testifysec/swf/actions/runs/7879307166/attempts/1",
+		SourceRepositoryVisibilityAtSigning: "public",
+	}.Render()
+	require.NoError(t, err)
+	testCertTemplate := &x509.Certificate{
+		Subject:         testCertSubject,
+		EmailAddresses:  testCertEmails,
+		DNSNames:        testCertDNSNames,
+		URIs:            testCertURIs,
+		ExtraExtensions: testExtensions,
+	}
+
+	testWorkflowCert, testIntermediateCert, testRootCert, err := createTestCert(testCertTemplate, testCertPublicKeyAlgorithm, testertValidity)
+	require.NoError(t, err)
+	verifier, err := cryptoutil.NewX509Verifier(testWorkflowCert, []*x509.Certificate{testIntermediateCert}, []*x509.Certificate{testRootCert}, time.Time{})
+	require.NoError(t, err)
+	trustBundles := map[string]TrustBundle{
+		"example": {
+			Root:          testRootCert,
+			Intermediates: []*x509.Certificate{testIntermediateCert},
+		},
+	}
+
+	cases := []constraintCheckCase{
+		{
+			Cert: testWorkflowCert,
+			Constraint: CertConstraint{
+				CommonName:    "*",
+				Organizations: []string{"*"},
+				Emails:        []string{""},
+				URIs:          []string{"*"},
+				Roots:         []string{"example"},
+				Extensions: certificate.Extensions{
+					Issuer: "https://token.actions.githubusercontent.com",
+				},
+			},
+			Expected: true,
+		},
+		{
+			Cert: testWorkflowCert,
+			Constraint: CertConstraint{
+				CommonName:    "*",
+				Organizations: []string{"*"},
+				Emails:        []string{""},
+				URIs:          []string{"*"},
+				Roots:         []string{"example"},
+				Extensions: certificate.Extensions{
+					Issuer:                              "https://token.actions.githubusercontent.com",
+					BuildSignerURI:                      "*",
+					BuildSignerDigest:                   "5447bd853eb2e7220dc4f36682972654b93e63ac",
+					RunnerEnvironment:                   "github-hosted",
+					SourceRepositoryURI:                 "https://github.com/testifysec/swf",
+					SourceRepositoryDigest:              "5447bd853eb2e7220dc4f36682972654b93e63ac",
+					SourceRepositoryRef:                 "refs/heads/main",
+					SourceRepositoryIdentifier:          "706339980",
+					SourceRepositoryOwnerURI:            "https://github.com/testifysec",
+					SourceRepositoryOwnerIdentifier:     "87545603",
+					BuildConfigURI:                      "https://github.com/testifysec/swf/.github/workflows/pipeline.yml@refs/heads/main",
+					BuildConfigDigest:                   "5447bd853eb2e7220dc4f36682972654b93e63ac",
+					BuildTrigger:                        "push",
+					RunInvocationURI:                    "https://github.com/testifysec/swf/actions/runs/7879307166/attempts/1",
+					SourceRepositoryVisibilityAtSigning: "public",
+				},
+			},
+			Expected: true,
+		},
+		{
+			Cert: testWorkflowCert,
+			Constraint: CertConstraint{
+				CommonName:    "*",
+				Organizations: []string{"*"},
+				Emails:        []string{""},
+				URIs:          []string{"*"},
+				Roots:         []string{"example"},
+				Extensions: certificate.Extensions{
+					Issuer:                              "*",
+					GithubWorkflowTrigger:               "*",
+					GithubWorkflowSHA:                   "*",
+					GithubWorkflowName:                  "*",
+					GithubWorkflowRepository:            "*",
+					GithubWorkflowRef:                   "*",
+					BuildSignerURI:                      "*",
+					BuildSignerDigest:                   "*",
+					RunnerEnvironment:                   "*",
+					SourceRepositoryURI:                 "*",
+					SourceRepositoryDigest:              "*",
+					SourceRepositoryRef:                 "*",
+					SourceRepositoryIdentifier:          "*",
+					SourceRepositoryOwnerURI:            "*",
+					SourceRepositoryOwnerIdentifier:     "*",
+					BuildConfigURI:                      "*",
+					BuildConfigDigest:                   "*",
+					BuildTrigger:                        "*",
+					RunInvocationURI:                    "*",
+					SourceRepositoryVisibilityAtSigning: "*",
+				},
+			},
+			Expected: true,
+		},
+		{
+			Cert: testWorkflowCert,
+			Constraint: CertConstraint{
+				CommonName:    "*",
+				Organizations: []string{"*"},
+				Emails:        []string{""},
+				URIs:          []string{"https://github.com/testifysec/swf/.github/workflows/witness.yml@refs/heads/main"},
+				Roots:         []string{"example"},
+				Extensions: certificate.Extensions{
+					BuildSignerURI:                      "https://github.com/testifysec/swf/.github/workflows/witness.yml@*",
+					RunnerEnvironment:                   "*hosted*",
+					SourceRepositoryURI:                 "https://github.com/testifysec/swf",
+					SourceRepositoryOwnerURI:            "https://github.com/testifysec",
+					BuildConfigURI:                      "https://github.com/testifysec/swf/.github/workflows/pipeline.yml@*",
+					RunInvocationURI:                    "https://github.com/testifysec/swf/actions/runs/*/attempts/*",
+					SourceRepositoryVisibilityAtSigning: "public",
+				},
+			},
+			Expected: true,
 		},
 	}
 

@@ -19,6 +19,7 @@ import (
 	"strings"
 
 	"github.com/in-toto/go-witness/attestation"
+	"github.com/in-toto/go-witness/cryptoutil"
 	"github.com/in-toto/go-witness/source"
 )
 
@@ -78,6 +79,32 @@ func (r StepResult) Error() string {
 type RejectedCollection struct {
 	Collection source.VerifiedCollection
 	Reason     error
+}
+
+func (f Functionary) Validate(verifier cryptoutil.Verifier, trustBundles map[string]TrustBundle) error {
+	verifierID, err := verifier.KeyID()
+	if err != nil {
+		return fmt.Errorf("could not get key id: %w", err)
+	}
+
+	if f.PublicKeyID != "" && f.PublicKeyID == verifierID {
+		return nil
+	}
+
+	x509Verifier, ok := verifier.(*cryptoutil.X509Verifier)
+	if !ok {
+		return fmt.Errorf("verifier with ID %v is not a public key verifier or a x509 verifier", verifierID)
+	}
+
+	if len(f.CertConstraint.Roots) == 0 {
+		return fmt.Errorf("verifier with ID %v is an x509 verifier, but no trusted roots provided in functionary", verifierID)
+	}
+
+	if err := f.CertConstraint.Check(x509Verifier, trustBundles); err != nil {
+		return fmt.Errorf("verifier with ID %v doesn't meet certificate constraint: %w", verifierID, err)
+	}
+
+	return nil
 }
 
 // validateAttestations will test each collection against to ensure the expected attestations

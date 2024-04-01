@@ -16,6 +16,8 @@ package fulcio
 
 import (
 	"context"
+	"crypto/ecdsa"
+	"crypto/elliptic"
 	"crypto/rand"
 	"crypto/rsa"
 	"crypto/x509"
@@ -31,13 +33,14 @@ import (
 
 	"math/big"
 
+	"path/filepath"
+
 	fulciopb "github.com/sigstore/fulcio/pkg/generated/protobuf"
 	"github.com/stretchr/testify/require"
 	"go.step.sm/crypto/jose"
-	"path/filepath"
 
+	"github.com/go-jose/go-jose/v3/jwt"
 	"google.golang.org/grpc"
-	"gopkg.in/square/go-jose.v2/jwt"
 )
 
 func setupFulcioTestService(t *testing.T) (*dummyCAClientService, string) {
@@ -140,7 +143,7 @@ func TestGetCert(t *testing.T) {
 	ctx := context.Background()
 
 	// Generate a key pair for testing
-	key, err := rsa.GenerateKey(rand.Reader, 2048)
+	key, err := ecdsa.GenerateKey(elliptic.P384(), rand.Reader)
 	require.NoError(t, err)
 
 	// Set up a fake CAClient for testing
@@ -155,7 +158,7 @@ func TestGetCert(t *testing.T) {
 	require.Error(t, err)
 
 	// Test that an error is returned if the key cannot be loaded
-	key2, err := rsa.GenerateKey(rand.Reader, 2048)
+	key2, err := ecdsa.GenerateKey(elliptic.P384(), rand.Reader)
 	require.NoError(t, err)
 	_, err = getCert(ctx, key2, service.client, token)
 	require.Error(t, err)

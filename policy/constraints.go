@@ -15,10 +15,15 @@
 package policy
 
 import (
+	"crypto/x509/pkix"
 	"fmt"
 	"net/url"
+	"reflect"
 
+	"github.com/gobwas/glob"
 	"github.com/in-toto/go-witness/cryptoutil"
+	"github.com/in-toto/go-witness/log"
+	"github.com/sigstore/fulcio/pkg/certificate"
 )
 
 const (
@@ -27,12 +32,13 @@ const (
 
 // +kubebuilder:object:generate=true
 type CertConstraint struct {
-	CommonName    string   `json:"commonname"`
-	DNSNames      []string `json:"dnsnames"`
-	Emails        []string `json:"emails"`
-	Organizations []string `json:"organizations"`
-	URIs          []string `json:"uris"`
-	Roots         []string `json:"roots"`
+	CommonName    string                 `json:"commonname"`
+	DNSNames      []string               `json:"dnsnames"`
+	Emails        []string               `json:"emails"`
+	Organizations []string               `json:"organizations"`
+	URIs          []string               `json:"uris"`
+	Roots         []string               `json:"roots"`
+	Extensions    certificate.Extensions `json:"extensions"`
 }
 
 func (cc CertConstraint) Check(verifier *cryptoutil.X509Verifier, trustBundles map[string]TrustBundle) error {
@@ -63,6 +69,10 @@ func (cc CertConstraint) Check(verifier *cryptoutil.X509Verifier, trustBundles m
 		errs = append(errs, err)
 	}
 
+	if err := cc.checkExtensions(cert.Extensions); err != nil {
+		errs = append(errs, err)
+	}
+
 	if len(errs) > 0 {
 		return ErrConstraintCheckFailed{errs}
 	}
@@ -88,6 +98,30 @@ func (cc CertConstraint) checkTrustBundles(verifier *cryptoutil.X509Verifier, tr
 	}
 
 	return fmt.Errorf("cert doesn't belong to any root specified by constraint %+q", cc.Roots)
+}
+
+func (cc CertConstraint) checkExtensions(ext []pkix.Extension) error {
+	extensions, err := certificate.ParseExtensions(ext)
+	if err != nil {
+		return fmt.Errorf("error parsing fulcio cert extensions: %w", err)
+	}
+
+	fields := reflect.VisibleFields(reflect.TypeOf(cc.Extensions))
+	for _, field := range fields {
+		constraintField := reflect.ValueOf(cc.Extensions).FieldByName(field.Name)
+		if constraintField.String() == "" {
+			log.Infof("No constraint for field %s, allowing all values", field.Name)
+			continue
+		}
+		extensionsField := reflect.ValueOf(extensions).FieldByName(field.Name)
+
+		fieldGlob := glob.MustCompile(constraintField.String())
+		if !fieldGlob.Match(extensionsField.String()) {
+			return fmt.Errorf("cert field %s doesn't match constraint %+q", field.Name, constraintField.String())
+		}
+	}
+
+	return nil
 }
 
 func urisToStrings(uris []*url.URL) []string {

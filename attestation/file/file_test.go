@@ -38,13 +38,13 @@ func TestBrokenSymlink(t *testing.T) {
 	symTestDir := filepath.Join(dir, "symTestDir")
 	require.NoError(t, os.Symlink(testDir, symTestDir))
 
-	_, err := RecordArtifacts(dir, map[string]cryptoutil.DigestSet{}, []crypto.Hash{crypto.SHA256}, map[string]struct{}{})
+	_, err := RecordArtifacts(dir, map[string]cryptoutil.DigestSet{}, []cryptoutil.DigestValue{{Hash: crypto.SHA256}}, map[string]struct{}{})
 	require.NoError(t, err)
 
 	// remove the symlinks and make sure we don't get an error back
 	require.NoError(t, os.RemoveAll(testDir))
 	require.NoError(t, os.RemoveAll(testFile))
-	_, err = RecordArtifacts(dir, map[string]cryptoutil.DigestSet{}, []crypto.Hash{crypto.SHA256}, map[string]struct{}{})
+	_, err = RecordArtifacts(dir, map[string]cryptoutil.DigestSet{}, []cryptoutil.DigestValue{{Hash: crypto.SHA256}}, map[string]struct{}{})
 	require.NoError(t, err)
 }
 
@@ -58,6 +58,6 @@ func TestSymlinkCycle(t *testing.T) {
 	require.NoError(t, os.Symlink(dir, symTestDir))
 
 	// if a symlink cycle weren't properly handled this would be an infinite loop
-	_, err := RecordArtifacts(dir, map[string]cryptoutil.DigestSet{}, []crypto.Hash{crypto.SHA256}, map[string]struct{}{})
+	_, err := RecordArtifacts(dir, map[string]cryptoutil.DigestSet{}, []cryptoutil.DigestValue{{Hash: crypto.SHA256}}, map[string]struct{}{})
 	require.NoError(t, err)
 }

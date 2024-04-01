@@ -30,7 +30,7 @@ import (
 )
 
 func TestFromDigestMap(t *testing.T) {
-	testDigest, err := cryptoutil.CalculateDigestSetFromBytes([]byte("test"), []crypto.Hash{crypto.SHA256})
+	testDigest, err := cryptoutil.CalculateDigestSetFromBytes([]byte("test"), []cryptoutil.DigestValue{{Hash: crypto.SHA256}})
 	assert.NoError(t, err)
 	testDigestSet := make(map[string]cryptoutil.DigestSet)
 	testDigestSet["test"] = testDigest
@@ -57,7 +57,7 @@ func TestAttestorRunType(t *testing.T) {
 
 func TestAttestorAttest(t *testing.T) {
 	a := New()
-	testDigest, err := cryptoutil.CalculateDigestSetFromBytes([]byte("test"), []crypto.Hash{crypto.SHA256})
+	testDigest, err := cryptoutil.CalculateDigestSetFromBytes([]byte("test"), []cryptoutil.DigestValue{{Hash: crypto.SHA256}})
 	if err != nil {
 		t.Errorf("Failed to calculate digest set from bytes: %v", err)
 	}
