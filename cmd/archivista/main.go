@@ -1,4 +1,4 @@
-// Copyright 2022 The Archivista Contributors
+// Copyright 2022-2024 The Archivista Contributors
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -30,13 +30,9 @@ import (
 	"syscall"
 	"time"
 
-	"entgo.io/contrib/entgql"
-	"github.com/99designs/gqlgen/graphql/handler"
-	"github.com/99designs/gqlgen/graphql/playground"
 	nested "github.com/antonfisher/nested-logrus-formatter"
 	"github.com/gorilla/handlers"
-	"github.com/gorilla/mux"
-	"github.com/in-toto/archivista"
+	"github.com/in-toto/archivista/internal/artifactstore"
 	"github.com/in-toto/archivista/internal/config"
 	"github.com/in-toto/archivista/internal/metadatastorage/sqlstore"
 	"github.com/in-toto/archivista/internal/objectstorage/blobstore"
@@ -61,6 +57,7 @@ func main() {
 	defer cancel()
 
 	startTime := time.Now()
+	serverOpts := make([]server.Option, 0)
 
 	logrus.Infof("executing phase 1: get config from environment (time since start: %s)", time.Since(startTime))
 	now := time.Now()
@@ -86,6 +83,7 @@ func main() {
 	if err != nil {
 		logrus.Fatalf("error initializing storage clients: %+v", err)
 	}
+	serverOpts = append(serverOpts, server.WithObjectStore(fileStore))
 
 	entClient, err := sqlstore.NewEntClient(
 		cfg.SQLStoreBackend,
@@ -97,10 +95,11 @@ func main() {
 		logrus.Fatalf("could not create ent client: %+v", err)
 	}
 
-	mysqlStore, mysqlStoreCh, err := sqlstore.New(ctx, entClient)
+	sqlStore, sqlStoreCh, err := sqlstore.New(ctx, entClient)
 	if err != nil {
 		logrus.Fatalf("error initializing mysql client: %+v", err)
 	}
+	serverOpts = append(serverOpts, server.WithMetadataStore(sqlStore))
 
 	logrus.WithField("duration", time.Since(now)).Infof("completed phase 3: initializing storage clients")
 
@@ -108,21 +107,23 @@ func main() {
 	logrus.Infof("executing phase 3: create and register http service (time since start: %s)", time.Since(startTime))
 	// ********************************************************************************
 	now = time.Now()
-	server := server.New(mysqlStore, fileStore)
-	router := mux.NewRouter()
-	router.HandleFunc("/download/{gitoid}", server.GetHandler)
-	router.HandleFunc("/upload", server.StoreHandler)
 
-	if cfg.EnableGraphql {
-		client := mysqlStore.GetClient()
-		srv := handler.NewDefaultServer(archivista.NewSchema(client))
-		srv.Use(entgql.Transactioner{TxOpener: client})
-		router.Handle("/query", srv)
-		if cfg.GraphqlWebClientEnable {
-			router.Handle("/",
-				playground.Handler("Archivista", "/query"),
-			)
+	// initialize the artifact store
+	if cfg.EnableArtifactStore {
+		wds, err := artifactstore.New(artifactstore.WithConfigFile(cfg.ArtifactStoreConfig))
+		if err != nil {
+			logrus.Fatalf("could not create the artifact store: %+v", err)
 		}
+
+		serverOpts = append(serverOpts, server.WithArtifactStore(wds))
+	}
+
+	// initialize the server
+	sqlClient := sqlStore.GetClient()
+	serverOpts = append(serverOpts, server.WithEntSqlClient(sqlClient))
+	server, err := server.New(cfg, serverOpts...)
+	if err != nil {
+		logrus.Fatalf("could not create archivista server: %+v", err)
 	}
 
 	listenAddress := cfg.ListenOn
@@ -146,7 +147,7 @@ func main() {
 			handlers.AllowedOrigins(cfg.CORSAllowOrigins),
 			handlers.AllowedMethods([]string{"GET", "POST", "OPTIONS"}),
 			handlers.AllowedHeaders([]string{"Accept", "Content-Type", "Content-Length", "Accept-Encoding", "X-CSRF-Token", "Authorization"}),
-		)(router)); err != nil {
+		)(server.Router())); err != nil {
 			logrus.Fatalf("unable to start http server: %+v", err)
 		}
 	}()
@@ -156,7 +157,7 @@ func main() {
 
 	<-ctx.Done()
 	<-fileStoreCh
-	<-mysqlStoreCh
+	<-sqlStoreCh
 
 	logrus.Infof("exiting, uptime: %v", time.Since(startTime))
 }

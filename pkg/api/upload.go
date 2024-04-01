@@ -26,10 +26,12 @@ import (
 	"github.com/in-toto/go-witness/dsse"
 )
 
-type StoreResponse struct {
+type UploadResponse struct {
 	Gitoid string `json:"gitoid"`
 }
 
+type StoreResponse = UploadResponse
+// Deprecated: Use UploadResponse instead. It will be removed in version >= v0.6.0
 func Store(ctx context.Context, baseURL string, envelope dsse.Envelope) (StoreResponse, error) {
 	buf := &bytes.Buffer{}
 	enc := json.NewEncoder(buf)
@@ -47,35 +49,35 @@ func StoreWithReader(ctx context.Context, baseURL string, r io.Reader) (StoreRes
 func StoreWithReaderWithHTTPClient(ctx context.Context, client *http.Client, baseURL string, r io.Reader) (StoreResponse, error) {
 	uploadPath, err := url.JoinPath(baseURL, "upload")
 	if err != nil {
-		return StoreResponse{}, err
+		return UploadResponse{}, err
 	}
 
 	req, err := http.NewRequestWithContext(ctx, "POST", uploadPath, r)
 	if err != nil {
-		return StoreResponse{}, err
+		return UploadResponse{}, err
 	}
 
 	req.Header.Set("Content-Type", "application/json")
 	hc := &http.Client{}
 	resp, err := hc.Do(req)
 	if err != nil {
-		return StoreResponse{}, err
+		return UploadResponse{}, err
 	}
 
 	defer resp.Body.Close()
 	bodyBytes, err := io.ReadAll(resp.Body)
 	if err != nil {
-		return StoreResponse{}, err
+		return UploadResponse{}, err
 	}
 
 	if resp.StatusCode != http.StatusOK {
-		return StoreResponse{}, errors.New(string(bodyBytes))
+		return UploadResponse{}, errors.New(string(bodyBytes))
 	}
 
-	storeResp := StoreResponse{}
-	if err := json.Unmarshal(bodyBytes, &storeResp); err != nil {
-		return StoreResponse{}, err
+	uploadResp := UploadResponse{}
+	if err := json.Unmarshal(bodyBytes, &uploadResp); err != nil {
+		return UploadResponse{}, err
 	}
 
-	return storeResp, nil
+	return uploadResp, nil
 }

@@ -27,8 +27,10 @@ permissions:
 jobs:
   update-pre-commit-hooks:
     runs-on: ubuntu-latest
+    permissions:
+      pull-requests: write
     steps:
-      - uses: actions/checkout@b4ffde65f46336ab88eb53be808477a3936bae11
+      - uses: actions/checkout@9bb56186c3b09b4f86b1c65136769dd318469633
       - uses: actions/setup-python@0a5c61591373683505ea898e09a3ea4f39ef2b9c
         with:
           python-version: "3.11"
@@ -43,7 +45,7 @@ jobs:
         run: |
           echo "GIT_DIFF=$(git diff --exit-code 1> /dev/null; echo $?)" >> $GITHUB_OUTPUT
       - name: Create Pull Request
-        uses: peter-evans/create-pull-request@153407881ec5c347639a548ade7d8ad1d6740e38
+        uses: peter-evans/create-pull-request@70a41aba780001da0a30141984ae2a0c95d8704e # v6.0.2
         with:
           token: ${{ secrets.GITHUB_TOKEN }}
           commit-message: "build: Update pre-commit hooks"

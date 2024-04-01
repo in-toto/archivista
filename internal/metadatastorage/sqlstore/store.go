@@ -92,7 +92,7 @@ func (s *Store) Store(ctx context.Context, gitoid string, obj []byte) error {
 		return err
 	}
 
-	payloadDigestSet, err := cryptoutil.CalculateDigestSetFromBytes(envelope.Payload, []crypto.Hash{crypto.SHA256})
+	payloadDigestSet, err := cryptoutil.CalculateDigestSetFromBytes(envelope.Payload, []cryptoutil.DigestValue{{Hash: crypto.SHA256}})
 	if err != nil {
 		return err
 	}

@@ -14,11 +14,11 @@
 
 repos:
 - repo: https://github.com/gitleaks/gitleaks
-  rev: v8.18.1
+  rev: v8.18.2
   hooks:
   - id: gitleaks
 - repo: https://github.com/golangci/golangci-lint
-  rev: v1.55.2
+  rev: v1.56.2
   hooks:
   - id: golangci-lint
 - repo: https://github.com/jumanjihouse/pre-commit-hooks

@@ -1,0 +1,311 @@
+definitions:
+  api.StoreResponse:
+    properties:
+      gitoid:
+        type: string
+    type: object
+  archivista.Resolver:
+    type: object
+  artifactstore.Artifact:
+    properties:
+      versions:
+        additionalProperties:
+          $ref: '#/definitions/artifactstore.Version'
+        type: object
+    type: object
+  artifactstore.Distribution:
+    properties:
+      sha256digest:
+        type: string
+    type: object
+  artifactstore.Version:
+    properties:
+      description:
+        type: string
+      distributions:
+        additionalProperties:
+          $ref: '#/definitions/artifactstore.Distribution'
+        type: object
+    type: object
+  dsse.Envelope:
+    properties:
+      payload:
+        items:
+          type: integer
+        type: array
+      payloadType:
+        type: string
+      signatures:
+        items:
+          $ref: '#/definitions/dsse.Signature'
+        type: array
+    type: object
+  dsse.Signature:
+    properties:
+      certificate:
+        items:
+          type: integer
+        type: array
+      intermediates:
+        items:
+          items:
+            type: integer
+          type: array
+        type: array
+      keyid:
+        type: string
+      sig:
+        items:
+          type: integer
+        type: array
+      timestamps:
+        items:
+          $ref: '#/definitions/dsse.SignatureTimestamp'
+        type: array
+    type: object
+  dsse.SignatureTimestamp:
+    properties:
+      data:
+        items:
+          type: integer
+        type: array
+      type:
+        $ref: '#/definitions/dsse.SignatureTimestampType'
+    type: object
+  dsse.SignatureTimestampType:
+    enum:
+    - tsp
+    type: string
+    x-enum-varnames:
+    - TimestampRFC3161
+info:
+  contact:
+    name: Archivista Contributors
+    url: https://github.com/in-toto/archivista/issues/new
+  description: Archivista API
+  license:
+    url: https://opensource.org/licenses/Apache-2
+  title: Archivista API
+  version: v1
+paths:
+  /download/{gitoid}:
+    get:
+      deprecated: true
+      description: download an attestation
+      parameters:
+      - description: gitoid
+        in: path
+        name: gitoid
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/dsse.Envelope'
+        "400":
+          description: Bad Request
+          schema:
+            type: string
+        "404":
+          description: Not Found
+        "500":
+          description: Internal Server Error
+          schema:
+            type: string
+      summary: Download
+  /upload:
+    post:
+      deprecated: true
+      description: stores an attestation
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/api.StoreResponse'
+      summary: Upload
+  /v1/artifacts:
+    get:
+      description: retrieves details about all available Artifacts
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            additionalProperties:
+              $ref: '#/definitions/artifactstore.Artifact'
+            type: object
+        "400":
+          description: Bad Request
+          schema:
+            type: string
+        "500":
+          description: Internal Server Error
+          schema:
+            type: string
+      summary: List all Artifacts
+      tags:
+      - Artifacts
+  /v1/artifacts/{name}:
+    get:
+      description: retrieves details about all available versions of a specified artifact
+      parameters:
+      - description: artifact name
+        in: path
+        name: name
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            additionalProperties:
+              $ref: '#/definitions/artifactstore.Version'
+            type: object
+        "400":
+          description: Bad Request
+          schema:
+            type: string
+        "500":
+          description: Internal Server Error
+          schema:
+            type: string
+      summary: List Artifact Versions
+      tags:
+      - Artifacts
+  /v1/artifacts/{name}/{version}:
+    get:
+      description: retrieves details about a specified version of an artifact
+      parameters:
+      - description: artifact name
+        in: path
+        name: name
+        required: true
+        type: string
+      - description: version of artifact
+        in: path
+        name: version
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/artifactstore.Version'
+        "400":
+          description: Bad Request
+          schema:
+            type: string
+        "404":
+          description: Not Found
+        "500":
+          description: Internal Server Error
+          schema:
+            type: objecpec
+      summary: Artifact Version Details
+      tags:
+      - Artifacts
+  /v1/download/{gitoid}:
+    get:
+      description: download an attestation
+      parameters:
+      - description: gitoid
+        in: path
+        name: gitoid
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/dsse.Envelope'
+        "400":
+          description: Bad Request
+          schema:
+            type: string
+        "404":
+          description: Not Found
+        "500":
+          description: Internal Server Error
+          schema:
+            type: string
+      summary: Download
+      tags:
+      - attestation
+  /v1/download/artifact/{name}/{version}/{distribution}:
+    get:
+      description: downloads a specified distribution of an artifact
+      parameters:
+      - description: name of artifact
+        in: path
+        name: name
+        required: true
+        type: string
+      - description: version of artifact to download
+        in: path
+        name: version
+        required: true
+        type: string
+      - description: distribution of artifact to download
+        in: path
+        name: distribution
+        required: true
+        type: string
+      produces:
+      - application/octet-stream
+      responses:
+        "200":
+          description: OK
+          schema:
+            type: file
+        "400":
+          description: Bad Request
+          schema:
+            type: string
+        "404":
+          description: Not Found
+        "500":
+          description: Internal Server Error
+          schema:
+            type: string
+      summary: Download Artifact
+      tags:
+      - Artifacts
+  /v1/query:
+    post:
+      description: GraphQL query
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/archivista.Resolver'
+      summary: Query GraphQL
+      tags:
+      - graphql
+  /v1/upload:
+    post:
+      description: stores an attestation
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/api.StoreResponse'
+      summary: Upload
+      tags:
+      - attestation
+swagger: "2.0"

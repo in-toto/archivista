@@ -44,4 +44,4 @@ if [[ $atlas_rc -ne 0 ]]; then
     exit 1
 fi
 
-CompileDaemon -log-prefix=false -build="go build -o /out/archivista ./cmd/archivista" -command="/out/archivista"
+CompileDaemon -log-prefix=false -build="go build -buildvcs=false -o /out/archivista ./cmd/archivista" -command="/out/archivista"
