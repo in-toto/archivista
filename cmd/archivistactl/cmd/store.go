@@ -54,7 +54,7 @@ func storeAttestationByPath(ctx context.Context, baseUrl, path string) (string, 
 	}
 
 	defer file.Close()
-	resp, err := api.UploadWithReader(ctx, baseUrl, file)
+	resp, err := api.StoreWithReader(ctx, baseUrl, file)
 	if err != nil {
 		return "", err
 	}
