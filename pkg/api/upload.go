@@ -30,8 +30,9 @@ type UploadResponse struct {
 	Gitoid string `json:"gitoid"`
 }
 
-type StoreResponse = UploadResponse
 // Deprecated: Use UploadResponse instead. It will be removed in version >= v0.6.0
+type StoreResponse = UploadResponse
+
 func Store(ctx context.Context, baseURL string, envelope dsse.Envelope) (StoreResponse, error) {
 	buf := &bytes.Buffer{}
 	enc := json.NewEncoder(buf)
