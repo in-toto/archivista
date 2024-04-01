@@ -16,7 +16,6 @@ package cmd
 
 import (
 	"context"
-	"crypto"
 	"encoding/json"
 	"fmt"
 
@@ -27,7 +26,6 @@ import (
 	"github.com/in-toto/go-witness/attestation/material"
 	"github.com/in-toto/go-witness/attestation/product"
 	"github.com/in-toto/go-witness/cryptoutil"
-	"github.com/in-toto/go-witness/dsse"
 	"github.com/in-toto/go-witness/log"
 	"github.com/in-toto/go-witness/registry"
 	"github.com/in-toto/go-witness/timestamp"
@@ -35,10 +33,13 @@ import (
 	"github.com/spf13/cobra"
 )
 
+var alwaysRunAttestors = []attestation.Attestor{product.New(), material.New()}
+
 func RunCmd() *cobra.Command {
 	o := options.RunOptions{
-		AttestorOptSetters: make(map[string][]func(attestation.Attestor) (attestation.Attestor, error)),
-		SignerOptions:      options.SignerOptions{},
+		AttestorOptSetters:       make(map[string][]func(attestation.Attestor) (attestation.Attestor, error)),
+		SignerOptions:            options.SignerOptions{},
+		KMSSignerProviderOptions: options.KMSSignerProviderOptions{},
 	}
 
 	cmd := &cobra.Command{
@@ -47,9 +48,9 @@ func RunCmd() *cobra.Command {
 		SilenceErrors: true,
 		SilenceUsage:  true,
 		RunE: func(cmd *cobra.Command, args []string) error {
-			signers, err := loadSigners(cmd.Context(), o.SignerOptions, signerProvidersFromFlags(cmd.Flags()))
+			signers, err := loadSigners(cmd.Context(), o.SignerOptions, o.KMSSignerProviderOptions, providersFromFlags("signer", cmd.Flags()))
 			if err != nil {
-				return fmt.Errorf("failed to load signers")
+				return fmt.Errorf("failed to load signers: %w", err)
 			}
 
 			return runRun(cmd.Context(), o, args, signers...)
@@ -75,22 +76,27 @@ func runRun(ctx context.Context, ro options.RunOptions, args []string, signers .
 		return fmt.Errorf("failed to open out file: %w", err)
 	}
 
-	timestampers := []dsse.Timestamper{}
+	timestampers := []timestamp.Timestamper{}
 	for _, url := range ro.TimestampServers {
 		timestampers = append(timestampers, timestamp.NewTimestamper(timestamp.TimestampWithUrl(url)))
 	}
 
-	attestors := []attestation.Attestor{product.New(), material.New()}
+	attestors := alwaysRunAttestors
 	if len(args) > 0 {
 		attestors = append(attestors, commandrun.New(commandrun.WithCommand(args), commandrun.WithTracing(ro.Tracing)))
 	}
 
 	for _, a := range ro.Attestations {
+		if a == "command-run" {
+			log.Warnf("'command-run' is a builtin attestor and cannot be called with --attestations flag")
+			continue
+		}
+
 		duplicate := false
 		for _, att := range attestors {
 			if a != att.Name() {
 			} else {
-				log.Warnf("Attestator %s already declared, skipping", a)
+				log.Warnf("Attestor %s already declared, skipping", a)
 				duplicate = true
 				break
 			}
@@ -117,13 +123,13 @@ func runRun(ctx context.Context, ro options.RunOptions, args []string, signers .
 		}
 	}
 
-	var roHashes []crypto.Hash
+	var roHashes []cryptoutil.DigestValue
 	for _, hashStr := range ro.Hashes {
 		hash, err := cryptoutil.HashFromString(hashStr)
 		if err != nil {
 			return fmt.Errorf("failed to parse hash: %w", err)
 		}
-		roHashes = append(roHashes, hash)
+		roHashes = append(roHashes, cryptoutil.DigestValue{Hash: hash, GitOID: false})
 	}
 
 	defer out.Close()

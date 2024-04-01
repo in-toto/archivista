@@ -20,24 +20,27 @@ import (
 	"github.com/spf13/cobra"
 )
 
+var DefaultAttestors = []string{"environment", "git"}
+
 type RunOptions struct {
-	SignerOptions      SignerOptions
-	ArchivistaOptions  ArchivistaOptions
-	WorkingDir         string
-	Attestations       []string
-	Hashes             []string
-	OutFilePath        string
-	StepName           string
-	Tracing            bool
-	TimestampServers   []string
-	AttestorOptSetters map[string][]func(attestation.Attestor) (attestation.Attestor, error)
+	SignerOptions            SignerOptions
+	KMSSignerProviderOptions KMSSignerProviderOptions
+	ArchivistaOptions        ArchivistaOptions
+	WorkingDir               string
+	Attestations             []string
+	Hashes                   []string
+	OutFilePath              string
+	StepName                 string
+	Tracing                  bool
+	TimestampServers         []string
+	AttestorOptSetters       map[string][]func(attestation.Attestor) (attestation.Attestor, error)
 }
 
 func (ro *RunOptions) AddFlags(cmd *cobra.Command) {
 	ro.SignerOptions.AddFlags(cmd)
 	ro.ArchivistaOptions.AddFlags(cmd)
 	cmd.Flags().StringVarP(&ro.WorkingDir, "workingdir", "d", "", "Directory from which commands will run")
-	cmd.Flags().StringSliceVarP(&ro.Attestations, "attestations", "a", []string{"environment", "git"}, "Attestations to record ('product' and 'material' are always recorded)")
+	cmd.Flags().StringSliceVarP(&ro.Attestations, "attestations", "a", DefaultAttestors, "Attestations to record ('product' and 'material' are always recorded)")
 	cmd.Flags().StringSliceVar(&ro.Hashes, "hashes", []string{"sha256"}, "Hashes selected for digest calculation. Defaults to SHA256")
 	cmd.Flags().StringVarP(&ro.OutFilePath, "outfile", "o", "", "File to which to write signed data.  Defaults to stdout")
 	cmd.Flags().StringVarP(&ro.StepName, "step", "s", "", "Name of the step being run")
@@ -46,6 +49,8 @@ func (ro *RunOptions) AddFlags(cmd *cobra.Command) {
 
 	attestationRegistrations := attestation.RegistrationEntries()
 	ro.AttestorOptSetters = addFlagsFromRegistry("attestor", attestationRegistrations, cmd)
+
+	ro.KMSSignerProviderOptions.AddFlags(cmd)
 }
 
 type ArchivistaOptions struct {
