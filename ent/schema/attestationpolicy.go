@@ -1,4 +1,4 @@
-// Copyright 2022 The Archivista Contributors
+// Copyright 2024 The Archivista Contributors
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -17,36 +17,40 @@ package schema
 import (
 	"entgo.io/contrib/entgql"
 	"entgo.io/ent"
+	"entgo.io/ent/schema"
 	"entgo.io/ent/schema/edge"
 	"entgo.io/ent/schema/field"
 	"entgo.io/ent/schema/index"
 )
 
-// Statement represents an in-toto statement from an archived dsse envelope
-type Statement struct {
+// Attestation represents an attestation from a witness attestation collection
+type AttestationPolicy struct {
 	ent.Schema
 }
 
-// Fields of the Statement.
-func (Statement) Fields() []ent.Field {
+func (AttestationPolicy) Fields() []ent.Field {
 	return []ent.Field{
-		field.String("predicate").NotEmpty(),
+		field.String("name").NotEmpty(),
 	}
 }
 
-// Edges of the Statement.
-func (Statement) Edges() []ent.Edge {
+// Edges of the AttestationPolicy.
+func (AttestationPolicy) Edges() []ent.Edge {
 	return []ent.Edge{
-		edge.To("subjects", Subject.Type).Annotations(entgql.RelayConnection()),
-		edge.To("policies", AttestationPolicy.Type).Annotations(entgql.RelayConnection()),
-		edge.To("attestation_collections", AttestationCollection.Type).Unique(),
-
-		edge.From("dsse", Dsse.Type).Ref("statement"),
+		edge.From("statement", Statement.Type).
+			Ref("policies").Unique(),
 	}
 }
 
-func (Statement) Indexes() []ent.Index {
+func (AttestationPolicy) Indexes() []ent.Index {
 	return []ent.Index{
-		index.Fields("predicate"),
+		index.Fields("name"),
+	}
+}
+
+func (AttestationPolicy) Annotations() []schema.Annotation {
+	return []schema.Annotation{
+		entgql.RelayConnection(),
+		entgql.QueryField(),
 	}
 }
