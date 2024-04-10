@@ -56,6 +56,7 @@ docs:  ## Generate swagger docs
 
 .PHONY: db-migrations
 db-migrations:  ## Run the migrations for the database
+	@go generate ./...
 	@atlas migrate diff mysql --dir "file://ent/migrate/migrations/mysql" --to "ent://ent/schema" --dev-url "docker://mysql/8/dev"
 	@atlas migrate diff pgsql --dir "file://ent/migrate/migrations/pgsql" --to "ent://ent/schema" --dev-url "docker://postgres/16/dev?search_path=public"
 
