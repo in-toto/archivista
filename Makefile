@@ -23,13 +23,13 @@ run-dev:  ## Run the dev server
 
 .PHONY: stop
 stop:  ## Stop the dev server
-	@docker-compose down -v
+	@docker-compose -f compose-dev.yml down -v
 
 
 .PHONY: clean
 clean: ## Clean up the dev server
 	$(MAKE) stop
-	@docker compose rm --force
+	@docker compose -f compose-dev.yml rm --force
 	@docker rmi archivista-archivista --force
 
 
