@@ -38,7 +38,7 @@ func (AttestationPolicy) Fields() []ent.Field {
 func (AttestationPolicy) Edges() []ent.Edge {
 	return []ent.Edge{
 		edge.From("statement", Statement.Type).
-			Ref("policies").Unique(),
+			Ref("policy").Unique(),
 	}
 }
 
