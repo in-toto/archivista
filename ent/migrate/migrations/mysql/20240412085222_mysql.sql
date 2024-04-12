@@ -1,0 +1,2 @@
+-- Create "attestation_policies" table
+CREATE TABLE `attestation_policies` (`id` bigint NOT NULL AUTO_INCREMENT, `name` varchar(255) NOT NULL, `statement_policy` bigint NULL, PRIMARY KEY (`id`), INDEX `attestationpolicy_name` (`name`), UNIQUE INDEX `statement_policy` (`statement_policy`), CONSTRAINT `attestation_policies_statements_policy` FOREIGN KEY (`statement_policy`) REFERENCES `statements` (`id`) ON UPDATE NO ACTION ON DELETE SET NULL) CHARSET utf8mb4 COLLATE utf8mb4_bin;

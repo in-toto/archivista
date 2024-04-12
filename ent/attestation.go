@@ -40,12 +40,10 @@ type AttestationEdges struct {
 // AttestationCollectionOrErr returns the AttestationCollection value or an error if the edge
 // was not loaded in eager-loading, or loaded but was not found.
 func (e AttestationEdges) AttestationCollectionOrErr() (*AttestationCollection, error) {
-	if e.loadedTypes[0] {
-		if e.AttestationCollection == nil {
-			// Edge was loaded but was not found.
-			return nil, &NotFoundError{label: attestationcollection.Label}
-		}
+	if e.AttestationCollection != nil {
 		return e.AttestationCollection, nil
+	} else if e.loadedTypes[0] {
+		return nil, &NotFoundError{label: attestationcollection.Label}
 	}
 	return nil, &NotLoadedError{edge: "attestation_collection"}
 }

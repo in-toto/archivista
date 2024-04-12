@@ -49,12 +49,10 @@ type DsseEdges struct {
 // StatementOrErr returns the Statement value or an error if the edge
 // was not loaded in eager-loading, or loaded but was not found.
 func (e DsseEdges) StatementOrErr() (*Statement, error) {
-	if e.loadedTypes[0] {
-		if e.Statement == nil {
-			// Edge was loaded but was not found.
-			return nil, &NotFoundError{label: statement.Label}
-		}
+	if e.Statement != nil {
 		return e.Statement, nil
+	} else if e.loadedTypes[0] {
+		return nil, &NotFoundError{label: statement.Label}
 	}
 	return nil, &NotLoadedError{edge: "statement"}
 }

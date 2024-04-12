@@ -62,6 +62,33 @@ var (
 			},
 		},
 	}
+	// AttestationPoliciesColumns holds the columns for the "attestation_policies" table.
+	AttestationPoliciesColumns = []*schema.Column{
+		{Name: "id", Type: field.TypeInt, Increment: true},
+		{Name: "name", Type: field.TypeString},
+		{Name: "statement_policy", Type: field.TypeInt, Unique: true, Nullable: true},
+	}
+	// AttestationPoliciesTable holds the schema information for the "attestation_policies" table.
+	AttestationPoliciesTable = &schema.Table{
+		Name:       "attestation_policies",
+		Columns:    AttestationPoliciesColumns,
+		PrimaryKey: []*schema.Column{AttestationPoliciesColumns[0]},
+		ForeignKeys: []*schema.ForeignKey{
+			{
+				Symbol:     "attestation_policies_statements_policy",
+				Columns:    []*schema.Column{AttestationPoliciesColumns[2]},
+				RefColumns: []*schema.Column{StatementsColumns[0]},
+				OnDelete:   schema.SetNull,
+			},
+		},
+		Indexes: []*schema.Index{
+			{
+				Name:    "attestationpolicy_name",
+				Unique:  false,
+				Columns: []*schema.Column{AttestationPoliciesColumns[1]},
+			},
+		},
+	}
 	// DssesColumns holds the columns for the "dsses" table.
 	DssesColumns = []*schema.Column{
 		{Name: "id", Type: field.TypeInt, Increment: true},
@@ -237,6 +264,7 @@ var (
 	Tables = []*schema.Table{
 		AttestationsTable,
 		AttestationCollectionsTable,
+		AttestationPoliciesTable,
 		DssesTable,
 		PayloadDigestsTable,
 		SignaturesTable,
@@ -250,6 +278,7 @@ var (
 func init() {
 	AttestationsTable.ForeignKeys[0].RefTable = AttestationCollectionsTable
 	AttestationCollectionsTable.ForeignKeys[0].RefTable = StatementsTable
+	AttestationPoliciesTable.ForeignKeys[0].RefTable = StatementsTable
 	DssesTable.ForeignKeys[0].RefTable = StatementsTable
 	PayloadDigestsTable.ForeignKeys[0].RefTable = DssesTable
 	SignaturesTable.ForeignKeys[0].RefTable = DssesTable

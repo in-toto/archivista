@@ -9,6 +9,7 @@ import (
 
 	"github.com/in-toto/archivista/ent/attestation"
 	"github.com/in-toto/archivista/ent/attestationcollection"
+	"github.com/in-toto/archivista/ent/attestationpolicy"
 	"github.com/in-toto/archivista/ent/dsse"
 	"github.com/in-toto/archivista/ent/payloaddigest"
 	"github.com/in-toto/archivista/ent/predicate"
@@ -438,6 +439,206 @@ func (i *AttestationCollectionWhereInput) P() (predicate.AttestationCollection, 
 		return predicates[0], nil
 	default:
 		return attestationcollection.And(predicates...), nil
+	}
+}
+
+// AttestationPolicyWhereInput represents a where input for filtering AttestationPolicy queries.
+type AttestationPolicyWhereInput struct {
+	Predicates []predicate.AttestationPolicy  `json:"-"`
+	Not        *AttestationPolicyWhereInput   `json:"not,omitempty"`
+	Or         []*AttestationPolicyWhereInput `json:"or,omitempty"`
+	And        []*AttestationPolicyWhereInput `json:"and,omitempty"`
+
+	// "id" field predicates.
+	ID      *int  `json:"id,omitempty"`
+	IDNEQ   *int  `json:"idNEQ,omitempty"`
+	IDIn    []int `json:"idIn,omitempty"`
+	IDNotIn []int `json:"idNotIn,omitempty"`
+	IDGT    *int  `json:"idGT,omitempty"`
+	IDGTE   *int  `json:"idGTE,omitempty"`
+	IDLT    *int  `json:"idLT,omitempty"`
+	IDLTE   *int  `json:"idLTE,omitempty"`
+
+	// "name" field predicates.
+	Name             *string  `json:"name,omitempty"`
+	NameNEQ          *string  `json:"nameNEQ,omitempty"`
+	NameIn           []string `json:"nameIn,omitempty"`
+	NameNotIn        []string `json:"nameNotIn,omitempty"`
+	NameGT           *string  `json:"nameGT,omitempty"`
+	NameGTE          *string  `json:"nameGTE,omitempty"`
+	NameLT           *string  `json:"nameLT,omitempty"`
+	NameLTE          *string  `json:"nameLTE,omitempty"`
+	NameContains     *string  `json:"nameContains,omitempty"`
+	NameHasPrefix    *string  `json:"nameHasPrefix,omitempty"`
+	NameHasSuffix    *string  `json:"nameHasSuffix,omitempty"`
+	NameEqualFold    *string  `json:"nameEqualFold,omitempty"`
+	NameContainsFold *string  `json:"nameContainsFold,omitempty"`
+
+	// "statement" edge predicates.
+	HasStatement     *bool                  `json:"hasStatement,omitempty"`
+	HasStatementWith []*StatementWhereInput `json:"hasStatementWith,omitempty"`
+}
+
+// AddPredicates adds custom predicates to the where input to be used during the filtering phase.
+func (i *AttestationPolicyWhereInput) AddPredicates(predicates ...predicate.AttestationPolicy) {
+	i.Predicates = append(i.Predicates, predicates...)
+}
+
+// Filter applies the AttestationPolicyWhereInput filter on the AttestationPolicyQuery builder.
+func (i *AttestationPolicyWhereInput) Filter(q *AttestationPolicyQuery) (*AttestationPolicyQuery, error) {
+	if i == nil {
+		return q, nil
+	}
+	p, err := i.P()
+	if err != nil {
+		if err == ErrEmptyAttestationPolicyWhereInput {
+			return q, nil
+		}
+		return nil, err
+	}
+	return q.Where(p), nil
+}
+
+// ErrEmptyAttestationPolicyWhereInput is returned in case the AttestationPolicyWhereInput is empty.
+var ErrEmptyAttestationPolicyWhereInput = errors.New("ent: empty predicate AttestationPolicyWhereInput")
+
+// P returns a predicate for filtering attestationpolicies.
+// An error is returned if the input is empty or invalid.
+func (i *AttestationPolicyWhereInput) P() (predicate.AttestationPolicy, error) {
+	var predicates []predicate.AttestationPolicy
+	if i.Not != nil {
+		p, err := i.Not.P()
+		if err != nil {
+			return nil, fmt.Errorf("%w: field 'not'", err)
+		}
+		predicates = append(predicates, attestationpolicy.Not(p))
+	}
+	switch n := len(i.Or); {
+	case n == 1:
+		p, err := i.Or[0].P()
+		if err != nil {
+			return nil, fmt.Errorf("%w: field 'or'", err)
+		}
+		predicates = append(predicates, p)
+	case n > 1:
+		or := make([]predicate.AttestationPolicy, 0, n)
+		for _, w := range i.Or {
+			p, err := w.P()
+			if err != nil {
+				return nil, fmt.Errorf("%w: field 'or'", err)
+			}
+			or = append(or, p)
+		}
+		predicates = append(predicates, attestationpolicy.Or(or...))
+	}
+	switch n := len(i.And); {
+	case n == 1:
+		p, err := i.And[0].P()
+		if err != nil {
+			return nil, fmt.Errorf("%w: field 'and'", err)
+		}
+		predicates = append(predicates, p)
+	case n > 1:
+		and := make([]predicate.AttestationPolicy, 0, n)
+		for _, w := range i.And {
+			p, err := w.P()
+			if err != nil {
+				return nil, fmt.Errorf("%w: field 'and'", err)
+			}
+			and = append(and, p)
+		}
+		predicates = append(predicates, attestationpolicy.And(and...))
+	}
+	predicates = append(predicates, i.Predicates...)
+	if i.ID != nil {
+		predicates = append(predicates, attestationpolicy.IDEQ(*i.ID))
+	}
+	if i.IDNEQ != nil {
+		predicates = append(predicates, attestationpolicy.IDNEQ(*i.IDNEQ))
+	}
+	if len(i.IDIn) > 0 {
+		predicates = append(predicates, attestationpolicy.IDIn(i.IDIn...))
+	}
+	if len(i.IDNotIn) > 0 {
+		predicates = append(predicates, attestationpolicy.IDNotIn(i.IDNotIn...))
+	}
+	if i.IDGT != nil {
+		predicates = append(predicates, attestationpolicy.IDGT(*i.IDGT))
+	}
+	if i.IDGTE != nil {
+		predicates = append(predicates, attestationpolicy.IDGTE(*i.IDGTE))
+	}
+	if i.IDLT != nil {
+		predicates = append(predicates, attestationpolicy.IDLT(*i.IDLT))
+	}
+	if i.IDLTE != nil {
+		predicates = append(predicates, attestationpolicy.IDLTE(*i.IDLTE))
+	}
+	if i.Name != nil {
+		predicates = append(predicates, attestationpolicy.NameEQ(*i.Name))
+	}
+	if i.NameNEQ != nil {
+		predicates = append(predicates, attestationpolicy.NameNEQ(*i.NameNEQ))
+	}
+	if len(i.NameIn) > 0 {
+		predicates = append(predicates, attestationpolicy.NameIn(i.NameIn...))
+	}
+	if len(i.NameNotIn) > 0 {
+		predicates = append(predicates, attestationpolicy.NameNotIn(i.NameNotIn...))
+	}
+	if i.NameGT != nil {
+		predicates = append(predicates, attestationpolicy.NameGT(*i.NameGT))
+	}
+	if i.NameGTE != nil {
+		predicates = append(predicates, attestationpolicy.NameGTE(*i.NameGTE))
+	}
+	if i.NameLT != nil {
+		predicates = append(predicates, attestationpolicy.NameLT(*i.NameLT))
+	}
+	if i.NameLTE != nil {
+		predicates = append(predicates, attestationpolicy.NameLTE(*i.NameLTE))
+	}
+	if i.NameContains != nil {
+		predicates = append(predicates, attestationpolicy.NameContains(*i.NameContains))
+	}
+	if i.NameHasPrefix != nil {
+		predicates = append(predicates, attestationpolicy.NameHasPrefix(*i.NameHasPrefix))
+	}
+	if i.NameHasSuffix != nil {
+		predicates = append(predicates, attestationpolicy.NameHasSuffix(*i.NameHasSuffix))
+	}
+	if i.NameEqualFold != nil {
+		predicates = append(predicates, attestationpolicy.NameEqualFold(*i.NameEqualFold))
+	}
+	if i.NameContainsFold != nil {
+		predicates = append(predicates, attestationpolicy.NameContainsFold(*i.NameContainsFold))
+	}
+
+	if i.HasStatement != nil {
+		p := attestationpolicy.HasStatement()
+		if !*i.HasStatement {
+			p = attestationpolicy.Not(p)
+		}
+		predicates = append(predicates, p)
+	}
+	if len(i.HasStatementWith) > 0 {
+		with := make([]predicate.Statement, 0, len(i.HasStatementWith))
+		for _, w := range i.HasStatementWith {
+			p, err := w.P()
+			if err != nil {
+				return nil, fmt.Errorf("%w: field 'HasStatementWith'", err)
+			}
+			with = append(with, p)
+		}
+		predicates = append(predicates, attestationpolicy.HasStatementWith(with...))
+	}
+	switch len(predicates) {
+	case 0:
+		return nil, ErrEmptyAttestationPolicyWhereInput
+	case 1:
+		return predicates[0], nil
+	default:
+		return attestationpolicy.And(predicates...), nil
 	}
 }
 
@@ -1305,6 +1506,10 @@ type StatementWhereInput struct {
 	HasSubjects     *bool                `json:"hasSubjects,omitempty"`
 	HasSubjectsWith []*SubjectWhereInput `json:"hasSubjectsWith,omitempty"`
 
+	// "policy" edge predicates.
+	HasPolicy     *bool                          `json:"hasPolicy,omitempty"`
+	HasPolicyWith []*AttestationPolicyWhereInput `json:"hasPolicyWith,omitempty"`
+
 	// "attestation_collections" edge predicates.
 	HasAttestationCollections     *bool                              `json:"hasAttestationCollections,omitempty"`
 	HasAttestationCollectionsWith []*AttestationCollectionWhereInput `json:"hasAttestationCollectionsWith,omitempty"`
@@ -1466,6 +1671,24 @@ func (i *StatementWhereInput) P() (predicate.Statement, error) {
 			with = append(with, p)
 		}
 		predicates = append(predicates, statement.HasSubjectsWith(with...))
+	}
+	if i.HasPolicy != nil {
+		p := statement.HasPolicy()
+		if !*i.HasPolicy {
+			p = statement.Not(p)
+		}
+		predicates = append(predicates, p)
+	}
+	if len(i.HasPolicyWith) > 0 {
+		with := make([]predicate.AttestationPolicy, 0, len(i.HasPolicyWith))
+		for _, w := range i.HasPolicyWith {
+			p, err := w.P()
+			if err != nil {
+				return nil, fmt.Errorf("%w: field 'HasPolicyWith'", err)
+			}
+			with = append(with, p)
+		}
+		predicates = append(predicates, statement.HasPolicyWith(with...))
 	}
 	if i.HasAttestationCollections != nil {
 		p := statement.HasAttestationCollections()
