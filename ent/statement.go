@@ -9,6 +9,7 @@ import (
 	"entgo.io/ent"
 	"entgo.io/ent/dialect/sql"
 	"github.com/in-toto/archivista/ent/attestationcollection"
+	"github.com/in-toto/archivista/ent/attestationpolicy"
 	"github.com/in-toto/archivista/ent/statement"
 )
 
@@ -29,15 +30,17 @@ type Statement struct {
 type StatementEdges struct {
 	// Subjects holds the value of the subjects edge.
 	Subjects []*Subject `json:"subjects,omitempty"`
+	// Policy holds the value of the policy edge.
+	Policy *AttestationPolicy `json:"policy,omitempty"`
 	// AttestationCollections holds the value of the attestation_collections edge.
 	AttestationCollections *AttestationCollection `json:"attestation_collections,omitempty"`
 	// Dsse holds the value of the dsse edge.
 	Dsse []*Dsse `json:"dsse,omitempty"`
 	// loadedTypes holds the information for reporting if a
 	// type was loaded (or requested) in eager-loading or not.
-	loadedTypes [3]bool
+	loadedTypes [4]bool
 	// totalCount holds the count of the edges above.
-	totalCount [3]map[string]int
+	totalCount [4]map[string]int
 
 	namedSubjects map[string][]*Subject
 	namedDsse     map[string][]*Dsse
@@ -52,15 +55,24 @@ func (e StatementEdges) SubjectsOrErr() ([]*Subject, error) {
 	return nil, &NotLoadedError{edge: "subjects"}
 }
 
+// PolicyOrErr returns the Policy value or an error if the edge
+// was not loaded in eager-loading, or loaded but was not found.
+func (e StatementEdges) PolicyOrErr() (*AttestationPolicy, error) {
+	if e.Policy != nil {
+		return e.Policy, nil
+	} else if e.loadedTypes[1] {
+		return nil, &NotFoundError{label: attestationpolicy.Label}
+	}
+	return nil, &NotLoadedError{edge: "policy"}
+}
+
 // AttestationCollectionsOrErr returns the AttestationCollections value or an error if the edge
 // was not loaded in eager-loading, or loaded but was not found.
 func (e StatementEdges) AttestationCollectionsOrErr() (*AttestationCollection, error) {
-	if e.loadedTypes[1] {
-		if e.AttestationCollections == nil {
-			// Edge was loaded but was not found.
-			return nil, &NotFoundError{label: attestationcollection.Label}
-		}
+	if e.AttestationCollections != nil {
 		return e.AttestationCollections, nil
+	} else if e.loadedTypes[2] {
+		return nil, &NotFoundError{label: attestationcollection.Label}
 	}
 	return nil, &NotLoadedError{edge: "attestation_collections"}
 }
@@ -68,7 +80,7 @@ func (e StatementEdges) AttestationCollectionsOrErr() (*AttestationCollection, e
 // DsseOrErr returns the Dsse value or an error if the edge
 // was not loaded in eager-loading.
 func (e StatementEdges) DsseOrErr() ([]*Dsse, error) {
-	if e.loadedTypes[2] {
+	if e.loadedTypes[3] {
 		return e.Dsse, nil
 	}
 	return nil, &NotLoadedError{edge: "dsse"}
@@ -126,6 +138,11 @@ func (s *Statement) Value(name string) (ent.Value, error) {
 // QuerySubjects queries the "subjects" edge of the Statement entity.
 func (s *Statement) QuerySubjects() *SubjectQuery {
 	return NewStatementClient(s.config).QuerySubjects(s)
+}
+
+// QueryPolicy queries the "policy" edge of the Statement entity.
+func (s *Statement) QueryPolicy() *AttestationPolicyQuery {
+	return NewStatementClient(s.config).QueryPolicy(s)
 }
 
 // QueryAttestationCollections queries the "attestation_collections" edge of the Statement entity.

@@ -11,6 +11,7 @@ import (
 	"entgo.io/ent/dialect/sql/sqlgraph"
 	"entgo.io/ent/schema/field"
 	"github.com/in-toto/archivista/ent/attestationcollection"
+	"github.com/in-toto/archivista/ent/attestationpolicy"
 	"github.com/in-toto/archivista/ent/dsse"
 	"github.com/in-toto/archivista/ent/predicate"
 	"github.com/in-toto/archivista/ent/statement"
@@ -57,6 +58,25 @@ func (su *StatementUpdate) AddSubjects(s ...*Subject) *StatementUpdate {
 		ids[i] = s[i].ID
 	}
 	return su.AddSubjectIDs(ids...)
+}
+
+// SetPolicyID sets the "policy" edge to the AttestationPolicy entity by ID.
+func (su *StatementUpdate) SetPolicyID(id int) *StatementUpdate {
+	su.mutation.SetPolicyID(id)
+	return su
+}
+
+// SetNillablePolicyID sets the "policy" edge to the AttestationPolicy entity by ID if the given value is not nil.
+func (su *StatementUpdate) SetNillablePolicyID(id *int) *StatementUpdate {
+	if id != nil {
+		su = su.SetPolicyID(*id)
+	}
+	return su
+}
+
+// SetPolicy sets the "policy" edge to the AttestationPolicy entity.
+func (su *StatementUpdate) SetPolicy(a *AttestationPolicy) *StatementUpdate {
+	return su.SetPolicyID(a.ID)
 }
 
 // SetAttestationCollectionsID sets the "attestation_collections" edge to the AttestationCollection entity by ID.
@@ -117,6 +137,12 @@ func (su *StatementUpdate) RemoveSubjects(s ...*Subject) *StatementUpdate {
 		ids[i] = s[i].ID
 	}
 	return su.RemoveSubjectIDs(ids...)
+}
+
+// ClearPolicy clears the "policy" edge to the AttestationPolicy entity.
+func (su *StatementUpdate) ClearPolicy() *StatementUpdate {
+	su.mutation.ClearPolicy()
+	return su
 }
 
 // ClearAttestationCollections clears the "attestation_collections" edge to the AttestationCollection entity.
@@ -236,6 +262,35 @@ func (su *StatementUpdate) sqlSave(ctx context.Context) (n int, err error) {
 			Bidi:    false,
 			Target: &sqlgraph.EdgeTarget{
 				IDSpec: sqlgraph.NewFieldSpec(subject.FieldID, field.TypeInt),
+			},
+		}
+		for _, k := range nodes {
+			edge.Target.Nodes = append(edge.Target.Nodes, k)
+		}
+		_spec.Edges.Add = append(_spec.Edges.Add, edge)
+	}
+	if su.mutation.PolicyCleared() {
+		edge := &sqlgraph.EdgeSpec{
+			Rel:     sqlgraph.O2O,
+			Inverse: false,
+			Table:   statement.PolicyTable,
+			Columns: []string{statement.PolicyColumn},
+			Bidi:    false,
+			Target: &sqlgraph.EdgeTarget{
+				IDSpec: sqlgraph.NewFieldSpec(attestationpolicy.FieldID, field.TypeInt),
+			},
+		}
+		_spec.Edges.Clear = append(_spec.Edges.Clear, edge)
+	}
+	if nodes := su.mutation.PolicyIDs(); len(nodes) > 0 {
+		edge := &sqlgraph.EdgeSpec{
+			Rel:     sqlgraph.O2O,
+			Inverse: false,
+			Table:   statement.PolicyTable,
+			Columns: []string{statement.PolicyColumn},
+			Bidi:    false,
+			Target: &sqlgraph.EdgeTarget{
+				IDSpec: sqlgraph.NewFieldSpec(attestationpolicy.FieldID, field.TypeInt),
 			},
 		}
 		for _, k := range nodes {
@@ -366,6 +421,25 @@ func (suo *StatementUpdateOne) AddSubjects(s ...*Subject) *StatementUpdateOne {
 	return suo.AddSubjectIDs(ids...)
 }
 
+// SetPolicyID sets the "policy" edge to the AttestationPolicy entity by ID.
+func (suo *StatementUpdateOne) SetPolicyID(id int) *StatementUpdateOne {
+	suo.mutation.SetPolicyID(id)
+	return suo
+}
+
+// SetNillablePolicyID sets the "policy" edge to the AttestationPolicy entity by ID if the given value is not nil.
+func (suo *StatementUpdateOne) SetNillablePolicyID(id *int) *StatementUpdateOne {
+	if id != nil {
+		suo = suo.SetPolicyID(*id)
+	}
+	return suo
+}
+
+// SetPolicy sets the "policy" edge to the AttestationPolicy entity.
+func (suo *StatementUpdateOne) SetPolicy(a *AttestationPolicy) *StatementUpdateOne {
+	return suo.SetPolicyID(a.ID)
+}
+
 // SetAttestationCollectionsID sets the "attestation_collections" edge to the AttestationCollection entity by ID.
 func (suo *StatementUpdateOne) SetAttestationCollectionsID(id int) *StatementUpdateOne {
 	suo.mutation.SetAttestationCollectionsID(id)
@@ -424,6 +498,12 @@ func (suo *StatementUpdateOne) RemoveSubjects(s ...*Subject) *StatementUpdateOne
 		ids[i] = s[i].ID
 	}
 	return suo.RemoveSubjectIDs(ids...)
+}
+
+// ClearPolicy clears the "policy" edge to the AttestationPolicy entity.
+func (suo *StatementUpdateOne) ClearPolicy() *StatementUpdateOne {
+	suo.mutation.ClearPolicy()
+	return suo
 }
 
 // ClearAttestationCollections clears the "attestation_collections" edge to the AttestationCollection entity.
@@ -573,6 +653,35 @@ func (suo *StatementUpdateOne) sqlSave(ctx context.Context) (_node *Statement, e
 			Bidi:    false,
 			Target: &sqlgraph.EdgeTarget{
 				IDSpec: sqlgraph.NewFieldSpec(subject.FieldID, field.TypeInt),
+			},
+		}
+		for _, k := range nodes {
+			edge.Target.Nodes = append(edge.Target.Nodes, k)
+		}
+		_spec.Edges.Add = append(_spec.Edges.Add, edge)
+	}
+	if suo.mutation.PolicyCleared() {
+		edge := &sqlgraph.EdgeSpec{
+			Rel:     sqlgraph.O2O,
+			Inverse: false,
+			Table:   statement.PolicyTable,
+			Columns: []string{statement.PolicyColumn},
+			Bidi:    false,
+			Target: &sqlgraph.EdgeTarget{
+				IDSpec: sqlgraph.NewFieldSpec(attestationpolicy.FieldID, field.TypeInt),
+			},
+		}
+		_spec.Edges.Clear = append(_spec.Edges.Clear, edge)
+	}
+	if nodes := suo.mutation.PolicyIDs(); len(nodes) > 0 {
+		edge := &sqlgraph.EdgeSpec{
+			Rel:     sqlgraph.O2O,
+			Inverse: false,
+			Table:   statement.PolicyTable,
+			Columns: []string{statement.PolicyColumn},
+			Bidi:    false,
+			Target: &sqlgraph.EdgeTarget{
+				IDSpec: sqlgraph.NewFieldSpec(attestationpolicy.FieldID, field.TypeInt),
 			},
 		}
 		for _, k := range nodes {

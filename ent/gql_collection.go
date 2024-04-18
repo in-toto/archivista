@@ -11,6 +11,7 @@ import (
 	"github.com/99designs/gqlgen/graphql"
 	"github.com/in-toto/archivista/ent/attestation"
 	"github.com/in-toto/archivista/ent/attestationcollection"
+	"github.com/in-toto/archivista/ent/attestationpolicy"
 	"github.com/in-toto/archivista/ent/dsse"
 	"github.com/in-toto/archivista/ent/payloaddigest"
 	"github.com/in-toto/archivista/ent/signature"
@@ -182,6 +183,83 @@ func newAttestationCollectionPaginateArgs(rv map[string]any) *attestationcollect
 	}
 	if v, ok := rv[whereField].(*AttestationCollectionWhereInput); ok {
 		args.opts = append(args.opts, WithAttestationCollectionFilter(v.Filter))
+	}
+	return args
+}
+
+// CollectFields tells the query-builder to eagerly load connected nodes by resolver context.
+func (ap *AttestationPolicyQuery) CollectFields(ctx context.Context, satisfies ...string) (*AttestationPolicyQuery, error) {
+	fc := graphql.GetFieldContext(ctx)
+	if fc == nil {
+		return ap, nil
+	}
+	if err := ap.collectField(ctx, graphql.GetOperationContext(ctx), fc.Field, nil, satisfies...); err != nil {
+		return nil, err
+	}
+	return ap, nil
+}
+
+func (ap *AttestationPolicyQuery) collectField(ctx context.Context, opCtx *graphql.OperationContext, collected graphql.CollectedField, path []string, satisfies ...string) error {
+	path = append([]string(nil), path...)
+	var (
+		unknownSeen    bool
+		fieldSeen      = make(map[string]struct{}, len(attestationpolicy.Columns))
+		selectedFields = []string{attestationpolicy.FieldID}
+	)
+	for _, field := range graphql.CollectFields(opCtx, collected.Selections, satisfies) {
+		switch field.Name {
+		case "statement":
+			var (
+				alias = field.Alias
+				path  = append(path, alias)
+				query = (&StatementClient{config: ap.config}).Query()
+			)
+			if err := query.collectField(ctx, opCtx, field, path, satisfies...); err != nil {
+				return err
+			}
+			ap.withStatement = query
+		case "name":
+			if _, ok := fieldSeen[attestationpolicy.FieldName]; !ok {
+				selectedFields = append(selectedFields, attestationpolicy.FieldName)
+				fieldSeen[attestationpolicy.FieldName] = struct{}{}
+			}
+		case "id":
+		case "__typename":
+		default:
+			unknownSeen = true
+		}
+	}
+	if !unknownSeen {
+		ap.Select(selectedFields...)
+	}
+	return nil
+}
+
+type attestationpolicyPaginateArgs struct {
+	first, last   *int
+	after, before *Cursor
+	opts          []AttestationPolicyPaginateOption
+}
+
+func newAttestationPolicyPaginateArgs(rv map[string]any) *attestationpolicyPaginateArgs {
+	args := &attestationpolicyPaginateArgs{}
+	if rv == nil {
+		return args
+	}
+	if v := rv[firstField]; v != nil {
+		args.first = v.(*int)
+	}
+	if v := rv[lastField]; v != nil {
+		args.last = v.(*int)
+	}
+	if v := rv[afterField]; v != nil {
+		args.after = v.(*Cursor)
+	}
+	if v := rv[beforeField]; v != nil {
+		args.before = v.(*Cursor)
+	}
+	if v, ok := rv[whereField].(*AttestationPolicyWhereInput); ok {
+		args.opts = append(args.opts, WithAttestationPolicyFilter(v.Filter))
 	}
 	return args
 }
@@ -573,6 +651,16 @@ func (s *StatementQuery) collectField(ctx context.Context, opCtx *graphql.Operat
 			s.WithNamedSubjects(alias, func(wq *SubjectQuery) {
 				*wq = *query
 			})
+		case "policy":
+			var (
+				alias = field.Alias
+				path  = append(path, alias)
+				query = (&AttestationPolicyClient{config: s.config}).Query()
+			)
+			if err := query.collectField(ctx, opCtx, field, path, satisfies...); err != nil {
+				return err
+			}
+			s.withPolicy = query
 		case "attestationCollections":
 			var (
 				alias = field.Alias

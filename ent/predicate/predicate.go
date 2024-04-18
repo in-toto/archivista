@@ -12,6 +12,9 @@ type Attestation func(*sql.Selector)
 // AttestationCollection is the predicate function for attestationcollection builders.
 type AttestationCollection func(*sql.Selector)
 
+// AttestationPolicy is the predicate function for attestationpolicy builders.
+type AttestationPolicy func(*sql.Selector)
+
 // Dsse is the predicate function for dsse builders.
 type Dsse func(*sql.Selector)
 

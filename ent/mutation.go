@@ -13,6 +13,7 @@ import (
 	"entgo.io/ent/dialect/sql"
 	"github.com/in-toto/archivista/ent/attestation"
 	"github.com/in-toto/archivista/ent/attestationcollection"
+	"github.com/in-toto/archivista/ent/attestationpolicy"
 	"github.com/in-toto/archivista/ent/dsse"
 	"github.com/in-toto/archivista/ent/payloaddigest"
 	"github.com/in-toto/archivista/ent/predicate"
@@ -34,6 +35,7 @@ const (
 	// Node types.
 	TypeAttestation           = "Attestation"
 	TypeAttestationCollection = "AttestationCollection"
+	TypeAttestationPolicy     = "AttestationPolicy"
 	TypeDsse                  = "Dsse"
 	TypePayloadDigest         = "PayloadDigest"
 	TypeSignature             = "Signature"
@@ -912,6 +914,399 @@ func (m *AttestationCollectionMutation) ResetEdge(name string) error {
 		return nil
 	}
 	return fmt.Errorf("unknown AttestationCollection edge %s", name)
+}
+
+// AttestationPolicyMutation represents an operation that mutates the AttestationPolicy nodes in the graph.
+type AttestationPolicyMutation struct {
+	config
+	op               Op
+	typ              string
+	id               *int
+	name             *string
+	clearedFields    map[string]struct{}
+	statement        *int
+	clearedstatement bool
+	done             bool
+	oldValue         func(context.Context) (*AttestationPolicy, error)
+	predicates       []predicate.AttestationPolicy
+}
+
+var _ ent.Mutation = (*AttestationPolicyMutation)(nil)
+
+// attestationpolicyOption allows management of the mutation configuration using functional options.
+type attestationpolicyOption func(*AttestationPolicyMutation)
+
+// newAttestationPolicyMutation creates new mutation for the AttestationPolicy entity.
+func newAttestationPolicyMutation(c config, op Op, opts ...attestationpolicyOption) *AttestationPolicyMutation {
+	m := &AttestationPolicyMutation{
+		config:        c,
+		op:            op,
+		typ:           TypeAttestationPolicy,
+		clearedFields: make(map[string]struct{}),
+	}
+	for _, opt := range opts {
+		opt(m)
+	}
+	return m
+}
+
+// withAttestationPolicyID sets the ID field of the mutation.
+func withAttestationPolicyID(id int) attestationpolicyOption {
+	return func(m *AttestationPolicyMutation) {
+		var (
+			err   error
+			once  sync.Once
+			value *AttestationPolicy
+		)
+		m.oldValue = func(ctx context.Context) (*AttestationPolicy, error) {
+			once.Do(func() {
+				if m.done {
+					err = errors.New("querying old values post mutation is not allowed")
+				} else {
+					value, err = m.Client().AttestationPolicy.Get(ctx, id)
+				}
+			})
+			return value, err
+		}
+		m.id = &id
+	}
+}
+
+// withAttestationPolicy sets the old AttestationPolicy of the mutation.
+func withAttestationPolicy(node *AttestationPolicy) attestationpolicyOption {
+	return func(m *AttestationPolicyMutation) {
+		m.oldValue = func(context.Context) (*AttestationPolicy, error) {
+			return node, nil
+		}
+		m.id = &node.ID
+	}
+}
+
+// Client returns a new `ent.Client` from the mutation. If the mutation was
+// executed in a transaction (ent.Tx), a transactional client is returned.
+func (m AttestationPolicyMutation) Client() *Client {
+	client := &Client{config: m.config}
+	client.init()
+	return client
+}
+
+// Tx returns an `ent.Tx` for mutations that were executed in transactions;
+// it returns an error otherwise.
+func (m AttestationPolicyMutation) Tx() (*Tx, error) {
+	if _, ok := m.driver.(*txDriver); !ok {
+		return nil, errors.New("ent: mutation is not running in a transaction")
+	}
+	tx := &Tx{config: m.config}
+	tx.init()
+	return tx, nil
+}
+
+// ID returns the ID value in the mutation. Note that the ID is only available
+// if it was provided to the builder or after it was returned from the database.
+func (m *AttestationPolicyMutation) ID() (id int, exists bool) {
+	if m.id == nil {
+		return
+	}
+	return *m.id, true
+}
+
+// IDs queries the database and returns the entity ids that match the mutation's predicate.
+// That means, if the mutation is applied within a transaction with an isolation level such
+// as sql.LevelSerializable, the returned ids match the ids of the rows that will be updated
+// or updated by the mutation.
+func (m *AttestationPolicyMutation) IDs(ctx context.Context) ([]int, error) {
+	switch {
+	case m.op.Is(OpUpdateOne | OpDeleteOne):
+		id, exists := m.ID()
+		if exists {
+			return []int{id}, nil
+		}
+		fallthrough
+	case m.op.Is(OpUpdate | OpDelete):
+		return m.Client().AttestationPolicy.Query().Where(m.predicates...).IDs(ctx)
+	default:
+		return nil, fmt.Errorf("IDs is not allowed on %s operations", m.op)
+	}
+}
+
+// SetName sets the "name" field.
+func (m *AttestationPolicyMutation) SetName(s string) {
+	m.name = &s
+}
+
+// Name returns the value of the "name" field in the mutation.
+func (m *AttestationPolicyMutation) Name() (r string, exists bool) {
+	v := m.name
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// OldName returns the old "name" field's value of the AttestationPolicy entity.
+// If the AttestationPolicy object wasn't provided to the builder, the object is fetched from the database.
+// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
+func (m *AttestationPolicyMutation) OldName(ctx context.Context) (v string, err error) {
+	if !m.op.Is(OpUpdateOne) {
+		return v, errors.New("OldName is only allowed on UpdateOne operations")
+	}
+	if m.id == nil || m.oldValue == nil {
+		return v, errors.New("OldName requires an ID field in the mutation")
+	}
+	oldValue, err := m.oldValue(ctx)
+	if err != nil {
+		return v, fmt.Errorf("querying old value for OldName: %w", err)
+	}
+	return oldValue.Name, nil
+}
+
+// ResetName resets all changes to the "name" field.
+func (m *AttestationPolicyMutation) ResetName() {
+	m.name = nil
+}
+
+// SetStatementID sets the "statement" edge to the Statement entity by id.
+func (m *AttestationPolicyMutation) SetStatementID(id int) {
+	m.statement = &id
+}
+
+// ClearStatement clears the "statement" edge to the Statement entity.
+func (m *AttestationPolicyMutation) ClearStatement() {
+	m.clearedstatement = true
+}
+
+// StatementCleared reports if the "statement" edge to the Statement entity was cleared.
+func (m *AttestationPolicyMutation) StatementCleared() bool {
+	return m.clearedstatement
+}
+
+// StatementID returns the "statement" edge ID in the mutation.
+func (m *AttestationPolicyMutation) StatementID() (id int, exists bool) {
+	if m.statement != nil {
+		return *m.statement, true
+	}
+	return
+}
+
+// StatementIDs returns the "statement" edge IDs in the mutation.
+// Note that IDs always returns len(IDs) <= 1 for unique edges, and you should use
+// StatementID instead. It exists only for internal usage by the builders.
+func (m *AttestationPolicyMutation) StatementIDs() (ids []int) {
+	if id := m.statement; id != nil {
+		ids = append(ids, *id)
+	}
+	return
+}
+
+// ResetStatement resets all changes to the "statement" edge.
+func (m *AttestationPolicyMutation) ResetStatement() {
+	m.statement = nil
+	m.clearedstatement = false
+}
+
+// Where appends a list predicates to the AttestationPolicyMutation builder.
+func (m *AttestationPolicyMutation) Where(ps ...predicate.AttestationPolicy) {
+	m.predicates = append(m.predicates, ps...)
+}
+
+// WhereP appends storage-level predicates to the AttestationPolicyMutation builder. Using this method,
+// users can use type-assertion to append predicates that do not depend on any generated package.
+func (m *AttestationPolicyMutation) WhereP(ps ...func(*sql.Selector)) {
+	p := make([]predicate.AttestationPolicy, len(ps))
+	for i := range ps {
+		p[i] = ps[i]
+	}
+	m.Where(p...)
+}
+
+// Op returns the operation name.
+func (m *AttestationPolicyMutation) Op() Op {
+	return m.op
+}
+
+// SetOp allows setting the mutation operation.
+func (m *AttestationPolicyMutation) SetOp(op Op) {
+	m.op = op
+}
+
+// Type returns the node type of this mutation (AttestationPolicy).
+func (m *AttestationPolicyMutation) Type() string {
+	return m.typ
+}
+
+// Fields returns all fields that were changed during this mutation. Note that in
+// order to get all numeric fields that were incremented/decremented, call
+// AddedFields().
+func (m *AttestationPolicyMutation) Fields() []string {
+	fields := make([]string, 0, 1)
+	if m.name != nil {
+		fields = append(fields, attestationpolicy.FieldName)
+	}
+	return fields
+}
+
+// Field returns the value of a field with the given name. The second boolean
+// return value indicates that this field was not set, or was not defined in the
+// schema.
+func (m *AttestationPolicyMutation) Field(name string) (ent.Value, bool) {
+	switch name {
+	case attestationpolicy.FieldName:
+		return m.Name()
+	}
+	return nil, false
+}
+
+// OldField returns the old value of the field from the database. An error is
+// returned if the mutation operation is not UpdateOne, or the query to the
+// database failed.
+func (m *AttestationPolicyMutation) OldField(ctx context.Context, name string) (ent.Value, error) {
+	switch name {
+	case attestationpolicy.FieldName:
+		return m.OldName(ctx)
+	}
+	return nil, fmt.Errorf("unknown AttestationPolicy field %s", name)
+}
+
+// SetField sets the value of a field with the given name. It returns an error if
+// the field is not defined in the schema, or if the type mismatched the field
+// type.
+func (m *AttestationPolicyMutation) SetField(name string, value ent.Value) error {
+	switch name {
+	case attestationpolicy.FieldName:
+		v, ok := value.(string)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.SetName(v)
+		return nil
+	}
+	return fmt.Errorf("unknown AttestationPolicy field %s", name)
+}
+
+// AddedFields returns all numeric fields that were incremented/decremented during
+// this mutation.
+func (m *AttestationPolicyMutation) AddedFields() []string {
+	return nil
+}
+
+// AddedField returns the numeric value that was incremented/decremented on a field
+// with the given name. The second boolean return value indicates that this field
+// was not set, or was not defined in the schema.
+func (m *AttestationPolicyMutation) AddedField(name string) (ent.Value, bool) {
+	return nil, false
+}
+
+// AddField adds the value to the field with the given name. It returns an error if
+// the field is not defined in the schema, or if the type mismatched the field
+// type.
+func (m *AttestationPolicyMutation) AddField(name string, value ent.Value) error {
+	switch name {
+	}
+	return fmt.Errorf("unknown AttestationPolicy numeric field %s", name)
+}
+
+// ClearedFields returns all nullable fields that were cleared during this
+// mutation.
+func (m *AttestationPolicyMutation) ClearedFields() []string {
+	return nil
+}
+
+// FieldCleared returns a boolean indicating if a field with the given name was
+// cleared in this mutation.
+func (m *AttestationPolicyMutation) FieldCleared(name string) bool {
+	_, ok := m.clearedFields[name]
+	return ok
+}
+
+// ClearField clears the value of the field with the given name. It returns an
+// error if the field is not defined in the schema.
+func (m *AttestationPolicyMutation) ClearField(name string) error {
+	return fmt.Errorf("unknown AttestationPolicy nullable field %s", name)
+}
+
+// ResetField resets all changes in the mutation for the field with the given name.
+// It returns an error if the field is not defined in the schema.
+func (m *AttestationPolicyMutation) ResetField(name string) error {
+	switch name {
+	case attestationpolicy.FieldName:
+		m.ResetName()
+		return nil
+	}
+	return fmt.Errorf("unknown AttestationPolicy field %s", name)
+}
+
+// AddedEdges returns all edge names that were set/added in this mutation.
+func (m *AttestationPolicyMutation) AddedEdges() []string {
+	edges := make([]string, 0, 1)
+	if m.statement != nil {
+		edges = append(edges, attestationpolicy.EdgeStatement)
+	}
+	return edges
+}
+
+// AddedIDs returns all IDs (to other nodes) that were added for the given edge
+// name in this mutation.
+func (m *AttestationPolicyMutation) AddedIDs(name string) []ent.Value {
+	switch name {
+	case attestationpolicy.EdgeStatement:
+		if id := m.statement; id != nil {
+			return []ent.Value{*id}
+		}
+	}
+	return nil
+}
+
+// RemovedEdges returns all edge names that were removed in this mutation.
+func (m *AttestationPolicyMutation) RemovedEdges() []string {
+	edges := make([]string, 0, 1)
+	return edges
+}
+
+// RemovedIDs returns all IDs (to other nodes) that were removed for the edge with
+// the given name in this mutation.
+func (m *AttestationPolicyMutation) RemovedIDs(name string) []ent.Value {
+	return nil
+}
+
+// ClearedEdges returns all edge names that were cleared in this mutation.
+func (m *AttestationPolicyMutation) ClearedEdges() []string {
+	edges := make([]string, 0, 1)
+	if m.clearedstatement {
+		edges = append(edges, attestationpolicy.EdgeStatement)
+	}
+	return edges
+}
+
+// EdgeCleared returns a boolean which indicates if the edge with the given name
+// was cleared in this mutation.
+func (m *AttestationPolicyMutation) EdgeCleared(name string) bool {
+	switch name {
+	case attestationpolicy.EdgeStatement:
+		return m.clearedstatement
+	}
+	return false
+}
+
+// ClearEdge clears the value of the edge with the given name. It returns an error
+// if that edge is not defined in the schema.
+func (m *AttestationPolicyMutation) ClearEdge(name string) error {
+	switch name {
+	case attestationpolicy.EdgeStatement:
+		m.ClearStatement()
+		return nil
+	}
+	return fmt.Errorf("unknown AttestationPolicy unique edge %s", name)
+}
+
+// ResetEdge resets all changes to the edge with the given name in this mutation.
+// It returns an error if the edge is not defined in the schema.
+func (m *AttestationPolicyMutation) ResetEdge(name string) error {
+	switch name {
+	case attestationpolicy.EdgeStatement:
+		m.ResetStatement()
+		return nil
+	}
+	return fmt.Errorf("unknown AttestationPolicy edge %s", name)
 }
 
 // DsseMutation represents an operation that mutates the Dsse nodes in the graph.
@@ -2519,6 +2914,8 @@ type StatementMutation struct {
 	subjects                       map[int]struct{}
 	removedsubjects                map[int]struct{}
 	clearedsubjects                bool
+	policy                         *int
+	clearedpolicy                  bool
 	attestation_collections        *int
 	clearedattestation_collections bool
 	dsse                           map[int]struct{}
@@ -2715,6 +3112,45 @@ func (m *StatementMutation) ResetSubjects() {
 	m.subjects = nil
 	m.clearedsubjects = false
 	m.removedsubjects = nil
+}
+
+// SetPolicyID sets the "policy" edge to the AttestationPolicy entity by id.
+func (m *StatementMutation) SetPolicyID(id int) {
+	m.policy = &id
+}
+
+// ClearPolicy clears the "policy" edge to the AttestationPolicy entity.
+func (m *StatementMutation) ClearPolicy() {
+	m.clearedpolicy = true
+}
+
+// PolicyCleared reports if the "policy" edge to the AttestationPolicy entity was cleared.
+func (m *StatementMutation) PolicyCleared() bool {
+	return m.clearedpolicy
+}
+
+// PolicyID returns the "policy" edge ID in the mutation.
+func (m *StatementMutation) PolicyID() (id int, exists bool) {
+	if m.policy != nil {
+		return *m.policy, true
+	}
+	return
+}
+
+// PolicyIDs returns the "policy" edge IDs in the mutation.
+// Note that IDs always returns len(IDs) <= 1 for unique edges, and you should use
+// PolicyID instead. It exists only for internal usage by the builders.
+func (m *StatementMutation) PolicyIDs() (ids []int) {
+	if id := m.policy; id != nil {
+		ids = append(ids, *id)
+	}
+	return
+}
+
+// ResetPolicy resets all changes to the "policy" edge.
+func (m *StatementMutation) ResetPolicy() {
+	m.policy = nil
+	m.clearedpolicy = false
 }
 
 // SetAttestationCollectionsID sets the "attestation_collections" edge to the AttestationCollection entity by id.
@@ -2943,9 +3379,12 @@ func (m *StatementMutation) ResetField(name string) error {
 
 // AddedEdges returns all edge names that were set/added in this mutation.
 func (m *StatementMutation) AddedEdges() []string {
-	edges := make([]string, 0, 3)
+	edges := make([]string, 0, 4)
 	if m.subjects != nil {
 		edges = append(edges, statement.EdgeSubjects)
+	}
+	if m.policy != nil {
+		edges = append(edges, statement.EdgePolicy)
 	}
 	if m.attestation_collections != nil {
 		edges = append(edges, statement.EdgeAttestationCollections)
@@ -2966,6 +3405,10 @@ func (m *StatementMutation) AddedIDs(name string) []ent.Value {
 			ids = append(ids, id)
 		}
 		return ids
+	case statement.EdgePolicy:
+		if id := m.policy; id != nil {
+			return []ent.Value{*id}
+		}
 	case statement.EdgeAttestationCollections:
 		if id := m.attestation_collections; id != nil {
 			return []ent.Value{*id}
@@ -2982,7 +3425,7 @@ func (m *StatementMutation) AddedIDs(name string) []ent.Value {
 
 // RemovedEdges returns all edge names that were removed in this mutation.
 func (m *StatementMutation) RemovedEdges() []string {
-	edges := make([]string, 0, 3)
+	edges := make([]string, 0, 4)
 	if m.removedsubjects != nil {
 		edges = append(edges, statement.EdgeSubjects)
 	}
@@ -3014,9 +3457,12 @@ func (m *StatementMutation) RemovedIDs(name string) []ent.Value {
 
 // ClearedEdges returns all edge names that were cleared in this mutation.
 func (m *StatementMutation) ClearedEdges() []string {
-	edges := make([]string, 0, 3)
+	edges := make([]string, 0, 4)
 	if m.clearedsubjects {
 		edges = append(edges, statement.EdgeSubjects)
+	}
+	if m.clearedpolicy {
+		edges = append(edges, statement.EdgePolicy)
 	}
 	if m.clearedattestation_collections {
 		edges = append(edges, statement.EdgeAttestationCollections)
@@ -3033,6 +3479,8 @@ func (m *StatementMutation) EdgeCleared(name string) bool {
 	switch name {
 	case statement.EdgeSubjects:
 		return m.clearedsubjects
+	case statement.EdgePolicy:
+		return m.clearedpolicy
 	case statement.EdgeAttestationCollections:
 		return m.clearedattestation_collections
 	case statement.EdgeDsse:
@@ -3045,6 +3493,9 @@ func (m *StatementMutation) EdgeCleared(name string) bool {
 // if that edge is not defined in the schema.
 func (m *StatementMutation) ClearEdge(name string) error {
 	switch name {
+	case statement.EdgePolicy:
+		m.ClearPolicy()
+		return nil
 	case statement.EdgeAttestationCollections:
 		m.ClearAttestationCollections()
 		return nil
@@ -3058,6 +3509,9 @@ func (m *StatementMutation) ResetEdge(name string) error {
 	switch name {
 	case statement.EdgeSubjects:
 		m.ResetSubjects()
+		return nil
+	case statement.EdgePolicy:
+		m.ResetPolicy()
 		return nil
 	case statement.EdgeAttestationCollections:
 		m.ResetAttestationCollections()

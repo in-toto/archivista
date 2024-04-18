@@ -16,6 +16,8 @@ const (
 	FieldPredicate = "predicate"
 	// EdgeSubjects holds the string denoting the subjects edge name in mutations.
 	EdgeSubjects = "subjects"
+	// EdgePolicy holds the string denoting the policy edge name in mutations.
+	EdgePolicy = "policy"
 	// EdgeAttestationCollections holds the string denoting the attestation_collections edge name in mutations.
 	EdgeAttestationCollections = "attestation_collections"
 	// EdgeDsse holds the string denoting the dsse edge name in mutations.
@@ -29,6 +31,13 @@ const (
 	SubjectsInverseTable = "subjects"
 	// SubjectsColumn is the table column denoting the subjects relation/edge.
 	SubjectsColumn = "statement_subjects"
+	// PolicyTable is the table that holds the policy relation/edge.
+	PolicyTable = "attestation_policies"
+	// PolicyInverseTable is the table name for the AttestationPolicy entity.
+	// It exists in this package in order to avoid circular dependency with the "attestationpolicy" package.
+	PolicyInverseTable = "attestation_policies"
+	// PolicyColumn is the table column denoting the policy relation/edge.
+	PolicyColumn = "statement_policy"
 	// AttestationCollectionsTable is the table that holds the attestation_collections relation/edge.
 	AttestationCollectionsTable = "attestation_collections"
 	// AttestationCollectionsInverseTable is the table name for the AttestationCollection entity.
@@ -93,6 +102,13 @@ func BySubjects(term sql.OrderTerm, terms ...sql.OrderTerm) OrderOption {
 	}
 }
 
+// ByPolicyField orders the results by policy field.
+func ByPolicyField(field string, opts ...sql.OrderTermOption) OrderOption {
+	return func(s *sql.Selector) {
+		sqlgraph.OrderByNeighborTerms(s, newPolicyStep(), sql.OrderByField(field, opts...))
+	}
+}
+
 // ByAttestationCollectionsField orders the results by attestation_collections field.
 func ByAttestationCollectionsField(field string, opts ...sql.OrderTermOption) OrderOption {
 	return func(s *sql.Selector) {
@@ -118,6 +134,13 @@ func newSubjectsStep() *sqlgraph.Step {
 		sqlgraph.From(Table, FieldID),
 		sqlgraph.To(SubjectsInverseTable, FieldID),
 		sqlgraph.Edge(sqlgraph.O2M, false, SubjectsTable, SubjectsColumn),
+	)
+}
+func newPolicyStep() *sqlgraph.Step {
+	return sqlgraph.NewStep(
+		sqlgraph.From(Table, FieldID),
+		sqlgraph.To(PolicyInverseTable, FieldID),
+		sqlgraph.Edge(sqlgraph.O2O, false, PolicyTable, PolicyColumn),
 	)
 }
 func newAttestationCollectionsStep() *sqlgraph.Step {
