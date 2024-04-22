@@ -172,6 +172,11 @@ timestamp {
 }
 ```
 
+## Deployment
+
+Archivista can be easily deployed thru the provided helm chart into your kubernetes
+cluster. See the [README](chart/README.md) for more details.
+
 ## What's Next
 
 We would like to expand the types of data Archivista can ingest as well as expand the metadata Archivista collected about

@@ -1,0 +1,86 @@
+replicaCount: 1
+
+image:
+  repository: ghcr.io/in-toto/archivista
+  pullPolicy: IfNotPresent
+  # Overrides the image tag whose default is the chart appVersion.
+  tag: "0.1.1"
+
+nameOverride: ""
+fullnameOverride: ""
+
+serviceAccount:
+  create: false
+  annotations: {}
+  # The name of the service account to use.
+  # If not set and create is true, a name is generated using the fullname template
+  name: ""
+
+podAnnotations: {}
+
+podSecurityContext: {}
+  # fsGroup: 2000
+
+securityContext: {}
+  # capabilities:
+  #   drop:
+  #   - ALL
+  # readOnlyRootFilesystem: true
+  # runAsNonRoot: true
+  # runAsUser: 1000
+
+deployment:
+  env: []
+  # - name: ARCHIVISTA_SQL_STORE_CONNECTION_STRING
+  #   value: "user:pass@tcp(localhost:3306)/testify"
+  # - name: ARCHIVISTA_STORAGE_BACKEND
+  #   value: "BLOB"
+  # - name: ARCHIVISTA_BLOB_STORE_ENDPOINT
+  #   value: localhost:9000
+  # - name: ARCHIVISTA_BLOB_STORE_ACCESS_KEY_ID
+  #   value: testifytestifytestify
+  # - name: ARCHIVISTA_BLOB_STORE_SECRET_ACCESS_KEY_ID
+  #   value: exampleexampleexample
+  # - name: ARCHIVISTA_BLOB_STORE_USE_TLS
+  #   value: "FALSE"
+  # - name: ARCHIVISTA_BLOB_STORE_BUCKET_NAME
+  #   value: attestations
+
+service:
+  type: ClusterIP
+  port: 8082
+
+ingress:
+  enabled: true
+  className: ""
+  annotations: {}
+  hosts:
+    - host: archivista.localhost
+      paths:
+        - path: /
+          pathType: ImplementationSpecific
+  tls: []
+  #  - secretName: chart-example-tls
+  #    hosts:
+  #      - archivista.localhost
+
+resources: {}
+  # limits:
+  #   cpu: 100m
+  #   memory: 128Mi
+  # requests:
+  #   cpu: 100m
+  #   memory: 128Mi
+
+autoscaling:
+  enabled: false
+  minReplicas: 1
+  maxReplicas: 10
+  targetCPUUtilizationPercentage: 80
+  # targetMemoryUtilizationPercentage: 80
+
+nodeSelector: {}
+
+tolerations: []
+
+affinity: {}

@@ -1,0 +1,15 @@
+apiVersion: v1
+kind: Service
+metadata:
+  name: {{ include "archivista.fullname" . }}
+  labels:
+    {{- include "archivista.labels" . | nindent 4 }}
+spec:
+  type: {{ .Values.service.type }}
+  ports:
+    - port: {{ .Values.service.port }}
+      targetPort: graphql
+      protocol: TCP
+      name: graphql
+  selector:
+    {{- include "archivista.selectorLabels" . | nindent 4 }}
