@@ -6,7 +6,7 @@ toolchain go1.21.7
 
 require (
 	ariga.io/sqlcomment v0.1.0
-	entgo.io/contrib v0.4.5
+	entgo.io/contrib v0.5.0
 	entgo.io/ent v0.13.1
 	github.com/99designs/gqlgen v0.17.45
 	github.com/antonfisher/nested-logrus-formatter v1.3.1
