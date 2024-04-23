@@ -20,6 +20,7 @@ import (
 	"encoding/base64"
 	"encoding/json"
 	"fmt"
+	"strings"
 	"time"
 
 	"github.com/digitorus/timestamp"
@@ -29,6 +30,7 @@ import (
 	"github.com/in-toto/go-witness/cryptoutil"
 	"github.com/in-toto/go-witness/dsse"
 	"github.com/in-toto/go-witness/intoto"
+	"github.com/in-toto/go-witness/policy"
 	"github.com/sirupsen/logrus"
 )
 
@@ -39,6 +41,9 @@ const subjectBatchSize = 30000
 // mysql has a limit of 65536 parameters in a single query. each subject has ~3 parameters [subject id, algo, value],
 // so we can theoretically jam 65535/3 subjects in a single batch. but we probably want some breathing room just in case.
 const subjectDigestBatchSize = 20000
+
+// constant for Policy PayloadType
+const policyPayloadType = "https://witness.testifysec.com/policy/"
 
 type Store struct {
 	client *ent.Client
@@ -86,12 +91,7 @@ func (s *Store) withTx(ctx context.Context, fn func(tx *ent.Tx) error) error {
 	return nil
 }
 
-func (s *Store) Store(ctx context.Context, gitoid string, obj []byte) error {
-	envelope := &dsse.Envelope{}
-	if err := json.Unmarshal(obj, envelope); err != nil {
-		return err
-	}
-
+func (s *Store) storeAttestation(ctx context.Context, envelope *dsse.Envelope, gitoid string) error {
 	payloadDigestSet, err := cryptoutil.CalculateDigestSetFromBytes(envelope.Payload, []cryptoutil.DigestValue{{Hash: crypto.SHA256}})
 	if err != nil {
 		return err
@@ -216,6 +216,127 @@ func (s *Store) Store(ctx context.Context, gitoid string, obj []byte) error {
 	if err != nil {
 		logrus.Errorf("unable to store metadata: %+v", err)
 		return err
+	}
+
+	return nil
+}
+
+func (s *Store) storePolicy(ctx context.Context, envelope *dsse.Envelope, gitoid string) error {
+	payloadDigestSet, err := cryptoutil.CalculateDigestSetFromBytes(envelope.Payload, []cryptoutil.DigestValue{{Hash: crypto.SHA256}})
+	if err != nil {
+		return err
+	}
+
+	payload := &policy.Policy{}
+	if err := json.Unmarshal(envelope.Payload, payload); err != nil {
+		return err
+	}
+
+	custom := make(map[string]any)
+	custom["gitoid"] = gitoid
+
+	err = s.withTx(ctx, func(tx *ent.Tx) error {
+		dsse, err := tx.Dsse.Create().
+			SetPayloadType(envelope.PayloadType).
+			SetGitoidSha256(gitoid).
+			Save(ctx)
+		if err != nil {
+			return err
+		}
+
+		// stores the envelope signatures
+		for _, sig := range envelope.Signatures {
+			storedSig, err := tx.Signature.Create().
+				SetKeyID(sig.KeyID).
+				SetSignature(base64.StdEncoding.EncodeToString(sig.Signature)).
+				SetDsse(dsse).
+				Save(ctx)
+			if err != nil {
+				return err
+			}
+
+			for _, timestamp := range sig.Timestamps {
+				timestampedTime, err := timeFromTimestamp(timestamp)
+				if err != nil {
+					return err
+				}
+
+				_, err = tx.Timestamp.Create().
+					SetSignature(storedSig).
+					SetTimestamp(timestampedTime).
+					SetType(string(timestamp.Type)).
+					Save(ctx)
+				if err != nil {
+					return err
+				}
+			}
+		}
+
+		// stores the payload digests
+		for hashFn, digest := range payloadDigestSet {
+			hashName, err := cryptoutil.HashToString(hashFn.Hash)
+			if err != nil {
+				return err
+			}
+
+			if _, err := tx.PayloadDigest.Create().
+				SetDsse(dsse).
+				SetAlgorithm(hashName).
+				SetValue(digest).
+				Save(ctx); err != nil {
+				return err
+			}
+		}
+
+		stmt, err := tx.Statement.Create().
+			SetPredicate(envelope.PayloadType).
+			AddDsse(dsse).
+			Save(ctx)
+		if err != nil {
+			return err
+		}
+
+		// stores the subject
+		if _, err := tx.Subject.Create().
+			SetName(gitoid).
+			SetStatement(stmt).
+			Save(ctx); err != nil {
+			return err
+		}
+
+		if _, err := tx.AttestationPolicy.Create().
+			SetStatement(stmt).
+			SetName(gitoid).
+			Save(ctx); err != nil {
+			return err
+		}
+
+		return nil
+	})
+
+	if err != nil {
+		logrus.Errorf("unable to store metadata: %+v", err)
+		return err
+	}
+
+	return nil
+}
+
+func (s *Store) Store(ctx context.Context, gitoid string, obj []byte) error {
+	envelope := &dsse.Envelope{}
+	if err := json.Unmarshal(obj, envelope); err != nil {
+		return err
+	}
+
+	// check if the payload is a policy or an attestation
+	if strings.Contains(envelope.PayloadType, policyPayloadType) {
+		if err := s.storePolicy(ctx, envelope, gitoid); err != nil {
+			return err
+		}
+	} else {
+		if err := s.storeAttestation(ctx, envelope, gitoid); err != nil {
+			return err
+		}
 	}
 
 	return nil
