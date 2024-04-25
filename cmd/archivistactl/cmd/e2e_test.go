@@ -1,4 +1,4 @@
-// Copyright 2023 The Archivista Contributors
+// Copyright 2023-2024 The Archivista Contributors
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -76,7 +76,7 @@ func (e2e *E2EStoreSuite) Test_E2E() {
 		// define test cases struct
 		type testCases struct {
 			name                string
-			attestation         string // files are stored in test/
+			envelope            string // files are stored in test/
 			sha256              string
 			expectedStore       string
 			gitoidStore         string // this value is added during `activistactl store command`
@@ -89,7 +89,7 @@ func (e2e *E2EStoreSuite) Test_E2E() {
 		testTable := []testCases{
 			{
 				name:                "valid build attestation",
-				attestation:         "../../../test/build.attestation.json",
+				envelope:            "../../../test/build.attestation.json",
 				sha256:              "423da4cff198bbffbe3220ed9510d32ba96698e4b1f654552521d1f541abb6dc",
 				expectedStore:       "stored with gitoid",
 				expectedSearch:      "Collection name: build",
@@ -98,7 +98,7 @@ func (e2e *E2EStoreSuite) Test_E2E() {
 			{
 				name:                "valid package attestation",
 				sha256:              "10cbf0f3d870934921276f669ab707983113f929784d877f1192f43c581f2070",
-				attestation:         "../../../test/package.attestation.json",
+				envelope:            "../../../test/package.attestation.json",
 				expectedStore:       "stored with gitoid",
 				expectedSearch:      "Collection name: package",
 				expectedRetrieveSub: "Name: https://witness.dev/attestations/git/v0.1/commithash:be20100af602c780deeef50c54f5338662ce917c",
@@ -106,14 +106,14 @@ func (e2e *E2EStoreSuite) Test_E2E() {
 			{
 				name:           "duplicated package attestation",
 				sha256:         "10cbf0f3d870934921276f669ab707983113f929784d877f1192f43c581f2070",
-				attestation:    "../../../test/package.attestation.json",
+				envelope:       "../../../test/package.attestation.json",
 				expectedStore:  "",
 				expectedSearch: "Collection name: package",
 				expectedError:  "uplicate",
 			},
 			{
 				name:                "fail attestation",
-				attestation:         "../../../test/fail.attestation.json",
+				envelope:            "../../../test/fail.attestation.json",
 				sha256:              "5e8c57df8ae58fe9a29b29f9993e2fc3b25bd75eb2754f353880bad4b9ebfdb3",
 				expectedStore:       "stored with gitoid",
 				expectedSearch:      "",
@@ -121,7 +121,7 @@ func (e2e *E2EStoreSuite) Test_E2E() {
 			},
 			{
 				name:           "invalid payload attestation",
-				attestation:    "../../../test/invalid_payload.attestation.json",
+				envelope:       "../../../test/invalid_payload.attestation.json",
 				sha256:         "5e8c57df8ae58fe9a29b29f9993e2fc3b25bd75eb2754f353880bad4b9ebfdb3",
 				expectedStore:  "stored with gitoid",
 				expectedSearch: "",
@@ -129,8 +129,13 @@ func (e2e *E2EStoreSuite) Test_E2E() {
 			},
 			{
 				name:          "nonexistent payload file",
-				attestation:   "../../../test/missing.attestation.json",
+				envelope:      "../../../test/missing.attestation.json",
 				expectedError: "no such file or directory",
+			},
+			{
+				name:          "valid signed policy",
+				envelope:      "../../../test/policy-signed.json",
+				expectedStore: "stored with gitoid",
 			},
 		}
 		for _, test := range testTable {
@@ -139,7 +144,7 @@ func (e2e *E2EStoreSuite) Test_E2E() {
 			storeOutput := bytes.NewBufferString("")
 			rootCmd.SetOut(storeOutput)
 			rootCmd.SetErr(storeOutput)
-			rootCmd.SetArgs([]string{"store", test.attestation})
+			rootCmd.SetArgs([]string{"store", test.envelope})
 			err := rootCmd.Execute()
 			if err != nil {
 				// if return error assert if is expected error from test case
@@ -152,35 +157,37 @@ func (e2e *E2EStoreSuite) Test_E2E() {
 			}
 
 			// test `archivistactl search`
-			e2e.T().Log("Test `archivistactl search`" + test.name)
-			searchOutput := bytes.NewBufferString("")
-			rootCmd.SetOut(searchOutput)
-			rootCmd.SetErr(searchOutput)
-			rootCmd.SetArgs([]string{"search", "sha256:" + test.sha256})
-			err = rootCmd.Execute()
-			if err != nil {
-				e2e.FailNow(err.Error())
-			}
-			searchActual := searchOutput.String()
-			e2e.Contains(searchActual, test.expectedSearch)
-
-			if test.expectedRetrieveSub != "" {
-				// test `archivistactl retrieve subjects`
-				e2e.T().Log("Test `archivistactl retrieve subjects` " + test.name)
-				subjectsOutput := bytes.NewBufferString("")
-				rootCmd.SetOut(subjectsOutput)
-				rootCmd.SetErr(subjectsOutput)
-				rootCmd.SetArgs([]string{"retrieve", "subjects", test.gitoidStore})
+			if test.sha256 == "" {
+				e2e.T().Log("Test `archivistactl search`" + test.name)
+				searchOutput := bytes.NewBufferString("")
+				rootCmd.SetOut(searchOutput)
+				rootCmd.SetErr(searchOutput)
+				rootCmd.SetArgs([]string{"search", "sha256:" + test.sha256})
 				err = rootCmd.Execute()
 				if err != nil {
 					e2e.FailNow(err.Error())
 				}
-				subjectsActual := subjectsOutput.String()
-				e2e.Contains(subjectsActual, test.expectedRetrieveSub)
-				if test.name == "fail attestation" {
-					e2e.NotContains(subjectsActual, "sha256:"+test.sha256)
-				} else {
-					e2e.Contains(subjectsActual, "sha256:"+test.sha256)
+				searchActual := searchOutput.String()
+				e2e.Contains(searchActual, test.expectedSearch)
+
+				if test.expectedRetrieveSub != "" {
+					// test `archivistactl retrieve subjects`
+					e2e.T().Log("Test `archivistactl retrieve subjects` " + test.name)
+					subjectsOutput := bytes.NewBufferString("")
+					rootCmd.SetOut(subjectsOutput)
+					rootCmd.SetErr(subjectsOutput)
+					rootCmd.SetArgs([]string{"retrieve", "subjects", test.gitoidStore})
+					err = rootCmd.Execute()
+					if err != nil {
+						e2e.FailNow(err.Error())
+					}
+					subjectsActual := subjectsOutput.String()
+					e2e.Contains(subjectsActual, test.expectedRetrieveSub)
+					if test.name == "fail attestation" {
+						e2e.NotContains(subjectsActual, "sha256:"+test.sha256)
+					} else {
+						e2e.Contains(subjectsActual, "sha256:"+test.sha256)
+					}
 				}
 			}
 			if test.expectedError == "" {
@@ -195,8 +202,8 @@ func (e2e *E2EStoreSuite) Test_E2E() {
 				if err != nil {
 					e2e.FailNow(err.Error())
 				}
-				// compares file attestation with the retrieved attestation
-				fileAtt, err := os.ReadFile(test.attestation)
+				// compares file envelope with the retrieved envelope
+				fileAtt, err := os.ReadFile(test.envelope)
 				if err != nil {
 					e2e.FailNow(err.Error())
 				}
