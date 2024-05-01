@@ -17,7 +17,6 @@ version: '3.9'
 services:
   db:
     image: mysql:oracle
-    command: --default-authentication-plugin=mysql_native_password
     restart: always
     ports:
       - 3306:3306

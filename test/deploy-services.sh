@@ -42,6 +42,7 @@ waitForArchivista() {
 
     if [[ attempt -eq 6 ]]; then
       echo "timed out waiting for archivista"
+      docker compose logs
       exit 1
     fi
   done
