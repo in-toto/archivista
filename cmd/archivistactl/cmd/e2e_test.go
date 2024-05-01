@@ -60,6 +60,8 @@ func (e2e *E2EStoreSuite) Test_E2E() {
 	// Call the script to deploy the containers for the test cases
 	for _, testDB := range testDBCases {
 		cmd := exec.Command("bash", "../../../test/deploy-services.sh", "start-"+testDB)
+		var out strings.Builder
+		cmd.Stdout = &out
 		err := cmd.Start()
 		if err != nil {
 			e2e.FailNow(err.Error())
@@ -67,6 +69,7 @@ func (e2e *E2EStoreSuite) Test_E2E() {
 		e2e.T().Log("Starting services using DB: " + testDB)
 		err = cmd.Wait()
 		if err != nil {
+			e2e.T().Log(out.String())
 			e2e.FailNow(err.Error())
 		}
 
