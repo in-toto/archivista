@@ -9,10 +9,11 @@ import (
 
 	"entgo.io/ent/dialect/sql/sqlgraph"
 	"entgo.io/ent/schema/field"
-	"github.com/testifysec/archivista/ent/attestationcollection"
-	"github.com/testifysec/archivista/ent/dsse"
-	"github.com/testifysec/archivista/ent/statement"
-	"github.com/testifysec/archivista/ent/subject"
+	"github.com/in-toto/archivista/ent/attestationcollection"
+	"github.com/in-toto/archivista/ent/attestationpolicy"
+	"github.com/in-toto/archivista/ent/dsse"
+	"github.com/in-toto/archivista/ent/statement"
+	"github.com/in-toto/archivista/ent/subject"
 )
 
 // StatementCreate is the builder for creating a Statement entity.
@@ -41,6 +42,25 @@ func (sc *StatementCreate) AddSubjects(s ...*Subject) *StatementCreate {
 		ids[i] = s[i].ID
 	}
 	return sc.AddSubjectIDs(ids...)
+}
+
+// SetPolicyID sets the "policy" edge to the AttestationPolicy entity by ID.
+func (sc *StatementCreate) SetPolicyID(id int) *StatementCreate {
+	sc.mutation.SetPolicyID(id)
+	return sc
+}
+
+// SetNillablePolicyID sets the "policy" edge to the AttestationPolicy entity by ID if the given value is not nil.
+func (sc *StatementCreate) SetNillablePolicyID(id *int) *StatementCreate {
+	if id != nil {
+		sc = sc.SetPolicyID(*id)
+	}
+	return sc
+}
+
+// SetPolicy sets the "policy" edge to the AttestationPolicy entity.
+func (sc *StatementCreate) SetPolicy(a *AttestationPolicy) *StatementCreate {
+	return sc.SetPolicyID(a.ID)
 }
 
 // SetAttestationCollectionsID sets the "attestation_collections" edge to the AttestationCollection entity by ID.
@@ -158,6 +178,22 @@ func (sc *StatementCreate) createSpec() (*Statement, *sqlgraph.CreateSpec) {
 			Bidi:    false,
 			Target: &sqlgraph.EdgeTarget{
 				IDSpec: sqlgraph.NewFieldSpec(subject.FieldID, field.TypeInt),
+			},
+		}
+		for _, k := range nodes {
+			edge.Target.Nodes = append(edge.Target.Nodes, k)
+		}
+		_spec.Edges = append(_spec.Edges, edge)
+	}
+	if nodes := sc.mutation.PolicyIDs(); len(nodes) > 0 {
+		edge := &sqlgraph.EdgeSpec{
+			Rel:     sqlgraph.O2O,
+			Inverse: false,
+			Table:   statement.PolicyTable,
+			Columns: []string{statement.PolicyColumn},
+			Bidi:    false,
+			Target: &sqlgraph.EdgeTarget{
+				IDSpec: sqlgraph.NewFieldSpec(attestationpolicy.FieldID, field.TypeInt),
 			},
 		}
 		for _, k := range nodes {

@@ -19,8 +19,8 @@ import (
 	"fmt"
 	"os"
 
+	"github.com/in-toto/archivista/pkg/api"
 	"github.com/spf13/cobra"
-	archivistaapi "github.com/testifysec/archivista-api"
 )
 
 var (
@@ -34,7 +34,7 @@ var (
 				if gitoid, err := storeAttestationByPath(cmd.Context(), archivistaUrl, filePath); err != nil {
 					return fmt.Errorf("failed to store %s: %w", filePath, err)
 				} else {
-					fmt.Printf("%s stored with gitoid %s\n", filePath, gitoid)
+					rootCmd.Printf("%s stored with gitoid %s\n", filePath, gitoid)
 				}
 			}
 
@@ -54,7 +54,7 @@ func storeAttestationByPath(ctx context.Context, baseUrl, path string) (string, 
 	}
 
 	defer file.Close()
-	resp, err := archivistaapi.StoreWithReader(ctx, baseUrl, file)
+	resp, err := api.UploadWithReader(ctx, baseUrl, file)
 	if err != nil {
 		return "", err
 	}

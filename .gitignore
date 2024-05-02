@@ -14,13 +14,13 @@
 # Dependency directories (remove the comment below to include it)
 # vendor/
 
-*.json
+./*.json
 .gitignore
 .idea/
 
 ## protect against development environment being leaked out
 *.pem
 *.nix
-./archivist
+./archivista
 ./archivistctl
 .witness.yaml

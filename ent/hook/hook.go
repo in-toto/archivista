@@ -6,7 +6,7 @@ import (
 	"context"
 	"fmt"
 
-	"github.com/testifysec/archivista/ent"
+	"github.com/in-toto/archivista/ent"
 )
 
 // The AttestationFunc type is an adapter to allow the use of ordinary
@@ -31,6 +31,18 @@ func (f AttestationCollectionFunc) Mutate(ctx context.Context, m ent.Mutation) (
 		return f(ctx, mv)
 	}
 	return nil, fmt.Errorf("unexpected mutation type %T. expect *ent.AttestationCollectionMutation", m)
+}
+
+// The AttestationPolicyFunc type is an adapter to allow the use of ordinary
+// function as AttestationPolicy mutator.
+type AttestationPolicyFunc func(context.Context, *ent.AttestationPolicyMutation) (ent.Value, error)
+
+// Mutate calls f(ctx, m).
+func (f AttestationPolicyFunc) Mutate(ctx context.Context, m ent.Mutation) (ent.Value, error) {
+	if mv, ok := m.(*ent.AttestationPolicyMutation); ok {
+		return f(ctx, mv)
+	}
+	return nil, fmt.Errorf("unexpected mutation type %T. expect *ent.AttestationPolicyMutation", m)
 }
 
 // The DsseFunc type is an adapter to allow the use of ordinary

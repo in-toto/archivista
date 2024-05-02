@@ -16,11 +16,10 @@ package cmd
 
 import (
 	"errors"
-	"fmt"
 	"strings"
 
+	"github.com/in-toto/archivista/pkg/api"
 	"github.com/spf13/cobra"
-	archivistaapi "github.com/testifysec/archivista-api"
 )
 
 var (
@@ -49,7 +48,7 @@ Digests are expected to be in the form algorithm:digest, for instance: sha256:45
 				return err
 			}
 
-			results, err := archivistaapi.GraphQlQuery[searchResults](cmd.Context(), archivistaUrl, searchQuery, searchVars{Algorithm: algo, Digest: digest})
+			results, err := api.GraphQlQuery[searchResults](cmd.Context(), archivistaUrl, searchQuery, searchVars{Algorithm: algo, Digest: digest})
 			if err != nil {
 				return err
 			}
@@ -75,14 +74,14 @@ func validateDigestString(ds string) (algo, digest string, err error) {
 
 func printResults(results searchResults) {
 	for _, edge := range results.Dsses.Edges {
-		fmt.Printf("Gitoid: %s\n", edge.Node.GitoidSha256)
-		fmt.Printf("Collection name: %s\n", edge.Node.Statement.AttestationCollection.Name)
+		rootCmd.Printf("Gitoid: %s\n", edge.Node.GitoidSha256)
+		rootCmd.Printf("Collection name: %s\n", edge.Node.Statement.AttestationCollection.Name)
 		types := make([]string, 0, len(edge.Node.Statement.AttestationCollection.Attestations))
 		for _, attestation := range edge.Node.Statement.AttestationCollection.Attestations {
 			types = append(types, attestation.Type)
 		}
 
-		fmt.Printf("Attestations: %s\n\n", strings.Join(types, ", "))
+		rootCmd.Printf("Attestations: %s\n\n", strings.Join(types, ", "))
 	}
 }
 
@@ -115,7 +114,7 @@ const searchQuery = `query($algo: String!, $digest: String!) {
       hasStatementWith: {
         hasSubjectsWith: {
           hasSubjectDigestsWith: {
-            value: $digest, 
+            value: $digest,
             algorithm: $algo
           }
         }

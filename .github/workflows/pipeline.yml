@@ -13,7 +13,6 @@
 # limitations under the License.
 
 permissions:
-    id-token: write # This is required for requesting the JWT
     contents: read  # This is required for actions/checkout
 name: pipeline
 on:
@@ -26,6 +25,9 @@ on:
 jobs:
     fmt:
         uses: ./.github/workflows/witness.yml
+        permissions:
+          id-token: write # This is required for requesting the JWT
+          contents: read  # This is required for actions/checkout
         with:
           pull_request: ${{ github.event_name == 'pull_request' }}
           step: static-analysis
@@ -34,57 +36,61 @@ jobs:
 
     static_analysis:
         uses: ./.github/workflows/witness.yml
+        permissions:
+          id-token: write # This is required for requesting the JWT
+          contents: read  # This is required for actions/checkout
         with:
           pull_request: ${{ github.event_name == 'pull_request' }}
           step: static-analysis
           attestations: "github"
           command: go vet ./...
 
-    test:
+    tests:
         needs: [fmt, static_analysis]
         uses: ./.github/workflows/witness.yml
-        with: 
-            pull_request: ${{ github.event_name == 'pull_request' }}
-            step: "test"
-            attestations: "github"
-            command: go test -v -coverprofile=profile.cov -covermode=atomic ./...
-
-    e2e-tests:
-        needs: test
-        uses: ./.github/workflows/witness.yml
+        permissions:
+          id-token: write # This is required for requesting the JWT
+          contents: read  # This is required for actions/checkout
         with:
             pull_request: ${{ github.event_name == 'pull_request' }}
-            step: "e2e"
+            step: "tests"
             attestations: "github"
-            command: ./test/test.sh
+            command: |
+              make clean
+              make test
 
     release:
-        needs: e2e-tests
+        needs: tests
         permissions:
             id-token: write
             contents: write
             packages: write
         runs-on: ubuntu-latest
         if: github.event_name == 'push' && contains(github.ref, 'refs/tags/')
-        
+
         steps:
-            - uses: actions/checkout@v4.1.1
-            - uses: actions/setup-go@v4.1.0
+            - name: Harden Runner
+              uses: step-security/harden-runner@63c24ba6bd7ba022e95695ff85de572c04a18142 # v2.7.0
+              with:
+                egress-policy: audit
+
+            - uses: actions/checkout@0ad4b8fadaa221de15dcec353f45205ec38ea70b # v4.1.4
+            - uses: actions/setup-go@0c52d547c9bc32b1aa3301fd7a9cb496313a4491 # v5.0.0
               with:
                 go-version: 1.21.x
-    
+
             - name: Login to GitHub Container Registry
-              uses: docker/login-action@v3
+              uses: docker/login-action@e92390c5fb421da1463c202d546fed0ec5c39f20 # v3.1.0
               with:
                 registry: ghcr.io
                 username: ${{ github.actor }}
                 password: ${{ secrets.GITHUB_TOKEN }}
-    
+
             - name: Download GoReleaser
-              run: go install github.com/goreleaser/goreleaser@latest
-    
+              run: go install github.com/goreleaser/goreleaser@v1.23.0
+
             - name: Run GoReleaser
-              uses: testifysec/witness-run-action@40aa4ef36fc431a37de7c3faebcb66513c03b934
+              uses: testifysec/witness-run-action@2ae7f93c013ccf24b8ff52b4f042b32ca95ec7b8
               env:
                 GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
                 GITHUB_REPOSITORY_OWNER: ${{ github.repository_owner }}

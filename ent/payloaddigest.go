@@ -8,8 +8,8 @@ import (
 
 	"entgo.io/ent"
 	"entgo.io/ent/dialect/sql"
-	"github.com/testifysec/archivista/ent/dsse"
-	"github.com/testifysec/archivista/ent/payloaddigest"
+	"github.com/in-toto/archivista/ent/dsse"
+	"github.com/in-toto/archivista/ent/payloaddigest"
 )
 
 // PayloadDigest is the model entity for the PayloadDigest schema.
@@ -42,12 +42,10 @@ type PayloadDigestEdges struct {
 // DsseOrErr returns the Dsse value or an error if the edge
 // was not loaded in eager-loading, or loaded but was not found.
 func (e PayloadDigestEdges) DsseOrErr() (*Dsse, error) {
-	if e.loadedTypes[0] {
-		if e.Dsse == nil {
-			// Edge was loaded but was not found.
-			return nil, &NotFoundError{label: dsse.Label}
-		}
+	if e.Dsse != nil {
 		return e.Dsse, nil
+	} else if e.loadedTypes[0] {
+		return nil, &NotFoundError{label: dsse.Label}
 	}
 	return nil, &NotLoadedError{edge: "dsse"}
 }

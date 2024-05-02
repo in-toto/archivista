@@ -21,8 +21,8 @@ checkprograms() {
   local result=0
   for prog in "$@"
   do
-    if ! command -v $prog > /dev/null; then
-      printf "$prog is required to run this script. please ensure it is installed and in your PATH\n"
+    if ! command -v "$prog" > /dev/null; then
+      print "$prog is required to run this script. please ensure it is installed and in your PATH\n"
       result=1
     fi
   done
@@ -30,21 +30,19 @@ checkprograms() {
   return $result
 }
 
-runtests() {
-  go run $DIR/../cmd/archivistactl/main.go store $DIR/*.attestation.json
-}
-
 waitForArchivista() {
   echo "Waiting for archivista to be ready..."
   for attempt in $(seq 1 6); do
     sleep 10
-    local archivistastate=$(docker compose -f "$DIR/../compose.yml" ps archivista --format json | jq -r '.State')
+    local archivistastate
+    archivistastate=$(docker compose -f "$DIR/../compose.yml" ps archivista --format json | jq -r '.State')
     if [ "$archivistastate" == "running" ]; then
       break
     fi
 
     if [[ attempt -eq 6 ]]; then
       echo "timed out waiting for archivista"
+      docker compose logs
       exit 1
     fi
   done
@@ -54,14 +52,40 @@ if ! checkprograms docker jq ; then
   exit 1
 fi
 
-echo "Test mysql..."
-docker compose -f "$DIR/../compose.yml" up --build -d
-waitForArchivista
-runtests
-docker compose -f "$DIR/../compose.yml" down -v
+startMySQL() {
+  echo "Test mysql..."
+  docker compose -f "$DIR/../compose.yml" up --build -d
+  waitForArchivista
+}
 
-echo "Test psql..."
-docker compose -f "$DIR/../compose.yml" -f "$DIR/../compose.psql.yml" up --build -d
-waitForArchivista
-runtests
-docker compose -f "$DIR/../compose.yml" -f "$DIR/../compose.psql.yml" down -v
+startPgSQL(){
+  echo "Test psql..."
+  docker compose -f "$DIR/../compose.yml" -f "$DIR/../compose-psql.yml" up --build -d
+  waitForArchivista
+}
+
+
+stopServices() {
+  docker compose -f "$DIR/../compose.yml" -f "$DIR/../compose-psql.yml" down -v
+}
+
+
+case $1 in
+  start-mysql)
+    startMySQL
+    waitForArchivista
+  ;;
+
+  start-pgsql)
+    startPgSQL
+    waitForArchivista
+  ;;
+
+  stop)
+    stopServices
+  ;;
+
+  *)
+    echo "Wrong option. Use $0 start-mysql|start-pgsql|stop"
+  ;;
+esac

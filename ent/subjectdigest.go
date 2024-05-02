@@ -8,8 +8,8 @@ import (
 
 	"entgo.io/ent"
 	"entgo.io/ent/dialect/sql"
-	"github.com/testifysec/archivista/ent/subject"
-	"github.com/testifysec/archivista/ent/subjectdigest"
+	"github.com/in-toto/archivista/ent/subject"
+	"github.com/in-toto/archivista/ent/subjectdigest"
 )
 
 // SubjectDigest is the model entity for the SubjectDigest schema.
@@ -42,12 +42,10 @@ type SubjectDigestEdges struct {
 // SubjectOrErr returns the Subject value or an error if the edge
 // was not loaded in eager-loading, or loaded but was not found.
 func (e SubjectDigestEdges) SubjectOrErr() (*Subject, error) {
-	if e.loadedTypes[0] {
-		if e.Subject == nil {
-			// Edge was loaded but was not found.
-			return nil, &NotFoundError{label: subject.Label}
-		}
+	if e.Subject != nil {
 		return e.Subject, nil
+	} else if e.loadedTypes[0] {
+		return nil, &NotFoundError{label: subject.Label}
 	}
 	return nil, &NotLoadedError{edge: "subject"}
 }

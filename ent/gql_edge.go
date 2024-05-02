@@ -36,6 +36,14 @@ func (ac *AttestationCollection) Statement(ctx context.Context) (*Statement, err
 	return result, err
 }
 
+func (ap *AttestationPolicy) Statement(ctx context.Context) (*Statement, error) {
+	result, err := ap.Edges.StatementOrErr()
+	if IsNotLoaded(err) {
+		result, err = ap.QueryStatement().Only(ctx)
+	}
+	return result, MaskNotFound(err)
+}
+
 func (d *Dsse) Statement(ctx context.Context) (*Statement, error) {
 	result, err := d.Edges.StatementOrErr()
 	if IsNotLoaded(err) {
@@ -114,6 +122,14 @@ func (s *Statement) Subjects(
 		return conn, nil
 	}
 	return s.QuerySubjects().Paginate(ctx, after, first, before, last, opts...)
+}
+
+func (s *Statement) Policy(ctx context.Context) (*AttestationPolicy, error) {
+	result, err := s.Edges.PolicyOrErr()
+	if IsNotLoaded(err) {
+		result, err = s.QueryPolicy().Only(ctx)
+	}
+	return result, MaskNotFound(err)
 }
 
 func (s *Statement) AttestationCollections(ctx context.Context) (*AttestationCollection, error) {

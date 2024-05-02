@@ -9,9 +9,9 @@ import (
 
 	"entgo.io/ent/dialect/sql/sqlgraph"
 	"entgo.io/ent/schema/field"
-	"github.com/testifysec/archivista/ent/attestation"
-	"github.com/testifysec/archivista/ent/attestationcollection"
-	"github.com/testifysec/archivista/ent/statement"
+	"github.com/in-toto/archivista/ent/attestation"
+	"github.com/in-toto/archivista/ent/attestationcollection"
+	"github.com/in-toto/archivista/ent/statement"
 )
 
 // AttestationCollectionCreate is the builder for creating a AttestationCollection entity.

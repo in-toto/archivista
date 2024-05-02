@@ -43,6 +43,7 @@ type Config struct {
 	FileServeOn                string `default:"" desc:"What address to serve files on. Only valid when using FILE storage backend." split_words:"true"`
 	FileDir                    string `default:"/tmp/archivista/" desc:"Directory to store and serve files. Only valid when using FILE storage backend." split_words:"true"`
 	BlobStoreEndpoint          string `default:"127.0.0.1:9000" desc:"URL endpoint for blob storage. Only valid when using BLOB storage backend." split_words:"true"`
+	BlobStoreCredentialType    string `default:"ACCESS_KEY" desc:"Blob store credential type. Options are IAM or ACCESS_KEY" split_words:"true"`
 	BlobStoreAccessKeyId       string `default:"" desc:"Blob store access key id. Only valid when using BLOB storage backend." split_words:"true"`
 	BlobStoreSecretAccessKeyId string `default:"" desc:"Blob store secret access key id. Only valid when using BLOB storage backend." split_words:"true"`
 	BlobStoreUseTLS            bool   `default:"TRUE" desc:"Use TLS for BLOB storage backend. Only valid when using BLOB storage backend." split_words:"true"`
@@ -50,6 +51,9 @@ type Config struct {
 
 	EnableGraphql          bool `default:"TRUE" desc:"*** Enable GraphQL Endpoint" split_words:"true"`
 	GraphqlWebClientEnable bool `default:"TRUE" desc:"Enable GraphiQL, the GraphQL web client" split_words:"true"`
+
+	EnableArtifactStore bool   `default:"FALSE" desc:"*** Enable Artifact Store Endpoints" split_words:"true"`
+	ArtifactStoreConfig string `default:"/tmp/artifacts/config.yaml" desc:"Location of the config describing available artifacts" split_words:"true"`
 }
 
 // Process reads config from env

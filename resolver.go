@@ -20,7 +20,7 @@ package archivista
 
 import (
 	"github.com/99designs/gqlgen/graphql"
-	"github.com/testifysec/archivista/ent"
+	"github.com/in-toto/archivista/ent"
 )
 
 // Resolver is the resolver root.

@@ -59,9 +59,17 @@ func New(ctx context.Context, directory string, address string) (*Store, <-chan 
 }
 
 func (s *Store) Get(ctx context.Context, gitoid string) (io.ReadCloser, error) {
-	return os.Open(filepath.Join(s.prefix, gitoid+".json"))
+	if filepath.IsLocal(gitoid) {
+		return os.Open(filepath.Join(s.prefix, gitoid+".json"))
+	} else {
+		return nil, filepath.ErrBadPattern
+	}
 }
 
 func (s *Store) Store(ctx context.Context, gitoid string, payload []byte) error {
-	return os.WriteFile(filepath.Join(s.prefix, gitoid+".json"), payload, 0o600)
+	if filepath.IsLocal(gitoid) {
+		return os.WriteFile(filepath.Join(s.prefix, gitoid+".json"), payload, 0o600)
+	} else {
+		return filepath.ErrBadPattern
+	}
 }

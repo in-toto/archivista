@@ -14,15 +14,16 @@ import (
 	"entgo.io/ent/dialect/sql/schema"
 	"github.com/99designs/gqlgen/graphql"
 	"github.com/hashicorp/go-multierror"
-	"github.com/testifysec/archivista/ent/attestation"
-	"github.com/testifysec/archivista/ent/attestationcollection"
-	"github.com/testifysec/archivista/ent/dsse"
-	"github.com/testifysec/archivista/ent/payloaddigest"
-	"github.com/testifysec/archivista/ent/signature"
-	"github.com/testifysec/archivista/ent/statement"
-	"github.com/testifysec/archivista/ent/subject"
-	"github.com/testifysec/archivista/ent/subjectdigest"
-	"github.com/testifysec/archivista/ent/timestamp"
+	"github.com/in-toto/archivista/ent/attestation"
+	"github.com/in-toto/archivista/ent/attestationcollection"
+	"github.com/in-toto/archivista/ent/attestationpolicy"
+	"github.com/in-toto/archivista/ent/dsse"
+	"github.com/in-toto/archivista/ent/payloaddigest"
+	"github.com/in-toto/archivista/ent/signature"
+	"github.com/in-toto/archivista/ent/statement"
+	"github.com/in-toto/archivista/ent/subject"
+	"github.com/in-toto/archivista/ent/subjectdigest"
+	"github.com/in-toto/archivista/ent/timestamp"
 	"golang.org/x/sync/semaphore"
 )
 
@@ -36,6 +37,9 @@ func (n *Attestation) IsNode() {}
 
 // IsNode implements the Node interface check for GQLGen.
 func (n *AttestationCollection) IsNode() {}
+
+// IsNode implements the Node interface check for GQLGen.
+func (n *AttestationPolicy) IsNode() {}
 
 // IsNode implements the Node interface check for GQLGen.
 func (n *Dsse) IsNode() {}
@@ -132,6 +136,18 @@ func (c *Client) noder(ctx context.Context, table string, id int) (Noder, error)
 		query := c.AttestationCollection.Query().
 			Where(attestationcollection.ID(id))
 		query, err := query.CollectFields(ctx, "AttestationCollection")
+		if err != nil {
+			return nil, err
+		}
+		n, err := query.Only(ctx)
+		if err != nil {
+			return nil, err
+		}
+		return n, nil
+	case attestationpolicy.Table:
+		query := c.AttestationPolicy.Query().
+			Where(attestationpolicy.ID(id))
+		query, err := query.CollectFields(ctx, "AttestationPolicy")
 		if err != nil {
 			return nil, err
 		}
@@ -317,6 +333,22 @@ func (c *Client) noders(ctx context.Context, table string, ids []int) ([]Noder, 
 		query := c.AttestationCollection.Query().
 			Where(attestationcollection.IDIn(ids...))
 		query, err := query.CollectFields(ctx, "AttestationCollection")
+		if err != nil {
+			return nil, err
+		}
+		nodes, err := query.All(ctx)
+		if err != nil {
+			return nil, err
+		}
+		for _, node := range nodes {
+			for _, noder := range idmap[node.ID] {
+				*noder = node
+			}
+		}
+	case attestationpolicy.Table:
+		query := c.AttestationPolicy.Query().
+			Where(attestationpolicy.IDIn(ids...))
+		query, err := query.CollectFields(ctx, "AttestationPolicy")
 		if err != nil {
 			return nil, err
 		}

@@ -8,8 +8,8 @@ import (
 	"entgo.io/ent/dialect/sql"
 	"entgo.io/ent/dialect/sql/sqlgraph"
 	"entgo.io/ent/schema/field"
-	"github.com/testifysec/archivista/ent/predicate"
-	"github.com/testifysec/archivista/ent/subjectdigest"
+	"github.com/in-toto/archivista/ent/predicate"
+	"github.com/in-toto/archivista/ent/subjectdigest"
 )
 
 // SubjectDigestDelete is the builder for deleting a SubjectDigest entity.

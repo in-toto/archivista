@@ -9,8 +9,8 @@ import (
 
 	"entgo.io/ent"
 	"entgo.io/ent/dialect/sql"
-	"github.com/testifysec/archivista/ent/signature"
-	"github.com/testifysec/archivista/ent/timestamp"
+	"github.com/in-toto/archivista/ent/signature"
+	"github.com/in-toto/archivista/ent/timestamp"
 )
 
 // Timestamp is the model entity for the Timestamp schema.
@@ -43,12 +43,10 @@ type TimestampEdges struct {
 // SignatureOrErr returns the Signature value or an error if the edge
 // was not loaded in eager-loading, or loaded but was not found.
 func (e TimestampEdges) SignatureOrErr() (*Signature, error) {
-	if e.loadedTypes[0] {
-		if e.Signature == nil {
-			// Edge was loaded but was not found.
-			return nil, &NotFoundError{label: signature.Label}
-		}
+	if e.Signature != nil {
 		return e.Signature, nil
+	} else if e.loadedTypes[0] {
+		return nil, &NotFoundError{label: signature.Label}
 	}
 	return nil, &NotLoadedError{edge: "signature"}
 }

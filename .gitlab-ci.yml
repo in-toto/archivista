@@ -25,7 +25,7 @@ build-and-push-server:
   script:
     - ko auth login -u ${CI_REGISTRY_USER} -p ${CI_REGISTRY_PASSWORD} ${CI_REGISTRY}
     - ko publish --bare --tags=${CI_COMMIT_SHORT_SHA} ./cmd/archivista
-  
+
 build-and-push-client:
   variables:
     KO_DOCKER_REPO: registry.gitlab.com/testifysec/judge-platform/archivista/archivistactl

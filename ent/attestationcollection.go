@@ -8,8 +8,8 @@ import (
 
 	"entgo.io/ent"
 	"entgo.io/ent/dialect/sql"
-	"github.com/testifysec/archivista/ent/attestationcollection"
-	"github.com/testifysec/archivista/ent/statement"
+	"github.com/in-toto/archivista/ent/attestationcollection"
+	"github.com/in-toto/archivista/ent/statement"
 )
 
 // AttestationCollection is the model entity for the AttestationCollection schema.
@@ -53,12 +53,10 @@ func (e AttestationCollectionEdges) AttestationsOrErr() ([]*Attestation, error) 
 // StatementOrErr returns the Statement value or an error if the edge
 // was not loaded in eager-loading, or loaded but was not found.
 func (e AttestationCollectionEdges) StatementOrErr() (*Statement, error) {
-	if e.loadedTypes[1] {
-		if e.Statement == nil {
-			// Edge was loaded but was not found.
-			return nil, &NotFoundError{label: statement.Label}
-		}
+	if e.Statement != nil {
 		return e.Statement, nil
+	} else if e.loadedTypes[1] {
+		return nil, &NotFoundError{label: statement.Label}
 	}
 	return nil, &NotLoadedError{edge: "statement"}
 }

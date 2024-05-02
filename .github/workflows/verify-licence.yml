@@ -18,18 +18,26 @@ on:
   push:
     branches: ['main', 'release-*']
   pull_request:
+permissions:
+  contents: read
+
 jobs:
     license-check:
       name: license boilerplate check
       runs-on: ubuntu-latest
       steps:
-        - uses: actions/checkout@v4
-        - uses: actions/setup-go@v4
+        - name: Harden Runner
+          uses: step-security/harden-runner@63c24ba6bd7ba022e95695ff85de572c04a18142 # v2.7.0
+          with:
+            egress-policy: audit
+
+        - uses: actions/checkout@0ad4b8fadaa221de15dcec353f45205ec38ea70b # v4.1.4
+        - uses: actions/setup-go@0c52d547c9bc32b1aa3301fd7a9cb496313a4491 # v5.0.0
           with:
             go-version: '1.19.x'
         - name: Install addlicense
-          run: go install github.com/google/addlicense@latest
+          run: go install github.com/google/addlicense@v1.1.1
         - name: Check license headers
           run: |
             set -e
-            addlicense --check -l apache -c 'The Archivist Contributors' -v ./
+            addlicense --check -l apache -c 'The Archivista Contributors' --ignore "ent/migrate/migrations/**" --ignore "docs/**" -v ./

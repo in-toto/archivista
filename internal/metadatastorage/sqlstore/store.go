@@ -23,13 +23,13 @@ import (
 	"time"
 
 	"github.com/digitorus/timestamp"
+	"github.com/in-toto/archivista/ent"
+	"github.com/in-toto/archivista/internal/metadatastorage"
+	"github.com/in-toto/archivista/internal/metadatastorage/parserregistry"
+	"github.com/in-toto/go-witness/cryptoutil"
+	"github.com/in-toto/go-witness/dsse"
+	"github.com/in-toto/go-witness/intoto"
 	"github.com/sirupsen/logrus"
-	"github.com/testifysec/archivista/ent"
-	"github.com/testifysec/archivista/internal/metadatastorage"
-	"github.com/testifysec/archivista/internal/metadatastorage/parserregistry"
-	"github.com/testifysec/go-witness/cryptoutil"
-	"github.com/testifysec/go-witness/dsse"
-	"github.com/testifysec/go-witness/intoto"
 )
 
 // mysql has a limit of 65536 parameters in a single query. each subject has ~2 parameters [statment id and name],
@@ -92,7 +92,7 @@ func (s *Store) Store(ctx context.Context, gitoid string, obj []byte) error {
 		return err
 	}
 
-	payloadDigestSet, err := cryptoutil.CalculateDigestSetFromBytes(envelope.Payload, []crypto.Hash{crypto.SHA256})
+	payloadDigestSet, err := cryptoutil.CalculateDigestSetFromBytes(envelope.Payload, []cryptoutil.DigestValue{{Hash: crypto.SHA256}})
 	if err != nil {
 		return err
 	}

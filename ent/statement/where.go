@@ -5,7 +5,7 @@ package statement
 import (
 	"entgo.io/ent/dialect/sql"
 	"entgo.io/ent/dialect/sql/sqlgraph"
-	"github.com/testifysec/archivista/ent/predicate"
+	"github.com/in-toto/archivista/ent/predicate"
 )
 
 // ID filters vertices based on their ID field.
@@ -138,6 +138,29 @@ func HasSubjects() predicate.Statement {
 func HasSubjectsWith(preds ...predicate.Subject) predicate.Statement {
 	return predicate.Statement(func(s *sql.Selector) {
 		step := newSubjectsStep()
+		sqlgraph.HasNeighborsWith(s, step, func(s *sql.Selector) {
+			for _, p := range preds {
+				p(s)
+			}
+		})
+	})
+}
+
+// HasPolicy applies the HasEdge predicate on the "policy" edge.
+func HasPolicy() predicate.Statement {
+	return predicate.Statement(func(s *sql.Selector) {
+		step := sqlgraph.NewStep(
+			sqlgraph.From(Table, FieldID),
+			sqlgraph.Edge(sqlgraph.O2O, false, PolicyTable, PolicyColumn),
+		)
+		sqlgraph.HasNeighbors(s, step)
+	})
+}
+
+// HasPolicyWith applies the HasEdge predicate on the "policy" edge with a given conditions (other predicates).
+func HasPolicyWith(preds ...predicate.AttestationPolicy) predicate.Statement {
+	return predicate.Statement(func(s *sql.Selector) {
+		step := newPolicyStep()
 		sqlgraph.HasNeighborsWith(s, step, func(s *sql.Selector) {
 			for _, p := range preds {
 				p(s)

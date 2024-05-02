@@ -3,15 +3,16 @@
 package ent
 
 import (
-	"github.com/testifysec/archivista/ent/attestation"
-	"github.com/testifysec/archivista/ent/attestationcollection"
-	"github.com/testifysec/archivista/ent/dsse"
-	"github.com/testifysec/archivista/ent/payloaddigest"
-	"github.com/testifysec/archivista/ent/schema"
-	"github.com/testifysec/archivista/ent/signature"
-	"github.com/testifysec/archivista/ent/statement"
-	"github.com/testifysec/archivista/ent/subject"
-	"github.com/testifysec/archivista/ent/subjectdigest"
+	"github.com/in-toto/archivista/ent/attestation"
+	"github.com/in-toto/archivista/ent/attestationcollection"
+	"github.com/in-toto/archivista/ent/attestationpolicy"
+	"github.com/in-toto/archivista/ent/dsse"
+	"github.com/in-toto/archivista/ent/payloaddigest"
+	"github.com/in-toto/archivista/ent/schema"
+	"github.com/in-toto/archivista/ent/signature"
+	"github.com/in-toto/archivista/ent/statement"
+	"github.com/in-toto/archivista/ent/subject"
+	"github.com/in-toto/archivista/ent/subjectdigest"
 )
 
 // The init function reads all schema descriptors with runtime code
@@ -30,6 +31,12 @@ func init() {
 	attestationcollectionDescName := attestationcollectionFields[0].Descriptor()
 	// attestationcollection.NameValidator is a validator for the "name" field. It is called by the builders before save.
 	attestationcollection.NameValidator = attestationcollectionDescName.Validators[0].(func(string) error)
+	attestationpolicyFields := schema.AttestationPolicy{}.Fields()
+	_ = attestationpolicyFields
+	// attestationpolicyDescName is the schema descriptor for name field.
+	attestationpolicyDescName := attestationpolicyFields[0].Descriptor()
+	// attestationpolicy.NameValidator is a validator for the "name" field. It is called by the builders before save.
+	attestationpolicy.NameValidator = attestationpolicyDescName.Validators[0].(func(string) error)
 	dsseFields := schema.Dsse{}.Fields()
 	_ = dsseFields
 	// dsseDescGitoidSha256 is the schema descriptor for gitoid_sha256 field.

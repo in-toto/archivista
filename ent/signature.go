@@ -8,8 +8,8 @@ import (
 
 	"entgo.io/ent"
 	"entgo.io/ent/dialect/sql"
-	"github.com/testifysec/archivista/ent/dsse"
-	"github.com/testifysec/archivista/ent/signature"
+	"github.com/in-toto/archivista/ent/dsse"
+	"github.com/in-toto/archivista/ent/signature"
 )
 
 // Signature is the model entity for the Signature schema.
@@ -46,12 +46,10 @@ type SignatureEdges struct {
 // DsseOrErr returns the Dsse value or an error if the edge
 // was not loaded in eager-loading, or loaded but was not found.
 func (e SignatureEdges) DsseOrErr() (*Dsse, error) {
-	if e.loadedTypes[0] {
-		if e.Dsse == nil {
-			// Edge was loaded but was not found.
-			return nil, &NotFoundError{label: dsse.Label}
-		}
+	if e.Dsse != nil {
 		return e.Dsse, nil
+	} else if e.loadedTypes[0] {
+		return nil, &NotFoundError{label: dsse.Label}
 	}
 	return nil, &NotLoadedError{edge: "dsse"}
 }

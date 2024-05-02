@@ -15,7 +15,7 @@
 on:
     workflow_call:
         inputs:
-            pull_request: 
+            pull_request:
                 required: true
                 type: boolean
             command:
@@ -27,21 +27,36 @@ on:
             attestations:
                 required: true
                 type: string
-            
+
+permissions:
+  contents: read
+
 jobs:
     witness:
-        runs-on: ubuntu-latest
+        runs-on: ubuntu-22.04
+        permissions:
+          contents: read
+          id-token: write
         steps:
-          - uses: actions/checkout@v4.1.1
-          - uses: actions/setup-go@v4.1.0
+          - name: Harden Runner
+            uses: step-security/harden-runner@63c24ba6bd7ba022e95695ff85de572c04a18142 # v2.7.0
+            with:
+              egress-policy: audit
+
+          - uses: actions/checkout@0ad4b8fadaa221de15dcec353f45205ec38ea70b # v4.1.4
+          - uses: actions/setup-go@0c52d547c9bc32b1aa3301fd7a9cb496313a4491 # v5.0.0
             with:
               go-version: 1.21.x
 
           - if: ${{ inputs.pull_request == false }}
-            uses: testifysec/witness-run-action@40aa4ef36fc431a37de7c3faebcb66513c03b934
+            uses: testifysec/witness-run-action@2ae7f93c013ccf24b8ff52b4f042b32ca95ec7b8
             with:
               step: ${{ inputs.step }}
               attestations: ${{ inputs.attestations }}
               command: /bin/sh -c "${{ inputs.command }}"
+
           - if: ${{ inputs.pull_request == true }}
             run: ${{ inputs.command }}
+
+          - if: ${{ inputs.step == 'tests' }}
+            uses: codecov/codecov-action@84508663e988701840491b86de86b666e8a86bed
