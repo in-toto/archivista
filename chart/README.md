@@ -4,8 +4,6 @@
 
 Helm chart for Archivista - a graph and storage service for in-toto attestations.
 
-**Homepage:** <https://www.testifysec.com/>
-
 ## Requirements
 
 A MySQL database and S3 compatible store are needed to successfully install this Helm chart.
@@ -31,13 +29,13 @@ helm uninstall archivista
 
 ## Maintainers
 
-| Name       | Email | Url                           |
-| ---        | ---   | ---                           |
-| TestifySec |       | <https://www.testifysec.com/> |
+| Name            | Email | Url                           |
+| ---             | ---   | ---                           |
+| in-toto project |       | <https://github.com/in-toto/> |
 
 ## Source Code
 
-* Helm charts: <https://github.com/testifysec/charts>
+* Helm chart: <https://github.com/in-toto/archivista/chart>
 * Archivista: <https://github.com/in-toto/archivista>
 
 ## Values
