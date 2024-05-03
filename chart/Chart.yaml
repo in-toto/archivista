@@ -17,7 +17,7 @@ name: archivista
 description: A Helm chart for Archivista
 
 type: application
-version: 0.1.1
+version: 0.4.0
 
 keywords:
   - attestation
@@ -31,4 +31,4 @@ sources:
 maintainers:
   - name: in-toto
 
-appVersion: "0.1.1"
+appVersion: "0.4.0"
