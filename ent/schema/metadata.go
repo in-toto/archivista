@@ -15,39 +15,32 @@
 package schema
 
 import (
-	"entgo.io/contrib/entgql"
 	"entgo.io/ent"
-	"entgo.io/ent/schema"
 	"entgo.io/ent/schema/edge"
 	"entgo.io/ent/schema/field"
+	"entgo.io/ent/schema/index"
 )
 
-// Dsse represents some metadata about an archived DSSE envelope
-type Dsse struct {
+type Metadata struct {
 	ent.Schema
 }
 
-// Fields of the Statement.
-func (Dsse) Fields() []ent.Field {
+func (Metadata) Fields() []ent.Field {
 	return []ent.Field{
-		field.String("gitoid_sha256").NotEmpty().Unique(),
-		field.String("payload_type").NotEmpty(),
+		field.String("key").NotEmpty().Comment("Key value for the metadata item"),
+		field.String("value").NotEmpty().Comment("Value for the metadata item"),
 	}
 }
 
-// Edges of the Statement.
-func (Dsse) Edges() []ent.Edge {
+func (Metadata) Indexes() []ent.Index {
+	return []ent.Index{
+		index.Fields("key", "value").Unique(),
+	}
+}
+
+func (Metadata) Edges() []ent.Edge {
 	return []ent.Edge{
-		edge.To("statement", Statement.Type).Unique(),
-		edge.To("signatures", Signature.Type),
-		edge.To("payload_digests", PayloadDigest.Type),
-		edge.To("metadata", Metadata.Type),
-	}
-}
-
-func (Dsse) Annotations() []schema.Annotation {
-	return []schema.Annotation{
-		entgql.RelayConnection(),
-		entgql.QueryField(),
+		edge.From("envelope", Dsse.Type).
+			Ref("metadata"),
 	}
 }
