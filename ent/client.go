@@ -19,6 +19,7 @@ import (
 	"github.com/in-toto/archivista/ent/attestationcollection"
 	"github.com/in-toto/archivista/ent/attestationpolicy"
 	"github.com/in-toto/archivista/ent/dsse"
+	"github.com/in-toto/archivista/ent/metadata"
 	"github.com/in-toto/archivista/ent/payloaddigest"
 	"github.com/in-toto/archivista/ent/signature"
 	"github.com/in-toto/archivista/ent/statement"
@@ -40,6 +41,8 @@ type Client struct {
 	AttestationPolicy *AttestationPolicyClient
 	// Dsse is the client for interacting with the Dsse builders.
 	Dsse *DsseClient
+	// Metadata is the client for interacting with the Metadata builders.
+	Metadata *MetadataClient
 	// PayloadDigest is the client for interacting with the PayloadDigest builders.
 	PayloadDigest *PayloadDigestClient
 	// Signature is the client for interacting with the Signature builders.
@@ -69,6 +72,7 @@ func (c *Client) init() {
 	c.AttestationCollection = NewAttestationCollectionClient(c.config)
 	c.AttestationPolicy = NewAttestationPolicyClient(c.config)
 	c.Dsse = NewDsseClient(c.config)
+	c.Metadata = NewMetadataClient(c.config)
 	c.PayloadDigest = NewPayloadDigestClient(c.config)
 	c.Signature = NewSignatureClient(c.config)
 	c.Statement = NewStatementClient(c.config)
@@ -171,6 +175,7 @@ func (c *Client) Tx(ctx context.Context) (*Tx, error) {
 		AttestationCollection: NewAttestationCollectionClient(cfg),
 		AttestationPolicy:     NewAttestationPolicyClient(cfg),
 		Dsse:                  NewDsseClient(cfg),
+		Metadata:              NewMetadataClient(cfg),
 		PayloadDigest:         NewPayloadDigestClient(cfg),
 		Signature:             NewSignatureClient(cfg),
 		Statement:             NewStatementClient(cfg),
@@ -200,6 +205,7 @@ func (c *Client) BeginTx(ctx context.Context, opts *sql.TxOptions) (*Tx, error) 
 		AttestationCollection: NewAttestationCollectionClient(cfg),
 		AttestationPolicy:     NewAttestationPolicyClient(cfg),
 		Dsse:                  NewDsseClient(cfg),
+		Metadata:              NewMetadataClient(cfg),
 		PayloadDigest:         NewPayloadDigestClient(cfg),
 		Signature:             NewSignatureClient(cfg),
 		Statement:             NewStatementClient(cfg),
@@ -235,7 +241,7 @@ func (c *Client) Close() error {
 // In order to add hooks to a specific client, call: `client.Node.Use(...)`.
 func (c *Client) Use(hooks ...Hook) {
 	for _, n := range []interface{ Use(...Hook) }{
-		c.Attestation, c.AttestationCollection, c.AttestationPolicy, c.Dsse,
+		c.Attestation, c.AttestationCollection, c.AttestationPolicy, c.Dsse, c.Metadata,
 		c.PayloadDigest, c.Signature, c.Statement, c.Subject, c.SubjectDigest,
 		c.Timestamp,
 	} {
@@ -247,7 +253,7 @@ func (c *Client) Use(hooks ...Hook) {
 // In order to add interceptors to a specific client, call: `client.Node.Intercept(...)`.
 func (c *Client) Intercept(interceptors ...Interceptor) {
 	for _, n := range []interface{ Intercept(...Interceptor) }{
-		c.Attestation, c.AttestationCollection, c.AttestationPolicy, c.Dsse,
+		c.Attestation, c.AttestationCollection, c.AttestationPolicy, c.Dsse, c.Metadata,
 		c.PayloadDigest, c.Signature, c.Statement, c.Subject, c.SubjectDigest,
 		c.Timestamp,
 	} {
@@ -266,6 +272,8 @@ func (c *Client) Mutate(ctx context.Context, m Mutation) (Value, error) {
 		return c.AttestationPolicy.mutate(ctx, m)
 	case *DsseMutation:
 		return c.Dsse.mutate(ctx, m)
+	case *MetadataMutation:
+		return c.Metadata.mutate(ctx, m)
 	case *PayloadDigestMutation:
 		return c.PayloadDigest.mutate(ctx, m)
 	case *SignatureMutation:
@@ -902,6 +910,22 @@ func (c *DsseClient) QueryPayloadDigests(d *Dsse) *PayloadDigestQuery {
 	return query
 }
 
+// QueryMetadata queries the metadata edge of a Dsse.
+func (c *DsseClient) QueryMetadata(d *Dsse) *MetadataQuery {
+	query := (&MetadataClient{config: c.config}).Query()
+	query.path = func(context.Context) (fromV *sql.Selector, _ error) {
+		id := d.ID
+		step := sqlgraph.NewStep(
+			sqlgraph.From(dsse.Table, dsse.FieldID, id),
+			sqlgraph.To(metadata.Table, metadata.FieldID),
+			sqlgraph.Edge(sqlgraph.M2M, false, dsse.MetadataTable, dsse.MetadataPrimaryKey...),
+		)
+		fromV = sqlgraph.Neighbors(d.driver.Dialect(), step)
+		return fromV, nil
+	}
+	return query
+}
+
 // Hooks returns the client hooks.
 func (c *DsseClient) Hooks() []Hook {
 	return c.hooks.Dsse
@@ -924,6 +948,155 @@ func (c *DsseClient) mutate(ctx context.Context, m *DsseMutation) (Value, error)
 		return (&DsseDelete{config: c.config, hooks: c.Hooks(), mutation: m}).Exec(ctx)
 	default:
 		return nil, fmt.Errorf("ent: unknown Dsse mutation op: %q", m.Op())
+	}
+}
+
+// MetadataClient is a client for the Metadata schema.
+type MetadataClient struct {
+	config
+}
+
+// NewMetadataClient returns a client for the Metadata from the given config.
+func NewMetadataClient(c config) *MetadataClient {
+	return &MetadataClient{config: c}
+}
+
+// Use adds a list of mutation hooks to the hooks stack.
+// A call to `Use(f, g, h)` equals to `metadata.Hooks(f(g(h())))`.
+func (c *MetadataClient) Use(hooks ...Hook) {
+	c.hooks.Metadata = append(c.hooks.Metadata, hooks...)
+}
+
+// Intercept adds a list of query interceptors to the interceptors stack.
+// A call to `Intercept(f, g, h)` equals to `metadata.Intercept(f(g(h())))`.
+func (c *MetadataClient) Intercept(interceptors ...Interceptor) {
+	c.inters.Metadata = append(c.inters.Metadata, interceptors...)
+}
+
+// Create returns a builder for creating a Metadata entity.
+func (c *MetadataClient) Create() *MetadataCreate {
+	mutation := newMetadataMutation(c.config, OpCreate)
+	return &MetadataCreate{config: c.config, hooks: c.Hooks(), mutation: mutation}
+}
+
+// CreateBulk returns a builder for creating a bulk of Metadata entities.
+func (c *MetadataClient) CreateBulk(builders ...*MetadataCreate) *MetadataCreateBulk {
+	return &MetadataCreateBulk{config: c.config, builders: builders}
+}
+
+// MapCreateBulk creates a bulk creation builder from the given slice. For each item in the slice, the function creates
+// a builder and applies setFunc on it.
+func (c *MetadataClient) MapCreateBulk(slice any, setFunc func(*MetadataCreate, int)) *MetadataCreateBulk {
+	rv := reflect.ValueOf(slice)
+	if rv.Kind() != reflect.Slice {
+		return &MetadataCreateBulk{err: fmt.Errorf("calling to MetadataClient.MapCreateBulk with wrong type %T, need slice", slice)}
+	}
+	builders := make([]*MetadataCreate, rv.Len())
+	for i := 0; i < rv.Len(); i++ {
+		builders[i] = c.Create()
+		setFunc(builders[i], i)
+	}
+	return &MetadataCreateBulk{config: c.config, builders: builders}
+}
+
+// Update returns an update builder for Metadata.
+func (c *MetadataClient) Update() *MetadataUpdate {
+	mutation := newMetadataMutation(c.config, OpUpdate)
+	return &MetadataUpdate{config: c.config, hooks: c.Hooks(), mutation: mutation}
+}
+
+// UpdateOne returns an update builder for the given entity.
+func (c *MetadataClient) UpdateOne(m *Metadata) *MetadataUpdateOne {
+	mutation := newMetadataMutation(c.config, OpUpdateOne, withMetadata(m))
+	return &MetadataUpdateOne{config: c.config, hooks: c.Hooks(), mutation: mutation}
+}
+
+// UpdateOneID returns an update builder for the given id.
+func (c *MetadataClient) UpdateOneID(id int) *MetadataUpdateOne {
+	mutation := newMetadataMutation(c.config, OpUpdateOne, withMetadataID(id))
+	return &MetadataUpdateOne{config: c.config, hooks: c.Hooks(), mutation: mutation}
+}
+
+// Delete returns a delete builder for Metadata.
+func (c *MetadataClient) Delete() *MetadataDelete {
+	mutation := newMetadataMutation(c.config, OpDelete)
+	return &MetadataDelete{config: c.config, hooks: c.Hooks(), mutation: mutation}
+}
+
+// DeleteOne returns a builder for deleting the given entity.
+func (c *MetadataClient) DeleteOne(m *Metadata) *MetadataDeleteOne {
+	return c.DeleteOneID(m.ID)
+}
+
+// DeleteOneID returns a builder for deleting the given entity by its id.
+func (c *MetadataClient) DeleteOneID(id int) *MetadataDeleteOne {
+	builder := c.Delete().Where(metadata.ID(id))
+	builder.mutation.id = &id
+	builder.mutation.op = OpDeleteOne
+	return &MetadataDeleteOne{builder}
+}
+
+// Query returns a query builder for Metadata.
+func (c *MetadataClient) Query() *MetadataQuery {
+	return &MetadataQuery{
+		config: c.config,
+		ctx:    &QueryContext{Type: TypeMetadata},
+		inters: c.Interceptors(),
+	}
+}
+
+// Get returns a Metadata entity by its id.
+func (c *MetadataClient) Get(ctx context.Context, id int) (*Metadata, error) {
+	return c.Query().Where(metadata.ID(id)).Only(ctx)
+}
+
+// GetX is like Get, but panics if an error occurs.
+func (c *MetadataClient) GetX(ctx context.Context, id int) *Metadata {
+	obj, err := c.Get(ctx, id)
+	if err != nil {
+		panic(err)
+	}
+	return obj
+}
+
+// QueryEnvelope queries the envelope edge of a Metadata.
+func (c *MetadataClient) QueryEnvelope(m *Metadata) *DsseQuery {
+	query := (&DsseClient{config: c.config}).Query()
+	query.path = func(context.Context) (fromV *sql.Selector, _ error) {
+		id := m.ID
+		step := sqlgraph.NewStep(
+			sqlgraph.From(metadata.Table, metadata.FieldID, id),
+			sqlgraph.To(dsse.Table, dsse.FieldID),
+			sqlgraph.Edge(sqlgraph.M2M, true, metadata.EnvelopeTable, metadata.EnvelopePrimaryKey...),
+		)
+		fromV = sqlgraph.Neighbors(m.driver.Dialect(), step)
+		return fromV, nil
+	}
+	return query
+}
+
+// Hooks returns the client hooks.
+func (c *MetadataClient) Hooks() []Hook {
+	return c.hooks.Metadata
+}
+
+// Interceptors returns the client interceptors.
+func (c *MetadataClient) Interceptors() []Interceptor {
+	return c.inters.Metadata
+}
+
+func (c *MetadataClient) mutate(ctx context.Context, m *MetadataMutation) (Value, error) {
+	switch m.Op() {
+	case OpCreate:
+		return (&MetadataCreate{config: c.config, hooks: c.Hooks(), mutation: m}).Save(ctx)
+	case OpUpdate:
+		return (&MetadataUpdate{config: c.config, hooks: c.Hooks(), mutation: m}).Save(ctx)
+	case OpUpdateOne:
+		return (&MetadataUpdateOne{config: c.config, hooks: c.Hooks(), mutation: m}).Save(ctx)
+	case OpDelete, OpDeleteOne:
+		return (&MetadataDelete{config: c.config, hooks: c.Hooks(), mutation: m}).Exec(ctx)
+	default:
+		return nil, fmt.Errorf("ent: unknown Metadata mutation op: %q", m.Op())
 	}
 }
 
@@ -1904,11 +2077,13 @@ func (c *TimestampClient) mutate(ctx context.Context, m *TimestampMutation) (Val
 // hooks and interceptors per client, for fast access.
 type (
 	hooks struct {
-		Attestation, AttestationCollection, AttestationPolicy, Dsse, PayloadDigest,
-		Signature, Statement, Subject, SubjectDigest, Timestamp []ent.Hook
+		Attestation, AttestationCollection, AttestationPolicy, Dsse, Metadata,
+		PayloadDigest, Signature, Statement, Subject, SubjectDigest,
+		Timestamp []ent.Hook
 	}
 	inters struct {
-		Attestation, AttestationCollection, AttestationPolicy, Dsse, PayloadDigest,
-		Signature, Statement, Subject, SubjectDigest, Timestamp []ent.Interceptor
+		Attestation, AttestationCollection, AttestationPolicy, Dsse, Metadata,
+		PayloadDigest, Signature, Statement, Subject, SubjectDigest,
+		Timestamp []ent.Interceptor
 	}
 )

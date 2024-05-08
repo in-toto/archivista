@@ -10,6 +10,7 @@ import (
 	"entgo.io/ent/dialect/sql/sqlgraph"
 	"entgo.io/ent/schema/field"
 	"github.com/in-toto/archivista/ent/dsse"
+	"github.com/in-toto/archivista/ent/metadata"
 	"github.com/in-toto/archivista/ent/payloaddigest"
 	"github.com/in-toto/archivista/ent/signature"
 	"github.com/in-toto/archivista/ent/statement"
@@ -81,6 +82,21 @@ func (dc *DsseCreate) AddPayloadDigests(p ...*PayloadDigest) *DsseCreate {
 		ids[i] = p[i].ID
 	}
 	return dc.AddPayloadDigestIDs(ids...)
+}
+
+// AddMetadatumIDs adds the "metadata" edge to the Metadata entity by IDs.
+func (dc *DsseCreate) AddMetadatumIDs(ids ...int) *DsseCreate {
+	dc.mutation.AddMetadatumIDs(ids...)
+	return dc
+}
+
+// AddMetadata adds the "metadata" edges to the Metadata entity.
+func (dc *DsseCreate) AddMetadata(m ...*Metadata) *DsseCreate {
+	ids := make([]int, len(m))
+	for i := range m {
+		ids[i] = m[i].ID
+	}
+	return dc.AddMetadatumIDs(ids...)
 }
 
 // Mutation returns the DsseMutation object of the builder.
@@ -209,6 +225,22 @@ func (dc *DsseCreate) createSpec() (*Dsse, *sqlgraph.CreateSpec) {
 			Bidi:    false,
 			Target: &sqlgraph.EdgeTarget{
 				IDSpec: sqlgraph.NewFieldSpec(payloaddigest.FieldID, field.TypeInt),
+			},
+		}
+		for _, k := range nodes {
+			edge.Target.Nodes = append(edge.Target.Nodes, k)
+		}
+		_spec.Edges = append(_spec.Edges, edge)
+	}
+	if nodes := dc.mutation.MetadataIDs(); len(nodes) > 0 {
+		edge := &sqlgraph.EdgeSpec{
+			Rel:     sqlgraph.M2M,
+			Inverse: false,
+			Table:   dsse.MetadataTable,
+			Columns: dsse.MetadataPrimaryKey,
+			Bidi:    false,
+			Target: &sqlgraph.EdgeTarget{
+				IDSpec: sqlgraph.NewFieldSpec(metadata.FieldID, field.TypeInt),
 			},
 		}
 		for _, k := range nodes {

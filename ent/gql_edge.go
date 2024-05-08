@@ -76,6 +76,30 @@ func (d *Dsse) PayloadDigests(ctx context.Context) (result []*PayloadDigest, err
 	return result, err
 }
 
+func (d *Dsse) Metadata(ctx context.Context) (result []*Metadata, err error) {
+	if fc := graphql.GetFieldContext(ctx); fc != nil && fc.Field.Alias != "" {
+		result, err = d.NamedMetadata(graphql.GetFieldContext(ctx).Field.Alias)
+	} else {
+		result, err = d.Edges.MetadataOrErr()
+	}
+	if IsNotLoaded(err) {
+		result, err = d.QueryMetadata().All(ctx)
+	}
+	return result, err
+}
+
+func (m *Metadata) Envelope(ctx context.Context) (result []*Dsse, err error) {
+	if fc := graphql.GetFieldContext(ctx); fc != nil && fc.Field.Alias != "" {
+		result, err = m.NamedEnvelope(graphql.GetFieldContext(ctx).Field.Alias)
+	} else {
+		result, err = m.Edges.EnvelopeOrErr()
+	}
+	if IsNotLoaded(err) {
+		result, err = m.QueryEnvelope().All(ctx)
+	}
+	return result, err
+}
+
 func (pd *PayloadDigest) Dsse(ctx context.Context) (*Dsse, error) {
 	result, err := pd.Edges.DsseOrErr()
 	if IsNotLoaded(err) {

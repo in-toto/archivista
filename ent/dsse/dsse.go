@@ -22,6 +22,8 @@ const (
 	EdgeSignatures = "signatures"
 	// EdgePayloadDigests holds the string denoting the payload_digests edge name in mutations.
 	EdgePayloadDigests = "payload_digests"
+	// EdgeMetadata holds the string denoting the metadata edge name in mutations.
+	EdgeMetadata = "metadata"
 	// Table holds the table name of the dsse in the database.
 	Table = "dsses"
 	// StatementTable is the table that holds the statement relation/edge.
@@ -45,6 +47,11 @@ const (
 	PayloadDigestsInverseTable = "payload_digests"
 	// PayloadDigestsColumn is the table column denoting the payload_digests relation/edge.
 	PayloadDigestsColumn = "dsse_payload_digests"
+	// MetadataTable is the table that holds the metadata relation/edge. The primary key declared below.
+	MetadataTable = "dsse_metadata"
+	// MetadataInverseTable is the table name for the Metadata entity.
+	// It exists in this package in order to avoid circular dependency with the "metadata" package.
+	MetadataInverseTable = "metadata"
 )
 
 // Columns holds all SQL columns for dsse fields.
@@ -59,6 +66,12 @@ var Columns = []string{
 var ForeignKeys = []string{
 	"dsse_statement",
 }
+
+var (
+	// MetadataPrimaryKey and MetadataColumn2 are the table columns denoting the
+	// primary key for the metadata relation (M2M).
+	MetadataPrimaryKey = []string{"dsse_id", "metadata_id"}
+)
 
 // ValidColumn reports if the column name is valid (part of the table columns).
 func ValidColumn(column string) bool {
@@ -134,6 +147,20 @@ func ByPayloadDigests(term sql.OrderTerm, terms ...sql.OrderTerm) OrderOption {
 		sqlgraph.OrderByNeighborTerms(s, newPayloadDigestsStep(), append([]sql.OrderTerm{term}, terms...)...)
 	}
 }
+
+// ByMetadataCount orders the results by metadata count.
+func ByMetadataCount(opts ...sql.OrderTermOption) OrderOption {
+	return func(s *sql.Selector) {
+		sqlgraph.OrderByNeighborsCount(s, newMetadataStep(), opts...)
+	}
+}
+
+// ByMetadata orders the results by metadata terms.
+func ByMetadata(term sql.OrderTerm, terms ...sql.OrderTerm) OrderOption {
+	return func(s *sql.Selector) {
+		sqlgraph.OrderByNeighborTerms(s, newMetadataStep(), append([]sql.OrderTerm{term}, terms...)...)
+	}
+}
 func newStatementStep() *sqlgraph.Step {
 	return sqlgraph.NewStep(
 		sqlgraph.From(Table, FieldID),
@@ -153,5 +180,12 @@ func newPayloadDigestsStep() *sqlgraph.Step {
 		sqlgraph.From(Table, FieldID),
 		sqlgraph.To(PayloadDigestsInverseTable, FieldID),
 		sqlgraph.Edge(sqlgraph.O2M, false, PayloadDigestsTable, PayloadDigestsColumn),
+	)
+}
+func newMetadataStep() *sqlgraph.Step {
+	return sqlgraph.NewStep(
+		sqlgraph.From(Table, FieldID),
+		sqlgraph.To(MetadataInverseTable, FieldID),
+		sqlgraph.Edge(sqlgraph.M2M, false, MetadataTable, MetadataPrimaryKey...),
 	)
 }

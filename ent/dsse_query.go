@@ -12,6 +12,7 @@ import (
 	"entgo.io/ent/dialect/sql/sqlgraph"
 	"entgo.io/ent/schema/field"
 	"github.com/in-toto/archivista/ent/dsse"
+	"github.com/in-toto/archivista/ent/metadata"
 	"github.com/in-toto/archivista/ent/payloaddigest"
 	"github.com/in-toto/archivista/ent/predicate"
 	"github.com/in-toto/archivista/ent/signature"
@@ -28,11 +29,13 @@ type DsseQuery struct {
 	withStatement           *StatementQuery
 	withSignatures          *SignatureQuery
 	withPayloadDigests      *PayloadDigestQuery
+	withMetadata            *MetadataQuery
 	withFKs                 bool
 	modifiers               []func(*sql.Selector)
 	loadTotal               []func(context.Context, []*Dsse) error
 	withNamedSignatures     map[string]*SignatureQuery
 	withNamedPayloadDigests map[string]*PayloadDigestQuery
+	withNamedMetadata       map[string]*MetadataQuery
 	// intermediate query (i.e. traversal path).
 	sql  *sql.Selector
 	path func(context.Context) (*sql.Selector, error)
@@ -128,6 +131,28 @@ func (dq *DsseQuery) QueryPayloadDigests() *PayloadDigestQuery {
 			sqlgraph.From(dsse.Table, dsse.FieldID, selector),
 			sqlgraph.To(payloaddigest.Table, payloaddigest.FieldID),
 			sqlgraph.Edge(sqlgraph.O2M, false, dsse.PayloadDigestsTable, dsse.PayloadDigestsColumn),
+		)
+		fromU = sqlgraph.SetNeighbors(dq.driver.Dialect(), step)
+		return fromU, nil
+	}
+	return query
+}
+
+// QueryMetadata chains the current query on the "metadata" edge.
+func (dq *DsseQuery) QueryMetadata() *MetadataQuery {
+	query := (&MetadataClient{config: dq.config}).Query()
+	query.path = func(ctx context.Context) (fromU *sql.Selector, err error) {
+		if err := dq.prepareQuery(ctx); err != nil {
+			return nil, err
+		}
+		selector := dq.sqlQuery(ctx)
+		if err := selector.Err(); err != nil {
+			return nil, err
+		}
+		step := sqlgraph.NewStep(
+			sqlgraph.From(dsse.Table, dsse.FieldID, selector),
+			sqlgraph.To(metadata.Table, metadata.FieldID),
+			sqlgraph.Edge(sqlgraph.M2M, false, dsse.MetadataTable, dsse.MetadataPrimaryKey...),
 		)
 		fromU = sqlgraph.SetNeighbors(dq.driver.Dialect(), step)
 		return fromU, nil
@@ -330,6 +355,7 @@ func (dq *DsseQuery) Clone() *DsseQuery {
 		withStatement:      dq.withStatement.Clone(),
 		withSignatures:     dq.withSignatures.Clone(),
 		withPayloadDigests: dq.withPayloadDigests.Clone(),
+		withMetadata:       dq.withMetadata.Clone(),
 		// clone intermediate query.
 		sql:  dq.sql.Clone(),
 		path: dq.path,
@@ -366,6 +392,17 @@ func (dq *DsseQuery) WithPayloadDigests(opts ...func(*PayloadDigestQuery)) *Dsse
 		opt(query)
 	}
 	dq.withPayloadDigests = query
+	return dq
+}
+
+// WithMetadata tells the query-builder to eager-load the nodes that are connected to
+// the "metadata" edge. The optional arguments are used to configure the query builder of the edge.
+func (dq *DsseQuery) WithMetadata(opts ...func(*MetadataQuery)) *DsseQuery {
+	query := (&MetadataClient{config: dq.config}).Query()
+	for _, opt := range opts {
+		opt(query)
+	}
+	dq.withMetadata = query
 	return dq
 }
 
@@ -448,10 +485,11 @@ func (dq *DsseQuery) sqlAll(ctx context.Context, hooks ...queryHook) ([]*Dsse, e
 		nodes       = []*Dsse{}
 		withFKs     = dq.withFKs
 		_spec       = dq.querySpec()
-		loadedTypes = [3]bool{
+		loadedTypes = [4]bool{
 			dq.withStatement != nil,
 			dq.withSignatures != nil,
 			dq.withPayloadDigests != nil,
+			dq.withMetadata != nil,
 		}
 	)
 	if dq.withStatement != nil {
@@ -501,6 +539,13 @@ func (dq *DsseQuery) sqlAll(ctx context.Context, hooks ...queryHook) ([]*Dsse, e
 			return nil, err
 		}
 	}
+	if query := dq.withMetadata; query != nil {
+		if err := dq.loadMetadata(ctx, query, nodes,
+			func(n *Dsse) { n.Edges.Metadata = []*Metadata{} },
+			func(n *Dsse, e *Metadata) { n.Edges.Metadata = append(n.Edges.Metadata, e) }); err != nil {
+			return nil, err
+		}
+	}
 	for name, query := range dq.withNamedSignatures {
 		if err := dq.loadSignatures(ctx, query, nodes,
 			func(n *Dsse) { n.appendNamedSignatures(name) },
@@ -512,6 +557,13 @@ func (dq *DsseQuery) sqlAll(ctx context.Context, hooks ...queryHook) ([]*Dsse, e
 		if err := dq.loadPayloadDigests(ctx, query, nodes,
 			func(n *Dsse) { n.appendNamedPayloadDigests(name) },
 			func(n *Dsse, e *PayloadDigest) { n.appendNamedPayloadDigests(name, e) }); err != nil {
+			return nil, err
+		}
+	}
+	for name, query := range dq.withNamedMetadata {
+		if err := dq.loadMetadata(ctx, query, nodes,
+			func(n *Dsse) { n.appendNamedMetadata(name) },
+			func(n *Dsse, e *Metadata) { n.appendNamedMetadata(name, e) }); err != nil {
 			return nil, err
 		}
 	}
@@ -614,6 +666,67 @@ func (dq *DsseQuery) loadPayloadDigests(ctx context.Context, query *PayloadDiges
 			return fmt.Errorf(`unexpected referenced foreign-key "dsse_payload_digests" returned %v for node %v`, *fk, n.ID)
 		}
 		assign(node, n)
+	}
+	return nil
+}
+func (dq *DsseQuery) loadMetadata(ctx context.Context, query *MetadataQuery, nodes []*Dsse, init func(*Dsse), assign func(*Dsse, *Metadata)) error {
+	edgeIDs := make([]driver.Value, len(nodes))
+	byID := make(map[int]*Dsse)
+	nids := make(map[int]map[*Dsse]struct{})
+	for i, node := range nodes {
+		edgeIDs[i] = node.ID
+		byID[node.ID] = node
+		if init != nil {
+			init(node)
+		}
+	}
+	query.Where(func(s *sql.Selector) {
+		joinT := sql.Table(dsse.MetadataTable)
+		s.Join(joinT).On(s.C(metadata.FieldID), joinT.C(dsse.MetadataPrimaryKey[1]))
+		s.Where(sql.InValues(joinT.C(dsse.MetadataPrimaryKey[0]), edgeIDs...))
+		columns := s.SelectedColumns()
+		s.Select(joinT.C(dsse.MetadataPrimaryKey[0]))
+		s.AppendSelect(columns...)
+		s.SetDistinct(false)
+	})
+	if err := query.prepareQuery(ctx); err != nil {
+		return err
+	}
+	qr := QuerierFunc(func(ctx context.Context, q Query) (Value, error) {
+		return query.sqlAll(ctx, func(_ context.Context, spec *sqlgraph.QuerySpec) {
+			assign := spec.Assign
+			values := spec.ScanValues
+			spec.ScanValues = func(columns []string) ([]any, error) {
+				values, err := values(columns[1:])
+				if err != nil {
+					return nil, err
+				}
+				return append([]any{new(sql.NullInt64)}, values...), nil
+			}
+			spec.Assign = func(columns []string, values []any) error {
+				outValue := int(values[0].(*sql.NullInt64).Int64)
+				inValue := int(values[1].(*sql.NullInt64).Int64)
+				if nids[inValue] == nil {
+					nids[inValue] = map[*Dsse]struct{}{byID[outValue]: {}}
+					return assign(columns[1:], values[1:])
+				}
+				nids[inValue][byID[outValue]] = struct{}{}
+				return nil
+			}
+		})
+	})
+	neighbors, err := withInterceptors[[]*Metadata](ctx, query, qr, query.inters)
+	if err != nil {
+		return err
+	}
+	for _, n := range neighbors {
+		nodes, ok := nids[n.ID]
+		if !ok {
+			return fmt.Errorf(`unexpected "metadata" node returned %v`, n.ID)
+		}
+		for kn := range nodes {
+			assign(kn, n)
+		}
 	}
 	return nil
 }
@@ -727,6 +840,20 @@ func (dq *DsseQuery) WithNamedPayloadDigests(name string, opts ...func(*PayloadD
 		dq.withNamedPayloadDigests = make(map[string]*PayloadDigestQuery)
 	}
 	dq.withNamedPayloadDigests[name] = query
+	return dq
+}
+
+// WithNamedMetadata tells the query-builder to eager-load the nodes that are connected to the "metadata"
+// edge with the given name. The optional arguments are used to configure the query builder of the edge.
+func (dq *DsseQuery) WithNamedMetadata(name string, opts ...func(*MetadataQuery)) *DsseQuery {
+	query := (&MetadataClient{config: dq.config}).Query()
+	for _, opt := range opts {
+		opt(query)
+	}
+	if dq.withNamedMetadata == nil {
+		dq.withNamedMetadata = make(map[string]*MetadataQuery)
+	}
+	dq.withNamedMetadata[name] = query
 	return dq
 }
 

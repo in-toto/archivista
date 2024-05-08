@@ -36,14 +36,17 @@ type DsseEdges struct {
 	Signatures []*Signature `json:"signatures,omitempty"`
 	// PayloadDigests holds the value of the payload_digests edge.
 	PayloadDigests []*PayloadDigest `json:"payload_digests,omitempty"`
+	// Metadata holds the value of the metadata edge.
+	Metadata []*Metadata `json:"metadata,omitempty"`
 	// loadedTypes holds the information for reporting if a
 	// type was loaded (or requested) in eager-loading or not.
-	loadedTypes [3]bool
+	loadedTypes [4]bool
 	// totalCount holds the count of the edges above.
-	totalCount [3]map[string]int
+	totalCount [4]map[string]int
 
 	namedSignatures     map[string][]*Signature
 	namedPayloadDigests map[string][]*PayloadDigest
+	namedMetadata       map[string][]*Metadata
 }
 
 // StatementOrErr returns the Statement value or an error if the edge
@@ -73,6 +76,15 @@ func (e DsseEdges) PayloadDigestsOrErr() ([]*PayloadDigest, error) {
 		return e.PayloadDigests, nil
 	}
 	return nil, &NotLoadedError{edge: "payload_digests"}
+}
+
+// MetadataOrErr returns the Metadata value or an error if the edge
+// was not loaded in eager-loading.
+func (e DsseEdges) MetadataOrErr() ([]*Metadata, error) {
+	if e.loadedTypes[3] {
+		return e.Metadata, nil
+	}
+	return nil, &NotLoadedError{edge: "metadata"}
 }
 
 // scanValues returns the types for scanning values from sql.Rows.
@@ -154,6 +166,11 @@ func (d *Dsse) QueryPayloadDigests() *PayloadDigestQuery {
 	return NewDsseClient(d.config).QueryPayloadDigests(d)
 }
 
+// QueryMetadata queries the "metadata" edge of the Dsse entity.
+func (d *Dsse) QueryMetadata() *MetadataQuery {
+	return NewDsseClient(d.config).QueryMetadata(d)
+}
+
 // Update returns a builder for updating this Dsse.
 // Note that you need to call Dsse.Unwrap() before calling this method if this Dsse
 // was returned from a transaction, and the transaction was committed or rolled back.
@@ -231,6 +248,30 @@ func (d *Dsse) appendNamedPayloadDigests(name string, edges ...*PayloadDigest) {
 		d.Edges.namedPayloadDigests[name] = []*PayloadDigest{}
 	} else {
 		d.Edges.namedPayloadDigests[name] = append(d.Edges.namedPayloadDigests[name], edges...)
+	}
+}
+
+// NamedMetadata returns the Metadata named value or an error if the edge was not
+// loaded in eager-loading with this name.
+func (d *Dsse) NamedMetadata(name string) ([]*Metadata, error) {
+	if d.Edges.namedMetadata == nil {
+		return nil, &NotLoadedError{edge: name}
+	}
+	nodes, ok := d.Edges.namedMetadata[name]
+	if !ok {
+		return nil, &NotLoadedError{edge: name}
+	}
+	return nodes, nil
+}
+
+func (d *Dsse) appendNamedMetadata(name string, edges ...*Metadata) {
+	if d.Edges.namedMetadata == nil {
+		d.Edges.namedMetadata = make(map[string][]*Metadata)
+	}
+	if len(edges) == 0 {
+		d.Edges.namedMetadata[name] = []*Metadata{}
+	} else {
+		d.Edges.namedMetadata[name] = append(d.Edges.namedMetadata[name], edges...)
 	}
 }
 

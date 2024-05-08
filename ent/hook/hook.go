@@ -57,6 +57,18 @@ func (f DsseFunc) Mutate(ctx context.Context, m ent.Mutation) (ent.Value, error)
 	return nil, fmt.Errorf("unexpected mutation type %T. expect *ent.DsseMutation", m)
 }
 
+// The MetadataFunc type is an adapter to allow the use of ordinary
+// function as Metadata mutator.
+type MetadataFunc func(context.Context, *ent.MetadataMutation) (ent.Value, error)
+
+// Mutate calls f(ctx, m).
+func (f MetadataFunc) Mutate(ctx context.Context, m ent.Mutation) (ent.Value, error) {
+	if mv, ok := m.(*ent.MetadataMutation); ok {
+		return f(ctx, mv)
+	}
+	return nil, fmt.Errorf("unexpected mutation type %T. expect *ent.MetadataMutation", m)
+}
+
 // The PayloadDigestFunc type is an adapter to allow the use of ordinary
 // function as PayloadDigest mutator.
 type PayloadDigestFunc func(context.Context, *ent.PayloadDigestMutation) (ent.Value, error)

@@ -18,6 +18,7 @@ import (
 	"github.com/in-toto/archivista/ent/attestationcollection"
 	"github.com/in-toto/archivista/ent/attestationpolicy"
 	"github.com/in-toto/archivista/ent/dsse"
+	"github.com/in-toto/archivista/ent/metadata"
 	"github.com/in-toto/archivista/ent/payloaddigest"
 	"github.com/in-toto/archivista/ent/signature"
 	"github.com/in-toto/archivista/ent/statement"
@@ -32,35 +33,60 @@ type Noder interface {
 	IsNode()
 }
 
-// IsNode implements the Node interface check for GQLGen.
-func (n *Attestation) IsNode() {}
+var attestationImplementors = []string{"Attestation", "Node"}
 
 // IsNode implements the Node interface check for GQLGen.
-func (n *AttestationCollection) IsNode() {}
+func (*Attestation) IsNode() {}
+
+var attestationcollectionImplementors = []string{"AttestationCollection", "Node"}
 
 // IsNode implements the Node interface check for GQLGen.
-func (n *AttestationPolicy) IsNode() {}
+func (*AttestationCollection) IsNode() {}
+
+var attestationpolicyImplementors = []string{"AttestationPolicy", "Node"}
 
 // IsNode implements the Node interface check for GQLGen.
-func (n *Dsse) IsNode() {}
+func (*AttestationPolicy) IsNode() {}
+
+var dsseImplementors = []string{"Dsse", "Node"}
 
 // IsNode implements the Node interface check for GQLGen.
-func (n *PayloadDigest) IsNode() {}
+func (*Dsse) IsNode() {}
+
+var metadataImplementors = []string{"Metadata", "Node"}
 
 // IsNode implements the Node interface check for GQLGen.
-func (n *Signature) IsNode() {}
+func (*Metadata) IsNode() {}
+
+var payloaddigestImplementors = []string{"PayloadDigest", "Node"}
 
 // IsNode implements the Node interface check for GQLGen.
-func (n *Statement) IsNode() {}
+func (*PayloadDigest) IsNode() {}
+
+var signatureImplementors = []string{"Signature", "Node"}
 
 // IsNode implements the Node interface check for GQLGen.
-func (n *Subject) IsNode() {}
+func (*Signature) IsNode() {}
+
+var statementImplementors = []string{"Statement", "Node"}
 
 // IsNode implements the Node interface check for GQLGen.
-func (n *SubjectDigest) IsNode() {}
+func (*Statement) IsNode() {}
+
+var subjectImplementors = []string{"Subject", "Node"}
 
 // IsNode implements the Node interface check for GQLGen.
-func (n *Timestamp) IsNode() {}
+func (*Subject) IsNode() {}
+
+var subjectdigestImplementors = []string{"SubjectDigest", "Node"}
+
+// IsNode implements the Node interface check for GQLGen.
+func (*SubjectDigest) IsNode() {}
+
+var timestampImplementors = []string{"Timestamp", "Node"}
+
+// IsNode implements the Node interface check for GQLGen.
+func (*Timestamp) IsNode() {}
 
 var errNodeInvalidID = &NotFoundError{"node"}
 
@@ -123,123 +149,102 @@ func (c *Client) noder(ctx context.Context, table string, id int) (Noder, error)
 	case attestation.Table:
 		query := c.Attestation.Query().
 			Where(attestation.ID(id))
-		query, err := query.CollectFields(ctx, "Attestation")
-		if err != nil {
-			return nil, err
+		if fc := graphql.GetFieldContext(ctx); fc != nil {
+			if err := query.collectField(ctx, true, graphql.GetOperationContext(ctx), fc.Field, nil, attestationImplementors...); err != nil {
+				return nil, err
+			}
 		}
-		n, err := query.Only(ctx)
-		if err != nil {
-			return nil, err
-		}
-		return n, nil
+		return query.Only(ctx)
 	case attestationcollection.Table:
 		query := c.AttestationCollection.Query().
 			Where(attestationcollection.ID(id))
-		query, err := query.CollectFields(ctx, "AttestationCollection")
-		if err != nil {
-			return nil, err
+		if fc := graphql.GetFieldContext(ctx); fc != nil {
+			if err := query.collectField(ctx, true, graphql.GetOperationContext(ctx), fc.Field, nil, attestationcollectionImplementors...); err != nil {
+				return nil, err
+			}
 		}
-		n, err := query.Only(ctx)
-		if err != nil {
-			return nil, err
-		}
-		return n, nil
+		return query.Only(ctx)
 	case attestationpolicy.Table:
 		query := c.AttestationPolicy.Query().
 			Where(attestationpolicy.ID(id))
-		query, err := query.CollectFields(ctx, "AttestationPolicy")
-		if err != nil {
-			return nil, err
+		if fc := graphql.GetFieldContext(ctx); fc != nil {
+			if err := query.collectField(ctx, true, graphql.GetOperationContext(ctx), fc.Field, nil, attestationpolicyImplementors...); err != nil {
+				return nil, err
+			}
 		}
-		n, err := query.Only(ctx)
-		if err != nil {
-			return nil, err
-		}
-		return n, nil
+		return query.Only(ctx)
 	case dsse.Table:
 		query := c.Dsse.Query().
 			Where(dsse.ID(id))
-		query, err := query.CollectFields(ctx, "Dsse")
-		if err != nil {
-			return nil, err
+		if fc := graphql.GetFieldContext(ctx); fc != nil {
+			if err := query.collectField(ctx, true, graphql.GetOperationContext(ctx), fc.Field, nil, dsseImplementors...); err != nil {
+				return nil, err
+			}
 		}
-		n, err := query.Only(ctx)
-		if err != nil {
-			return nil, err
+		return query.Only(ctx)
+	case metadata.Table:
+		query := c.Metadata.Query().
+			Where(metadata.ID(id))
+		if fc := graphql.GetFieldContext(ctx); fc != nil {
+			if err := query.collectField(ctx, true, graphql.GetOperationContext(ctx), fc.Field, nil, metadataImplementors...); err != nil {
+				return nil, err
+			}
 		}
-		return n, nil
+		return query.Only(ctx)
 	case payloaddigest.Table:
 		query := c.PayloadDigest.Query().
 			Where(payloaddigest.ID(id))
-		query, err := query.CollectFields(ctx, "PayloadDigest")
-		if err != nil {
-			return nil, err
+		if fc := graphql.GetFieldContext(ctx); fc != nil {
+			if err := query.collectField(ctx, true, graphql.GetOperationContext(ctx), fc.Field, nil, payloaddigestImplementors...); err != nil {
+				return nil, err
+			}
 		}
-		n, err := query.Only(ctx)
-		if err != nil {
-			return nil, err
-		}
-		return n, nil
+		return query.Only(ctx)
 	case signature.Table:
 		query := c.Signature.Query().
 			Where(signature.ID(id))
-		query, err := query.CollectFields(ctx, "Signature")
-		if err != nil {
-			return nil, err
+		if fc := graphql.GetFieldContext(ctx); fc != nil {
+			if err := query.collectField(ctx, true, graphql.GetOperationContext(ctx), fc.Field, nil, signatureImplementors...); err != nil {
+				return nil, err
+			}
 		}
-		n, err := query.Only(ctx)
-		if err != nil {
-			return nil, err
-		}
-		return n, nil
+		return query.Only(ctx)
 	case statement.Table:
 		query := c.Statement.Query().
 			Where(statement.ID(id))
-		query, err := query.CollectFields(ctx, "Statement")
-		if err != nil {
-			return nil, err
+		if fc := graphql.GetFieldContext(ctx); fc != nil {
+			if err := query.collectField(ctx, true, graphql.GetOperationContext(ctx), fc.Field, nil, statementImplementors...); err != nil {
+				return nil, err
+			}
 		}
-		n, err := query.Only(ctx)
-		if err != nil {
-			return nil, err
-		}
-		return n, nil
+		return query.Only(ctx)
 	case subject.Table:
 		query := c.Subject.Query().
 			Where(subject.ID(id))
-		query, err := query.CollectFields(ctx, "Subject")
-		if err != nil {
-			return nil, err
+		if fc := graphql.GetFieldContext(ctx); fc != nil {
+			if err := query.collectField(ctx, true, graphql.GetOperationContext(ctx), fc.Field, nil, subjectImplementors...); err != nil {
+				return nil, err
+			}
 		}
-		n, err := query.Only(ctx)
-		if err != nil {
-			return nil, err
-		}
-		return n, nil
+		return query.Only(ctx)
 	case subjectdigest.Table:
 		query := c.SubjectDigest.Query().
 			Where(subjectdigest.ID(id))
-		query, err := query.CollectFields(ctx, "SubjectDigest")
-		if err != nil {
-			return nil, err
+		if fc := graphql.GetFieldContext(ctx); fc != nil {
+			if err := query.collectField(ctx, true, graphql.GetOperationContext(ctx), fc.Field, nil, subjectdigestImplementors...); err != nil {
+				return nil, err
+			}
 		}
-		n, err := query.Only(ctx)
-		if err != nil {
-			return nil, err
-		}
-		return n, nil
+		return query.Only(ctx)
 	case timestamp.Table:
 		query := c.Timestamp.Query().
 			Where(timestamp.ID(id))
-		query, err := query.CollectFields(ctx, "Timestamp")
-		if err != nil {
-			return nil, err
+		if fc := graphql.GetFieldContext(ctx); fc != nil {
+			if err := query.collectField(ctx, true, graphql.GetOperationContext(ctx), fc.Field, nil, timestampImplementors...); err != nil {
+				return nil, err
+			}
 		}
-		n, err := query.Only(ctx)
-		if err != nil {
-			return nil, err
-		}
-		return n, nil
+		return query.Only(ctx)
 	default:
 		return nil, fmt.Errorf("cannot resolve noder from table %q: %w", table, errNodeInvalidID)
 	}
@@ -316,7 +321,7 @@ func (c *Client) noders(ctx context.Context, table string, ids []int) ([]Noder, 
 	case attestation.Table:
 		query := c.Attestation.Query().
 			Where(attestation.IDIn(ids...))
-		query, err := query.CollectFields(ctx, "Attestation")
+		query, err := query.CollectFields(ctx, attestationImplementors...)
 		if err != nil {
 			return nil, err
 		}
@@ -332,7 +337,7 @@ func (c *Client) noders(ctx context.Context, table string, ids []int) ([]Noder, 
 	case attestationcollection.Table:
 		query := c.AttestationCollection.Query().
 			Where(attestationcollection.IDIn(ids...))
-		query, err := query.CollectFields(ctx, "AttestationCollection")
+		query, err := query.CollectFields(ctx, attestationcollectionImplementors...)
 		if err != nil {
 			return nil, err
 		}
@@ -348,7 +353,7 @@ func (c *Client) noders(ctx context.Context, table string, ids []int) ([]Noder, 
 	case attestationpolicy.Table:
 		query := c.AttestationPolicy.Query().
 			Where(attestationpolicy.IDIn(ids...))
-		query, err := query.CollectFields(ctx, "AttestationPolicy")
+		query, err := query.CollectFields(ctx, attestationpolicyImplementors...)
 		if err != nil {
 			return nil, err
 		}
@@ -364,7 +369,23 @@ func (c *Client) noders(ctx context.Context, table string, ids []int) ([]Noder, 
 	case dsse.Table:
 		query := c.Dsse.Query().
 			Where(dsse.IDIn(ids...))
-		query, err := query.CollectFields(ctx, "Dsse")
+		query, err := query.CollectFields(ctx, dsseImplementors...)
+		if err != nil {
+			return nil, err
+		}
+		nodes, err := query.All(ctx)
+		if err != nil {
+			return nil, err
+		}
+		for _, node := range nodes {
+			for _, noder := range idmap[node.ID] {
+				*noder = node
+			}
+		}
+	case metadata.Table:
+		query := c.Metadata.Query().
+			Where(metadata.IDIn(ids...))
+		query, err := query.CollectFields(ctx, metadataImplementors...)
 		if err != nil {
 			return nil, err
 		}
@@ -380,7 +401,7 @@ func (c *Client) noders(ctx context.Context, table string, ids []int) ([]Noder, 
 	case payloaddigest.Table:
 		query := c.PayloadDigest.Query().
 			Where(payloaddigest.IDIn(ids...))
-		query, err := query.CollectFields(ctx, "PayloadDigest")
+		query, err := query.CollectFields(ctx, payloaddigestImplementors...)
 		if err != nil {
 			return nil, err
 		}
@@ -396,7 +417,7 @@ func (c *Client) noders(ctx context.Context, table string, ids []int) ([]Noder, 
 	case signature.Table:
 		query := c.Signature.Query().
 			Where(signature.IDIn(ids...))
-		query, err := query.CollectFields(ctx, "Signature")
+		query, err := query.CollectFields(ctx, signatureImplementors...)
 		if err != nil {
 			return nil, err
 		}
@@ -412,7 +433,7 @@ func (c *Client) noders(ctx context.Context, table string, ids []int) ([]Noder, 
 	case statement.Table:
 		query := c.Statement.Query().
 			Where(statement.IDIn(ids...))
-		query, err := query.CollectFields(ctx, "Statement")
+		query, err := query.CollectFields(ctx, statementImplementors...)
 		if err != nil {
 			return nil, err
 		}
@@ -428,7 +449,7 @@ func (c *Client) noders(ctx context.Context, table string, ids []int) ([]Noder, 
 	case subject.Table:
 		query := c.Subject.Query().
 			Where(subject.IDIn(ids...))
-		query, err := query.CollectFields(ctx, "Subject")
+		query, err := query.CollectFields(ctx, subjectImplementors...)
 		if err != nil {
 			return nil, err
 		}
@@ -444,7 +465,7 @@ func (c *Client) noders(ctx context.Context, table string, ids []int) ([]Noder, 
 	case subjectdigest.Table:
 		query := c.SubjectDigest.Query().
 			Where(subjectdigest.IDIn(ids...))
-		query, err := query.CollectFields(ctx, "SubjectDigest")
+		query, err := query.CollectFields(ctx, subjectdigestImplementors...)
 		if err != nil {
 			return nil, err
 		}
@@ -460,7 +481,7 @@ func (c *Client) noders(ctx context.Context, table string, ids []int) ([]Noder, 
 	case timestamp.Table:
 		query := c.Timestamp.Query().
 			Where(timestamp.IDIn(ids...))
-		query, err := query.CollectFields(ctx, "Timestamp")
+		query, err := query.CollectFields(ctx, timestampImplementors...)
 		if err != nil {
 			return nil, err
 		}

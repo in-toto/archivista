@@ -16,6 +16,7 @@ import (
 	"github.com/in-toto/archivista/ent/attestationcollection"
 	"github.com/in-toto/archivista/ent/attestationpolicy"
 	"github.com/in-toto/archivista/ent/dsse"
+	"github.com/in-toto/archivista/ent/metadata"
 	"github.com/in-toto/archivista/ent/payloaddigest"
 	"github.com/in-toto/archivista/ent/signature"
 	"github.com/in-toto/archivista/ent/statement"
@@ -86,6 +87,7 @@ func checkColumn(table, column string) error {
 			attestationcollection.Table: attestationcollection.ValidColumn,
 			attestationpolicy.Table:     attestationpolicy.ValidColumn,
 			dsse.Table:                  dsse.ValidColumn,
+			metadata.Table:              metadata.ValidColumn,
 			payloaddigest.Table:         payloaddigest.ValidColumn,
 			signature.Table:             signature.ValidColumn,
 			statement.Table:             statement.ValidColumn,

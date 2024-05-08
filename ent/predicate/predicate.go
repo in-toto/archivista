@@ -18,6 +18,9 @@ type AttestationPolicy func(*sql.Selector)
 // Dsse is the predicate function for dsse builders.
 type Dsse func(*sql.Selector)
 
+// Metadata is the predicate function for metadata builders.
+type Metadata func(*sql.Selector)
+
 // PayloadDigest is the predicate function for payloaddigest builders.
 type PayloadDigest func(*sql.Selector)
 

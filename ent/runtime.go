@@ -7,6 +7,7 @@ import (
 	"github.com/in-toto/archivista/ent/attestationcollection"
 	"github.com/in-toto/archivista/ent/attestationpolicy"
 	"github.com/in-toto/archivista/ent/dsse"
+	"github.com/in-toto/archivista/ent/metadata"
 	"github.com/in-toto/archivista/ent/payloaddigest"
 	"github.com/in-toto/archivista/ent/schema"
 	"github.com/in-toto/archivista/ent/signature"
@@ -47,6 +48,16 @@ func init() {
 	dsseDescPayloadType := dsseFields[1].Descriptor()
 	// dsse.PayloadTypeValidator is a validator for the "payload_type" field. It is called by the builders before save.
 	dsse.PayloadTypeValidator = dsseDescPayloadType.Validators[0].(func(string) error)
+	metadataFields := schema.Metadata{}.Fields()
+	_ = metadataFields
+	// metadataDescKey is the schema descriptor for key field.
+	metadataDescKey := metadataFields[0].Descriptor()
+	// metadata.KeyValidator is a validator for the "key" field. It is called by the builders before save.
+	metadata.KeyValidator = metadataDescKey.Validators[0].(func(string) error)
+	// metadataDescValue is the schema descriptor for value field.
+	metadataDescValue := metadataFields[1].Descriptor()
+	// metadata.ValueValidator is a validator for the "value" field. It is called by the builders before save.
+	metadata.ValueValidator = metadataDescValue.Validators[0].(func(string) error)
 	payloaddigestFields := schema.PayloadDigest{}.Fields()
 	_ = payloaddigestFields
 	// payloaddigestDescAlgorithm is the schema descriptor for algorithm field.

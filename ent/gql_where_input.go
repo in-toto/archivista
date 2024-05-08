@@ -11,6 +11,7 @@ import (
 	"github.com/in-toto/archivista/ent/attestationcollection"
 	"github.com/in-toto/archivista/ent/attestationpolicy"
 	"github.com/in-toto/archivista/ent/dsse"
+	"github.com/in-toto/archivista/ent/metadata"
 	"github.com/in-toto/archivista/ent/payloaddigest"
 	"github.com/in-toto/archivista/ent/predicate"
 	"github.com/in-toto/archivista/ent/signature"
@@ -700,6 +701,10 @@ type DsseWhereInput struct {
 	// "payload_digests" edge predicates.
 	HasPayloadDigests     *bool                      `json:"hasPayloadDigests,omitempty"`
 	HasPayloadDigestsWith []*PayloadDigestWhereInput `json:"hasPayloadDigestsWith,omitempty"`
+
+	// "metadata" edge predicates.
+	HasMetadata     *bool                 `json:"hasMetadata,omitempty"`
+	HasMetadataWith []*MetadataWhereInput `json:"hasMetadataWith,omitempty"`
 }
 
 // AddPredicates adds custom predicates to the where input to be used during the filtering phase.
@@ -930,6 +935,24 @@ func (i *DsseWhereInput) P() (predicate.Dsse, error) {
 		}
 		predicates = append(predicates, dsse.HasPayloadDigestsWith(with...))
 	}
+	if i.HasMetadata != nil {
+		p := dsse.HasMetadata()
+		if !*i.HasMetadata {
+			p = dsse.Not(p)
+		}
+		predicates = append(predicates, p)
+	}
+	if len(i.HasMetadataWith) > 0 {
+		with := make([]predicate.Metadata, 0, len(i.HasMetadataWith))
+		for _, w := range i.HasMetadataWith {
+			p, err := w.P()
+			if err != nil {
+				return nil, fmt.Errorf("%w: field 'HasMetadataWith'", err)
+			}
+			with = append(with, p)
+		}
+		predicates = append(predicates, dsse.HasMetadataWith(with...))
+	}
 	switch len(predicates) {
 	case 0:
 		return nil, ErrEmptyDsseWhereInput
@@ -937,6 +960,260 @@ func (i *DsseWhereInput) P() (predicate.Dsse, error) {
 		return predicates[0], nil
 	default:
 		return dsse.And(predicates...), nil
+	}
+}
+
+// MetadataWhereInput represents a where input for filtering Metadata queries.
+type MetadataWhereInput struct {
+	Predicates []predicate.Metadata  `json:"-"`
+	Not        *MetadataWhereInput   `json:"not,omitempty"`
+	Or         []*MetadataWhereInput `json:"or,omitempty"`
+	And        []*MetadataWhereInput `json:"and,omitempty"`
+
+	// "id" field predicates.
+	ID      *int  `json:"id,omitempty"`
+	IDNEQ   *int  `json:"idNEQ,omitempty"`
+	IDIn    []int `json:"idIn,omitempty"`
+	IDNotIn []int `json:"idNotIn,omitempty"`
+	IDGT    *int  `json:"idGT,omitempty"`
+	IDGTE   *int  `json:"idGTE,omitempty"`
+	IDLT    *int  `json:"idLT,omitempty"`
+	IDLTE   *int  `json:"idLTE,omitempty"`
+
+	// "key" field predicates.
+	Key             *string  `json:"key,omitempty"`
+	KeyNEQ          *string  `json:"keyNEQ,omitempty"`
+	KeyIn           []string `json:"keyIn,omitempty"`
+	KeyNotIn        []string `json:"keyNotIn,omitempty"`
+	KeyGT           *string  `json:"keyGT,omitempty"`
+	KeyGTE          *string  `json:"keyGTE,omitempty"`
+	KeyLT           *string  `json:"keyLT,omitempty"`
+	KeyLTE          *string  `json:"keyLTE,omitempty"`
+	KeyContains     *string  `json:"keyContains,omitempty"`
+	KeyHasPrefix    *string  `json:"keyHasPrefix,omitempty"`
+	KeyHasSuffix    *string  `json:"keyHasSuffix,omitempty"`
+	KeyEqualFold    *string  `json:"keyEqualFold,omitempty"`
+	KeyContainsFold *string  `json:"keyContainsFold,omitempty"`
+
+	// "value" field predicates.
+	Value             *string  `json:"value,omitempty"`
+	ValueNEQ          *string  `json:"valueNEQ,omitempty"`
+	ValueIn           []string `json:"valueIn,omitempty"`
+	ValueNotIn        []string `json:"valueNotIn,omitempty"`
+	ValueGT           *string  `json:"valueGT,omitempty"`
+	ValueGTE          *string  `json:"valueGTE,omitempty"`
+	ValueLT           *string  `json:"valueLT,omitempty"`
+	ValueLTE          *string  `json:"valueLTE,omitempty"`
+	ValueContains     *string  `json:"valueContains,omitempty"`
+	ValueHasPrefix    *string  `json:"valueHasPrefix,omitempty"`
+	ValueHasSuffix    *string  `json:"valueHasSuffix,omitempty"`
+	ValueEqualFold    *string  `json:"valueEqualFold,omitempty"`
+	ValueContainsFold *string  `json:"valueContainsFold,omitempty"`
+
+	// "envelope" edge predicates.
+	HasEnvelope     *bool             `json:"hasEnvelope,omitempty"`
+	HasEnvelopeWith []*DsseWhereInput `json:"hasEnvelopeWith,omitempty"`
+}
+
+// AddPredicates adds custom predicates to the where input to be used during the filtering phase.
+func (i *MetadataWhereInput) AddPredicates(predicates ...predicate.Metadata) {
+	i.Predicates = append(i.Predicates, predicates...)
+}
+
+// Filter applies the MetadataWhereInput filter on the MetadataQuery builder.
+func (i *MetadataWhereInput) Filter(q *MetadataQuery) (*MetadataQuery, error) {
+	if i == nil {
+		return q, nil
+	}
+	p, err := i.P()
+	if err != nil {
+		if err == ErrEmptyMetadataWhereInput {
+			return q, nil
+		}
+		return nil, err
+	}
+	return q.Where(p), nil
+}
+
+// ErrEmptyMetadataWhereInput is returned in case the MetadataWhereInput is empty.
+var ErrEmptyMetadataWhereInput = errors.New("ent: empty predicate MetadataWhereInput")
+
+// P returns a predicate for filtering metadataslice.
+// An error is returned if the input is empty or invalid.
+func (i *MetadataWhereInput) P() (predicate.Metadata, error) {
+	var predicates []predicate.Metadata
+	if i.Not != nil {
+		p, err := i.Not.P()
+		if err != nil {
+			return nil, fmt.Errorf("%w: field 'not'", err)
+		}
+		predicates = append(predicates, metadata.Not(p))
+	}
+	switch n := len(i.Or); {
+	case n == 1:
+		p, err := i.Or[0].P()
+		if err != nil {
+			return nil, fmt.Errorf("%w: field 'or'", err)
+		}
+		predicates = append(predicates, p)
+	case n > 1:
+		or := make([]predicate.Metadata, 0, n)
+		for _, w := range i.Or {
+			p, err := w.P()
+			if err != nil {
+				return nil, fmt.Errorf("%w: field 'or'", err)
+			}
+			or = append(or, p)
+		}
+		predicates = append(predicates, metadata.Or(or...))
+	}
+	switch n := len(i.And); {
+	case n == 1:
+		p, err := i.And[0].P()
+		if err != nil {
+			return nil, fmt.Errorf("%w: field 'and'", err)
+		}
+		predicates = append(predicates, p)
+	case n > 1:
+		and := make([]predicate.Metadata, 0, n)
+		for _, w := range i.And {
+			p, err := w.P()
+			if err != nil {
+				return nil, fmt.Errorf("%w: field 'and'", err)
+			}
+			and = append(and, p)
+		}
+		predicates = append(predicates, metadata.And(and...))
+	}
+	predicates = append(predicates, i.Predicates...)
+	if i.ID != nil {
+		predicates = append(predicates, metadata.IDEQ(*i.ID))
+	}
+	if i.IDNEQ != nil {
+		predicates = append(predicates, metadata.IDNEQ(*i.IDNEQ))
+	}
+	if len(i.IDIn) > 0 {
+		predicates = append(predicates, metadata.IDIn(i.IDIn...))
+	}
+	if len(i.IDNotIn) > 0 {
+		predicates = append(predicates, metadata.IDNotIn(i.IDNotIn...))
+	}
+	if i.IDGT != nil {
+		predicates = append(predicates, metadata.IDGT(*i.IDGT))
+	}
+	if i.IDGTE != nil {
+		predicates = append(predicates, metadata.IDGTE(*i.IDGTE))
+	}
+	if i.IDLT != nil {
+		predicates = append(predicates, metadata.IDLT(*i.IDLT))
+	}
+	if i.IDLTE != nil {
+		predicates = append(predicates, metadata.IDLTE(*i.IDLTE))
+	}
+	if i.Key != nil {
+		predicates = append(predicates, metadata.KeyEQ(*i.Key))
+	}
+	if i.KeyNEQ != nil {
+		predicates = append(predicates, metadata.KeyNEQ(*i.KeyNEQ))
+	}
+	if len(i.KeyIn) > 0 {
+		predicates = append(predicates, metadata.KeyIn(i.KeyIn...))
+	}
+	if len(i.KeyNotIn) > 0 {
+		predicates = append(predicates, metadata.KeyNotIn(i.KeyNotIn...))
+	}
+	if i.KeyGT != nil {
+		predicates = append(predicates, metadata.KeyGT(*i.KeyGT))
+	}
+	if i.KeyGTE != nil {
+		predicates = append(predicates, metadata.KeyGTE(*i.KeyGTE))
+	}
+	if i.KeyLT != nil {
+		predicates = append(predicates, metadata.KeyLT(*i.KeyLT))
+	}
+	if i.KeyLTE != nil {
+		predicates = append(predicates, metadata.KeyLTE(*i.KeyLTE))
+	}
+	if i.KeyContains != nil {
+		predicates = append(predicates, metadata.KeyContains(*i.KeyContains))
+	}
+	if i.KeyHasPrefix != nil {
+		predicates = append(predicates, metadata.KeyHasPrefix(*i.KeyHasPrefix))
+	}
+	if i.KeyHasSuffix != nil {
+		predicates = append(predicates, metadata.KeyHasSuffix(*i.KeyHasSuffix))
+	}
+	if i.KeyEqualFold != nil {
+		predicates = append(predicates, metadata.KeyEqualFold(*i.KeyEqualFold))
+	}
+	if i.KeyContainsFold != nil {
+		predicates = append(predicates, metadata.KeyContainsFold(*i.KeyContainsFold))
+	}
+	if i.Value != nil {
+		predicates = append(predicates, metadata.ValueEQ(*i.Value))
+	}
+	if i.ValueNEQ != nil {
+		predicates = append(predicates, metadata.ValueNEQ(*i.ValueNEQ))
+	}
+	if len(i.ValueIn) > 0 {
+		predicates = append(predicates, metadata.ValueIn(i.ValueIn...))
+	}
+	if len(i.ValueNotIn) > 0 {
+		predicates = append(predicates, metadata.ValueNotIn(i.ValueNotIn...))
+	}
+	if i.ValueGT != nil {
+		predicates = append(predicates, metadata.ValueGT(*i.ValueGT))
+	}
+	if i.ValueGTE != nil {
+		predicates = append(predicates, metadata.ValueGTE(*i.ValueGTE))
+	}
+	if i.ValueLT != nil {
+		predicates = append(predicates, metadata.ValueLT(*i.ValueLT))
+	}
+	if i.ValueLTE != nil {
+		predicates = append(predicates, metadata.ValueLTE(*i.ValueLTE))
+	}
+	if i.ValueContains != nil {
+		predicates = append(predicates, metadata.ValueContains(*i.ValueContains))
+	}
+	if i.ValueHasPrefix != nil {
+		predicates = append(predicates, metadata.ValueHasPrefix(*i.ValueHasPrefix))
+	}
+	if i.ValueHasSuffix != nil {
+		predicates = append(predicates, metadata.ValueHasSuffix(*i.ValueHasSuffix))
+	}
+	if i.ValueEqualFold != nil {
+		predicates = append(predicates, metadata.ValueEqualFold(*i.ValueEqualFold))
+	}
+	if i.ValueContainsFold != nil {
+		predicates = append(predicates, metadata.ValueContainsFold(*i.ValueContainsFold))
+	}
+
+	if i.HasEnvelope != nil {
+		p := metadata.HasEnvelope()
+		if !*i.HasEnvelope {
+			p = metadata.Not(p)
+		}
+		predicates = append(predicates, p)
+	}
+	if len(i.HasEnvelopeWith) > 0 {
+		with := make([]predicate.Dsse, 0, len(i.HasEnvelopeWith))
+		for _, w := range i.HasEnvelopeWith {
+			p, err := w.P()
+			if err != nil {
+				return nil, fmt.Errorf("%w: field 'HasEnvelopeWith'", err)
+			}
+			with = append(with, p)
+		}
+		predicates = append(predicates, metadata.HasEnvelopeWith(with...))
+	}
+	switch len(predicates) {
+	case 0:
+		return nil, ErrEmptyMetadataWhereInput
+	case 1:
+		return predicates[0], nil
+	default:
+		return metadata.And(predicates...), nil
 	}
 }
 

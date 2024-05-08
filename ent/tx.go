@@ -20,6 +20,8 @@ type Tx struct {
 	AttestationPolicy *AttestationPolicyClient
 	// Dsse is the client for interacting with the Dsse builders.
 	Dsse *DsseClient
+	// Metadata is the client for interacting with the Metadata builders.
+	Metadata *MetadataClient
 	// PayloadDigest is the client for interacting with the PayloadDigest builders.
 	PayloadDigest *PayloadDigestClient
 	// Signature is the client for interacting with the Signature builders.
@@ -167,6 +169,7 @@ func (tx *Tx) init() {
 	tx.AttestationCollection = NewAttestationCollectionClient(tx.config)
 	tx.AttestationPolicy = NewAttestationPolicyClient(tx.config)
 	tx.Dsse = NewDsseClient(tx.config)
+	tx.Metadata = NewMetadataClient(tx.config)
 	tx.PayloadDigest = NewPayloadDigestClient(tx.config)
 	tx.Signature = NewSignatureClient(tx.config)
 	tx.Statement = NewStatementClient(tx.config)

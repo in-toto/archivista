@@ -110,6 +110,25 @@ var (
 			},
 		},
 	}
+	// MetadataColumns holds the columns for the "metadata" table.
+	MetadataColumns = []*schema.Column{
+		{Name: "id", Type: field.TypeInt, Increment: true},
+		{Name: "key", Type: field.TypeString},
+		{Name: "value", Type: field.TypeString},
+	}
+	// MetadataTable holds the schema information for the "metadata" table.
+	MetadataTable = &schema.Table{
+		Name:       "metadata",
+		Columns:    MetadataColumns,
+		PrimaryKey: []*schema.Column{MetadataColumns[0]},
+		Indexes: []*schema.Index{
+			{
+				Name:    "metadata_key_value",
+				Unique:  true,
+				Columns: []*schema.Column{MetadataColumns[1], MetadataColumns[2]},
+			},
+		},
+	}
 	// PayloadDigestsColumns holds the columns for the "payload_digests" table.
 	PayloadDigestsColumns = []*schema.Column{
 		{Name: "id", Type: field.TypeInt, Increment: true},
@@ -260,18 +279,45 @@ var (
 			},
 		},
 	}
+	// DsseMetadataColumns holds the columns for the "dsse_metadata" table.
+	DsseMetadataColumns = []*schema.Column{
+		{Name: "dsse_id", Type: field.TypeInt},
+		{Name: "metadata_id", Type: field.TypeInt},
+	}
+	// DsseMetadataTable holds the schema information for the "dsse_metadata" table.
+	DsseMetadataTable = &schema.Table{
+		Name:       "dsse_metadata",
+		Columns:    DsseMetadataColumns,
+		PrimaryKey: []*schema.Column{DsseMetadataColumns[0], DsseMetadataColumns[1]},
+		ForeignKeys: []*schema.ForeignKey{
+			{
+				Symbol:     "dsse_metadata_dsse_id",
+				Columns:    []*schema.Column{DsseMetadataColumns[0]},
+				RefColumns: []*schema.Column{DssesColumns[0]},
+				OnDelete:   schema.Cascade,
+			},
+			{
+				Symbol:     "dsse_metadata_metadata_id",
+				Columns:    []*schema.Column{DsseMetadataColumns[1]},
+				RefColumns: []*schema.Column{MetadataColumns[0]},
+				OnDelete:   schema.Cascade,
+			},
+		},
+	}
 	// Tables holds all the tables in the schema.
 	Tables = []*schema.Table{
 		AttestationsTable,
 		AttestationCollectionsTable,
 		AttestationPoliciesTable,
 		DssesTable,
+		MetadataTable,
 		PayloadDigestsTable,
 		SignaturesTable,
 		StatementsTable,
 		SubjectsTable,
 		SubjectDigestsTable,
 		TimestampsTable,
+		DsseMetadataTable,
 	}
 )
 
@@ -285,4 +331,6 @@ func init() {
 	SubjectsTable.ForeignKeys[0].RefTable = StatementsTable
 	SubjectDigestsTable.ForeignKeys[0].RefTable = SubjectsTable
 	TimestampsTable.ForeignKeys[0].RefTable = SignaturesTable
+	DsseMetadataTable.ForeignKeys[0].RefTable = DssesTable
+	DsseMetadataTable.ForeignKeys[1].RefTable = MetadataTable
 }

@@ -11,6 +11,7 @@ import (
 	"entgo.io/ent/dialect/sql/sqlgraph"
 	"entgo.io/ent/schema/field"
 	"github.com/in-toto/archivista/ent/dsse"
+	"github.com/in-toto/archivista/ent/metadata"
 	"github.com/in-toto/archivista/ent/payloaddigest"
 	"github.com/in-toto/archivista/ent/predicate"
 	"github.com/in-toto/archivista/ent/signature"
@@ -107,6 +108,21 @@ func (du *DsseUpdate) AddPayloadDigests(p ...*PayloadDigest) *DsseUpdate {
 	return du.AddPayloadDigestIDs(ids...)
 }
 
+// AddMetadatumIDs adds the "metadata" edge to the Metadata entity by IDs.
+func (du *DsseUpdate) AddMetadatumIDs(ids ...int) *DsseUpdate {
+	du.mutation.AddMetadatumIDs(ids...)
+	return du
+}
+
+// AddMetadata adds the "metadata" edges to the Metadata entity.
+func (du *DsseUpdate) AddMetadata(m ...*Metadata) *DsseUpdate {
+	ids := make([]int, len(m))
+	for i := range m {
+		ids[i] = m[i].ID
+	}
+	return du.AddMetadatumIDs(ids...)
+}
+
 // Mutation returns the DsseMutation object of the builder.
 func (du *DsseUpdate) Mutation() *DsseMutation {
 	return du.mutation
@@ -158,6 +174,27 @@ func (du *DsseUpdate) RemovePayloadDigests(p ...*PayloadDigest) *DsseUpdate {
 		ids[i] = p[i].ID
 	}
 	return du.RemovePayloadDigestIDs(ids...)
+}
+
+// ClearMetadata clears all "metadata" edges to the Metadata entity.
+func (du *DsseUpdate) ClearMetadata() *DsseUpdate {
+	du.mutation.ClearMetadata()
+	return du
+}
+
+// RemoveMetadatumIDs removes the "metadata" edge to Metadata entities by IDs.
+func (du *DsseUpdate) RemoveMetadatumIDs(ids ...int) *DsseUpdate {
+	du.mutation.RemoveMetadatumIDs(ids...)
+	return du
+}
+
+// RemoveMetadata removes "metadata" edges to Metadata entities.
+func (du *DsseUpdate) RemoveMetadata(m ...*Metadata) *DsseUpdate {
+	ids := make([]int, len(m))
+	for i := range m {
+		ids[i] = m[i].ID
+	}
+	return du.RemoveMetadatumIDs(ids...)
 }
 
 // Save executes the query and returns the number of nodes affected by the update operation.
@@ -339,6 +376,51 @@ func (du *DsseUpdate) sqlSave(ctx context.Context) (n int, err error) {
 		}
 		_spec.Edges.Add = append(_spec.Edges.Add, edge)
 	}
+	if du.mutation.MetadataCleared() {
+		edge := &sqlgraph.EdgeSpec{
+			Rel:     sqlgraph.M2M,
+			Inverse: false,
+			Table:   dsse.MetadataTable,
+			Columns: dsse.MetadataPrimaryKey,
+			Bidi:    false,
+			Target: &sqlgraph.EdgeTarget{
+				IDSpec: sqlgraph.NewFieldSpec(metadata.FieldID, field.TypeInt),
+			},
+		}
+		_spec.Edges.Clear = append(_spec.Edges.Clear, edge)
+	}
+	if nodes := du.mutation.RemovedMetadataIDs(); len(nodes) > 0 && !du.mutation.MetadataCleared() {
+		edge := &sqlgraph.EdgeSpec{
+			Rel:     sqlgraph.M2M,
+			Inverse: false,
+			Table:   dsse.MetadataTable,
+			Columns: dsse.MetadataPrimaryKey,
+			Bidi:    false,
+			Target: &sqlgraph.EdgeTarget{
+				IDSpec: sqlgraph.NewFieldSpec(metadata.FieldID, field.TypeInt),
+			},
+		}
+		for _, k := range nodes {
+			edge.Target.Nodes = append(edge.Target.Nodes, k)
+		}
+		_spec.Edges.Clear = append(_spec.Edges.Clear, edge)
+	}
+	if nodes := du.mutation.MetadataIDs(); len(nodes) > 0 {
+		edge := &sqlgraph.EdgeSpec{
+			Rel:     sqlgraph.M2M,
+			Inverse: false,
+			Table:   dsse.MetadataTable,
+			Columns: dsse.MetadataPrimaryKey,
+			Bidi:    false,
+			Target: &sqlgraph.EdgeTarget{
+				IDSpec: sqlgraph.NewFieldSpec(metadata.FieldID, field.TypeInt),
+			},
+		}
+		for _, k := range nodes {
+			edge.Target.Nodes = append(edge.Target.Nodes, k)
+		}
+		_spec.Edges.Add = append(_spec.Edges.Add, edge)
+	}
 	if n, err = sqlgraph.UpdateNodes(ctx, du.driver, _spec); err != nil {
 		if _, ok := err.(*sqlgraph.NotFoundError); ok {
 			err = &NotFoundError{dsse.Label}
@@ -436,6 +518,21 @@ func (duo *DsseUpdateOne) AddPayloadDigests(p ...*PayloadDigest) *DsseUpdateOne 
 	return duo.AddPayloadDigestIDs(ids...)
 }
 
+// AddMetadatumIDs adds the "metadata" edge to the Metadata entity by IDs.
+func (duo *DsseUpdateOne) AddMetadatumIDs(ids ...int) *DsseUpdateOne {
+	duo.mutation.AddMetadatumIDs(ids...)
+	return duo
+}
+
+// AddMetadata adds the "metadata" edges to the Metadata entity.
+func (duo *DsseUpdateOne) AddMetadata(m ...*Metadata) *DsseUpdateOne {
+	ids := make([]int, len(m))
+	for i := range m {
+		ids[i] = m[i].ID
+	}
+	return duo.AddMetadatumIDs(ids...)
+}
+
 // Mutation returns the DsseMutation object of the builder.
 func (duo *DsseUpdateOne) Mutation() *DsseMutation {
 	return duo.mutation
@@ -487,6 +584,27 @@ func (duo *DsseUpdateOne) RemovePayloadDigests(p ...*PayloadDigest) *DsseUpdateO
 		ids[i] = p[i].ID
 	}
 	return duo.RemovePayloadDigestIDs(ids...)
+}
+
+// ClearMetadata clears all "metadata" edges to the Metadata entity.
+func (duo *DsseUpdateOne) ClearMetadata() *DsseUpdateOne {
+	duo.mutation.ClearMetadata()
+	return duo
+}
+
+// RemoveMetadatumIDs removes the "metadata" edge to Metadata entities by IDs.
+func (duo *DsseUpdateOne) RemoveMetadatumIDs(ids ...int) *DsseUpdateOne {
+	duo.mutation.RemoveMetadatumIDs(ids...)
+	return duo
+}
+
+// RemoveMetadata removes "metadata" edges to Metadata entities.
+func (duo *DsseUpdateOne) RemoveMetadata(m ...*Metadata) *DsseUpdateOne {
+	ids := make([]int, len(m))
+	for i := range m {
+		ids[i] = m[i].ID
+	}
+	return duo.RemoveMetadatumIDs(ids...)
 }
 
 // Where appends a list predicates to the DsseUpdate builder.
@@ -691,6 +809,51 @@ func (duo *DsseUpdateOne) sqlSave(ctx context.Context) (_node *Dsse, err error) 
 			Bidi:    false,
 			Target: &sqlgraph.EdgeTarget{
 				IDSpec: sqlgraph.NewFieldSpec(payloaddigest.FieldID, field.TypeInt),
+			},
+		}
+		for _, k := range nodes {
+			edge.Target.Nodes = append(edge.Target.Nodes, k)
+		}
+		_spec.Edges.Add = append(_spec.Edges.Add, edge)
+	}
+	if duo.mutation.MetadataCleared() {
+		edge := &sqlgraph.EdgeSpec{
+			Rel:     sqlgraph.M2M,
+			Inverse: false,
+			Table:   dsse.MetadataTable,
+			Columns: dsse.MetadataPrimaryKey,
+			Bidi:    false,
+			Target: &sqlgraph.EdgeTarget{
+				IDSpec: sqlgraph.NewFieldSpec(metadata.FieldID, field.TypeInt),
+			},
+		}
+		_spec.Edges.Clear = append(_spec.Edges.Clear, edge)
+	}
+	if nodes := duo.mutation.RemovedMetadataIDs(); len(nodes) > 0 && !duo.mutation.MetadataCleared() {
+		edge := &sqlgraph.EdgeSpec{
+			Rel:     sqlgraph.M2M,
+			Inverse: false,
+			Table:   dsse.MetadataTable,
+			Columns: dsse.MetadataPrimaryKey,
+			Bidi:    false,
+			Target: &sqlgraph.EdgeTarget{
+				IDSpec: sqlgraph.NewFieldSpec(metadata.FieldID, field.TypeInt),
+			},
+		}
+		for _, k := range nodes {
+			edge.Target.Nodes = append(edge.Target.Nodes, k)
+		}
+		_spec.Edges.Clear = append(_spec.Edges.Clear, edge)
+	}
+	if nodes := duo.mutation.MetadataIDs(); len(nodes) > 0 {
+		edge := &sqlgraph.EdgeSpec{
+			Rel:     sqlgraph.M2M,
+			Inverse: false,
+			Table:   dsse.MetadataTable,
+			Columns: dsse.MetadataPrimaryKey,
+			Bidi:    false,
+			Target: &sqlgraph.EdgeTarget{
+				IDSpec: sqlgraph.NewFieldSpec(metadata.FieldID, field.TypeInt),
 			},
 		}
 		for _, k := range nodes {
