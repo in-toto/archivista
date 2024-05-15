@@ -21,6 +21,7 @@ import (
 	"net/http"
 	"os"
 	"path/filepath"
+	"time"
 
 	"github.com/gorilla/handlers"
 )
@@ -32,9 +33,23 @@ type Store struct {
 func New(ctx context.Context, directory string, address string) (*Store, <-chan error, error) {
 	errCh := make(chan error)
 	go func() {
-		server := handlers.CompressHandler(http.FileServer(http.Dir(directory)))
-		log.Fatalln(http.ListenAndServe(address, server))
+		server := &http.Server{
+			Addr:         address,
+			Handler:      handlers.CompressHandler(http.FileServer(http.Dir(directory))),
+			ReadTimeout:  5 * time.Second,
+			WriteTimeout: 10 * time.Second,
+		}
+
+		if err := server.ListenAndServe(); err != nil && err != http.ErrServerClosed {
+			log.Fatalf("Could not listen on %s: %v\n", address, err)
+		}
+
 		<-ctx.Done()
+
+		if err := server.Shutdown(context.Background()); err != nil {
+			log.Fatalf("Server Shutdown Failed:%+v", err)
+		}
+
 		close(errCh)
 	}()
 
@@ -53,7 +68,7 @@ func (s *Store) Get(ctx context.Context, gitoid string) (io.ReadCloser, error) {
 
 func (s *Store) Store(ctx context.Context, gitoid string, payload []byte) error {
 	if filepath.IsLocal(gitoid) {
-		return os.WriteFile(filepath.Join(s.prefix, gitoid+".json"), payload, 0644)
+		return os.WriteFile(filepath.Join(s.prefix, gitoid+".json"), payload, 0o600)
 	} else {
 		return filepath.ErrBadPattern
 	}
