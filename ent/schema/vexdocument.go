@@ -28,7 +28,7 @@ type VexDocument struct {
 
 func (VexDocument) Fields() []ent.Field {
 	return []ent.Field{
-		field.String("id").NotEmpty(),
+		field.String("vex_id").NotEmpty(),
 	}
 }
 
@@ -41,6 +41,6 @@ func (VexDocument) Edges() []ent.Edge {
 
 func (VexDocument) Indexes() []ent.Index {
 	return []ent.Index{
-		index.Fields("id"),
+		index.Fields("vex_id"),
 	}
 }

@@ -28,19 +28,18 @@ type VexStatement struct {
 
 func (VexStatement) Fields() []ent.Field {
 	return []ent.Field{
-		field.String("id").NotEmpty(),
+		field.String("vex_id").NotEmpty(),
 	}
 }
 
 func (VexStatement) Edges() []ent.Edge {
 	return []ent.Edge{
-		edge.To("vex_statements", VexStatement.Type),
-		edge.From("vexdocument", VexDocument.Type).Ref("vex_statements").Unique().Required(),
+		edge.From("vex_document", VexDocument.Type).Ref("vex_statements").Unique().Required(),
 	}
 }
 
 func (VexStatement) Indexes() []ent.Index {
 	return []ent.Index{
-		index.Fields("id"),
+		index.Fields("vex_id"),
 	}
 }
