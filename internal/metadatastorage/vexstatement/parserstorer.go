@@ -39,7 +39,7 @@ func Parse(data []byte) (metadatastorage.Storer, error) {
 }
 
 func (pv ParsedVEX) Store(ctx context.Context, tx *ent.Tx, stmtID int) error {
-	document, err := tx.VEXDocument.Create().
+	document, err := tx.VexDocument.Create().
 		SetStatementID(stmtID).
 		SetID(pv.ID).
 		Save(ctx)
@@ -48,7 +48,7 @@ func (pv ParsedVEX) Store(ctx context.Context, tx *ent.Tx, stmtID int) error {
 	}
 
 	for _, s := range pv.Statements {
-		if err := tx.VEXStatement.Create().
+		if err := tx.VexStatement.Create().
 			SetVEXDocumentID(document.ID).
 			SetVuln(s.Vulnerability.Name).
 			Exec(ctx); err != nil {

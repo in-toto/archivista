@@ -40,6 +40,7 @@ func (Statement) Edges() []ent.Edge {
 		edge.To("subjects", Subject.Type).Annotations(entgql.RelayConnection()),
 		edge.To("policy", AttestationPolicy.Type).Unique(),
 		edge.To("attestation_collections", AttestationCollection.Type).Unique(),
+		edge.To("vex_documents", VexDocument.Type).Unique(),
 
 		edge.From("dsse", Dsse.Type).Ref("statement"),
 	}
