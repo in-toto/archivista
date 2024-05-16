@@ -34,7 +34,7 @@ func (VexStatement) Fields() []ent.Field {
 
 func (VexStatement) Edges() []ent.Edge {
 	return []ent.Edge{
-		edge.To("vex_statements", Statement.Type),
+		edge.To("vex_statements", VexStatement.Type),
 		edge.From("vexdocument", VexDocument.Type).Ref("vex_statements").Unique().Required(),
 	}
 }
