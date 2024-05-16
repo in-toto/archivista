@@ -26,6 +26,12 @@ func (vsc *VexStatementCreate) SetVexID(s string) *VexStatementCreate {
 	return vsc
 }
 
+// SetVulnID sets the "vuln_id" field.
+func (vsc *VexStatementCreate) SetVulnID(s string) *VexStatementCreate {
+	vsc.mutation.SetVulnID(s)
+	return vsc
+}
+
 // SetVexDocumentID sets the "vex_document" edge to the VexDocument entity by ID.
 func (vsc *VexStatementCreate) SetVexDocumentID(id int) *VexStatementCreate {
 	vsc.mutation.SetVexDocumentID(id)
@@ -79,6 +85,14 @@ func (vsc *VexStatementCreate) check() error {
 			return &ValidationError{Name: "vex_id", err: fmt.Errorf(`ent: validator failed for field "VexStatement.vex_id": %w`, err)}
 		}
 	}
+	if _, ok := vsc.mutation.VulnID(); !ok {
+		return &ValidationError{Name: "vuln_id", err: errors.New(`ent: missing required field "VexStatement.vuln_id"`)}
+	}
+	if v, ok := vsc.mutation.VulnID(); ok {
+		if err := vexstatement.VulnIDValidator(v); err != nil {
+			return &ValidationError{Name: "vuln_id", err: fmt.Errorf(`ent: validator failed for field "VexStatement.vuln_id": %w`, err)}
+		}
+	}
 	if _, ok := vsc.mutation.VexDocumentID(); !ok {
 		return &ValidationError{Name: "vex_document", err: errors.New(`ent: missing required edge "VexStatement.vex_document"`)}
 	}
@@ -111,6 +125,10 @@ func (vsc *VexStatementCreate) createSpec() (*VexStatement, *sqlgraph.CreateSpec
 	if value, ok := vsc.mutation.VexID(); ok {
 		_spec.SetField(vexstatement.FieldVexID, field.TypeString, value)
 		_node.VexID = value
+	}
+	if value, ok := vsc.mutation.VulnID(); ok {
+		_spec.SetField(vexstatement.FieldVulnID, field.TypeString, value)
+		_node.VulnID = value
 	}
 	if nodes := vsc.mutation.VexDocumentIDs(); len(nodes) > 0 {
 		edge := &sqlgraph.EdgeSpec{

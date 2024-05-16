@@ -14,6 +14,8 @@ const (
 	FieldID = "id"
 	// FieldVexID holds the string denoting the vex_id field in the database.
 	FieldVexID = "vex_id"
+	// FieldVulnID holds the string denoting the vuln_id field in the database.
+	FieldVulnID = "vuln_id"
 	// EdgeVexDocument holds the string denoting the vex_document edge name in mutations.
 	EdgeVexDocument = "vex_document"
 	// Table holds the table name of the vexstatement in the database.
@@ -31,6 +33,7 @@ const (
 var Columns = []string{
 	FieldID,
 	FieldVexID,
+	FieldVulnID,
 }
 
 // ForeignKeys holds the SQL foreign-keys that are owned by the "vex_statements"
@@ -57,6 +60,8 @@ func ValidColumn(column string) bool {
 var (
 	// VexIDValidator is a validator for the "vex_id" field. It is called by the builders before save.
 	VexIDValidator func(string) error
+	// VulnIDValidator is a validator for the "vuln_id" field. It is called by the builders before save.
+	VulnIDValidator func(string) error
 )
 
 // OrderOption defines the ordering options for the VexStatement queries.
@@ -70,6 +75,11 @@ func ByID(opts ...sql.OrderTermOption) OrderOption {
 // ByVexID orders the results by the vex_id field.
 func ByVexID(opts ...sql.OrderTermOption) OrderOption {
 	return sql.OrderByField(FieldVexID, opts...).ToFunc()
+}
+
+// ByVulnID orders the results by the vuln_id field.
+func ByVulnID(opts ...sql.OrderTermOption) OrderOption {
+	return sql.OrderByField(FieldVulnID, opts...).ToFunc()
 }
 
 // ByVexDocumentField orders the results by vex_document field.

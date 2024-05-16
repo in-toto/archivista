@@ -5417,6 +5417,7 @@ type VexStatementMutation struct {
 	typ                 string
 	id                  *int
 	vex_id              *string
+	vuln_id             *string
 	clearedFields       map[string]struct{}
 	vex_document        *int
 	clearedvex_document bool
@@ -5559,6 +5560,42 @@ func (m *VexStatementMutation) ResetVexID() {
 	m.vex_id = nil
 }
 
+// SetVulnID sets the "vuln_id" field.
+func (m *VexStatementMutation) SetVulnID(s string) {
+	m.vuln_id = &s
+}
+
+// VulnID returns the value of the "vuln_id" field in the mutation.
+func (m *VexStatementMutation) VulnID() (r string, exists bool) {
+	v := m.vuln_id
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// OldVulnID returns the old "vuln_id" field's value of the VexStatement entity.
+// If the VexStatement object wasn't provided to the builder, the object is fetched from the database.
+// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
+func (m *VexStatementMutation) OldVulnID(ctx context.Context) (v string, err error) {
+	if !m.op.Is(OpUpdateOne) {
+		return v, errors.New("OldVulnID is only allowed on UpdateOne operations")
+	}
+	if m.id == nil || m.oldValue == nil {
+		return v, errors.New("OldVulnID requires an ID field in the mutation")
+	}
+	oldValue, err := m.oldValue(ctx)
+	if err != nil {
+		return v, fmt.Errorf("querying old value for OldVulnID: %w", err)
+	}
+	return oldValue.VulnID, nil
+}
+
+// ResetVulnID resets all changes to the "vuln_id" field.
+func (m *VexStatementMutation) ResetVulnID() {
+	m.vuln_id = nil
+}
+
 // SetVexDocumentID sets the "vex_document" edge to the VexDocument entity by id.
 func (m *VexStatementMutation) SetVexDocumentID(id int) {
 	m.vex_document = &id
@@ -5632,9 +5669,12 @@ func (m *VexStatementMutation) Type() string {
 // order to get all numeric fields that were incremented/decremented, call
 // AddedFields().
 func (m *VexStatementMutation) Fields() []string {
-	fields := make([]string, 0, 1)
+	fields := make([]string, 0, 2)
 	if m.vex_id != nil {
 		fields = append(fields, vexstatement.FieldVexID)
+	}
+	if m.vuln_id != nil {
+		fields = append(fields, vexstatement.FieldVulnID)
 	}
 	return fields
 }
@@ -5646,6 +5686,8 @@ func (m *VexStatementMutation) Field(name string) (ent.Value, bool) {
 	switch name {
 	case vexstatement.FieldVexID:
 		return m.VexID()
+	case vexstatement.FieldVulnID:
+		return m.VulnID()
 	}
 	return nil, false
 }
@@ -5657,6 +5699,8 @@ func (m *VexStatementMutation) OldField(ctx context.Context, name string) (ent.V
 	switch name {
 	case vexstatement.FieldVexID:
 		return m.OldVexID(ctx)
+	case vexstatement.FieldVulnID:
+		return m.OldVulnID(ctx)
 	}
 	return nil, fmt.Errorf("unknown VexStatement field %s", name)
 }
@@ -5672,6 +5716,13 @@ func (m *VexStatementMutation) SetField(name string, value ent.Value) error {
 			return fmt.Errorf("unexpected type %T for field %s", value, name)
 		}
 		m.SetVexID(v)
+		return nil
+	case vexstatement.FieldVulnID:
+		v, ok := value.(string)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.SetVulnID(v)
 		return nil
 	}
 	return fmt.Errorf("unknown VexStatement field %s", name)
@@ -5724,6 +5775,9 @@ func (m *VexStatementMutation) ResetField(name string) error {
 	switch name {
 	case vexstatement.FieldVexID:
 		m.ResetVexID()
+		return nil
+	case vexstatement.FieldVulnID:
+		m.ResetVulnID()
 		return nil
 	}
 	return fmt.Errorf("unknown VexStatement field %s", name)

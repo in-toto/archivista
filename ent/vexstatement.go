@@ -19,6 +19,8 @@ type VexStatement struct {
 	ID int `json:"id,omitempty"`
 	// VexID holds the value of the "vex_id" field.
 	VexID string `json:"vex_id,omitempty"`
+	// VulnID holds the value of the "vuln_id" field.
+	VulnID string `json:"vuln_id,omitempty"`
 	// Edges holds the relations/edges for other nodes in the graph.
 	// The values are being populated by the VexStatementQuery when eager-loading is set.
 	Edges                       VexStatementEdges `json:"edges"`
@@ -55,7 +57,7 @@ func (*VexStatement) scanValues(columns []string) ([]any, error) {
 		switch columns[i] {
 		case vexstatement.FieldID:
 			values[i] = new(sql.NullInt64)
-		case vexstatement.FieldVexID:
+		case vexstatement.FieldVexID, vexstatement.FieldVulnID:
 			values[i] = new(sql.NullString)
 		case vexstatement.ForeignKeys[0]: // vex_document_vex_statements
 			values[i] = new(sql.NullInt64)
@@ -85,6 +87,12 @@ func (vs *VexStatement) assignValues(columns []string, values []any) error {
 				return fmt.Errorf("unexpected type %T for field vex_id", values[i])
 			} else if value.Valid {
 				vs.VexID = value.String
+			}
+		case vexstatement.FieldVulnID:
+			if value, ok := values[i].(*sql.NullString); !ok {
+				return fmt.Errorf("unexpected type %T for field vuln_id", values[i])
+			} else if value.Valid {
+				vs.VulnID = value.String
 			}
 		case vexstatement.ForeignKeys[0]:
 			if value, ok := values[i].(*sql.NullInt64); !ok {
@@ -136,6 +144,9 @@ func (vs *VexStatement) String() string {
 	builder.WriteString(fmt.Sprintf("id=%v, ", vs.ID))
 	builder.WriteString("vex_id=")
 	builder.WriteString(vs.VexID)
+	builder.WriteString(", ")
+	builder.WriteString("vuln_id=")
+	builder.WriteString(vs.VulnID)
 	builder.WriteByte(')')
 	return builder.String()
 }

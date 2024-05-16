@@ -2724,6 +2724,21 @@ type VexStatementWhereInput struct {
 	VexIDEqualFold    *string  `json:"vexIDEqualFold,omitempty"`
 	VexIDContainsFold *string  `json:"vexIDContainsFold,omitempty"`
 
+	// "vuln_id" field predicates.
+	VulnID             *string  `json:"vulnID,omitempty"`
+	VulnIDNEQ          *string  `json:"vulnIDNEQ,omitempty"`
+	VulnIDIn           []string `json:"vulnIDIn,omitempty"`
+	VulnIDNotIn        []string `json:"vulnIDNotIn,omitempty"`
+	VulnIDGT           *string  `json:"vulnIDGT,omitempty"`
+	VulnIDGTE          *string  `json:"vulnIDGTE,omitempty"`
+	VulnIDLT           *string  `json:"vulnIDLT,omitempty"`
+	VulnIDLTE          *string  `json:"vulnIDLTE,omitempty"`
+	VulnIDContains     *string  `json:"vulnIDContains,omitempty"`
+	VulnIDHasPrefix    *string  `json:"vulnIDHasPrefix,omitempty"`
+	VulnIDHasSuffix    *string  `json:"vulnIDHasSuffix,omitempty"`
+	VulnIDEqualFold    *string  `json:"vulnIDEqualFold,omitempty"`
+	VulnIDContainsFold *string  `json:"vulnIDContainsFold,omitempty"`
+
 	// "vex_document" edge predicates.
 	HasVexDocument     *bool                    `json:"hasVexDocument,omitempty"`
 	HasVexDocumentWith []*VexDocumentWhereInput `json:"hasVexDocumentWith,omitempty"`
@@ -2862,6 +2877,45 @@ func (i *VexStatementWhereInput) P() (predicate.VexStatement, error) {
 	}
 	if i.VexIDContainsFold != nil {
 		predicates = append(predicates, vexstatement.VexIDContainsFold(*i.VexIDContainsFold))
+	}
+	if i.VulnID != nil {
+		predicates = append(predicates, vexstatement.VulnIDEQ(*i.VulnID))
+	}
+	if i.VulnIDNEQ != nil {
+		predicates = append(predicates, vexstatement.VulnIDNEQ(*i.VulnIDNEQ))
+	}
+	if len(i.VulnIDIn) > 0 {
+		predicates = append(predicates, vexstatement.VulnIDIn(i.VulnIDIn...))
+	}
+	if len(i.VulnIDNotIn) > 0 {
+		predicates = append(predicates, vexstatement.VulnIDNotIn(i.VulnIDNotIn...))
+	}
+	if i.VulnIDGT != nil {
+		predicates = append(predicates, vexstatement.VulnIDGT(*i.VulnIDGT))
+	}
+	if i.VulnIDGTE != nil {
+		predicates = append(predicates, vexstatement.VulnIDGTE(*i.VulnIDGTE))
+	}
+	if i.VulnIDLT != nil {
+		predicates = append(predicates, vexstatement.VulnIDLT(*i.VulnIDLT))
+	}
+	if i.VulnIDLTE != nil {
+		predicates = append(predicates, vexstatement.VulnIDLTE(*i.VulnIDLTE))
+	}
+	if i.VulnIDContains != nil {
+		predicates = append(predicates, vexstatement.VulnIDContains(*i.VulnIDContains))
+	}
+	if i.VulnIDHasPrefix != nil {
+		predicates = append(predicates, vexstatement.VulnIDHasPrefix(*i.VulnIDHasPrefix))
+	}
+	if i.VulnIDHasSuffix != nil {
+		predicates = append(predicates, vexstatement.VulnIDHasSuffix(*i.VulnIDHasSuffix))
+	}
+	if i.VulnIDEqualFold != nil {
+		predicates = append(predicates, vexstatement.VulnIDEqualFold(*i.VulnIDEqualFold))
+	}
+	if i.VulnIDContainsFold != nil {
+		predicates = append(predicates, vexstatement.VulnIDContainsFold(*i.VulnIDContainsFold))
 	}
 
 	if i.HasVexDocument != nil {

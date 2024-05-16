@@ -29,6 +29,7 @@ type VexStatement struct {
 func (VexStatement) Fields() []ent.Field {
 	return []ent.Field{
 		field.String("vex_id").NotEmpty(),
+		field.String("vuln_id").NotEmpty(),
 	}
 }
 
@@ -41,5 +42,6 @@ func (VexStatement) Edges() []ent.Edge {
 func (VexStatement) Indexes() []ent.Index {
 	return []ent.Index{
 		index.Fields("vex_id"),
+		index.Fields("vuln_id"),
 	}
 }

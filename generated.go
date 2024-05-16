@@ -181,6 +181,7 @@ type ComplexityRoot struct {
 		ID          func(childComplexity int) int
 		VexDocument func(childComplexity int) int
 		VexID       func(childComplexity int) int
+		VulnID      func(childComplexity int) int
 	}
 }
 
@@ -765,6 +766,13 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 		}
 
 		return e.complexity.VexStatement.VexID(childComplexity), true
+
+	case "VexStatement.vulnID":
+		if e.complexity.VexStatement.VulnID == nil {
+			break
+		}
+
+		return e.complexity.VexStatement.VulnID(childComplexity), true
 
 	}
 	return 0, false
@@ -4743,6 +4751,8 @@ func (ec *executionContext) fieldContext_VexDocument_vexStatements(_ context.Con
 				return ec.fieldContext_VexStatement_id(ctx, field)
 			case "vexID":
 				return ec.fieldContext_VexStatement_vexID(ctx, field)
+			case "vulnID":
+				return ec.fieldContext_VexStatement_vulnID(ctx, field)
 			case "vexDocument":
 				return ec.fieldContext_VexStatement_vexDocument(ctx, field)
 			}
@@ -4888,6 +4898,50 @@ func (ec *executionContext) _VexStatement_vexID(ctx context.Context, field graph
 }
 
 func (ec *executionContext) fieldContext_VexStatement_vexID(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "VexStatement",
+		Field:      field,
+		IsMethod:   false,
+		IsResolver: false,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return nil, errors.New("field of type String does not have child fields")
+		},
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _VexStatement_vulnID(ctx context.Context, field graphql.CollectedField, obj *ent.VexStatement) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_VexStatement_vulnID(ctx, field)
+	if err != nil {
+		return graphql.Null
+	}
+	ctx = graphql.WithFieldContext(ctx, fc)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.VulnID, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.(string)
+	fc.Result = res
+	return ec.marshalNString2string(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) fieldContext_VexStatement_vulnID(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
 	fc = &graphql.FieldContext{
 		Object:     "VexStatement",
 		Field:      field,
@@ -9516,7 +9570,7 @@ func (ec *executionContext) unmarshalInputVexStatementWhereInput(ctx context.Con
 		asMap[k] = v
 	}
 
-	fieldsInOrder := [...]string{"not", "and", "or", "id", "idNEQ", "idIn", "idNotIn", "idGT", "idGTE", "idLT", "idLTE", "vexID", "vexIDNEQ", "vexIDIn", "vexIDNotIn", "vexIDGT", "vexIDGTE", "vexIDLT", "vexIDLTE", "vexIDContains", "vexIDHasPrefix", "vexIDHasSuffix", "vexIDEqualFold", "vexIDContainsFold", "hasVexDocument", "hasVexDocumentWith"}
+	fieldsInOrder := [...]string{"not", "and", "or", "id", "idNEQ", "idIn", "idNotIn", "idGT", "idGTE", "idLT", "idLTE", "vexID", "vexIDNEQ", "vexIDIn", "vexIDNotIn", "vexIDGT", "vexIDGTE", "vexIDLT", "vexIDLTE", "vexIDContains", "vexIDHasPrefix", "vexIDHasSuffix", "vexIDEqualFold", "vexIDContainsFold", "vulnID", "vulnIDNEQ", "vulnIDIn", "vulnIDNotIn", "vulnIDGT", "vulnIDGTE", "vulnIDLT", "vulnIDLTE", "vulnIDContains", "vulnIDHasPrefix", "vulnIDHasSuffix", "vulnIDEqualFold", "vulnIDContainsFold", "hasVexDocument", "hasVexDocumentWith"}
 	for _, k := range fieldsInOrder {
 		v, ok := asMap[k]
 		if !ok {
@@ -9691,6 +9745,97 @@ func (ec *executionContext) unmarshalInputVexStatementWhereInput(ctx context.Con
 				return it, err
 			}
 			it.VexIDContainsFold = data
+		case "vulnID":
+			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("vulnID"))
+			data, err := ec.unmarshalOString2ᚖstring(ctx, v)
+			if err != nil {
+				return it, err
+			}
+			it.VulnID = data
+		case "vulnIDNEQ":
+			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("vulnIDNEQ"))
+			data, err := ec.unmarshalOString2ᚖstring(ctx, v)
+			if err != nil {
+				return it, err
+			}
+			it.VulnIDNEQ = data
+		case "vulnIDIn":
+			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("vulnIDIn"))
+			data, err := ec.unmarshalOString2ᚕstringᚄ(ctx, v)
+			if err != nil {
+				return it, err
+			}
+			it.VulnIDIn = data
+		case "vulnIDNotIn":
+			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("vulnIDNotIn"))
+			data, err := ec.unmarshalOString2ᚕstringᚄ(ctx, v)
+			if err != nil {
+				return it, err
+			}
+			it.VulnIDNotIn = data
+		case "vulnIDGT":
+			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("vulnIDGT"))
+			data, err := ec.unmarshalOString2ᚖstring(ctx, v)
+			if err != nil {
+				return it, err
+			}
+			it.VulnIDGT = data
+		case "vulnIDGTE":
+			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("vulnIDGTE"))
+			data, err := ec.unmarshalOString2ᚖstring(ctx, v)
+			if err != nil {
+				return it, err
+			}
+			it.VulnIDGTE = data
+		case "vulnIDLT":
+			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("vulnIDLT"))
+			data, err := ec.unmarshalOString2ᚖstring(ctx, v)
+			if err != nil {
+				return it, err
+			}
+			it.VulnIDLT = data
+		case "vulnIDLTE":
+			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("vulnIDLTE"))
+			data, err := ec.unmarshalOString2ᚖstring(ctx, v)
+			if err != nil {
+				return it, err
+			}
+			it.VulnIDLTE = data
+		case "vulnIDContains":
+			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("vulnIDContains"))
+			data, err := ec.unmarshalOString2ᚖstring(ctx, v)
+			if err != nil {
+				return it, err
+			}
+			it.VulnIDContains = data
+		case "vulnIDHasPrefix":
+			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("vulnIDHasPrefix"))
+			data, err := ec.unmarshalOString2ᚖstring(ctx, v)
+			if err != nil {
+				return it, err
+			}
+			it.VulnIDHasPrefix = data
+		case "vulnIDHasSuffix":
+			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("vulnIDHasSuffix"))
+			data, err := ec.unmarshalOString2ᚖstring(ctx, v)
+			if err != nil {
+				return it, err
+			}
+			it.VulnIDHasSuffix = data
+		case "vulnIDEqualFold":
+			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("vulnIDEqualFold"))
+			data, err := ec.unmarshalOString2ᚖstring(ctx, v)
+			if err != nil {
+				return it, err
+			}
+			it.VulnIDEqualFold = data
+		case "vulnIDContainsFold":
+			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("vulnIDContainsFold"))
+			data, err := ec.unmarshalOString2ᚖstring(ctx, v)
+			if err != nil {
+				return it, err
+			}
+			it.VulnIDContainsFold = data
 		case "hasVexDocument":
 			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("hasVexDocument"))
 			data, err := ec.unmarshalOBoolean2ᚖbool(ctx, v)
@@ -11486,6 +11631,11 @@ func (ec *executionContext) _VexStatement(ctx context.Context, sel ast.Selection
 			}
 		case "vexID":
 			out.Values[i] = ec._VexStatement_vexID(ctx, field, obj)
+			if out.Values[i] == graphql.Null {
+				atomic.AddUint32(&out.Invalids, 1)
+			}
+		case "vulnID":
+			out.Values[i] = ec._VexStatement_vulnID(ctx, field, obj)
 			if out.Values[i] == graphql.Null {
 				atomic.AddUint32(&out.Invalids, 1)
 			}

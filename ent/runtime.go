@@ -103,4 +103,8 @@ func init() {
 	vexstatementDescVexID := vexstatementFields[0].Descriptor()
 	// vexstatement.VexIDValidator is a validator for the "vex_id" field. It is called by the builders before save.
 	vexstatement.VexIDValidator = vexstatementDescVexID.Validators[0].(func(string) error)
+	// vexstatementDescVulnID is the schema descriptor for vuln_id field.
+	vexstatementDescVulnID := vexstatementFields[1].Descriptor()
+	// vexstatement.VulnIDValidator is a validator for the "vuln_id" field. It is called by the builders before save.
+	vexstatement.VulnIDValidator = vexstatementDescVulnID.Validators[0].(func(string) error)
 }

@@ -291,6 +291,7 @@ var (
 	VexStatementsColumns = []*schema.Column{
 		{Name: "id", Type: field.TypeInt, Increment: true},
 		{Name: "vex_id", Type: field.TypeString},
+		{Name: "vuln_id", Type: field.TypeString},
 		{Name: "vex_document_vex_statements", Type: field.TypeInt, Unique: true},
 	}
 	// VexStatementsTable holds the schema information for the "vex_statements" table.
@@ -301,7 +302,7 @@ var (
 		ForeignKeys: []*schema.ForeignKey{
 			{
 				Symbol:     "vex_statements_vex_documents_vex_statements",
-				Columns:    []*schema.Column{VexStatementsColumns[2]},
+				Columns:    []*schema.Column{VexStatementsColumns[3]},
 				RefColumns: []*schema.Column{VexDocumentsColumns[0]},
 				OnDelete:   schema.NoAction,
 			},
@@ -311,6 +312,11 @@ var (
 				Name:    "vexstatement_vex_id",
 				Unique:  false,
 				Columns: []*schema.Column{VexStatementsColumns[1]},
+			},
+			{
+				Name:    "vexstatement_vuln_id",
+				Unique:  false,
+				Columns: []*schema.Column{VexStatementsColumns[2]},
 			},
 		},
 	}

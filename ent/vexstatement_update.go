@@ -42,6 +42,20 @@ func (vsu *VexStatementUpdate) SetNillableVexID(s *string) *VexStatementUpdate {
 	return vsu
 }
 
+// SetVulnID sets the "vuln_id" field.
+func (vsu *VexStatementUpdate) SetVulnID(s string) *VexStatementUpdate {
+	vsu.mutation.SetVulnID(s)
+	return vsu
+}
+
+// SetNillableVulnID sets the "vuln_id" field if the given value is not nil.
+func (vsu *VexStatementUpdate) SetNillableVulnID(s *string) *VexStatementUpdate {
+	if s != nil {
+		vsu.SetVulnID(*s)
+	}
+	return vsu
+}
+
 // SetVexDocumentID sets the "vex_document" edge to the VexDocument entity by ID.
 func (vsu *VexStatementUpdate) SetVexDocumentID(id int) *VexStatementUpdate {
 	vsu.mutation.SetVexDocumentID(id)
@@ -98,6 +112,11 @@ func (vsu *VexStatementUpdate) check() error {
 			return &ValidationError{Name: "vex_id", err: fmt.Errorf(`ent: validator failed for field "VexStatement.vex_id": %w`, err)}
 		}
 	}
+	if v, ok := vsu.mutation.VulnID(); ok {
+		if err := vexstatement.VulnIDValidator(v); err != nil {
+			return &ValidationError{Name: "vuln_id", err: fmt.Errorf(`ent: validator failed for field "VexStatement.vuln_id": %w`, err)}
+		}
+	}
 	if _, ok := vsu.mutation.VexDocumentID(); vsu.mutation.VexDocumentCleared() && !ok {
 		return errors.New(`ent: clearing a required unique edge "VexStatement.vex_document"`)
 	}
@@ -118,6 +137,9 @@ func (vsu *VexStatementUpdate) sqlSave(ctx context.Context) (n int, err error) {
 	}
 	if value, ok := vsu.mutation.VexID(); ok {
 		_spec.SetField(vexstatement.FieldVexID, field.TypeString, value)
+	}
+	if value, ok := vsu.mutation.VulnID(); ok {
+		_spec.SetField(vexstatement.FieldVulnID, field.TypeString, value)
 	}
 	if vsu.mutation.VexDocumentCleared() {
 		edge := &sqlgraph.EdgeSpec{
@@ -178,6 +200,20 @@ func (vsuo *VexStatementUpdateOne) SetVexID(s string) *VexStatementUpdateOne {
 func (vsuo *VexStatementUpdateOne) SetNillableVexID(s *string) *VexStatementUpdateOne {
 	if s != nil {
 		vsuo.SetVexID(*s)
+	}
+	return vsuo
+}
+
+// SetVulnID sets the "vuln_id" field.
+func (vsuo *VexStatementUpdateOne) SetVulnID(s string) *VexStatementUpdateOne {
+	vsuo.mutation.SetVulnID(s)
+	return vsuo
+}
+
+// SetNillableVulnID sets the "vuln_id" field if the given value is not nil.
+func (vsuo *VexStatementUpdateOne) SetNillableVulnID(s *string) *VexStatementUpdateOne {
+	if s != nil {
+		vsuo.SetVulnID(*s)
 	}
 	return vsuo
 }
@@ -251,6 +287,11 @@ func (vsuo *VexStatementUpdateOne) check() error {
 			return &ValidationError{Name: "vex_id", err: fmt.Errorf(`ent: validator failed for field "VexStatement.vex_id": %w`, err)}
 		}
 	}
+	if v, ok := vsuo.mutation.VulnID(); ok {
+		if err := vexstatement.VulnIDValidator(v); err != nil {
+			return &ValidationError{Name: "vuln_id", err: fmt.Errorf(`ent: validator failed for field "VexStatement.vuln_id": %w`, err)}
+		}
+	}
 	if _, ok := vsuo.mutation.VexDocumentID(); vsuo.mutation.VexDocumentCleared() && !ok {
 		return errors.New(`ent: clearing a required unique edge "VexStatement.vex_document"`)
 	}
@@ -288,6 +329,9 @@ func (vsuo *VexStatementUpdateOne) sqlSave(ctx context.Context) (_node *VexState
 	}
 	if value, ok := vsuo.mutation.VexID(); ok {
 		_spec.SetField(vexstatement.FieldVexID, field.TypeString, value)
+	}
+	if value, ok := vsuo.mutation.VulnID(); ok {
+		_spec.SetField(vexstatement.FieldVulnID, field.TypeString, value)
 	}
 	if vsuo.mutation.VexDocumentCleared() {
 		edge := &sqlgraph.EdgeSpec{

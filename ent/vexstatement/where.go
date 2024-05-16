@@ -58,6 +58,11 @@ func VexID(v string) predicate.VexStatement {
 	return predicate.VexStatement(sql.FieldEQ(FieldVexID, v))
 }
 
+// VulnID applies equality check predicate on the "vuln_id" field. It's identical to VulnIDEQ.
+func VulnID(v string) predicate.VexStatement {
+	return predicate.VexStatement(sql.FieldEQ(FieldVulnID, v))
+}
+
 // VexIDEQ applies the EQ predicate on the "vex_id" field.
 func VexIDEQ(v string) predicate.VexStatement {
 	return predicate.VexStatement(sql.FieldEQ(FieldVexID, v))
@@ -121,6 +126,71 @@ func VexIDEqualFold(v string) predicate.VexStatement {
 // VexIDContainsFold applies the ContainsFold predicate on the "vex_id" field.
 func VexIDContainsFold(v string) predicate.VexStatement {
 	return predicate.VexStatement(sql.FieldContainsFold(FieldVexID, v))
+}
+
+// VulnIDEQ applies the EQ predicate on the "vuln_id" field.
+func VulnIDEQ(v string) predicate.VexStatement {
+	return predicate.VexStatement(sql.FieldEQ(FieldVulnID, v))
+}
+
+// VulnIDNEQ applies the NEQ predicate on the "vuln_id" field.
+func VulnIDNEQ(v string) predicate.VexStatement {
+	return predicate.VexStatement(sql.FieldNEQ(FieldVulnID, v))
+}
+
+// VulnIDIn applies the In predicate on the "vuln_id" field.
+func VulnIDIn(vs ...string) predicate.VexStatement {
+	return predicate.VexStatement(sql.FieldIn(FieldVulnID, vs...))
+}
+
+// VulnIDNotIn applies the NotIn predicate on the "vuln_id" field.
+func VulnIDNotIn(vs ...string) predicate.VexStatement {
+	return predicate.VexStatement(sql.FieldNotIn(FieldVulnID, vs...))
+}
+
+// VulnIDGT applies the GT predicate on the "vuln_id" field.
+func VulnIDGT(v string) predicate.VexStatement {
+	return predicate.VexStatement(sql.FieldGT(FieldVulnID, v))
+}
+
+// VulnIDGTE applies the GTE predicate on the "vuln_id" field.
+func VulnIDGTE(v string) predicate.VexStatement {
+	return predicate.VexStatement(sql.FieldGTE(FieldVulnID, v))
+}
+
+// VulnIDLT applies the LT predicate on the "vuln_id" field.
+func VulnIDLT(v string) predicate.VexStatement {
+	return predicate.VexStatement(sql.FieldLT(FieldVulnID, v))
+}
+
+// VulnIDLTE applies the LTE predicate on the "vuln_id" field.
+func VulnIDLTE(v string) predicate.VexStatement {
+	return predicate.VexStatement(sql.FieldLTE(FieldVulnID, v))
+}
+
+// VulnIDContains applies the Contains predicate on the "vuln_id" field.
+func VulnIDContains(v string) predicate.VexStatement {
+	return predicate.VexStatement(sql.FieldContains(FieldVulnID, v))
+}
+
+// VulnIDHasPrefix applies the HasPrefix predicate on the "vuln_id" field.
+func VulnIDHasPrefix(v string) predicate.VexStatement {
+	return predicate.VexStatement(sql.FieldHasPrefix(FieldVulnID, v))
+}
+
+// VulnIDHasSuffix applies the HasSuffix predicate on the "vuln_id" field.
+func VulnIDHasSuffix(v string) predicate.VexStatement {
+	return predicate.VexStatement(sql.FieldHasSuffix(FieldVulnID, v))
+}
+
+// VulnIDEqualFold applies the EqualFold predicate on the "vuln_id" field.
+func VulnIDEqualFold(v string) predicate.VexStatement {
+	return predicate.VexStatement(sql.FieldEqualFold(FieldVulnID, v))
+}
+
+// VulnIDContainsFold applies the ContainsFold predicate on the "vuln_id" field.
+func VulnIDContainsFold(v string) predicate.VexStatement {
+	return predicate.VexStatement(sql.FieldContainsFold(FieldVulnID, v))
 }
 
 // HasVexDocument applies the HasEdge predicate on the "vex_document" edge.

@@ -1144,6 +1144,11 @@ func (vs *VexStatementQuery) collectField(ctx context.Context, oneNode bool, opC
 				selectedFields = append(selectedFields, vexstatement.FieldVexID)
 				fieldSeen[vexstatement.FieldVexID] = struct{}{}
 			}
+		case "vulnID":
+			if _, ok := fieldSeen[vexstatement.FieldVulnID]; !ok {
+				selectedFields = append(selectedFields, vexstatement.FieldVulnID)
+				fieldSeen[vexstatement.FieldVulnID] = struct{}{}
+			}
 		case "id":
 		case "__typename":
 		default:

@@ -912,6 +912,7 @@ input VexDocumentWhereInput {
 type VexStatement implements Node {
   id: ID!
   vexID: String!
+  vulnID: String!
   vexDocument: VexDocument!
 }
 """
@@ -949,6 +950,22 @@ input VexStatementWhereInput {
   vexIDHasSuffix: String
   vexIDEqualFold: String
   vexIDContainsFold: String
+  """
+  vuln_id field predicates
+  """
+  vulnID: String
+  vulnIDNEQ: String
+  vulnIDIn: [String!]
+  vulnIDNotIn: [String!]
+  vulnIDGT: String
+  vulnIDGTE: String
+  vulnIDLT: String
+  vulnIDLTE: String
+  vulnIDContains: String
+  vulnIDHasPrefix: String
+  vulnIDHasSuffix: String
+  vulnIDEqualFold: String
+  vulnIDContainsFold: String
   """
   vex_document edge predicates
   """
