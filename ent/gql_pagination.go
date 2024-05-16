@@ -21,6 +21,8 @@ import (
 	"github.com/in-toto/archivista/ent/subject"
 	"github.com/in-toto/archivista/ent/subjectdigest"
 	"github.com/in-toto/archivista/ent/timestamp"
+	"github.com/in-toto/archivista/ent/vexdocument"
+	"github.com/in-toto/archivista/ent/vexstatement"
 	"github.com/vektah/gqlparser/v2/gqlerror"
 )
 
@@ -279,7 +281,9 @@ func (a *AttestationQuery) Paginate(
 	if hasCollectedField(ctx, totalCountField) || hasCollectedField(ctx, pageInfoField) {
 		hasPagination := after != nil || first != nil || before != nil || last != nil
 		if hasPagination || ignoredEdges {
-			if conn.TotalCount, err = a.Clone().Count(ctx); err != nil {
+			c := a.Clone()
+			c.ctx.Fields = nil
+			if conn.TotalCount, err = c.Count(ctx); err != nil {
 				return nil, err
 			}
 			conn.PageInfo.HasNextPage = first != nil && conn.TotalCount > 0
@@ -292,11 +296,12 @@ func (a *AttestationQuery) Paginate(
 	if a, err = pager.applyCursors(a, after, before); err != nil {
 		return nil, err
 	}
-	if limit := paginateLimit(first, last); limit != 0 {
+	limit := paginateLimit(first, last)
+	if limit != 0 {
 		a.Limit(limit)
 	}
 	if field := collectedField(ctx, edgesField, nodeField); field != nil {
-		if err := a.collectField(ctx, graphql.GetOperationContext(ctx), *field, []string{edgesField, nodeField}); err != nil {
+		if err := a.collectField(ctx, limit == 1, graphql.GetOperationContext(ctx), *field, []string{edgesField, nodeField}); err != nil {
 			return nil, err
 		}
 	}
@@ -525,7 +530,9 @@ func (ac *AttestationCollectionQuery) Paginate(
 	if hasCollectedField(ctx, totalCountField) || hasCollectedField(ctx, pageInfoField) {
 		hasPagination := after != nil || first != nil || before != nil || last != nil
 		if hasPagination || ignoredEdges {
-			if conn.TotalCount, err = ac.Clone().Count(ctx); err != nil {
+			c := ac.Clone()
+			c.ctx.Fields = nil
+			if conn.TotalCount, err = c.Count(ctx); err != nil {
 				return nil, err
 			}
 			conn.PageInfo.HasNextPage = first != nil && conn.TotalCount > 0
@@ -538,11 +545,12 @@ func (ac *AttestationCollectionQuery) Paginate(
 	if ac, err = pager.applyCursors(ac, after, before); err != nil {
 		return nil, err
 	}
-	if limit := paginateLimit(first, last); limit != 0 {
+	limit := paginateLimit(first, last)
+	if limit != 0 {
 		ac.Limit(limit)
 	}
 	if field := collectedField(ctx, edgesField, nodeField); field != nil {
-		if err := ac.collectField(ctx, graphql.GetOperationContext(ctx), *field, []string{edgesField, nodeField}); err != nil {
+		if err := ac.collectField(ctx, limit == 1, graphql.GetOperationContext(ctx), *field, []string{edgesField, nodeField}); err != nil {
 			return nil, err
 		}
 	}
@@ -771,7 +779,9 @@ func (ap *AttestationPolicyQuery) Paginate(
 	if hasCollectedField(ctx, totalCountField) || hasCollectedField(ctx, pageInfoField) {
 		hasPagination := after != nil || first != nil || before != nil || last != nil
 		if hasPagination || ignoredEdges {
-			if conn.TotalCount, err = ap.Clone().Count(ctx); err != nil {
+			c := ap.Clone()
+			c.ctx.Fields = nil
+			if conn.TotalCount, err = c.Count(ctx); err != nil {
 				return nil, err
 			}
 			conn.PageInfo.HasNextPage = first != nil && conn.TotalCount > 0
@@ -784,11 +794,12 @@ func (ap *AttestationPolicyQuery) Paginate(
 	if ap, err = pager.applyCursors(ap, after, before); err != nil {
 		return nil, err
 	}
-	if limit := paginateLimit(first, last); limit != 0 {
+	limit := paginateLimit(first, last)
+	if limit != 0 {
 		ap.Limit(limit)
 	}
 	if field := collectedField(ctx, edgesField, nodeField); field != nil {
-		if err := ap.collectField(ctx, graphql.GetOperationContext(ctx), *field, []string{edgesField, nodeField}); err != nil {
+		if err := ap.collectField(ctx, limit == 1, graphql.GetOperationContext(ctx), *field, []string{edgesField, nodeField}); err != nil {
 			return nil, err
 		}
 	}
@@ -1017,7 +1028,9 @@ func (d *DsseQuery) Paginate(
 	if hasCollectedField(ctx, totalCountField) || hasCollectedField(ctx, pageInfoField) {
 		hasPagination := after != nil || first != nil || before != nil || last != nil
 		if hasPagination || ignoredEdges {
-			if conn.TotalCount, err = d.Clone().Count(ctx); err != nil {
+			c := d.Clone()
+			c.ctx.Fields = nil
+			if conn.TotalCount, err = c.Count(ctx); err != nil {
 				return nil, err
 			}
 			conn.PageInfo.HasNextPage = first != nil && conn.TotalCount > 0
@@ -1030,11 +1043,12 @@ func (d *DsseQuery) Paginate(
 	if d, err = pager.applyCursors(d, after, before); err != nil {
 		return nil, err
 	}
-	if limit := paginateLimit(first, last); limit != 0 {
+	limit := paginateLimit(first, last)
+	if limit != 0 {
 		d.Limit(limit)
 	}
 	if field := collectedField(ctx, edgesField, nodeField); field != nil {
-		if err := d.collectField(ctx, graphql.GetOperationContext(ctx), *field, []string{edgesField, nodeField}); err != nil {
+		if err := d.collectField(ctx, limit == 1, graphql.GetOperationContext(ctx), *field, []string{edgesField, nodeField}); err != nil {
 			return nil, err
 		}
 	}
@@ -1263,7 +1277,9 @@ func (pd *PayloadDigestQuery) Paginate(
 	if hasCollectedField(ctx, totalCountField) || hasCollectedField(ctx, pageInfoField) {
 		hasPagination := after != nil || first != nil || before != nil || last != nil
 		if hasPagination || ignoredEdges {
-			if conn.TotalCount, err = pd.Clone().Count(ctx); err != nil {
+			c := pd.Clone()
+			c.ctx.Fields = nil
+			if conn.TotalCount, err = c.Count(ctx); err != nil {
 				return nil, err
 			}
 			conn.PageInfo.HasNextPage = first != nil && conn.TotalCount > 0
@@ -1276,11 +1292,12 @@ func (pd *PayloadDigestQuery) Paginate(
 	if pd, err = pager.applyCursors(pd, after, before); err != nil {
 		return nil, err
 	}
-	if limit := paginateLimit(first, last); limit != 0 {
+	limit := paginateLimit(first, last)
+	if limit != 0 {
 		pd.Limit(limit)
 	}
 	if field := collectedField(ctx, edgesField, nodeField); field != nil {
-		if err := pd.collectField(ctx, graphql.GetOperationContext(ctx), *field, []string{edgesField, nodeField}); err != nil {
+		if err := pd.collectField(ctx, limit == 1, graphql.GetOperationContext(ctx), *field, []string{edgesField, nodeField}); err != nil {
 			return nil, err
 		}
 	}
@@ -1509,7 +1526,9 @@ func (s *SignatureQuery) Paginate(
 	if hasCollectedField(ctx, totalCountField) || hasCollectedField(ctx, pageInfoField) {
 		hasPagination := after != nil || first != nil || before != nil || last != nil
 		if hasPagination || ignoredEdges {
-			if conn.TotalCount, err = s.Clone().Count(ctx); err != nil {
+			c := s.Clone()
+			c.ctx.Fields = nil
+			if conn.TotalCount, err = c.Count(ctx); err != nil {
 				return nil, err
 			}
 			conn.PageInfo.HasNextPage = first != nil && conn.TotalCount > 0
@@ -1522,11 +1541,12 @@ func (s *SignatureQuery) Paginate(
 	if s, err = pager.applyCursors(s, after, before); err != nil {
 		return nil, err
 	}
-	if limit := paginateLimit(first, last); limit != 0 {
+	limit := paginateLimit(first, last)
+	if limit != 0 {
 		s.Limit(limit)
 	}
 	if field := collectedField(ctx, edgesField, nodeField); field != nil {
-		if err := s.collectField(ctx, graphql.GetOperationContext(ctx), *field, []string{edgesField, nodeField}); err != nil {
+		if err := s.collectField(ctx, limit == 1, graphql.GetOperationContext(ctx), *field, []string{edgesField, nodeField}); err != nil {
 			return nil, err
 		}
 	}
@@ -1755,7 +1775,9 @@ func (s *StatementQuery) Paginate(
 	if hasCollectedField(ctx, totalCountField) || hasCollectedField(ctx, pageInfoField) {
 		hasPagination := after != nil || first != nil || before != nil || last != nil
 		if hasPagination || ignoredEdges {
-			if conn.TotalCount, err = s.Clone().Count(ctx); err != nil {
+			c := s.Clone()
+			c.ctx.Fields = nil
+			if conn.TotalCount, err = c.Count(ctx); err != nil {
 				return nil, err
 			}
 			conn.PageInfo.HasNextPage = first != nil && conn.TotalCount > 0
@@ -1768,11 +1790,12 @@ func (s *StatementQuery) Paginate(
 	if s, err = pager.applyCursors(s, after, before); err != nil {
 		return nil, err
 	}
-	if limit := paginateLimit(first, last); limit != 0 {
+	limit := paginateLimit(first, last)
+	if limit != 0 {
 		s.Limit(limit)
 	}
 	if field := collectedField(ctx, edgesField, nodeField); field != nil {
-		if err := s.collectField(ctx, graphql.GetOperationContext(ctx), *field, []string{edgesField, nodeField}); err != nil {
+		if err := s.collectField(ctx, limit == 1, graphql.GetOperationContext(ctx), *field, []string{edgesField, nodeField}); err != nil {
 			return nil, err
 		}
 	}
@@ -2001,7 +2024,9 @@ func (s *SubjectQuery) Paginate(
 	if hasCollectedField(ctx, totalCountField) || hasCollectedField(ctx, pageInfoField) {
 		hasPagination := after != nil || first != nil || before != nil || last != nil
 		if hasPagination || ignoredEdges {
-			if conn.TotalCount, err = s.Clone().Count(ctx); err != nil {
+			c := s.Clone()
+			c.ctx.Fields = nil
+			if conn.TotalCount, err = c.Count(ctx); err != nil {
 				return nil, err
 			}
 			conn.PageInfo.HasNextPage = first != nil && conn.TotalCount > 0
@@ -2014,11 +2039,12 @@ func (s *SubjectQuery) Paginate(
 	if s, err = pager.applyCursors(s, after, before); err != nil {
 		return nil, err
 	}
-	if limit := paginateLimit(first, last); limit != 0 {
+	limit := paginateLimit(first, last)
+	if limit != 0 {
 		s.Limit(limit)
 	}
 	if field := collectedField(ctx, edgesField, nodeField); field != nil {
-		if err := s.collectField(ctx, graphql.GetOperationContext(ctx), *field, []string{edgesField, nodeField}); err != nil {
+		if err := s.collectField(ctx, limit == 1, graphql.GetOperationContext(ctx), *field, []string{edgesField, nodeField}); err != nil {
 			return nil, err
 		}
 	}
@@ -2247,7 +2273,9 @@ func (sd *SubjectDigestQuery) Paginate(
 	if hasCollectedField(ctx, totalCountField) || hasCollectedField(ctx, pageInfoField) {
 		hasPagination := after != nil || first != nil || before != nil || last != nil
 		if hasPagination || ignoredEdges {
-			if conn.TotalCount, err = sd.Clone().Count(ctx); err != nil {
+			c := sd.Clone()
+			c.ctx.Fields = nil
+			if conn.TotalCount, err = c.Count(ctx); err != nil {
 				return nil, err
 			}
 			conn.PageInfo.HasNextPage = first != nil && conn.TotalCount > 0
@@ -2260,11 +2288,12 @@ func (sd *SubjectDigestQuery) Paginate(
 	if sd, err = pager.applyCursors(sd, after, before); err != nil {
 		return nil, err
 	}
-	if limit := paginateLimit(first, last); limit != 0 {
+	limit := paginateLimit(first, last)
+	if limit != 0 {
 		sd.Limit(limit)
 	}
 	if field := collectedField(ctx, edgesField, nodeField); field != nil {
-		if err := sd.collectField(ctx, graphql.GetOperationContext(ctx), *field, []string{edgesField, nodeField}); err != nil {
+		if err := sd.collectField(ctx, limit == 1, graphql.GetOperationContext(ctx), *field, []string{edgesField, nodeField}); err != nil {
 			return nil, err
 		}
 	}
@@ -2493,7 +2522,9 @@ func (t *TimestampQuery) Paginate(
 	if hasCollectedField(ctx, totalCountField) || hasCollectedField(ctx, pageInfoField) {
 		hasPagination := after != nil || first != nil || before != nil || last != nil
 		if hasPagination || ignoredEdges {
-			if conn.TotalCount, err = t.Clone().Count(ctx); err != nil {
+			c := t.Clone()
+			c.ctx.Fields = nil
+			if conn.TotalCount, err = c.Count(ctx); err != nil {
 				return nil, err
 			}
 			conn.PageInfo.HasNextPage = first != nil && conn.TotalCount > 0
@@ -2506,11 +2537,12 @@ func (t *TimestampQuery) Paginate(
 	if t, err = pager.applyCursors(t, after, before); err != nil {
 		return nil, err
 	}
-	if limit := paginateLimit(first, last); limit != 0 {
+	limit := paginateLimit(first, last)
+	if limit != 0 {
 		t.Limit(limit)
 	}
 	if field := collectedField(ctx, edgesField, nodeField); field != nil {
-		if err := t.collectField(ctx, graphql.GetOperationContext(ctx), *field, []string{edgesField, nodeField}); err != nil {
+		if err := t.collectField(ctx, limit == 1, graphql.GetOperationContext(ctx), *field, []string{edgesField, nodeField}); err != nil {
 			return nil, err
 		}
 	}
@@ -2561,5 +2593,503 @@ func (t *Timestamp) ToEdge(order *TimestampOrder) *TimestampEdge {
 	return &TimestampEdge{
 		Node:   t,
 		Cursor: order.Field.toCursor(t),
+	}
+}
+
+// VexDocumentEdge is the edge representation of VexDocument.
+type VexDocumentEdge struct {
+	Node   *VexDocument `json:"node"`
+	Cursor Cursor       `json:"cursor"`
+}
+
+// VexDocumentConnection is the connection containing edges to VexDocument.
+type VexDocumentConnection struct {
+	Edges      []*VexDocumentEdge `json:"edges"`
+	PageInfo   PageInfo           `json:"pageInfo"`
+	TotalCount int                `json:"totalCount"`
+}
+
+func (c *VexDocumentConnection) build(nodes []*VexDocument, pager *vexdocumentPager, after *Cursor, first *int, before *Cursor, last *int) {
+	c.PageInfo.HasNextPage = before != nil
+	c.PageInfo.HasPreviousPage = after != nil
+	if first != nil && *first+1 == len(nodes) {
+		c.PageInfo.HasNextPage = true
+		nodes = nodes[:len(nodes)-1]
+	} else if last != nil && *last+1 == len(nodes) {
+		c.PageInfo.HasPreviousPage = true
+		nodes = nodes[:len(nodes)-1]
+	}
+	var nodeAt func(int) *VexDocument
+	if last != nil {
+		n := len(nodes) - 1
+		nodeAt = func(i int) *VexDocument {
+			return nodes[n-i]
+		}
+	} else {
+		nodeAt = func(i int) *VexDocument {
+			return nodes[i]
+		}
+	}
+	c.Edges = make([]*VexDocumentEdge, len(nodes))
+	for i := range nodes {
+		node := nodeAt(i)
+		c.Edges[i] = &VexDocumentEdge{
+			Node:   node,
+			Cursor: pager.toCursor(node),
+		}
+	}
+	if l := len(c.Edges); l > 0 {
+		c.PageInfo.StartCursor = &c.Edges[0].Cursor
+		c.PageInfo.EndCursor = &c.Edges[l-1].Cursor
+	}
+	if c.TotalCount == 0 {
+		c.TotalCount = len(nodes)
+	}
+}
+
+// VexDocumentPaginateOption enables pagination customization.
+type VexDocumentPaginateOption func(*vexdocumentPager) error
+
+// WithVexDocumentOrder configures pagination ordering.
+func WithVexDocumentOrder(order *VexDocumentOrder) VexDocumentPaginateOption {
+	if order == nil {
+		order = DefaultVexDocumentOrder
+	}
+	o := *order
+	return func(pager *vexdocumentPager) error {
+		if err := o.Direction.Validate(); err != nil {
+			return err
+		}
+		if o.Field == nil {
+			o.Field = DefaultVexDocumentOrder.Field
+		}
+		pager.order = &o
+		return nil
+	}
+}
+
+// WithVexDocumentFilter configures pagination filter.
+func WithVexDocumentFilter(filter func(*VexDocumentQuery) (*VexDocumentQuery, error)) VexDocumentPaginateOption {
+	return func(pager *vexdocumentPager) error {
+		if filter == nil {
+			return errors.New("VexDocumentQuery filter cannot be nil")
+		}
+		pager.filter = filter
+		return nil
+	}
+}
+
+type vexdocumentPager struct {
+	reverse bool
+	order   *VexDocumentOrder
+	filter  func(*VexDocumentQuery) (*VexDocumentQuery, error)
+}
+
+func newVexDocumentPager(opts []VexDocumentPaginateOption, reverse bool) (*vexdocumentPager, error) {
+	pager := &vexdocumentPager{reverse: reverse}
+	for _, opt := range opts {
+		if err := opt(pager); err != nil {
+			return nil, err
+		}
+	}
+	if pager.order == nil {
+		pager.order = DefaultVexDocumentOrder
+	}
+	return pager, nil
+}
+
+func (p *vexdocumentPager) applyFilter(query *VexDocumentQuery) (*VexDocumentQuery, error) {
+	if p.filter != nil {
+		return p.filter(query)
+	}
+	return query, nil
+}
+
+func (p *vexdocumentPager) toCursor(vd *VexDocument) Cursor {
+	return p.order.Field.toCursor(vd)
+}
+
+func (p *vexdocumentPager) applyCursors(query *VexDocumentQuery, after, before *Cursor) (*VexDocumentQuery, error) {
+	direction := p.order.Direction
+	if p.reverse {
+		direction = direction.Reverse()
+	}
+	for _, predicate := range entgql.CursorsPredicate(after, before, DefaultVexDocumentOrder.Field.column, p.order.Field.column, direction) {
+		query = query.Where(predicate)
+	}
+	return query, nil
+}
+
+func (p *vexdocumentPager) applyOrder(query *VexDocumentQuery) *VexDocumentQuery {
+	direction := p.order.Direction
+	if p.reverse {
+		direction = direction.Reverse()
+	}
+	query = query.Order(p.order.Field.toTerm(direction.OrderTermOption()))
+	if p.order.Field != DefaultVexDocumentOrder.Field {
+		query = query.Order(DefaultVexDocumentOrder.Field.toTerm(direction.OrderTermOption()))
+	}
+	if len(query.ctx.Fields) > 0 {
+		query.ctx.AppendFieldOnce(p.order.Field.column)
+	}
+	return query
+}
+
+func (p *vexdocumentPager) orderExpr(query *VexDocumentQuery) sql.Querier {
+	direction := p.order.Direction
+	if p.reverse {
+		direction = direction.Reverse()
+	}
+	if len(query.ctx.Fields) > 0 {
+		query.ctx.AppendFieldOnce(p.order.Field.column)
+	}
+	return sql.ExprFunc(func(b *sql.Builder) {
+		b.Ident(p.order.Field.column).Pad().WriteString(string(direction))
+		if p.order.Field != DefaultVexDocumentOrder.Field {
+			b.Comma().Ident(DefaultVexDocumentOrder.Field.column).Pad().WriteString(string(direction))
+		}
+	})
+}
+
+// Paginate executes the query and returns a relay based cursor connection to VexDocument.
+func (vd *VexDocumentQuery) Paginate(
+	ctx context.Context, after *Cursor, first *int,
+	before *Cursor, last *int, opts ...VexDocumentPaginateOption,
+) (*VexDocumentConnection, error) {
+	if err := validateFirstLast(first, last); err != nil {
+		return nil, err
+	}
+	pager, err := newVexDocumentPager(opts, last != nil)
+	if err != nil {
+		return nil, err
+	}
+	if vd, err = pager.applyFilter(vd); err != nil {
+		return nil, err
+	}
+	conn := &VexDocumentConnection{Edges: []*VexDocumentEdge{}}
+	ignoredEdges := !hasCollectedField(ctx, edgesField)
+	if hasCollectedField(ctx, totalCountField) || hasCollectedField(ctx, pageInfoField) {
+		hasPagination := after != nil || first != nil || before != nil || last != nil
+		if hasPagination || ignoredEdges {
+			c := vd.Clone()
+			c.ctx.Fields = nil
+			if conn.TotalCount, err = c.Count(ctx); err != nil {
+				return nil, err
+			}
+			conn.PageInfo.HasNextPage = first != nil && conn.TotalCount > 0
+			conn.PageInfo.HasPreviousPage = last != nil && conn.TotalCount > 0
+		}
+	}
+	if ignoredEdges || (first != nil && *first == 0) || (last != nil && *last == 0) {
+		return conn, nil
+	}
+	if vd, err = pager.applyCursors(vd, after, before); err != nil {
+		return nil, err
+	}
+	limit := paginateLimit(first, last)
+	if limit != 0 {
+		vd.Limit(limit)
+	}
+	if field := collectedField(ctx, edgesField, nodeField); field != nil {
+		if err := vd.collectField(ctx, limit == 1, graphql.GetOperationContext(ctx), *field, []string{edgesField, nodeField}); err != nil {
+			return nil, err
+		}
+	}
+	vd = pager.applyOrder(vd)
+	nodes, err := vd.All(ctx)
+	if err != nil {
+		return nil, err
+	}
+	conn.build(nodes, pager, after, first, before, last)
+	return conn, nil
+}
+
+// VexDocumentOrderField defines the ordering field of VexDocument.
+type VexDocumentOrderField struct {
+	// Value extracts the ordering value from the given VexDocument.
+	Value    func(*VexDocument) (ent.Value, error)
+	column   string // field or computed.
+	toTerm   func(...sql.OrderTermOption) vexdocument.OrderOption
+	toCursor func(*VexDocument) Cursor
+}
+
+// VexDocumentOrder defines the ordering of VexDocument.
+type VexDocumentOrder struct {
+	Direction OrderDirection         `json:"direction"`
+	Field     *VexDocumentOrderField `json:"field"`
+}
+
+// DefaultVexDocumentOrder is the default ordering of VexDocument.
+var DefaultVexDocumentOrder = &VexDocumentOrder{
+	Direction: entgql.OrderDirectionAsc,
+	Field: &VexDocumentOrderField{
+		Value: func(vd *VexDocument) (ent.Value, error) {
+			return vd.ID, nil
+		},
+		column: vexdocument.FieldID,
+		toTerm: vexdocument.ByID,
+		toCursor: func(vd *VexDocument) Cursor {
+			return Cursor{ID: vd.ID}
+		},
+	},
+}
+
+// ToEdge converts VexDocument into VexDocumentEdge.
+func (vd *VexDocument) ToEdge(order *VexDocumentOrder) *VexDocumentEdge {
+	if order == nil {
+		order = DefaultVexDocumentOrder
+	}
+	return &VexDocumentEdge{
+		Node:   vd,
+		Cursor: order.Field.toCursor(vd),
+	}
+}
+
+// VexStatementEdge is the edge representation of VexStatement.
+type VexStatementEdge struct {
+	Node   *VexStatement `json:"node"`
+	Cursor Cursor        `json:"cursor"`
+}
+
+// VexStatementConnection is the connection containing edges to VexStatement.
+type VexStatementConnection struct {
+	Edges      []*VexStatementEdge `json:"edges"`
+	PageInfo   PageInfo            `json:"pageInfo"`
+	TotalCount int                 `json:"totalCount"`
+}
+
+func (c *VexStatementConnection) build(nodes []*VexStatement, pager *vexstatementPager, after *Cursor, first *int, before *Cursor, last *int) {
+	c.PageInfo.HasNextPage = before != nil
+	c.PageInfo.HasPreviousPage = after != nil
+	if first != nil && *first+1 == len(nodes) {
+		c.PageInfo.HasNextPage = true
+		nodes = nodes[:len(nodes)-1]
+	} else if last != nil && *last+1 == len(nodes) {
+		c.PageInfo.HasPreviousPage = true
+		nodes = nodes[:len(nodes)-1]
+	}
+	var nodeAt func(int) *VexStatement
+	if last != nil {
+		n := len(nodes) - 1
+		nodeAt = func(i int) *VexStatement {
+			return nodes[n-i]
+		}
+	} else {
+		nodeAt = func(i int) *VexStatement {
+			return nodes[i]
+		}
+	}
+	c.Edges = make([]*VexStatementEdge, len(nodes))
+	for i := range nodes {
+		node := nodeAt(i)
+		c.Edges[i] = &VexStatementEdge{
+			Node:   node,
+			Cursor: pager.toCursor(node),
+		}
+	}
+	if l := len(c.Edges); l > 0 {
+		c.PageInfo.StartCursor = &c.Edges[0].Cursor
+		c.PageInfo.EndCursor = &c.Edges[l-1].Cursor
+	}
+	if c.TotalCount == 0 {
+		c.TotalCount = len(nodes)
+	}
+}
+
+// VexStatementPaginateOption enables pagination customization.
+type VexStatementPaginateOption func(*vexstatementPager) error
+
+// WithVexStatementOrder configures pagination ordering.
+func WithVexStatementOrder(order *VexStatementOrder) VexStatementPaginateOption {
+	if order == nil {
+		order = DefaultVexStatementOrder
+	}
+	o := *order
+	return func(pager *vexstatementPager) error {
+		if err := o.Direction.Validate(); err != nil {
+			return err
+		}
+		if o.Field == nil {
+			o.Field = DefaultVexStatementOrder.Field
+		}
+		pager.order = &o
+		return nil
+	}
+}
+
+// WithVexStatementFilter configures pagination filter.
+func WithVexStatementFilter(filter func(*VexStatementQuery) (*VexStatementQuery, error)) VexStatementPaginateOption {
+	return func(pager *vexstatementPager) error {
+		if filter == nil {
+			return errors.New("VexStatementQuery filter cannot be nil")
+		}
+		pager.filter = filter
+		return nil
+	}
+}
+
+type vexstatementPager struct {
+	reverse bool
+	order   *VexStatementOrder
+	filter  func(*VexStatementQuery) (*VexStatementQuery, error)
+}
+
+func newVexStatementPager(opts []VexStatementPaginateOption, reverse bool) (*vexstatementPager, error) {
+	pager := &vexstatementPager{reverse: reverse}
+	for _, opt := range opts {
+		if err := opt(pager); err != nil {
+			return nil, err
+		}
+	}
+	if pager.order == nil {
+		pager.order = DefaultVexStatementOrder
+	}
+	return pager, nil
+}
+
+func (p *vexstatementPager) applyFilter(query *VexStatementQuery) (*VexStatementQuery, error) {
+	if p.filter != nil {
+		return p.filter(query)
+	}
+	return query, nil
+}
+
+func (p *vexstatementPager) toCursor(vs *VexStatement) Cursor {
+	return p.order.Field.toCursor(vs)
+}
+
+func (p *vexstatementPager) applyCursors(query *VexStatementQuery, after, before *Cursor) (*VexStatementQuery, error) {
+	direction := p.order.Direction
+	if p.reverse {
+		direction = direction.Reverse()
+	}
+	for _, predicate := range entgql.CursorsPredicate(after, before, DefaultVexStatementOrder.Field.column, p.order.Field.column, direction) {
+		query = query.Where(predicate)
+	}
+	return query, nil
+}
+
+func (p *vexstatementPager) applyOrder(query *VexStatementQuery) *VexStatementQuery {
+	direction := p.order.Direction
+	if p.reverse {
+		direction = direction.Reverse()
+	}
+	query = query.Order(p.order.Field.toTerm(direction.OrderTermOption()))
+	if p.order.Field != DefaultVexStatementOrder.Field {
+		query = query.Order(DefaultVexStatementOrder.Field.toTerm(direction.OrderTermOption()))
+	}
+	if len(query.ctx.Fields) > 0 {
+		query.ctx.AppendFieldOnce(p.order.Field.column)
+	}
+	return query
+}
+
+func (p *vexstatementPager) orderExpr(query *VexStatementQuery) sql.Querier {
+	direction := p.order.Direction
+	if p.reverse {
+		direction = direction.Reverse()
+	}
+	if len(query.ctx.Fields) > 0 {
+		query.ctx.AppendFieldOnce(p.order.Field.column)
+	}
+	return sql.ExprFunc(func(b *sql.Builder) {
+		b.Ident(p.order.Field.column).Pad().WriteString(string(direction))
+		if p.order.Field != DefaultVexStatementOrder.Field {
+			b.Comma().Ident(DefaultVexStatementOrder.Field.column).Pad().WriteString(string(direction))
+		}
+	})
+}
+
+// Paginate executes the query and returns a relay based cursor connection to VexStatement.
+func (vs *VexStatementQuery) Paginate(
+	ctx context.Context, after *Cursor, first *int,
+	before *Cursor, last *int, opts ...VexStatementPaginateOption,
+) (*VexStatementConnection, error) {
+	if err := validateFirstLast(first, last); err != nil {
+		return nil, err
+	}
+	pager, err := newVexStatementPager(opts, last != nil)
+	if err != nil {
+		return nil, err
+	}
+	if vs, err = pager.applyFilter(vs); err != nil {
+		return nil, err
+	}
+	conn := &VexStatementConnection{Edges: []*VexStatementEdge{}}
+	ignoredEdges := !hasCollectedField(ctx, edgesField)
+	if hasCollectedField(ctx, totalCountField) || hasCollectedField(ctx, pageInfoField) {
+		hasPagination := after != nil || first != nil || before != nil || last != nil
+		if hasPagination || ignoredEdges {
+			c := vs.Clone()
+			c.ctx.Fields = nil
+			if conn.TotalCount, err = c.Count(ctx); err != nil {
+				return nil, err
+			}
+			conn.PageInfo.HasNextPage = first != nil && conn.TotalCount > 0
+			conn.PageInfo.HasPreviousPage = last != nil && conn.TotalCount > 0
+		}
+	}
+	if ignoredEdges || (first != nil && *first == 0) || (last != nil && *last == 0) {
+		return conn, nil
+	}
+	if vs, err = pager.applyCursors(vs, after, before); err != nil {
+		return nil, err
+	}
+	limit := paginateLimit(first, last)
+	if limit != 0 {
+		vs.Limit(limit)
+	}
+	if field := collectedField(ctx, edgesField, nodeField); field != nil {
+		if err := vs.collectField(ctx, limit == 1, graphql.GetOperationContext(ctx), *field, []string{edgesField, nodeField}); err != nil {
+			return nil, err
+		}
+	}
+	vs = pager.applyOrder(vs)
+	nodes, err := vs.All(ctx)
+	if err != nil {
+		return nil, err
+	}
+	conn.build(nodes, pager, after, first, before, last)
+	return conn, nil
+}
+
+// VexStatementOrderField defines the ordering field of VexStatement.
+type VexStatementOrderField struct {
+	// Value extracts the ordering value from the given VexStatement.
+	Value    func(*VexStatement) (ent.Value, error)
+	column   string // field or computed.
+	toTerm   func(...sql.OrderTermOption) vexstatement.OrderOption
+	toCursor func(*VexStatement) Cursor
+}
+
+// VexStatementOrder defines the ordering of VexStatement.
+type VexStatementOrder struct {
+	Direction OrderDirection          `json:"direction"`
+	Field     *VexStatementOrderField `json:"field"`
+}
+
+// DefaultVexStatementOrder is the default ordering of VexStatement.
+var DefaultVexStatementOrder = &VexStatementOrder{
+	Direction: entgql.OrderDirectionAsc,
+	Field: &VexStatementOrderField{
+		Value: func(vs *VexStatement) (ent.Value, error) {
+			return vs.ID, nil
+		},
+		column: vexstatement.FieldID,
+		toTerm: vexstatement.ByID,
+		toCursor: func(vs *VexStatement) Cursor {
+			return Cursor{ID: vs.ID}
+		},
+	},
+}
+
+// ToEdge converts VexStatement into VexStatementEdge.
+func (vs *VexStatement) ToEdge(order *VexStatementOrder) *VexStatementEdge {
+	if order == nil {
+		order = DefaultVexStatementOrder
+	}
+	return &VexStatementEdge{
+		Node:   vs,
+		Cursor: order.Field.toCursor(vs),
 	}
 }

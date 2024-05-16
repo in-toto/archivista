@@ -35,3 +35,9 @@ type SubjectDigest func(*sql.Selector)
 
 // Timestamp is the predicate function for timestamp builders.
 type Timestamp func(*sql.Selector)
+
+// VexDocument is the predicate function for vexdocument builders.
+type VexDocument func(*sql.Selector)
+
+// VexStatement is the predicate function for vexstatement builders.
+type VexStatement func(*sql.Selector)

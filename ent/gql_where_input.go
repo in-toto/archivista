@@ -18,6 +18,8 @@ import (
 	"github.com/in-toto/archivista/ent/subject"
 	"github.com/in-toto/archivista/ent/subjectdigest"
 	"github.com/in-toto/archivista/ent/timestamp"
+	"github.com/in-toto/archivista/ent/vexdocument"
+	"github.com/in-toto/archivista/ent/vexstatement"
 )
 
 // AttestationWhereInput represents a where input for filtering Attestation queries.
@@ -1514,6 +1516,10 @@ type StatementWhereInput struct {
 	HasAttestationCollections     *bool                              `json:"hasAttestationCollections,omitempty"`
 	HasAttestationCollectionsWith []*AttestationCollectionWhereInput `json:"hasAttestationCollectionsWith,omitempty"`
 
+	// "vex_documents" edge predicates.
+	HasVexDocuments     *bool                    `json:"hasVexDocuments,omitempty"`
+	HasVexDocumentsWith []*VexDocumentWhereInput `json:"hasVexDocumentsWith,omitempty"`
+
 	// "dsse" edge predicates.
 	HasDsse     *bool             `json:"hasDsse,omitempty"`
 	HasDsseWith []*DsseWhereInput `json:"hasDsseWith,omitempty"`
@@ -1707,6 +1713,24 @@ func (i *StatementWhereInput) P() (predicate.Statement, error) {
 			with = append(with, p)
 		}
 		predicates = append(predicates, statement.HasAttestationCollectionsWith(with...))
+	}
+	if i.HasVexDocuments != nil {
+		p := statement.HasVexDocuments()
+		if !*i.HasVexDocuments {
+			p = statement.Not(p)
+		}
+		predicates = append(predicates, p)
+	}
+	if len(i.HasVexDocumentsWith) > 0 {
+		with := make([]predicate.VexDocument, 0, len(i.HasVexDocumentsWith))
+		for _, w := range i.HasVexDocumentsWith {
+			p, err := w.P()
+			if err != nil {
+				return nil, fmt.Errorf("%w: field 'HasVexDocumentsWith'", err)
+			}
+			with = append(with, p)
+		}
+		predicates = append(predicates, statement.HasVexDocumentsWith(with...))
 	}
 	if i.HasDsse != nil {
 		p := statement.HasDsse()
@@ -2443,5 +2467,427 @@ func (i *TimestampWhereInput) P() (predicate.Timestamp, error) {
 		return predicates[0], nil
 	default:
 		return timestamp.And(predicates...), nil
+	}
+}
+
+// VexDocumentWhereInput represents a where input for filtering VexDocument queries.
+type VexDocumentWhereInput struct {
+	Predicates []predicate.VexDocument  `json:"-"`
+	Not        *VexDocumentWhereInput   `json:"not,omitempty"`
+	Or         []*VexDocumentWhereInput `json:"or,omitempty"`
+	And        []*VexDocumentWhereInput `json:"and,omitempty"`
+
+	// "id" field predicates.
+	ID      *int  `json:"id,omitempty"`
+	IDNEQ   *int  `json:"idNEQ,omitempty"`
+	IDIn    []int `json:"idIn,omitempty"`
+	IDNotIn []int `json:"idNotIn,omitempty"`
+	IDGT    *int  `json:"idGT,omitempty"`
+	IDGTE   *int  `json:"idGTE,omitempty"`
+	IDLT    *int  `json:"idLT,omitempty"`
+	IDLTE   *int  `json:"idLTE,omitempty"`
+
+	// "vex_id" field predicates.
+	VexID             *string  `json:"vexID,omitempty"`
+	VexIDNEQ          *string  `json:"vexIDNEQ,omitempty"`
+	VexIDIn           []string `json:"vexIDIn,omitempty"`
+	VexIDNotIn        []string `json:"vexIDNotIn,omitempty"`
+	VexIDGT           *string  `json:"vexIDGT,omitempty"`
+	VexIDGTE          *string  `json:"vexIDGTE,omitempty"`
+	VexIDLT           *string  `json:"vexIDLT,omitempty"`
+	VexIDLTE          *string  `json:"vexIDLTE,omitempty"`
+	VexIDContains     *string  `json:"vexIDContains,omitempty"`
+	VexIDHasPrefix    *string  `json:"vexIDHasPrefix,omitempty"`
+	VexIDHasSuffix    *string  `json:"vexIDHasSuffix,omitempty"`
+	VexIDEqualFold    *string  `json:"vexIDEqualFold,omitempty"`
+	VexIDContainsFold *string  `json:"vexIDContainsFold,omitempty"`
+
+	// "vex_statements" edge predicates.
+	HasVexStatements     *bool                     `json:"hasVexStatements,omitempty"`
+	HasVexStatementsWith []*VexStatementWhereInput `json:"hasVexStatementsWith,omitempty"`
+
+	// "statement" edge predicates.
+	HasStatement     *bool                  `json:"hasStatement,omitempty"`
+	HasStatementWith []*StatementWhereInput `json:"hasStatementWith,omitempty"`
+}
+
+// AddPredicates adds custom predicates to the where input to be used during the filtering phase.
+func (i *VexDocumentWhereInput) AddPredicates(predicates ...predicate.VexDocument) {
+	i.Predicates = append(i.Predicates, predicates...)
+}
+
+// Filter applies the VexDocumentWhereInput filter on the VexDocumentQuery builder.
+func (i *VexDocumentWhereInput) Filter(q *VexDocumentQuery) (*VexDocumentQuery, error) {
+	if i == nil {
+		return q, nil
+	}
+	p, err := i.P()
+	if err != nil {
+		if err == ErrEmptyVexDocumentWhereInput {
+			return q, nil
+		}
+		return nil, err
+	}
+	return q.Where(p), nil
+}
+
+// ErrEmptyVexDocumentWhereInput is returned in case the VexDocumentWhereInput is empty.
+var ErrEmptyVexDocumentWhereInput = errors.New("ent: empty predicate VexDocumentWhereInput")
+
+// P returns a predicate for filtering vexdocuments.
+// An error is returned if the input is empty or invalid.
+func (i *VexDocumentWhereInput) P() (predicate.VexDocument, error) {
+	var predicates []predicate.VexDocument
+	if i.Not != nil {
+		p, err := i.Not.P()
+		if err != nil {
+			return nil, fmt.Errorf("%w: field 'not'", err)
+		}
+		predicates = append(predicates, vexdocument.Not(p))
+	}
+	switch n := len(i.Or); {
+	case n == 1:
+		p, err := i.Or[0].P()
+		if err != nil {
+			return nil, fmt.Errorf("%w: field 'or'", err)
+		}
+		predicates = append(predicates, p)
+	case n > 1:
+		or := make([]predicate.VexDocument, 0, n)
+		for _, w := range i.Or {
+			p, err := w.P()
+			if err != nil {
+				return nil, fmt.Errorf("%w: field 'or'", err)
+			}
+			or = append(or, p)
+		}
+		predicates = append(predicates, vexdocument.Or(or...))
+	}
+	switch n := len(i.And); {
+	case n == 1:
+		p, err := i.And[0].P()
+		if err != nil {
+			return nil, fmt.Errorf("%w: field 'and'", err)
+		}
+		predicates = append(predicates, p)
+	case n > 1:
+		and := make([]predicate.VexDocument, 0, n)
+		for _, w := range i.And {
+			p, err := w.P()
+			if err != nil {
+				return nil, fmt.Errorf("%w: field 'and'", err)
+			}
+			and = append(and, p)
+		}
+		predicates = append(predicates, vexdocument.And(and...))
+	}
+	predicates = append(predicates, i.Predicates...)
+	if i.ID != nil {
+		predicates = append(predicates, vexdocument.IDEQ(*i.ID))
+	}
+	if i.IDNEQ != nil {
+		predicates = append(predicates, vexdocument.IDNEQ(*i.IDNEQ))
+	}
+	if len(i.IDIn) > 0 {
+		predicates = append(predicates, vexdocument.IDIn(i.IDIn...))
+	}
+	if len(i.IDNotIn) > 0 {
+		predicates = append(predicates, vexdocument.IDNotIn(i.IDNotIn...))
+	}
+	if i.IDGT != nil {
+		predicates = append(predicates, vexdocument.IDGT(*i.IDGT))
+	}
+	if i.IDGTE != nil {
+		predicates = append(predicates, vexdocument.IDGTE(*i.IDGTE))
+	}
+	if i.IDLT != nil {
+		predicates = append(predicates, vexdocument.IDLT(*i.IDLT))
+	}
+	if i.IDLTE != nil {
+		predicates = append(predicates, vexdocument.IDLTE(*i.IDLTE))
+	}
+	if i.VexID != nil {
+		predicates = append(predicates, vexdocument.VexIDEQ(*i.VexID))
+	}
+	if i.VexIDNEQ != nil {
+		predicates = append(predicates, vexdocument.VexIDNEQ(*i.VexIDNEQ))
+	}
+	if len(i.VexIDIn) > 0 {
+		predicates = append(predicates, vexdocument.VexIDIn(i.VexIDIn...))
+	}
+	if len(i.VexIDNotIn) > 0 {
+		predicates = append(predicates, vexdocument.VexIDNotIn(i.VexIDNotIn...))
+	}
+	if i.VexIDGT != nil {
+		predicates = append(predicates, vexdocument.VexIDGT(*i.VexIDGT))
+	}
+	if i.VexIDGTE != nil {
+		predicates = append(predicates, vexdocument.VexIDGTE(*i.VexIDGTE))
+	}
+	if i.VexIDLT != nil {
+		predicates = append(predicates, vexdocument.VexIDLT(*i.VexIDLT))
+	}
+	if i.VexIDLTE != nil {
+		predicates = append(predicates, vexdocument.VexIDLTE(*i.VexIDLTE))
+	}
+	if i.VexIDContains != nil {
+		predicates = append(predicates, vexdocument.VexIDContains(*i.VexIDContains))
+	}
+	if i.VexIDHasPrefix != nil {
+		predicates = append(predicates, vexdocument.VexIDHasPrefix(*i.VexIDHasPrefix))
+	}
+	if i.VexIDHasSuffix != nil {
+		predicates = append(predicates, vexdocument.VexIDHasSuffix(*i.VexIDHasSuffix))
+	}
+	if i.VexIDEqualFold != nil {
+		predicates = append(predicates, vexdocument.VexIDEqualFold(*i.VexIDEqualFold))
+	}
+	if i.VexIDContainsFold != nil {
+		predicates = append(predicates, vexdocument.VexIDContainsFold(*i.VexIDContainsFold))
+	}
+
+	if i.HasVexStatements != nil {
+		p := vexdocument.HasVexStatements()
+		if !*i.HasVexStatements {
+			p = vexdocument.Not(p)
+		}
+		predicates = append(predicates, p)
+	}
+	if len(i.HasVexStatementsWith) > 0 {
+		with := make([]predicate.VexStatement, 0, len(i.HasVexStatementsWith))
+		for _, w := range i.HasVexStatementsWith {
+			p, err := w.P()
+			if err != nil {
+				return nil, fmt.Errorf("%w: field 'HasVexStatementsWith'", err)
+			}
+			with = append(with, p)
+		}
+		predicates = append(predicates, vexdocument.HasVexStatementsWith(with...))
+	}
+	if i.HasStatement != nil {
+		p := vexdocument.HasStatement()
+		if !*i.HasStatement {
+			p = vexdocument.Not(p)
+		}
+		predicates = append(predicates, p)
+	}
+	if len(i.HasStatementWith) > 0 {
+		with := make([]predicate.Statement, 0, len(i.HasStatementWith))
+		for _, w := range i.HasStatementWith {
+			p, err := w.P()
+			if err != nil {
+				return nil, fmt.Errorf("%w: field 'HasStatementWith'", err)
+			}
+			with = append(with, p)
+		}
+		predicates = append(predicates, vexdocument.HasStatementWith(with...))
+	}
+	switch len(predicates) {
+	case 0:
+		return nil, ErrEmptyVexDocumentWhereInput
+	case 1:
+		return predicates[0], nil
+	default:
+		return vexdocument.And(predicates...), nil
+	}
+}
+
+// VexStatementWhereInput represents a where input for filtering VexStatement queries.
+type VexStatementWhereInput struct {
+	Predicates []predicate.VexStatement  `json:"-"`
+	Not        *VexStatementWhereInput   `json:"not,omitempty"`
+	Or         []*VexStatementWhereInput `json:"or,omitempty"`
+	And        []*VexStatementWhereInput `json:"and,omitempty"`
+
+	// "id" field predicates.
+	ID      *int  `json:"id,omitempty"`
+	IDNEQ   *int  `json:"idNEQ,omitempty"`
+	IDIn    []int `json:"idIn,omitempty"`
+	IDNotIn []int `json:"idNotIn,omitempty"`
+	IDGT    *int  `json:"idGT,omitempty"`
+	IDGTE   *int  `json:"idGTE,omitempty"`
+	IDLT    *int  `json:"idLT,omitempty"`
+	IDLTE   *int  `json:"idLTE,omitempty"`
+
+	// "vex_id" field predicates.
+	VexID             *string  `json:"vexID,omitempty"`
+	VexIDNEQ          *string  `json:"vexIDNEQ,omitempty"`
+	VexIDIn           []string `json:"vexIDIn,omitempty"`
+	VexIDNotIn        []string `json:"vexIDNotIn,omitempty"`
+	VexIDGT           *string  `json:"vexIDGT,omitempty"`
+	VexIDGTE          *string  `json:"vexIDGTE,omitempty"`
+	VexIDLT           *string  `json:"vexIDLT,omitempty"`
+	VexIDLTE          *string  `json:"vexIDLTE,omitempty"`
+	VexIDContains     *string  `json:"vexIDContains,omitempty"`
+	VexIDHasPrefix    *string  `json:"vexIDHasPrefix,omitempty"`
+	VexIDHasSuffix    *string  `json:"vexIDHasSuffix,omitempty"`
+	VexIDEqualFold    *string  `json:"vexIDEqualFold,omitempty"`
+	VexIDContainsFold *string  `json:"vexIDContainsFold,omitempty"`
+
+	// "vex_document" edge predicates.
+	HasVexDocument     *bool                    `json:"hasVexDocument,omitempty"`
+	HasVexDocumentWith []*VexDocumentWhereInput `json:"hasVexDocumentWith,omitempty"`
+}
+
+// AddPredicates adds custom predicates to the where input to be used during the filtering phase.
+func (i *VexStatementWhereInput) AddPredicates(predicates ...predicate.VexStatement) {
+	i.Predicates = append(i.Predicates, predicates...)
+}
+
+// Filter applies the VexStatementWhereInput filter on the VexStatementQuery builder.
+func (i *VexStatementWhereInput) Filter(q *VexStatementQuery) (*VexStatementQuery, error) {
+	if i == nil {
+		return q, nil
+	}
+	p, err := i.P()
+	if err != nil {
+		if err == ErrEmptyVexStatementWhereInput {
+			return q, nil
+		}
+		return nil, err
+	}
+	return q.Where(p), nil
+}
+
+// ErrEmptyVexStatementWhereInput is returned in case the VexStatementWhereInput is empty.
+var ErrEmptyVexStatementWhereInput = errors.New("ent: empty predicate VexStatementWhereInput")
+
+// P returns a predicate for filtering vexstatements.
+// An error is returned if the input is empty or invalid.
+func (i *VexStatementWhereInput) P() (predicate.VexStatement, error) {
+	var predicates []predicate.VexStatement
+	if i.Not != nil {
+		p, err := i.Not.P()
+		if err != nil {
+			return nil, fmt.Errorf("%w: field 'not'", err)
+		}
+		predicates = append(predicates, vexstatement.Not(p))
+	}
+	switch n := len(i.Or); {
+	case n == 1:
+		p, err := i.Or[0].P()
+		if err != nil {
+			return nil, fmt.Errorf("%w: field 'or'", err)
+		}
+		predicates = append(predicates, p)
+	case n > 1:
+		or := make([]predicate.VexStatement, 0, n)
+		for _, w := range i.Or {
+			p, err := w.P()
+			if err != nil {
+				return nil, fmt.Errorf("%w: field 'or'", err)
+			}
+			or = append(or, p)
+		}
+		predicates = append(predicates, vexstatement.Or(or...))
+	}
+	switch n := len(i.And); {
+	case n == 1:
+		p, err := i.And[0].P()
+		if err != nil {
+			return nil, fmt.Errorf("%w: field 'and'", err)
+		}
+		predicates = append(predicates, p)
+	case n > 1:
+		and := make([]predicate.VexStatement, 0, n)
+		for _, w := range i.And {
+			p, err := w.P()
+			if err != nil {
+				return nil, fmt.Errorf("%w: field 'and'", err)
+			}
+			and = append(and, p)
+		}
+		predicates = append(predicates, vexstatement.And(and...))
+	}
+	predicates = append(predicates, i.Predicates...)
+	if i.ID != nil {
+		predicates = append(predicates, vexstatement.IDEQ(*i.ID))
+	}
+	if i.IDNEQ != nil {
+		predicates = append(predicates, vexstatement.IDNEQ(*i.IDNEQ))
+	}
+	if len(i.IDIn) > 0 {
+		predicates = append(predicates, vexstatement.IDIn(i.IDIn...))
+	}
+	if len(i.IDNotIn) > 0 {
+		predicates = append(predicates, vexstatement.IDNotIn(i.IDNotIn...))
+	}
+	if i.IDGT != nil {
+		predicates = append(predicates, vexstatement.IDGT(*i.IDGT))
+	}
+	if i.IDGTE != nil {
+		predicates = append(predicates, vexstatement.IDGTE(*i.IDGTE))
+	}
+	if i.IDLT != nil {
+		predicates = append(predicates, vexstatement.IDLT(*i.IDLT))
+	}
+	if i.IDLTE != nil {
+		predicates = append(predicates, vexstatement.IDLTE(*i.IDLTE))
+	}
+	if i.VexID != nil {
+		predicates = append(predicates, vexstatement.VexIDEQ(*i.VexID))
+	}
+	if i.VexIDNEQ != nil {
+		predicates = append(predicates, vexstatement.VexIDNEQ(*i.VexIDNEQ))
+	}
+	if len(i.VexIDIn) > 0 {
+		predicates = append(predicates, vexstatement.VexIDIn(i.VexIDIn...))
+	}
+	if len(i.VexIDNotIn) > 0 {
+		predicates = append(predicates, vexstatement.VexIDNotIn(i.VexIDNotIn...))
+	}
+	if i.VexIDGT != nil {
+		predicates = append(predicates, vexstatement.VexIDGT(*i.VexIDGT))
+	}
+	if i.VexIDGTE != nil {
+		predicates = append(predicates, vexstatement.VexIDGTE(*i.VexIDGTE))
+	}
+	if i.VexIDLT != nil {
+		predicates = append(predicates, vexstatement.VexIDLT(*i.VexIDLT))
+	}
+	if i.VexIDLTE != nil {
+		predicates = append(predicates, vexstatement.VexIDLTE(*i.VexIDLTE))
+	}
+	if i.VexIDContains != nil {
+		predicates = append(predicates, vexstatement.VexIDContains(*i.VexIDContains))
+	}
+	if i.VexIDHasPrefix != nil {
+		predicates = append(predicates, vexstatement.VexIDHasPrefix(*i.VexIDHasPrefix))
+	}
+	if i.VexIDHasSuffix != nil {
+		predicates = append(predicates, vexstatement.VexIDHasSuffix(*i.VexIDHasSuffix))
+	}
+	if i.VexIDEqualFold != nil {
+		predicates = append(predicates, vexstatement.VexIDEqualFold(*i.VexIDEqualFold))
+	}
+	if i.VexIDContainsFold != nil {
+		predicates = append(predicates, vexstatement.VexIDContainsFold(*i.VexIDContainsFold))
+	}
+
+	if i.HasVexDocument != nil {
+		p := vexstatement.HasVexDocument()
+		if !*i.HasVexDocument {
+			p = vexstatement.Not(p)
+		}
+		predicates = append(predicates, p)
+	}
+	if len(i.HasVexDocumentWith) > 0 {
+		with := make([]predicate.VexDocument, 0, len(i.HasVexDocumentWith))
+		for _, w := range i.HasVexDocumentWith {
+			p, err := w.P()
+			if err != nil {
+				return nil, fmt.Errorf("%w: field 'HasVexDocumentWith'", err)
+			}
+			with = append(with, p)
+		}
+		predicates = append(predicates, vexstatement.HasVexDocumentWith(with...))
+	}
+	switch len(predicates) {
+	case 0:
+		return nil, ErrEmptyVexStatementWhereInput
+	case 1:
+		return predicates[0], nil
+	default:
+		return vexstatement.And(predicates...), nil
 	}
 }

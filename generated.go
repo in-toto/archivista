@@ -135,6 +135,7 @@ type ComplexityRoot struct {
 		Policy                 func(childComplexity int) int
 		Predicate              func(childComplexity int) int
 		Subjects               func(childComplexity int, after *entgql.Cursor[int], first *int, before *entgql.Cursor[int], last *int, where *ent.SubjectWhereInput) int
+		VexDocuments           func(childComplexity int) int
 	}
 
 	Subject struct {
@@ -167,6 +168,19 @@ type ComplexityRoot struct {
 		Signature func(childComplexity int) int
 		Timestamp func(childComplexity int) int
 		Type      func(childComplexity int) int
+	}
+
+	VexDocument struct {
+		ID            func(childComplexity int) int
+		Statement     func(childComplexity int) int
+		VexID         func(childComplexity int) int
+		VexStatements func(childComplexity int) int
+	}
+
+	VexStatement struct {
+		ID          func(childComplexity int) int
+		VexDocument func(childComplexity int) int
+		VexID       func(childComplexity int) int
 	}
 }
 
@@ -577,6 +591,13 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 
 		return e.complexity.Statement.Subjects(childComplexity, args["after"].(*entgql.Cursor[int]), args["first"].(*int), args["before"].(*entgql.Cursor[int]), args["last"].(*int), args["where"].(*ent.SubjectWhereInput)), true
 
+	case "Statement.vexDocuments":
+		if e.complexity.Statement.VexDocuments == nil {
+			break
+		}
+
+		return e.complexity.Statement.VexDocuments(childComplexity), true
+
 	case "Subject.id":
 		if e.complexity.Subject.ID == nil {
 			break
@@ -696,6 +717,55 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 
 		return e.complexity.Timestamp.Type(childComplexity), true
 
+	case "VexDocument.id":
+		if e.complexity.VexDocument.ID == nil {
+			break
+		}
+
+		return e.complexity.VexDocument.ID(childComplexity), true
+
+	case "VexDocument.statement":
+		if e.complexity.VexDocument.Statement == nil {
+			break
+		}
+
+		return e.complexity.VexDocument.Statement(childComplexity), true
+
+	case "VexDocument.vexID":
+		if e.complexity.VexDocument.VexID == nil {
+			break
+		}
+
+		return e.complexity.VexDocument.VexID(childComplexity), true
+
+	case "VexDocument.vexStatements":
+		if e.complexity.VexDocument.VexStatements == nil {
+			break
+		}
+
+		return e.complexity.VexDocument.VexStatements(childComplexity), true
+
+	case "VexStatement.id":
+		if e.complexity.VexStatement.ID == nil {
+			break
+		}
+
+		return e.complexity.VexStatement.ID(childComplexity), true
+
+	case "VexStatement.vexDocument":
+		if e.complexity.VexStatement.VexDocument == nil {
+			break
+		}
+
+		return e.complexity.VexStatement.VexDocument(childComplexity), true
+
+	case "VexStatement.vexID":
+		if e.complexity.VexStatement.VexID == nil {
+			break
+		}
+
+		return e.complexity.VexStatement.VexID(childComplexity), true
+
 	}
 	return 0, false
 }
@@ -714,6 +784,8 @@ func (e *executableSchema) Exec(ctx context.Context) graphql.ResponseHandler {
 		ec.unmarshalInputSubjectDigestWhereInput,
 		ec.unmarshalInputSubjectWhereInput,
 		ec.unmarshalInputTimestampWhereInput,
+		ec.unmarshalInputVexDocumentWhereInput,
+		ec.unmarshalInputVexStatementWhereInput,
 	)
 	first := true
 
@@ -1134,7 +1206,7 @@ func (ec *executionContext) _Attestation_id(ctx context.Context, field graphql.C
 	return ec.marshalNID2int(ctx, field.Selections, res)
 }
 
-func (ec *executionContext) fieldContext_Attestation_id(ctx context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+func (ec *executionContext) fieldContext_Attestation_id(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
 	fc = &graphql.FieldContext{
 		Object:     "Attestation",
 		Field:      field,
@@ -1178,7 +1250,7 @@ func (ec *executionContext) _Attestation_type(ctx context.Context, field graphql
 	return ec.marshalNString2string(ctx, field.Selections, res)
 }
 
-func (ec *executionContext) fieldContext_Attestation_type(ctx context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+func (ec *executionContext) fieldContext_Attestation_type(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
 	fc = &graphql.FieldContext{
 		Object:     "Attestation",
 		Field:      field,
@@ -1222,7 +1294,7 @@ func (ec *executionContext) _Attestation_attestationCollection(ctx context.Conte
 	return ec.marshalNAttestationCollection2ᚖgithubᚗcomᚋinᚑtotoᚋarchivistaᚋentᚐAttestationCollection(ctx, field.Selections, res)
 }
 
-func (ec *executionContext) fieldContext_Attestation_attestationCollection(ctx context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+func (ec *executionContext) fieldContext_Attestation_attestationCollection(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
 	fc = &graphql.FieldContext{
 		Object:     "Attestation",
 		Field:      field,
@@ -1276,7 +1348,7 @@ func (ec *executionContext) _AttestationCollection_id(ctx context.Context, field
 	return ec.marshalNID2int(ctx, field.Selections, res)
 }
 
-func (ec *executionContext) fieldContext_AttestationCollection_id(ctx context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+func (ec *executionContext) fieldContext_AttestationCollection_id(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
 	fc = &graphql.FieldContext{
 		Object:     "AttestationCollection",
 		Field:      field,
@@ -1320,7 +1392,7 @@ func (ec *executionContext) _AttestationCollection_name(ctx context.Context, fie
 	return ec.marshalNString2string(ctx, field.Selections, res)
 }
 
-func (ec *executionContext) fieldContext_AttestationCollection_name(ctx context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+func (ec *executionContext) fieldContext_AttestationCollection_name(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
 	fc = &graphql.FieldContext{
 		Object:     "AttestationCollection",
 		Field:      field,
@@ -1361,7 +1433,7 @@ func (ec *executionContext) _AttestationCollection_attestations(ctx context.Cont
 	return ec.marshalOAttestation2ᚕᚖgithubᚗcomᚋinᚑtotoᚋarchivistaᚋentᚐAttestationᚄ(ctx, field.Selections, res)
 }
 
-func (ec *executionContext) fieldContext_AttestationCollection_attestations(ctx context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+func (ec *executionContext) fieldContext_AttestationCollection_attestations(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
 	fc = &graphql.FieldContext{
 		Object:     "AttestationCollection",
 		Field:      field,
@@ -1413,7 +1485,7 @@ func (ec *executionContext) _AttestationCollection_statement(ctx context.Context
 	return ec.marshalNStatement2ᚖgithubᚗcomᚋinᚑtotoᚋarchivistaᚋentᚐStatement(ctx, field.Selections, res)
 }
 
-func (ec *executionContext) fieldContext_AttestationCollection_statement(ctx context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+func (ec *executionContext) fieldContext_AttestationCollection_statement(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
 	fc = &graphql.FieldContext{
 		Object:     "AttestationCollection",
 		Field:      field,
@@ -1431,6 +1503,8 @@ func (ec *executionContext) fieldContext_AttestationCollection_statement(ctx con
 				return ec.fieldContext_Statement_policy(ctx, field)
 			case "attestationCollections":
 				return ec.fieldContext_Statement_attestationCollections(ctx, field)
+			case "vexDocuments":
+				return ec.fieldContext_Statement_vexDocuments(ctx, field)
 			case "dsse":
 				return ec.fieldContext_Statement_dsse(ctx, field)
 			}
@@ -1471,7 +1545,7 @@ func (ec *executionContext) _AttestationPolicy_id(ctx context.Context, field gra
 	return ec.marshalNID2int(ctx, field.Selections, res)
 }
 
-func (ec *executionContext) fieldContext_AttestationPolicy_id(ctx context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+func (ec *executionContext) fieldContext_AttestationPolicy_id(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
 	fc = &graphql.FieldContext{
 		Object:     "AttestationPolicy",
 		Field:      field,
@@ -1515,7 +1589,7 @@ func (ec *executionContext) _AttestationPolicy_name(ctx context.Context, field g
 	return ec.marshalNString2string(ctx, field.Selections, res)
 }
 
-func (ec *executionContext) fieldContext_AttestationPolicy_name(ctx context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+func (ec *executionContext) fieldContext_AttestationPolicy_name(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
 	fc = &graphql.FieldContext{
 		Object:     "AttestationPolicy",
 		Field:      field,
@@ -1556,7 +1630,7 @@ func (ec *executionContext) _AttestationPolicy_statement(ctx context.Context, fi
 	return ec.marshalOStatement2ᚖgithubᚗcomᚋinᚑtotoᚋarchivistaᚋentᚐStatement(ctx, field.Selections, res)
 }
 
-func (ec *executionContext) fieldContext_AttestationPolicy_statement(ctx context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+func (ec *executionContext) fieldContext_AttestationPolicy_statement(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
 	fc = &graphql.FieldContext{
 		Object:     "AttestationPolicy",
 		Field:      field,
@@ -1574,6 +1648,8 @@ func (ec *executionContext) fieldContext_AttestationPolicy_statement(ctx context
 				return ec.fieldContext_Statement_policy(ctx, field)
 			case "attestationCollections":
 				return ec.fieldContext_Statement_attestationCollections(ctx, field)
+			case "vexDocuments":
+				return ec.fieldContext_Statement_vexDocuments(ctx, field)
 			case "dsse":
 				return ec.fieldContext_Statement_dsse(ctx, field)
 			}
@@ -1611,7 +1687,7 @@ func (ec *executionContext) _AttestationPolicyConnection_edges(ctx context.Conte
 	return ec.marshalOAttestationPolicyEdge2ᚕᚖgithubᚗcomᚋinᚑtotoᚋarchivistaᚋentᚐAttestationPolicyEdge(ctx, field.Selections, res)
 }
 
-func (ec *executionContext) fieldContext_AttestationPolicyConnection_edges(ctx context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+func (ec *executionContext) fieldContext_AttestationPolicyConnection_edges(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
 	fc = &graphql.FieldContext{
 		Object:     "AttestationPolicyConnection",
 		Field:      field,
@@ -1661,7 +1737,7 @@ func (ec *executionContext) _AttestationPolicyConnection_pageInfo(ctx context.Co
 	return ec.marshalNPageInfo2entgoᚗioᚋcontribᚋentgqlᚐPageInfo(ctx, field.Selections, res)
 }
 
-func (ec *executionContext) fieldContext_AttestationPolicyConnection_pageInfo(ctx context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+func (ec *executionContext) fieldContext_AttestationPolicyConnection_pageInfo(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
 	fc = &graphql.FieldContext{
 		Object:     "AttestationPolicyConnection",
 		Field:      field,
@@ -1715,7 +1791,7 @@ func (ec *executionContext) _AttestationPolicyConnection_totalCount(ctx context.
 	return ec.marshalNInt2int(ctx, field.Selections, res)
 }
 
-func (ec *executionContext) fieldContext_AttestationPolicyConnection_totalCount(ctx context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+func (ec *executionContext) fieldContext_AttestationPolicyConnection_totalCount(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
 	fc = &graphql.FieldContext{
 		Object:     "AttestationPolicyConnection",
 		Field:      field,
@@ -1756,7 +1832,7 @@ func (ec *executionContext) _AttestationPolicyEdge_node(ctx context.Context, fie
 	return ec.marshalOAttestationPolicy2ᚖgithubᚗcomᚋinᚑtotoᚋarchivistaᚋentᚐAttestationPolicy(ctx, field.Selections, res)
 }
 
-func (ec *executionContext) fieldContext_AttestationPolicyEdge_node(ctx context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+func (ec *executionContext) fieldContext_AttestationPolicyEdge_node(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
 	fc = &graphql.FieldContext{
 		Object:     "AttestationPolicyEdge",
 		Field:      field,
@@ -1808,7 +1884,7 @@ func (ec *executionContext) _AttestationPolicyEdge_cursor(ctx context.Context, f
 	return ec.marshalNCursor2entgoᚗioᚋcontribᚋentgqlᚐCursor(ctx, field.Selections, res)
 }
 
-func (ec *executionContext) fieldContext_AttestationPolicyEdge_cursor(ctx context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+func (ec *executionContext) fieldContext_AttestationPolicyEdge_cursor(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
 	fc = &graphql.FieldContext{
 		Object:     "AttestationPolicyEdge",
 		Field:      field,
@@ -1852,7 +1928,7 @@ func (ec *executionContext) _Dsse_id(ctx context.Context, field graphql.Collecte
 	return ec.marshalNID2int(ctx, field.Selections, res)
 }
 
-func (ec *executionContext) fieldContext_Dsse_id(ctx context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+func (ec *executionContext) fieldContext_Dsse_id(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
 	fc = &graphql.FieldContext{
 		Object:     "Dsse",
 		Field:      field,
@@ -1896,7 +1972,7 @@ func (ec *executionContext) _Dsse_gitoidSha256(ctx context.Context, field graphq
 	return ec.marshalNString2string(ctx, field.Selections, res)
 }
 
-func (ec *executionContext) fieldContext_Dsse_gitoidSha256(ctx context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+func (ec *executionContext) fieldContext_Dsse_gitoidSha256(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
 	fc = &graphql.FieldContext{
 		Object:     "Dsse",
 		Field:      field,
@@ -1940,7 +2016,7 @@ func (ec *executionContext) _Dsse_payloadType(ctx context.Context, field graphql
 	return ec.marshalNString2string(ctx, field.Selections, res)
 }
 
-func (ec *executionContext) fieldContext_Dsse_payloadType(ctx context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+func (ec *executionContext) fieldContext_Dsse_payloadType(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
 	fc = &graphql.FieldContext{
 		Object:     "Dsse",
 		Field:      field,
@@ -1981,7 +2057,7 @@ func (ec *executionContext) _Dsse_statement(ctx context.Context, field graphql.C
 	return ec.marshalOStatement2ᚖgithubᚗcomᚋinᚑtotoᚋarchivistaᚋentᚐStatement(ctx, field.Selections, res)
 }
 
-func (ec *executionContext) fieldContext_Dsse_statement(ctx context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+func (ec *executionContext) fieldContext_Dsse_statement(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
 	fc = &graphql.FieldContext{
 		Object:     "Dsse",
 		Field:      field,
@@ -1999,6 +2075,8 @@ func (ec *executionContext) fieldContext_Dsse_statement(ctx context.Context, fie
 				return ec.fieldContext_Statement_policy(ctx, field)
 			case "attestationCollections":
 				return ec.fieldContext_Statement_attestationCollections(ctx, field)
+			case "vexDocuments":
+				return ec.fieldContext_Statement_vexDocuments(ctx, field)
 			case "dsse":
 				return ec.fieldContext_Statement_dsse(ctx, field)
 			}
@@ -2036,7 +2114,7 @@ func (ec *executionContext) _Dsse_signatures(ctx context.Context, field graphql.
 	return ec.marshalOSignature2ᚕᚖgithubᚗcomᚋinᚑtotoᚋarchivistaᚋentᚐSignatureᚄ(ctx, field.Selections, res)
 }
 
-func (ec *executionContext) fieldContext_Dsse_signatures(ctx context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+func (ec *executionContext) fieldContext_Dsse_signatures(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
 	fc = &graphql.FieldContext{
 		Object:     "Dsse",
 		Field:      field,
@@ -2089,7 +2167,7 @@ func (ec *executionContext) _Dsse_payloadDigests(ctx context.Context, field grap
 	return ec.marshalOPayloadDigest2ᚕᚖgithubᚗcomᚋinᚑtotoᚋarchivistaᚋentᚐPayloadDigestᚄ(ctx, field.Selections, res)
 }
 
-func (ec *executionContext) fieldContext_Dsse_payloadDigests(ctx context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+func (ec *executionContext) fieldContext_Dsse_payloadDigests(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
 	fc = &graphql.FieldContext{
 		Object:     "Dsse",
 		Field:      field,
@@ -2140,7 +2218,7 @@ func (ec *executionContext) _DsseConnection_edges(ctx context.Context, field gra
 	return ec.marshalODsseEdge2ᚕᚖgithubᚗcomᚋinᚑtotoᚋarchivistaᚋentᚐDsseEdge(ctx, field.Selections, res)
 }
 
-func (ec *executionContext) fieldContext_DsseConnection_edges(ctx context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+func (ec *executionContext) fieldContext_DsseConnection_edges(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
 	fc = &graphql.FieldContext{
 		Object:     "DsseConnection",
 		Field:      field,
@@ -2190,7 +2268,7 @@ func (ec *executionContext) _DsseConnection_pageInfo(ctx context.Context, field 
 	return ec.marshalNPageInfo2entgoᚗioᚋcontribᚋentgqlᚐPageInfo(ctx, field.Selections, res)
 }
 
-func (ec *executionContext) fieldContext_DsseConnection_pageInfo(ctx context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+func (ec *executionContext) fieldContext_DsseConnection_pageInfo(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
 	fc = &graphql.FieldContext{
 		Object:     "DsseConnection",
 		Field:      field,
@@ -2244,7 +2322,7 @@ func (ec *executionContext) _DsseConnection_totalCount(ctx context.Context, fiel
 	return ec.marshalNInt2int(ctx, field.Selections, res)
 }
 
-func (ec *executionContext) fieldContext_DsseConnection_totalCount(ctx context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+func (ec *executionContext) fieldContext_DsseConnection_totalCount(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
 	fc = &graphql.FieldContext{
 		Object:     "DsseConnection",
 		Field:      field,
@@ -2285,7 +2363,7 @@ func (ec *executionContext) _DsseEdge_node(ctx context.Context, field graphql.Co
 	return ec.marshalODsse2ᚖgithubᚗcomᚋinᚑtotoᚋarchivistaᚋentᚐDsse(ctx, field.Selections, res)
 }
 
-func (ec *executionContext) fieldContext_DsseEdge_node(ctx context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+func (ec *executionContext) fieldContext_DsseEdge_node(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
 	fc = &graphql.FieldContext{
 		Object:     "DsseEdge",
 		Field:      field,
@@ -2343,7 +2421,7 @@ func (ec *executionContext) _DsseEdge_cursor(ctx context.Context, field graphql.
 	return ec.marshalNCursor2entgoᚗioᚋcontribᚋentgqlᚐCursor(ctx, field.Selections, res)
 }
 
-func (ec *executionContext) fieldContext_DsseEdge_cursor(ctx context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+func (ec *executionContext) fieldContext_DsseEdge_cursor(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
 	fc = &graphql.FieldContext{
 		Object:     "DsseEdge",
 		Field:      field,
@@ -2387,7 +2465,7 @@ func (ec *executionContext) _PageInfo_hasNextPage(ctx context.Context, field gra
 	return ec.marshalNBoolean2bool(ctx, field.Selections, res)
 }
 
-func (ec *executionContext) fieldContext_PageInfo_hasNextPage(ctx context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+func (ec *executionContext) fieldContext_PageInfo_hasNextPage(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
 	fc = &graphql.FieldContext{
 		Object:     "PageInfo",
 		Field:      field,
@@ -2431,7 +2509,7 @@ func (ec *executionContext) _PageInfo_hasPreviousPage(ctx context.Context, field
 	return ec.marshalNBoolean2bool(ctx, field.Selections, res)
 }
 
-func (ec *executionContext) fieldContext_PageInfo_hasPreviousPage(ctx context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+func (ec *executionContext) fieldContext_PageInfo_hasPreviousPage(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
 	fc = &graphql.FieldContext{
 		Object:     "PageInfo",
 		Field:      field,
@@ -2472,7 +2550,7 @@ func (ec *executionContext) _PageInfo_startCursor(ctx context.Context, field gra
 	return ec.marshalOCursor2ᚖentgoᚗioᚋcontribᚋentgqlᚐCursor(ctx, field.Selections, res)
 }
 
-func (ec *executionContext) fieldContext_PageInfo_startCursor(ctx context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+func (ec *executionContext) fieldContext_PageInfo_startCursor(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
 	fc = &graphql.FieldContext{
 		Object:     "PageInfo",
 		Field:      field,
@@ -2513,7 +2591,7 @@ func (ec *executionContext) _PageInfo_endCursor(ctx context.Context, field graph
 	return ec.marshalOCursor2ᚖentgoᚗioᚋcontribᚋentgqlᚐCursor(ctx, field.Selections, res)
 }
 
-func (ec *executionContext) fieldContext_PageInfo_endCursor(ctx context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+func (ec *executionContext) fieldContext_PageInfo_endCursor(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
 	fc = &graphql.FieldContext{
 		Object:     "PageInfo",
 		Field:      field,
@@ -2557,7 +2635,7 @@ func (ec *executionContext) _PayloadDigest_id(ctx context.Context, field graphql
 	return ec.marshalNID2int(ctx, field.Selections, res)
 }
 
-func (ec *executionContext) fieldContext_PayloadDigest_id(ctx context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+func (ec *executionContext) fieldContext_PayloadDigest_id(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
 	fc = &graphql.FieldContext{
 		Object:     "PayloadDigest",
 		Field:      field,
@@ -2601,7 +2679,7 @@ func (ec *executionContext) _PayloadDigest_algorithm(ctx context.Context, field 
 	return ec.marshalNString2string(ctx, field.Selections, res)
 }
 
-func (ec *executionContext) fieldContext_PayloadDigest_algorithm(ctx context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+func (ec *executionContext) fieldContext_PayloadDigest_algorithm(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
 	fc = &graphql.FieldContext{
 		Object:     "PayloadDigest",
 		Field:      field,
@@ -2645,7 +2723,7 @@ func (ec *executionContext) _PayloadDigest_value(ctx context.Context, field grap
 	return ec.marshalNString2string(ctx, field.Selections, res)
 }
 
-func (ec *executionContext) fieldContext_PayloadDigest_value(ctx context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+func (ec *executionContext) fieldContext_PayloadDigest_value(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
 	fc = &graphql.FieldContext{
 		Object:     "PayloadDigest",
 		Field:      field,
@@ -2686,7 +2764,7 @@ func (ec *executionContext) _PayloadDigest_dsse(ctx context.Context, field graph
 	return ec.marshalODsse2ᚖgithubᚗcomᚋinᚑtotoᚋarchivistaᚋentᚐDsse(ctx, field.Selections, res)
 }
 
-func (ec *executionContext) fieldContext_PayloadDigest_dsse(ctx context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+func (ec *executionContext) fieldContext_PayloadDigest_dsse(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
 	fc = &graphql.FieldContext{
 		Object:     "PayloadDigest",
 		Field:      field,
@@ -3111,7 +3189,7 @@ func (ec *executionContext) _Query___schema(ctx context.Context, field graphql.C
 	return ec.marshalO__Schema2ᚖgithubᚗcomᚋ99designsᚋgqlgenᚋgraphqlᚋintrospectionᚐSchema(ctx, field.Selections, res)
 }
 
-func (ec *executionContext) fieldContext_Query___schema(ctx context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+func (ec *executionContext) fieldContext_Query___schema(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
 	fc = &graphql.FieldContext{
 		Object:     "Query",
 		Field:      field,
@@ -3169,7 +3247,7 @@ func (ec *executionContext) _Signature_id(ctx context.Context, field graphql.Col
 	return ec.marshalNID2int(ctx, field.Selections, res)
 }
 
-func (ec *executionContext) fieldContext_Signature_id(ctx context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+func (ec *executionContext) fieldContext_Signature_id(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
 	fc = &graphql.FieldContext{
 		Object:     "Signature",
 		Field:      field,
@@ -3213,7 +3291,7 @@ func (ec *executionContext) _Signature_keyID(ctx context.Context, field graphql.
 	return ec.marshalNString2string(ctx, field.Selections, res)
 }
 
-func (ec *executionContext) fieldContext_Signature_keyID(ctx context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+func (ec *executionContext) fieldContext_Signature_keyID(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
 	fc = &graphql.FieldContext{
 		Object:     "Signature",
 		Field:      field,
@@ -3257,7 +3335,7 @@ func (ec *executionContext) _Signature_signature(ctx context.Context, field grap
 	return ec.marshalNString2string(ctx, field.Selections, res)
 }
 
-func (ec *executionContext) fieldContext_Signature_signature(ctx context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+func (ec *executionContext) fieldContext_Signature_signature(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
 	fc = &graphql.FieldContext{
 		Object:     "Signature",
 		Field:      field,
@@ -3298,7 +3376,7 @@ func (ec *executionContext) _Signature_dsse(ctx context.Context, field graphql.C
 	return ec.marshalODsse2ᚖgithubᚗcomᚋinᚑtotoᚋarchivistaᚋentᚐDsse(ctx, field.Selections, res)
 }
 
-func (ec *executionContext) fieldContext_Signature_dsse(ctx context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+func (ec *executionContext) fieldContext_Signature_dsse(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
 	fc = &graphql.FieldContext{
 		Object:     "Signature",
 		Field:      field,
@@ -3353,7 +3431,7 @@ func (ec *executionContext) _Signature_timestamps(ctx context.Context, field gra
 	return ec.marshalOTimestamp2ᚕᚖgithubᚗcomᚋinᚑtotoᚋarchivistaᚋentᚐTimestampᚄ(ctx, field.Selections, res)
 }
 
-func (ec *executionContext) fieldContext_Signature_timestamps(ctx context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+func (ec *executionContext) fieldContext_Signature_timestamps(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
 	fc = &graphql.FieldContext{
 		Object:     "Signature",
 		Field:      field,
@@ -3407,7 +3485,7 @@ func (ec *executionContext) _Statement_id(ctx context.Context, field graphql.Col
 	return ec.marshalNID2int(ctx, field.Selections, res)
 }
 
-func (ec *executionContext) fieldContext_Statement_id(ctx context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+func (ec *executionContext) fieldContext_Statement_id(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
 	fc = &graphql.FieldContext{
 		Object:     "Statement",
 		Field:      field,
@@ -3451,7 +3529,7 @@ func (ec *executionContext) _Statement_predicate(ctx context.Context, field grap
 	return ec.marshalNString2string(ctx, field.Selections, res)
 }
 
-func (ec *executionContext) fieldContext_Statement_predicate(ctx context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+func (ec *executionContext) fieldContext_Statement_predicate(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
 	fc = &graphql.FieldContext{
 		Object:     "Statement",
 		Field:      field,
@@ -3555,7 +3633,7 @@ func (ec *executionContext) _Statement_policy(ctx context.Context, field graphql
 	return ec.marshalOAttestationPolicy2ᚖgithubᚗcomᚋinᚑtotoᚋarchivistaᚋentᚐAttestationPolicy(ctx, field.Selections, res)
 }
 
-func (ec *executionContext) fieldContext_Statement_policy(ctx context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+func (ec *executionContext) fieldContext_Statement_policy(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
 	fc = &graphql.FieldContext{
 		Object:     "Statement",
 		Field:      field,
@@ -3604,7 +3682,7 @@ func (ec *executionContext) _Statement_attestationCollections(ctx context.Contex
 	return ec.marshalOAttestationCollection2ᚖgithubᚗcomᚋinᚑtotoᚋarchivistaᚋentᚐAttestationCollection(ctx, field.Selections, res)
 }
 
-func (ec *executionContext) fieldContext_Statement_attestationCollections(ctx context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+func (ec *executionContext) fieldContext_Statement_attestationCollections(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
 	fc = &graphql.FieldContext{
 		Object:     "Statement",
 		Field:      field,
@@ -3622,6 +3700,57 @@ func (ec *executionContext) fieldContext_Statement_attestationCollections(ctx co
 				return ec.fieldContext_AttestationCollection_statement(ctx, field)
 			}
 			return nil, fmt.Errorf("no field named %q was found under type AttestationCollection", field.Name)
+		},
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _Statement_vexDocuments(ctx context.Context, field graphql.CollectedField, obj *ent.Statement) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_Statement_vexDocuments(ctx, field)
+	if err != nil {
+		return graphql.Null
+	}
+	ctx = graphql.WithFieldContext(ctx, fc)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.VexDocuments(ctx)
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		return graphql.Null
+	}
+	res := resTmp.(*ent.VexDocument)
+	fc.Result = res
+	return ec.marshalOVexDocument2ᚖgithubᚗcomᚋinᚑtotoᚋarchivistaᚋentᚐVexDocument(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) fieldContext_Statement_vexDocuments(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "Statement",
+		Field:      field,
+		IsMethod:   true,
+		IsResolver: false,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			switch field.Name {
+			case "id":
+				return ec.fieldContext_VexDocument_id(ctx, field)
+			case "vexID":
+				return ec.fieldContext_VexDocument_vexID(ctx, field)
+			case "vexStatements":
+				return ec.fieldContext_VexDocument_vexStatements(ctx, field)
+			case "statement":
+				return ec.fieldContext_VexDocument_statement(ctx, field)
+			}
+			return nil, fmt.Errorf("no field named %q was found under type VexDocument", field.Name)
 		},
 	}
 	return fc, nil
@@ -3655,7 +3784,7 @@ func (ec *executionContext) _Statement_dsse(ctx context.Context, field graphql.C
 	return ec.marshalODsse2ᚕᚖgithubᚗcomᚋinᚑtotoᚋarchivistaᚋentᚐDsseᚄ(ctx, field.Selections, res)
 }
 
-func (ec *executionContext) fieldContext_Statement_dsse(ctx context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+func (ec *executionContext) fieldContext_Statement_dsse(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
 	fc = &graphql.FieldContext{
 		Object:     "Statement",
 		Field:      field,
@@ -3713,7 +3842,7 @@ func (ec *executionContext) _Subject_id(ctx context.Context, field graphql.Colle
 	return ec.marshalNID2int(ctx, field.Selections, res)
 }
 
-func (ec *executionContext) fieldContext_Subject_id(ctx context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+func (ec *executionContext) fieldContext_Subject_id(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
 	fc = &graphql.FieldContext{
 		Object:     "Subject",
 		Field:      field,
@@ -3757,7 +3886,7 @@ func (ec *executionContext) _Subject_name(ctx context.Context, field graphql.Col
 	return ec.marshalNString2string(ctx, field.Selections, res)
 }
 
-func (ec *executionContext) fieldContext_Subject_name(ctx context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+func (ec *executionContext) fieldContext_Subject_name(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
 	fc = &graphql.FieldContext{
 		Object:     "Subject",
 		Field:      field,
@@ -3798,7 +3927,7 @@ func (ec *executionContext) _Subject_subjectDigests(ctx context.Context, field g
 	return ec.marshalOSubjectDigest2ᚕᚖgithubᚗcomᚋinᚑtotoᚋarchivistaᚋentᚐSubjectDigestᚄ(ctx, field.Selections, res)
 }
 
-func (ec *executionContext) fieldContext_Subject_subjectDigests(ctx context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+func (ec *executionContext) fieldContext_Subject_subjectDigests(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
 	fc = &graphql.FieldContext{
 		Object:     "Subject",
 		Field:      field,
@@ -3849,7 +3978,7 @@ func (ec *executionContext) _Subject_statement(ctx context.Context, field graphq
 	return ec.marshalOStatement2ᚖgithubᚗcomᚋinᚑtotoᚋarchivistaᚋentᚐStatement(ctx, field.Selections, res)
 }
 
-func (ec *executionContext) fieldContext_Subject_statement(ctx context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+func (ec *executionContext) fieldContext_Subject_statement(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
 	fc = &graphql.FieldContext{
 		Object:     "Subject",
 		Field:      field,
@@ -3867,6 +3996,8 @@ func (ec *executionContext) fieldContext_Subject_statement(ctx context.Context, 
 				return ec.fieldContext_Statement_policy(ctx, field)
 			case "attestationCollections":
 				return ec.fieldContext_Statement_attestationCollections(ctx, field)
+			case "vexDocuments":
+				return ec.fieldContext_Statement_vexDocuments(ctx, field)
 			case "dsse":
 				return ec.fieldContext_Statement_dsse(ctx, field)
 			}
@@ -3904,7 +4035,7 @@ func (ec *executionContext) _SubjectConnection_edges(ctx context.Context, field 
 	return ec.marshalOSubjectEdge2ᚕᚖgithubᚗcomᚋinᚑtotoᚋarchivistaᚋentᚐSubjectEdge(ctx, field.Selections, res)
 }
 
-func (ec *executionContext) fieldContext_SubjectConnection_edges(ctx context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+func (ec *executionContext) fieldContext_SubjectConnection_edges(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
 	fc = &graphql.FieldContext{
 		Object:     "SubjectConnection",
 		Field:      field,
@@ -3954,7 +4085,7 @@ func (ec *executionContext) _SubjectConnection_pageInfo(ctx context.Context, fie
 	return ec.marshalNPageInfo2entgoᚗioᚋcontribᚋentgqlᚐPageInfo(ctx, field.Selections, res)
 }
 
-func (ec *executionContext) fieldContext_SubjectConnection_pageInfo(ctx context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+func (ec *executionContext) fieldContext_SubjectConnection_pageInfo(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
 	fc = &graphql.FieldContext{
 		Object:     "SubjectConnection",
 		Field:      field,
@@ -4008,7 +4139,7 @@ func (ec *executionContext) _SubjectConnection_totalCount(ctx context.Context, f
 	return ec.marshalNInt2int(ctx, field.Selections, res)
 }
 
-func (ec *executionContext) fieldContext_SubjectConnection_totalCount(ctx context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+func (ec *executionContext) fieldContext_SubjectConnection_totalCount(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
 	fc = &graphql.FieldContext{
 		Object:     "SubjectConnection",
 		Field:      field,
@@ -4052,7 +4183,7 @@ func (ec *executionContext) _SubjectDigest_id(ctx context.Context, field graphql
 	return ec.marshalNID2int(ctx, field.Selections, res)
 }
 
-func (ec *executionContext) fieldContext_SubjectDigest_id(ctx context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+func (ec *executionContext) fieldContext_SubjectDigest_id(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
 	fc = &graphql.FieldContext{
 		Object:     "SubjectDigest",
 		Field:      field,
@@ -4096,7 +4227,7 @@ func (ec *executionContext) _SubjectDigest_algorithm(ctx context.Context, field 
 	return ec.marshalNString2string(ctx, field.Selections, res)
 }
 
-func (ec *executionContext) fieldContext_SubjectDigest_algorithm(ctx context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+func (ec *executionContext) fieldContext_SubjectDigest_algorithm(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
 	fc = &graphql.FieldContext{
 		Object:     "SubjectDigest",
 		Field:      field,
@@ -4140,7 +4271,7 @@ func (ec *executionContext) _SubjectDigest_value(ctx context.Context, field grap
 	return ec.marshalNString2string(ctx, field.Selections, res)
 }
 
-func (ec *executionContext) fieldContext_SubjectDigest_value(ctx context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+func (ec *executionContext) fieldContext_SubjectDigest_value(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
 	fc = &graphql.FieldContext{
 		Object:     "SubjectDigest",
 		Field:      field,
@@ -4181,7 +4312,7 @@ func (ec *executionContext) _SubjectDigest_subject(ctx context.Context, field gr
 	return ec.marshalOSubject2ᚖgithubᚗcomᚋinᚑtotoᚋarchivistaᚋentᚐSubject(ctx, field.Selections, res)
 }
 
-func (ec *executionContext) fieldContext_SubjectDigest_subject(ctx context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+func (ec *executionContext) fieldContext_SubjectDigest_subject(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
 	fc = &graphql.FieldContext{
 		Object:     "SubjectDigest",
 		Field:      field,
@@ -4232,7 +4363,7 @@ func (ec *executionContext) _SubjectEdge_node(ctx context.Context, field graphql
 	return ec.marshalOSubject2ᚖgithubᚗcomᚋinᚑtotoᚋarchivistaᚋentᚐSubject(ctx, field.Selections, res)
 }
 
-func (ec *executionContext) fieldContext_SubjectEdge_node(ctx context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+func (ec *executionContext) fieldContext_SubjectEdge_node(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
 	fc = &graphql.FieldContext{
 		Object:     "SubjectEdge",
 		Field:      field,
@@ -4286,7 +4417,7 @@ func (ec *executionContext) _SubjectEdge_cursor(ctx context.Context, field graph
 	return ec.marshalNCursor2entgoᚗioᚋcontribᚋentgqlᚐCursor(ctx, field.Selections, res)
 }
 
-func (ec *executionContext) fieldContext_SubjectEdge_cursor(ctx context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+func (ec *executionContext) fieldContext_SubjectEdge_cursor(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
 	fc = &graphql.FieldContext{
 		Object:     "SubjectEdge",
 		Field:      field,
@@ -4330,7 +4461,7 @@ func (ec *executionContext) _Timestamp_id(ctx context.Context, field graphql.Col
 	return ec.marshalNID2int(ctx, field.Selections, res)
 }
 
-func (ec *executionContext) fieldContext_Timestamp_id(ctx context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+func (ec *executionContext) fieldContext_Timestamp_id(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
 	fc = &graphql.FieldContext{
 		Object:     "Timestamp",
 		Field:      field,
@@ -4374,7 +4505,7 @@ func (ec *executionContext) _Timestamp_type(ctx context.Context, field graphql.C
 	return ec.marshalNString2string(ctx, field.Selections, res)
 }
 
-func (ec *executionContext) fieldContext_Timestamp_type(ctx context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+func (ec *executionContext) fieldContext_Timestamp_type(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
 	fc = &graphql.FieldContext{
 		Object:     "Timestamp",
 		Field:      field,
@@ -4418,7 +4549,7 @@ func (ec *executionContext) _Timestamp_timestamp(ctx context.Context, field grap
 	return ec.marshalNTime2timeᚐTime(ctx, field.Selections, res)
 }
 
-func (ec *executionContext) fieldContext_Timestamp_timestamp(ctx context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+func (ec *executionContext) fieldContext_Timestamp_timestamp(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
 	fc = &graphql.FieldContext{
 		Object:     "Timestamp",
 		Field:      field,
@@ -4459,7 +4590,7 @@ func (ec *executionContext) _Timestamp_signature(ctx context.Context, field grap
 	return ec.marshalOSignature2ᚖgithubᚗcomᚋinᚑtotoᚋarchivistaᚋentᚐSignature(ctx, field.Selections, res)
 }
 
-func (ec *executionContext) fieldContext_Timestamp_signature(ctx context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+func (ec *executionContext) fieldContext_Timestamp_signature(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
 	fc = &graphql.FieldContext{
 		Object:     "Timestamp",
 		Field:      field,
@@ -4479,6 +4610,345 @@ func (ec *executionContext) fieldContext_Timestamp_signature(ctx context.Context
 				return ec.fieldContext_Signature_timestamps(ctx, field)
 			}
 			return nil, fmt.Errorf("no field named %q was found under type Signature", field.Name)
+		},
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _VexDocument_id(ctx context.Context, field graphql.CollectedField, obj *ent.VexDocument) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_VexDocument_id(ctx, field)
+	if err != nil {
+		return graphql.Null
+	}
+	ctx = graphql.WithFieldContext(ctx, fc)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.ID, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.(int)
+	fc.Result = res
+	return ec.marshalNID2int(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) fieldContext_VexDocument_id(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "VexDocument",
+		Field:      field,
+		IsMethod:   false,
+		IsResolver: false,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return nil, errors.New("field of type ID does not have child fields")
+		},
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _VexDocument_vexID(ctx context.Context, field graphql.CollectedField, obj *ent.VexDocument) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_VexDocument_vexID(ctx, field)
+	if err != nil {
+		return graphql.Null
+	}
+	ctx = graphql.WithFieldContext(ctx, fc)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.VexID, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.(string)
+	fc.Result = res
+	return ec.marshalNString2string(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) fieldContext_VexDocument_vexID(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "VexDocument",
+		Field:      field,
+		IsMethod:   false,
+		IsResolver: false,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return nil, errors.New("field of type String does not have child fields")
+		},
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _VexDocument_vexStatements(ctx context.Context, field graphql.CollectedField, obj *ent.VexDocument) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_VexDocument_vexStatements(ctx, field)
+	if err != nil {
+		return graphql.Null
+	}
+	ctx = graphql.WithFieldContext(ctx, fc)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.VexStatements(ctx)
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		return graphql.Null
+	}
+	res := resTmp.(*ent.VexStatement)
+	fc.Result = res
+	return ec.marshalOVexStatement2ᚖgithubᚗcomᚋinᚑtotoᚋarchivistaᚋentᚐVexStatement(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) fieldContext_VexDocument_vexStatements(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "VexDocument",
+		Field:      field,
+		IsMethod:   true,
+		IsResolver: false,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			switch field.Name {
+			case "id":
+				return ec.fieldContext_VexStatement_id(ctx, field)
+			case "vexID":
+				return ec.fieldContext_VexStatement_vexID(ctx, field)
+			case "vexDocument":
+				return ec.fieldContext_VexStatement_vexDocument(ctx, field)
+			}
+			return nil, fmt.Errorf("no field named %q was found under type VexStatement", field.Name)
+		},
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _VexDocument_statement(ctx context.Context, field graphql.CollectedField, obj *ent.VexDocument) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_VexDocument_statement(ctx, field)
+	if err != nil {
+		return graphql.Null
+	}
+	ctx = graphql.WithFieldContext(ctx, fc)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.Statement(ctx)
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.(*ent.Statement)
+	fc.Result = res
+	return ec.marshalNStatement2ᚖgithubᚗcomᚋinᚑtotoᚋarchivistaᚋentᚐStatement(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) fieldContext_VexDocument_statement(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "VexDocument",
+		Field:      field,
+		IsMethod:   true,
+		IsResolver: false,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			switch field.Name {
+			case "id":
+				return ec.fieldContext_Statement_id(ctx, field)
+			case "predicate":
+				return ec.fieldContext_Statement_predicate(ctx, field)
+			case "subjects":
+				return ec.fieldContext_Statement_subjects(ctx, field)
+			case "policy":
+				return ec.fieldContext_Statement_policy(ctx, field)
+			case "attestationCollections":
+				return ec.fieldContext_Statement_attestationCollections(ctx, field)
+			case "vexDocuments":
+				return ec.fieldContext_Statement_vexDocuments(ctx, field)
+			case "dsse":
+				return ec.fieldContext_Statement_dsse(ctx, field)
+			}
+			return nil, fmt.Errorf("no field named %q was found under type Statement", field.Name)
+		},
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _VexStatement_id(ctx context.Context, field graphql.CollectedField, obj *ent.VexStatement) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_VexStatement_id(ctx, field)
+	if err != nil {
+		return graphql.Null
+	}
+	ctx = graphql.WithFieldContext(ctx, fc)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.ID, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.(int)
+	fc.Result = res
+	return ec.marshalNID2int(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) fieldContext_VexStatement_id(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "VexStatement",
+		Field:      field,
+		IsMethod:   false,
+		IsResolver: false,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return nil, errors.New("field of type ID does not have child fields")
+		},
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _VexStatement_vexID(ctx context.Context, field graphql.CollectedField, obj *ent.VexStatement) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_VexStatement_vexID(ctx, field)
+	if err != nil {
+		return graphql.Null
+	}
+	ctx = graphql.WithFieldContext(ctx, fc)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.VexID, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.(string)
+	fc.Result = res
+	return ec.marshalNString2string(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) fieldContext_VexStatement_vexID(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "VexStatement",
+		Field:      field,
+		IsMethod:   false,
+		IsResolver: false,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return nil, errors.New("field of type String does not have child fields")
+		},
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _VexStatement_vexDocument(ctx context.Context, field graphql.CollectedField, obj *ent.VexStatement) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_VexStatement_vexDocument(ctx, field)
+	if err != nil {
+		return graphql.Null
+	}
+	ctx = graphql.WithFieldContext(ctx, fc)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.VexDocument(ctx)
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.(*ent.VexDocument)
+	fc.Result = res
+	return ec.marshalNVexDocument2ᚖgithubᚗcomᚋinᚑtotoᚋarchivistaᚋentᚐVexDocument(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) fieldContext_VexStatement_vexDocument(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "VexStatement",
+		Field:      field,
+		IsMethod:   true,
+		IsResolver: false,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			switch field.Name {
+			case "id":
+				return ec.fieldContext_VexDocument_id(ctx, field)
+			case "vexID":
+				return ec.fieldContext_VexDocument_vexID(ctx, field)
+			case "vexStatements":
+				return ec.fieldContext_VexDocument_vexStatements(ctx, field)
+			case "statement":
+				return ec.fieldContext_VexDocument_statement(ctx, field)
+			}
+			return nil, fmt.Errorf("no field named %q was found under type VexDocument", field.Name)
 		},
 	}
 	return fc, nil
@@ -4515,7 +4985,7 @@ func (ec *executionContext) ___Directive_name(ctx context.Context, field graphql
 	return ec.marshalNString2string(ctx, field.Selections, res)
 }
 
-func (ec *executionContext) fieldContext___Directive_name(ctx context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+func (ec *executionContext) fieldContext___Directive_name(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
 	fc = &graphql.FieldContext{
 		Object:     "__Directive",
 		Field:      field,
@@ -4556,7 +5026,7 @@ func (ec *executionContext) ___Directive_description(ctx context.Context, field 
 	return ec.marshalOString2ᚖstring(ctx, field.Selections, res)
 }
 
-func (ec *executionContext) fieldContext___Directive_description(ctx context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+func (ec *executionContext) fieldContext___Directive_description(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
 	fc = &graphql.FieldContext{
 		Object:     "__Directive",
 		Field:      field,
@@ -4600,7 +5070,7 @@ func (ec *executionContext) ___Directive_locations(ctx context.Context, field gr
 	return ec.marshalN__DirectiveLocation2ᚕstringᚄ(ctx, field.Selections, res)
 }
 
-func (ec *executionContext) fieldContext___Directive_locations(ctx context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+func (ec *executionContext) fieldContext___Directive_locations(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
 	fc = &graphql.FieldContext{
 		Object:     "__Directive",
 		Field:      field,
@@ -4644,7 +5114,7 @@ func (ec *executionContext) ___Directive_args(ctx context.Context, field graphql
 	return ec.marshalN__InputValue2ᚕgithubᚗcomᚋ99designsᚋgqlgenᚋgraphqlᚋintrospectionᚐInputValueᚄ(ctx, field.Selections, res)
 }
 
-func (ec *executionContext) fieldContext___Directive_args(ctx context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+func (ec *executionContext) fieldContext___Directive_args(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
 	fc = &graphql.FieldContext{
 		Object:     "__Directive",
 		Field:      field,
@@ -4698,7 +5168,7 @@ func (ec *executionContext) ___Directive_isRepeatable(ctx context.Context, field
 	return ec.marshalNBoolean2bool(ctx, field.Selections, res)
 }
 
-func (ec *executionContext) fieldContext___Directive_isRepeatable(ctx context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+func (ec *executionContext) fieldContext___Directive_isRepeatable(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
 	fc = &graphql.FieldContext{
 		Object:     "__Directive",
 		Field:      field,
@@ -4742,7 +5212,7 @@ func (ec *executionContext) ___EnumValue_name(ctx context.Context, field graphql
 	return ec.marshalNString2string(ctx, field.Selections, res)
 }
 
-func (ec *executionContext) fieldContext___EnumValue_name(ctx context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+func (ec *executionContext) fieldContext___EnumValue_name(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
 	fc = &graphql.FieldContext{
 		Object:     "__EnumValue",
 		Field:      field,
@@ -4783,7 +5253,7 @@ func (ec *executionContext) ___EnumValue_description(ctx context.Context, field 
 	return ec.marshalOString2ᚖstring(ctx, field.Selections, res)
 }
 
-func (ec *executionContext) fieldContext___EnumValue_description(ctx context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+func (ec *executionContext) fieldContext___EnumValue_description(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
 	fc = &graphql.FieldContext{
 		Object:     "__EnumValue",
 		Field:      field,
@@ -4827,7 +5297,7 @@ func (ec *executionContext) ___EnumValue_isDeprecated(ctx context.Context, field
 	return ec.marshalNBoolean2bool(ctx, field.Selections, res)
 }
 
-func (ec *executionContext) fieldContext___EnumValue_isDeprecated(ctx context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+func (ec *executionContext) fieldContext___EnumValue_isDeprecated(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
 	fc = &graphql.FieldContext{
 		Object:     "__EnumValue",
 		Field:      field,
@@ -4868,7 +5338,7 @@ func (ec *executionContext) ___EnumValue_deprecationReason(ctx context.Context, 
 	return ec.marshalOString2ᚖstring(ctx, field.Selections, res)
 }
 
-func (ec *executionContext) fieldContext___EnumValue_deprecationReason(ctx context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+func (ec *executionContext) fieldContext___EnumValue_deprecationReason(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
 	fc = &graphql.FieldContext{
 		Object:     "__EnumValue",
 		Field:      field,
@@ -4912,7 +5382,7 @@ func (ec *executionContext) ___Field_name(ctx context.Context, field graphql.Col
 	return ec.marshalNString2string(ctx, field.Selections, res)
 }
 
-func (ec *executionContext) fieldContext___Field_name(ctx context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+func (ec *executionContext) fieldContext___Field_name(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
 	fc = &graphql.FieldContext{
 		Object:     "__Field",
 		Field:      field,
@@ -4953,7 +5423,7 @@ func (ec *executionContext) ___Field_description(ctx context.Context, field grap
 	return ec.marshalOString2ᚖstring(ctx, field.Selections, res)
 }
 
-func (ec *executionContext) fieldContext___Field_description(ctx context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+func (ec *executionContext) fieldContext___Field_description(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
 	fc = &graphql.FieldContext{
 		Object:     "__Field",
 		Field:      field,
@@ -4997,7 +5467,7 @@ func (ec *executionContext) ___Field_args(ctx context.Context, field graphql.Col
 	return ec.marshalN__InputValue2ᚕgithubᚗcomᚋ99designsᚋgqlgenᚋgraphqlᚋintrospectionᚐInputValueᚄ(ctx, field.Selections, res)
 }
 
-func (ec *executionContext) fieldContext___Field_args(ctx context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+func (ec *executionContext) fieldContext___Field_args(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
 	fc = &graphql.FieldContext{
 		Object:     "__Field",
 		Field:      field,
@@ -5051,7 +5521,7 @@ func (ec *executionContext) ___Field_type(ctx context.Context, field graphql.Col
 	return ec.marshalN__Type2ᚖgithubᚗcomᚋ99designsᚋgqlgenᚋgraphqlᚋintrospectionᚐType(ctx, field.Selections, res)
 }
 
-func (ec *executionContext) fieldContext___Field_type(ctx context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+func (ec *executionContext) fieldContext___Field_type(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
 	fc = &graphql.FieldContext{
 		Object:     "__Field",
 		Field:      field,
@@ -5117,7 +5587,7 @@ func (ec *executionContext) ___Field_isDeprecated(ctx context.Context, field gra
 	return ec.marshalNBoolean2bool(ctx, field.Selections, res)
 }
 
-func (ec *executionContext) fieldContext___Field_isDeprecated(ctx context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+func (ec *executionContext) fieldContext___Field_isDeprecated(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
 	fc = &graphql.FieldContext{
 		Object:     "__Field",
 		Field:      field,
@@ -5158,7 +5628,7 @@ func (ec *executionContext) ___Field_deprecationReason(ctx context.Context, fiel
 	return ec.marshalOString2ᚖstring(ctx, field.Selections, res)
 }
 
-func (ec *executionContext) fieldContext___Field_deprecationReason(ctx context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+func (ec *executionContext) fieldContext___Field_deprecationReason(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
 	fc = &graphql.FieldContext{
 		Object:     "__Field",
 		Field:      field,
@@ -5202,7 +5672,7 @@ func (ec *executionContext) ___InputValue_name(ctx context.Context, field graphq
 	return ec.marshalNString2string(ctx, field.Selections, res)
 }
 
-func (ec *executionContext) fieldContext___InputValue_name(ctx context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+func (ec *executionContext) fieldContext___InputValue_name(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
 	fc = &graphql.FieldContext{
 		Object:     "__InputValue",
 		Field:      field,
@@ -5243,7 +5713,7 @@ func (ec *executionContext) ___InputValue_description(ctx context.Context, field
 	return ec.marshalOString2ᚖstring(ctx, field.Selections, res)
 }
 
-func (ec *executionContext) fieldContext___InputValue_description(ctx context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+func (ec *executionContext) fieldContext___InputValue_description(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
 	fc = &graphql.FieldContext{
 		Object:     "__InputValue",
 		Field:      field,
@@ -5287,7 +5757,7 @@ func (ec *executionContext) ___InputValue_type(ctx context.Context, field graphq
 	return ec.marshalN__Type2ᚖgithubᚗcomᚋ99designsᚋgqlgenᚋgraphqlᚋintrospectionᚐType(ctx, field.Selections, res)
 }
 
-func (ec *executionContext) fieldContext___InputValue_type(ctx context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+func (ec *executionContext) fieldContext___InputValue_type(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
 	fc = &graphql.FieldContext{
 		Object:     "__InputValue",
 		Field:      field,
@@ -5350,7 +5820,7 @@ func (ec *executionContext) ___InputValue_defaultValue(ctx context.Context, fiel
 	return ec.marshalOString2ᚖstring(ctx, field.Selections, res)
 }
 
-func (ec *executionContext) fieldContext___InputValue_defaultValue(ctx context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+func (ec *executionContext) fieldContext___InputValue_defaultValue(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
 	fc = &graphql.FieldContext{
 		Object:     "__InputValue",
 		Field:      field,
@@ -5391,7 +5861,7 @@ func (ec *executionContext) ___Schema_description(ctx context.Context, field gra
 	return ec.marshalOString2ᚖstring(ctx, field.Selections, res)
 }
 
-func (ec *executionContext) fieldContext___Schema_description(ctx context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+func (ec *executionContext) fieldContext___Schema_description(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
 	fc = &graphql.FieldContext{
 		Object:     "__Schema",
 		Field:      field,
@@ -5435,7 +5905,7 @@ func (ec *executionContext) ___Schema_types(ctx context.Context, field graphql.C
 	return ec.marshalN__Type2ᚕgithubᚗcomᚋ99designsᚋgqlgenᚋgraphqlᚋintrospectionᚐTypeᚄ(ctx, field.Selections, res)
 }
 
-func (ec *executionContext) fieldContext___Schema_types(ctx context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+func (ec *executionContext) fieldContext___Schema_types(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
 	fc = &graphql.FieldContext{
 		Object:     "__Schema",
 		Field:      field,
@@ -5501,7 +5971,7 @@ func (ec *executionContext) ___Schema_queryType(ctx context.Context, field graph
 	return ec.marshalN__Type2ᚖgithubᚗcomᚋ99designsᚋgqlgenᚋgraphqlᚋintrospectionᚐType(ctx, field.Selections, res)
 }
 
-func (ec *executionContext) fieldContext___Schema_queryType(ctx context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+func (ec *executionContext) fieldContext___Schema_queryType(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
 	fc = &graphql.FieldContext{
 		Object:     "__Schema",
 		Field:      field,
@@ -5564,7 +6034,7 @@ func (ec *executionContext) ___Schema_mutationType(ctx context.Context, field gr
 	return ec.marshalO__Type2ᚖgithubᚗcomᚋ99designsᚋgqlgenᚋgraphqlᚋintrospectionᚐType(ctx, field.Selections, res)
 }
 
-func (ec *executionContext) fieldContext___Schema_mutationType(ctx context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+func (ec *executionContext) fieldContext___Schema_mutationType(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
 	fc = &graphql.FieldContext{
 		Object:     "__Schema",
 		Field:      field,
@@ -5627,7 +6097,7 @@ func (ec *executionContext) ___Schema_subscriptionType(ctx context.Context, fiel
 	return ec.marshalO__Type2ᚖgithubᚗcomᚋ99designsᚋgqlgenᚋgraphqlᚋintrospectionᚐType(ctx, field.Selections, res)
 }
 
-func (ec *executionContext) fieldContext___Schema_subscriptionType(ctx context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+func (ec *executionContext) fieldContext___Schema_subscriptionType(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
 	fc = &graphql.FieldContext{
 		Object:     "__Schema",
 		Field:      field,
@@ -5693,7 +6163,7 @@ func (ec *executionContext) ___Schema_directives(ctx context.Context, field grap
 	return ec.marshalN__Directive2ᚕgithubᚗcomᚋ99designsᚋgqlgenᚋgraphqlᚋintrospectionᚐDirectiveᚄ(ctx, field.Selections, res)
 }
 
-func (ec *executionContext) fieldContext___Schema_directives(ctx context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+func (ec *executionContext) fieldContext___Schema_directives(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
 	fc = &graphql.FieldContext{
 		Object:     "__Schema",
 		Field:      field,
@@ -5749,7 +6219,7 @@ func (ec *executionContext) ___Type_kind(ctx context.Context, field graphql.Coll
 	return ec.marshalN__TypeKind2string(ctx, field.Selections, res)
 }
 
-func (ec *executionContext) fieldContext___Type_kind(ctx context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+func (ec *executionContext) fieldContext___Type_kind(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
 	fc = &graphql.FieldContext{
 		Object:     "__Type",
 		Field:      field,
@@ -5790,7 +6260,7 @@ func (ec *executionContext) ___Type_name(ctx context.Context, field graphql.Coll
 	return ec.marshalOString2ᚖstring(ctx, field.Selections, res)
 }
 
-func (ec *executionContext) fieldContext___Type_name(ctx context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+func (ec *executionContext) fieldContext___Type_name(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
 	fc = &graphql.FieldContext{
 		Object:     "__Type",
 		Field:      field,
@@ -5831,7 +6301,7 @@ func (ec *executionContext) ___Type_description(ctx context.Context, field graph
 	return ec.marshalOString2ᚖstring(ctx, field.Selections, res)
 }
 
-func (ec *executionContext) fieldContext___Type_description(ctx context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+func (ec *executionContext) fieldContext___Type_description(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
 	fc = &graphql.FieldContext{
 		Object:     "__Type",
 		Field:      field,
@@ -5938,7 +6408,7 @@ func (ec *executionContext) ___Type_interfaces(ctx context.Context, field graphq
 	return ec.marshalO__Type2ᚕgithubᚗcomᚋ99designsᚋgqlgenᚋgraphqlᚋintrospectionᚐTypeᚄ(ctx, field.Selections, res)
 }
 
-func (ec *executionContext) fieldContext___Type_interfaces(ctx context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+func (ec *executionContext) fieldContext___Type_interfaces(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
 	fc = &graphql.FieldContext{
 		Object:     "__Type",
 		Field:      field,
@@ -6001,7 +6471,7 @@ func (ec *executionContext) ___Type_possibleTypes(ctx context.Context, field gra
 	return ec.marshalO__Type2ᚕgithubᚗcomᚋ99designsᚋgqlgenᚋgraphqlᚋintrospectionᚐTypeᚄ(ctx, field.Selections, res)
 }
 
-func (ec *executionContext) fieldContext___Type_possibleTypes(ctx context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+func (ec *executionContext) fieldContext___Type_possibleTypes(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
 	fc = &graphql.FieldContext{
 		Object:     "__Type",
 		Field:      field,
@@ -6126,7 +6596,7 @@ func (ec *executionContext) ___Type_inputFields(ctx context.Context, field graph
 	return ec.marshalO__InputValue2ᚕgithubᚗcomᚋ99designsᚋgqlgenᚋgraphqlᚋintrospectionᚐInputValueᚄ(ctx, field.Selections, res)
 }
 
-func (ec *executionContext) fieldContext___Type_inputFields(ctx context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+func (ec *executionContext) fieldContext___Type_inputFields(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
 	fc = &graphql.FieldContext{
 		Object:     "__Type",
 		Field:      field,
@@ -6177,7 +6647,7 @@ func (ec *executionContext) ___Type_ofType(ctx context.Context, field graphql.Co
 	return ec.marshalO__Type2ᚖgithubᚗcomᚋ99designsᚋgqlgenᚋgraphqlᚋintrospectionᚐType(ctx, field.Selections, res)
 }
 
-func (ec *executionContext) fieldContext___Type_ofType(ctx context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+func (ec *executionContext) fieldContext___Type_ofType(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
 	fc = &graphql.FieldContext{
 		Object:     "__Type",
 		Field:      field,
@@ -6240,7 +6710,7 @@ func (ec *executionContext) ___Type_specifiedByURL(ctx context.Context, field gr
 	return ec.marshalOString2ᚖstring(ctx, field.Selections, res)
 }
 
-func (ec *executionContext) fieldContext___Type_specifiedByURL(ctx context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+func (ec *executionContext) fieldContext___Type_specifiedByURL(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
 	fc = &graphql.FieldContext{
 		Object:     "__Type",
 		Field:      field,
@@ -7805,7 +8275,7 @@ func (ec *executionContext) unmarshalInputStatementWhereInput(ctx context.Contex
 		asMap[k] = v
 	}
 
-	fieldsInOrder := [...]string{"not", "and", "or", "id", "idNEQ", "idIn", "idNotIn", "idGT", "idGTE", "idLT", "idLTE", "predicate", "predicateNEQ", "predicateIn", "predicateNotIn", "predicateGT", "predicateGTE", "predicateLT", "predicateLTE", "predicateContains", "predicateHasPrefix", "predicateHasSuffix", "predicateEqualFold", "predicateContainsFold", "hasSubjects", "hasSubjectsWith", "hasPolicy", "hasPolicyWith", "hasAttestationCollections", "hasAttestationCollectionsWith", "hasDsse", "hasDsseWith"}
+	fieldsInOrder := [...]string{"not", "and", "or", "id", "idNEQ", "idIn", "idNotIn", "idGT", "idGTE", "idLT", "idLTE", "predicate", "predicateNEQ", "predicateIn", "predicateNotIn", "predicateGT", "predicateGTE", "predicateLT", "predicateLTE", "predicateContains", "predicateHasPrefix", "predicateHasSuffix", "predicateEqualFold", "predicateContainsFold", "hasSubjects", "hasSubjectsWith", "hasPolicy", "hasPolicyWith", "hasAttestationCollections", "hasAttestationCollectionsWith", "hasVexDocuments", "hasVexDocumentsWith", "hasDsse", "hasDsseWith"}
 	for _, k := range fieldsInOrder {
 		v, ok := asMap[k]
 		if !ok {
@@ -8022,6 +8492,20 @@ func (ec *executionContext) unmarshalInputStatementWhereInput(ctx context.Contex
 				return it, err
 			}
 			it.HasAttestationCollectionsWith = data
+		case "hasVexDocuments":
+			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("hasVexDocuments"))
+			data, err := ec.unmarshalOBoolean2ᚖbool(ctx, v)
+			if err != nil {
+				return it, err
+			}
+			it.HasVexDocuments = data
+		case "hasVexDocumentsWith":
+			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("hasVexDocumentsWith"))
+			data, err := ec.unmarshalOVexDocumentWhereInput2ᚕᚖgithubᚗcomᚋinᚑtotoᚋarchivistaᚋentᚐVexDocumentWhereInputᚄ(ctx, v)
+			if err != nil {
+				return it, err
+			}
+			it.HasVexDocumentsWith = data
 		case "hasDsse":
 			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("hasDsse"))
 			data, err := ec.unmarshalOBoolean2ᚖbool(ctx, v)
@@ -8809,6 +9293,424 @@ func (ec *executionContext) unmarshalInputTimestampWhereInput(ctx context.Contex
 	return it, nil
 }
 
+func (ec *executionContext) unmarshalInputVexDocumentWhereInput(ctx context.Context, obj interface{}) (ent.VexDocumentWhereInput, error) {
+	var it ent.VexDocumentWhereInput
+	asMap := map[string]interface{}{}
+	for k, v := range obj.(map[string]interface{}) {
+		asMap[k] = v
+	}
+
+	fieldsInOrder := [...]string{"not", "and", "or", "id", "idNEQ", "idIn", "idNotIn", "idGT", "idGTE", "idLT", "idLTE", "vexID", "vexIDNEQ", "vexIDIn", "vexIDNotIn", "vexIDGT", "vexIDGTE", "vexIDLT", "vexIDLTE", "vexIDContains", "vexIDHasPrefix", "vexIDHasSuffix", "vexIDEqualFold", "vexIDContainsFold", "hasVexStatements", "hasVexStatementsWith", "hasStatement", "hasStatementWith"}
+	for _, k := range fieldsInOrder {
+		v, ok := asMap[k]
+		if !ok {
+			continue
+		}
+		switch k {
+		case "not":
+			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("not"))
+			data, err := ec.unmarshalOVexDocumentWhereInput2ᚖgithubᚗcomᚋinᚑtotoᚋarchivistaᚋentᚐVexDocumentWhereInput(ctx, v)
+			if err != nil {
+				return it, err
+			}
+			it.Not = data
+		case "and":
+			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("and"))
+			data, err := ec.unmarshalOVexDocumentWhereInput2ᚕᚖgithubᚗcomᚋinᚑtotoᚋarchivistaᚋentᚐVexDocumentWhereInputᚄ(ctx, v)
+			if err != nil {
+				return it, err
+			}
+			it.And = data
+		case "or":
+			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("or"))
+			data, err := ec.unmarshalOVexDocumentWhereInput2ᚕᚖgithubᚗcomᚋinᚑtotoᚋarchivistaᚋentᚐVexDocumentWhereInputᚄ(ctx, v)
+			if err != nil {
+				return it, err
+			}
+			it.Or = data
+		case "id":
+			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("id"))
+			data, err := ec.unmarshalOID2ᚖint(ctx, v)
+			if err != nil {
+				return it, err
+			}
+			it.ID = data
+		case "idNEQ":
+			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("idNEQ"))
+			data, err := ec.unmarshalOID2ᚖint(ctx, v)
+			if err != nil {
+				return it, err
+			}
+			it.IDNEQ = data
+		case "idIn":
+			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("idIn"))
+			data, err := ec.unmarshalOID2ᚕintᚄ(ctx, v)
+			if err != nil {
+				return it, err
+			}
+			it.IDIn = data
+		case "idNotIn":
+			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("idNotIn"))
+			data, err := ec.unmarshalOID2ᚕintᚄ(ctx, v)
+			if err != nil {
+				return it, err
+			}
+			it.IDNotIn = data
+		case "idGT":
+			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("idGT"))
+			data, err := ec.unmarshalOID2ᚖint(ctx, v)
+			if err != nil {
+				return it, err
+			}
+			it.IDGT = data
+		case "idGTE":
+			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("idGTE"))
+			data, err := ec.unmarshalOID2ᚖint(ctx, v)
+			if err != nil {
+				return it, err
+			}
+			it.IDGTE = data
+		case "idLT":
+			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("idLT"))
+			data, err := ec.unmarshalOID2ᚖint(ctx, v)
+			if err != nil {
+				return it, err
+			}
+			it.IDLT = data
+		case "idLTE":
+			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("idLTE"))
+			data, err := ec.unmarshalOID2ᚖint(ctx, v)
+			if err != nil {
+				return it, err
+			}
+			it.IDLTE = data
+		case "vexID":
+			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("vexID"))
+			data, err := ec.unmarshalOString2ᚖstring(ctx, v)
+			if err != nil {
+				return it, err
+			}
+			it.VexID = data
+		case "vexIDNEQ":
+			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("vexIDNEQ"))
+			data, err := ec.unmarshalOString2ᚖstring(ctx, v)
+			if err != nil {
+				return it, err
+			}
+			it.VexIDNEQ = data
+		case "vexIDIn":
+			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("vexIDIn"))
+			data, err := ec.unmarshalOString2ᚕstringᚄ(ctx, v)
+			if err != nil {
+				return it, err
+			}
+			it.VexIDIn = data
+		case "vexIDNotIn":
+			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("vexIDNotIn"))
+			data, err := ec.unmarshalOString2ᚕstringᚄ(ctx, v)
+			if err != nil {
+				return it, err
+			}
+			it.VexIDNotIn = data
+		case "vexIDGT":
+			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("vexIDGT"))
+			data, err := ec.unmarshalOString2ᚖstring(ctx, v)
+			if err != nil {
+				return it, err
+			}
+			it.VexIDGT = data
+		case "vexIDGTE":
+			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("vexIDGTE"))
+			data, err := ec.unmarshalOString2ᚖstring(ctx, v)
+			if err != nil {
+				return it, err
+			}
+			it.VexIDGTE = data
+		case "vexIDLT":
+			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("vexIDLT"))
+			data, err := ec.unmarshalOString2ᚖstring(ctx, v)
+			if err != nil {
+				return it, err
+			}
+			it.VexIDLT = data
+		case "vexIDLTE":
+			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("vexIDLTE"))
+			data, err := ec.unmarshalOString2ᚖstring(ctx, v)
+			if err != nil {
+				return it, err
+			}
+			it.VexIDLTE = data
+		case "vexIDContains":
+			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("vexIDContains"))
+			data, err := ec.unmarshalOString2ᚖstring(ctx, v)
+			if err != nil {
+				return it, err
+			}
+			it.VexIDContains = data
+		case "vexIDHasPrefix":
+			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("vexIDHasPrefix"))
+			data, err := ec.unmarshalOString2ᚖstring(ctx, v)
+			if err != nil {
+				return it, err
+			}
+			it.VexIDHasPrefix = data
+		case "vexIDHasSuffix":
+			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("vexIDHasSuffix"))
+			data, err := ec.unmarshalOString2ᚖstring(ctx, v)
+			if err != nil {
+				return it, err
+			}
+			it.VexIDHasSuffix = data
+		case "vexIDEqualFold":
+			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("vexIDEqualFold"))
+			data, err := ec.unmarshalOString2ᚖstring(ctx, v)
+			if err != nil {
+				return it, err
+			}
+			it.VexIDEqualFold = data
+		case "vexIDContainsFold":
+			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("vexIDContainsFold"))
+			data, err := ec.unmarshalOString2ᚖstring(ctx, v)
+			if err != nil {
+				return it, err
+			}
+			it.VexIDContainsFold = data
+		case "hasVexStatements":
+			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("hasVexStatements"))
+			data, err := ec.unmarshalOBoolean2ᚖbool(ctx, v)
+			if err != nil {
+				return it, err
+			}
+			it.HasVexStatements = data
+		case "hasVexStatementsWith":
+			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("hasVexStatementsWith"))
+			data, err := ec.unmarshalOVexStatementWhereInput2ᚕᚖgithubᚗcomᚋinᚑtotoᚋarchivistaᚋentᚐVexStatementWhereInputᚄ(ctx, v)
+			if err != nil {
+				return it, err
+			}
+			it.HasVexStatementsWith = data
+		case "hasStatement":
+			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("hasStatement"))
+			data, err := ec.unmarshalOBoolean2ᚖbool(ctx, v)
+			if err != nil {
+				return it, err
+			}
+			it.HasStatement = data
+		case "hasStatementWith":
+			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("hasStatementWith"))
+			data, err := ec.unmarshalOStatementWhereInput2ᚕᚖgithubᚗcomᚋinᚑtotoᚋarchivistaᚋentᚐStatementWhereInputᚄ(ctx, v)
+			if err != nil {
+				return it, err
+			}
+			it.HasStatementWith = data
+		}
+	}
+
+	return it, nil
+}
+
+func (ec *executionContext) unmarshalInputVexStatementWhereInput(ctx context.Context, obj interface{}) (ent.VexStatementWhereInput, error) {
+	var it ent.VexStatementWhereInput
+	asMap := map[string]interface{}{}
+	for k, v := range obj.(map[string]interface{}) {
+		asMap[k] = v
+	}
+
+	fieldsInOrder := [...]string{"not", "and", "or", "id", "idNEQ", "idIn", "idNotIn", "idGT", "idGTE", "idLT", "idLTE", "vexID", "vexIDNEQ", "vexIDIn", "vexIDNotIn", "vexIDGT", "vexIDGTE", "vexIDLT", "vexIDLTE", "vexIDContains", "vexIDHasPrefix", "vexIDHasSuffix", "vexIDEqualFold", "vexIDContainsFold", "hasVexDocument", "hasVexDocumentWith"}
+	for _, k := range fieldsInOrder {
+		v, ok := asMap[k]
+		if !ok {
+			continue
+		}
+		switch k {
+		case "not":
+			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("not"))
+			data, err := ec.unmarshalOVexStatementWhereInput2ᚖgithubᚗcomᚋinᚑtotoᚋarchivistaᚋentᚐVexStatementWhereInput(ctx, v)
+			if err != nil {
+				return it, err
+			}
+			it.Not = data
+		case "and":
+			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("and"))
+			data, err := ec.unmarshalOVexStatementWhereInput2ᚕᚖgithubᚗcomᚋinᚑtotoᚋarchivistaᚋentᚐVexStatementWhereInputᚄ(ctx, v)
+			if err != nil {
+				return it, err
+			}
+			it.And = data
+		case "or":
+			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("or"))
+			data, err := ec.unmarshalOVexStatementWhereInput2ᚕᚖgithubᚗcomᚋinᚑtotoᚋarchivistaᚋentᚐVexStatementWhereInputᚄ(ctx, v)
+			if err != nil {
+				return it, err
+			}
+			it.Or = data
+		case "id":
+			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("id"))
+			data, err := ec.unmarshalOID2ᚖint(ctx, v)
+			if err != nil {
+				return it, err
+			}
+			it.ID = data
+		case "idNEQ":
+			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("idNEQ"))
+			data, err := ec.unmarshalOID2ᚖint(ctx, v)
+			if err != nil {
+				return it, err
+			}
+			it.IDNEQ = data
+		case "idIn":
+			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("idIn"))
+			data, err := ec.unmarshalOID2ᚕintᚄ(ctx, v)
+			if err != nil {
+				return it, err
+			}
+			it.IDIn = data
+		case "idNotIn":
+			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("idNotIn"))
+			data, err := ec.unmarshalOID2ᚕintᚄ(ctx, v)
+			if err != nil {
+				return it, err
+			}
+			it.IDNotIn = data
+		case "idGT":
+			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("idGT"))
+			data, err := ec.unmarshalOID2ᚖint(ctx, v)
+			if err != nil {
+				return it, err
+			}
+			it.IDGT = data
+		case "idGTE":
+			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("idGTE"))
+			data, err := ec.unmarshalOID2ᚖint(ctx, v)
+			if err != nil {
+				return it, err
+			}
+			it.IDGTE = data
+		case "idLT":
+			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("idLT"))
+			data, err := ec.unmarshalOID2ᚖint(ctx, v)
+			if err != nil {
+				return it, err
+			}
+			it.IDLT = data
+		case "idLTE":
+			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("idLTE"))
+			data, err := ec.unmarshalOID2ᚖint(ctx, v)
+			if err != nil {
+				return it, err
+			}
+			it.IDLTE = data
+		case "vexID":
+			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("vexID"))
+			data, err := ec.unmarshalOString2ᚖstring(ctx, v)
+			if err != nil {
+				return it, err
+			}
+			it.VexID = data
+		case "vexIDNEQ":
+			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("vexIDNEQ"))
+			data, err := ec.unmarshalOString2ᚖstring(ctx, v)
+			if err != nil {
+				return it, err
+			}
+			it.VexIDNEQ = data
+		case "vexIDIn":
+			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("vexIDIn"))
+			data, err := ec.unmarshalOString2ᚕstringᚄ(ctx, v)
+			if err != nil {
+				return it, err
+			}
+			it.VexIDIn = data
+		case "vexIDNotIn":
+			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("vexIDNotIn"))
+			data, err := ec.unmarshalOString2ᚕstringᚄ(ctx, v)
+			if err != nil {
+				return it, err
+			}
+			it.VexIDNotIn = data
+		case "vexIDGT":
+			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("vexIDGT"))
+			data, err := ec.unmarshalOString2ᚖstring(ctx, v)
+			if err != nil {
+				return it, err
+			}
+			it.VexIDGT = data
+		case "vexIDGTE":
+			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("vexIDGTE"))
+			data, err := ec.unmarshalOString2ᚖstring(ctx, v)
+			if err != nil {
+				return it, err
+			}
+			it.VexIDGTE = data
+		case "vexIDLT":
+			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("vexIDLT"))
+			data, err := ec.unmarshalOString2ᚖstring(ctx, v)
+			if err != nil {
+				return it, err
+			}
+			it.VexIDLT = data
+		case "vexIDLTE":
+			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("vexIDLTE"))
+			data, err := ec.unmarshalOString2ᚖstring(ctx, v)
+			if err != nil {
+				return it, err
+			}
+			it.VexIDLTE = data
+		case "vexIDContains":
+			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("vexIDContains"))
+			data, err := ec.unmarshalOString2ᚖstring(ctx, v)
+			if err != nil {
+				return it, err
+			}
+			it.VexIDContains = data
+		case "vexIDHasPrefix":
+			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("vexIDHasPrefix"))
+			data, err := ec.unmarshalOString2ᚖstring(ctx, v)
+			if err != nil {
+				return it, err
+			}
+			it.VexIDHasPrefix = data
+		case "vexIDHasSuffix":
+			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("vexIDHasSuffix"))
+			data, err := ec.unmarshalOString2ᚖstring(ctx, v)
+			if err != nil {
+				return it, err
+			}
+			it.VexIDHasSuffix = data
+		case "vexIDEqualFold":
+			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("vexIDEqualFold"))
+			data, err := ec.unmarshalOString2ᚖstring(ctx, v)
+			if err != nil {
+				return it, err
+			}
+			it.VexIDEqualFold = data
+		case "vexIDContainsFold":
+			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("vexIDContainsFold"))
+			data, err := ec.unmarshalOString2ᚖstring(ctx, v)
+			if err != nil {
+				return it, err
+			}
+			it.VexIDContainsFold = data
+		case "hasVexDocument":
+			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("hasVexDocument"))
+			data, err := ec.unmarshalOBoolean2ᚖbool(ctx, v)
+			if err != nil {
+				return it, err
+			}
+			it.HasVexDocument = data
+		case "hasVexDocumentWith":
+			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("hasVexDocumentWith"))
+			data, err := ec.unmarshalOVexDocumentWhereInput2ᚕᚖgithubᚗcomᚋinᚑtotoᚋarchivistaᚋentᚐVexDocumentWhereInputᚄ(ctx, v)
+			if err != nil {
+				return it, err
+			}
+			it.HasVexDocumentWith = data
+		}
+	}
+
+	return it, nil
+}
+
 // endregion **************************** input.gotpl *****************************
 
 // region    ************************** interface.gotpl ***************************
@@ -8867,6 +9769,16 @@ func (ec *executionContext) _Node(ctx context.Context, sel ast.SelectionSet, obj
 			return graphql.Null
 		}
 		return ec._Timestamp(ctx, sel, obj)
+	case *ent.VexDocument:
+		if obj == nil {
+			return graphql.Null
+		}
+		return ec._VexDocument(ctx, sel, obj)
+	case *ent.VexStatement:
+		if obj == nil {
+			return graphql.Null
+		}
+		return ec._VexStatement(ctx, sel, obj)
 	default:
 		panic(fmt.Errorf("unexpected type %T", obj))
 	}
@@ -8980,7 +9892,7 @@ func (ec *executionContext) _AttestationCollection(ctx context.Context, sel ast.
 		case "attestations":
 			field := field
 
-			innerFunc := func(ctx context.Context, fs *graphql.FieldSet) (res graphql.Marshaler) {
+			innerFunc := func(ctx context.Context, _ *graphql.FieldSet) (res graphql.Marshaler) {
 				defer func() {
 					if r := recover(); r != nil {
 						ec.Error(ctx, ec.Recover(ctx, r))
@@ -9093,7 +10005,7 @@ func (ec *executionContext) _AttestationPolicy(ctx context.Context, sel ast.Sele
 		case "statement":
 			field := field
 
-			innerFunc := func(ctx context.Context, fs *graphql.FieldSet) (res graphql.Marshaler) {
+			innerFunc := func(ctx context.Context, _ *graphql.FieldSet) (res graphql.Marshaler) {
 				defer func() {
 					if r := recover(); r != nil {
 						ec.Error(ctx, ec.Recover(ctx, r))
@@ -9262,7 +10174,7 @@ func (ec *executionContext) _Dsse(ctx context.Context, sel ast.SelectionSet, obj
 		case "statement":
 			field := field
 
-			innerFunc := func(ctx context.Context, fs *graphql.FieldSet) (res graphql.Marshaler) {
+			innerFunc := func(ctx context.Context, _ *graphql.FieldSet) (res graphql.Marshaler) {
 				defer func() {
 					if r := recover(); r != nil {
 						ec.Error(ctx, ec.Recover(ctx, r))
@@ -9295,7 +10207,7 @@ func (ec *executionContext) _Dsse(ctx context.Context, sel ast.SelectionSet, obj
 		case "signatures":
 			field := field
 
-			innerFunc := func(ctx context.Context, fs *graphql.FieldSet) (res graphql.Marshaler) {
+			innerFunc := func(ctx context.Context, _ *graphql.FieldSet) (res graphql.Marshaler) {
 				defer func() {
 					if r := recover(); r != nil {
 						ec.Error(ctx, ec.Recover(ctx, r))
@@ -9328,7 +10240,7 @@ func (ec *executionContext) _Dsse(ctx context.Context, sel ast.SelectionSet, obj
 		case "payloadDigests":
 			field := field
 
-			innerFunc := func(ctx context.Context, fs *graphql.FieldSet) (res graphql.Marshaler) {
+			innerFunc := func(ctx context.Context, _ *graphql.FieldSet) (res graphql.Marshaler) {
 				defer func() {
 					if r := recover(); r != nil {
 						ec.Error(ctx, ec.Recover(ctx, r))
@@ -9545,7 +10457,7 @@ func (ec *executionContext) _PayloadDigest(ctx context.Context, sel ast.Selectio
 		case "dsse":
 			field := field
 
-			innerFunc := func(ctx context.Context, fs *graphql.FieldSet) (res graphql.Marshaler) {
+			innerFunc := func(ctx context.Context, _ *graphql.FieldSet) (res graphql.Marshaler) {
 				defer func() {
 					if r := recover(); r != nil {
 						ec.Error(ctx, ec.Recover(ctx, r))
@@ -9620,7 +10532,7 @@ func (ec *executionContext) _Query(ctx context.Context, sel ast.SelectionSet) gr
 		case "node":
 			field := field
 
-			innerFunc := func(ctx context.Context, fs *graphql.FieldSet) (res graphql.Marshaler) {
+			innerFunc := func(ctx context.Context, _ *graphql.FieldSet) (res graphql.Marshaler) {
 				defer func() {
 					if r := recover(); r != nil {
 						ec.Error(ctx, ec.Recover(ctx, r))
@@ -9784,7 +10696,7 @@ func (ec *executionContext) _Signature(ctx context.Context, sel ast.SelectionSet
 		case "dsse":
 			field := field
 
-			innerFunc := func(ctx context.Context, fs *graphql.FieldSet) (res graphql.Marshaler) {
+			innerFunc := func(ctx context.Context, _ *graphql.FieldSet) (res graphql.Marshaler) {
 				defer func() {
 					if r := recover(); r != nil {
 						ec.Error(ctx, ec.Recover(ctx, r))
@@ -9817,7 +10729,7 @@ func (ec *executionContext) _Signature(ctx context.Context, sel ast.SelectionSet
 		case "timestamps":
 			field := field
 
-			innerFunc := func(ctx context.Context, fs *graphql.FieldSet) (res graphql.Marshaler) {
+			innerFunc := func(ctx context.Context, _ *graphql.FieldSet) (res graphql.Marshaler) {
 				defer func() {
 					if r := recover(); r != nil {
 						ec.Error(ctx, ec.Recover(ctx, r))
@@ -9930,7 +10842,7 @@ func (ec *executionContext) _Statement(ctx context.Context, sel ast.SelectionSet
 		case "policy":
 			field := field
 
-			innerFunc := func(ctx context.Context, fs *graphql.FieldSet) (res graphql.Marshaler) {
+			innerFunc := func(ctx context.Context, _ *graphql.FieldSet) (res graphql.Marshaler) {
 				defer func() {
 					if r := recover(); r != nil {
 						ec.Error(ctx, ec.Recover(ctx, r))
@@ -9963,7 +10875,7 @@ func (ec *executionContext) _Statement(ctx context.Context, sel ast.SelectionSet
 		case "attestationCollections":
 			field := field
 
-			innerFunc := func(ctx context.Context, fs *graphql.FieldSet) (res graphql.Marshaler) {
+			innerFunc := func(ctx context.Context, _ *graphql.FieldSet) (res graphql.Marshaler) {
 				defer func() {
 					if r := recover(); r != nil {
 						ec.Error(ctx, ec.Recover(ctx, r))
@@ -9993,10 +10905,43 @@ func (ec *executionContext) _Statement(ctx context.Context, sel ast.SelectionSet
 			}
 
 			out.Concurrently(i, func(ctx context.Context) graphql.Marshaler { return innerFunc(ctx, out) })
+		case "vexDocuments":
+			field := field
+
+			innerFunc := func(ctx context.Context, _ *graphql.FieldSet) (res graphql.Marshaler) {
+				defer func() {
+					if r := recover(); r != nil {
+						ec.Error(ctx, ec.Recover(ctx, r))
+					}
+				}()
+				res = ec._Statement_vexDocuments(ctx, field, obj)
+				return res
+			}
+
+			if field.Deferrable != nil {
+				dfs, ok := deferred[field.Deferrable.Label]
+				di := 0
+				if ok {
+					dfs.AddField(field)
+					di = len(dfs.Values) - 1
+				} else {
+					dfs = graphql.NewFieldSet([]graphql.CollectedField{field})
+					deferred[field.Deferrable.Label] = dfs
+				}
+				dfs.Concurrently(di, func(ctx context.Context) graphql.Marshaler {
+					return innerFunc(ctx, dfs)
+				})
+
+				// don't run the out.Concurrently() call below
+				out.Values[i] = graphql.Null
+				continue
+			}
+
+			out.Concurrently(i, func(ctx context.Context) graphql.Marshaler { return innerFunc(ctx, out) })
 		case "dsse":
 			field := field
 
-			innerFunc := func(ctx context.Context, fs *graphql.FieldSet) (res graphql.Marshaler) {
+			innerFunc := func(ctx context.Context, _ *graphql.FieldSet) (res graphql.Marshaler) {
 				defer func() {
 					if r := recover(); r != nil {
 						ec.Error(ctx, ec.Recover(ctx, r))
@@ -10073,7 +11018,7 @@ func (ec *executionContext) _Subject(ctx context.Context, sel ast.SelectionSet, 
 		case "subjectDigests":
 			field := field
 
-			innerFunc := func(ctx context.Context, fs *graphql.FieldSet) (res graphql.Marshaler) {
+			innerFunc := func(ctx context.Context, _ *graphql.FieldSet) (res graphql.Marshaler) {
 				defer func() {
 					if r := recover(); r != nil {
 						ec.Error(ctx, ec.Recover(ctx, r))
@@ -10106,7 +11051,7 @@ func (ec *executionContext) _Subject(ctx context.Context, sel ast.SelectionSet, 
 		case "statement":
 			field := field
 
-			innerFunc := func(ctx context.Context, fs *graphql.FieldSet) (res graphql.Marshaler) {
+			innerFunc := func(ctx context.Context, _ *graphql.FieldSet) (res graphql.Marshaler) {
 				defer func() {
 					if r := recover(); r != nil {
 						ec.Error(ctx, ec.Recover(ctx, r))
@@ -10234,7 +11179,7 @@ func (ec *executionContext) _SubjectDigest(ctx context.Context, sel ast.Selectio
 		case "subject":
 			field := field
 
-			innerFunc := func(ctx context.Context, fs *graphql.FieldSet) (res graphql.Marshaler) {
+			innerFunc := func(ctx context.Context, _ *graphql.FieldSet) (res graphql.Marshaler) {
 				defer func() {
 					if r := recover(); r != nil {
 						ec.Error(ctx, ec.Recover(ctx, r))
@@ -10357,13 +11302,206 @@ func (ec *executionContext) _Timestamp(ctx context.Context, sel ast.SelectionSet
 		case "signature":
 			field := field
 
-			innerFunc := func(ctx context.Context, fs *graphql.FieldSet) (res graphql.Marshaler) {
+			innerFunc := func(ctx context.Context, _ *graphql.FieldSet) (res graphql.Marshaler) {
 				defer func() {
 					if r := recover(); r != nil {
 						ec.Error(ctx, ec.Recover(ctx, r))
 					}
 				}()
 				res = ec._Timestamp_signature(ctx, field, obj)
+				return res
+			}
+
+			if field.Deferrable != nil {
+				dfs, ok := deferred[field.Deferrable.Label]
+				di := 0
+				if ok {
+					dfs.AddField(field)
+					di = len(dfs.Values) - 1
+				} else {
+					dfs = graphql.NewFieldSet([]graphql.CollectedField{field})
+					deferred[field.Deferrable.Label] = dfs
+				}
+				dfs.Concurrently(di, func(ctx context.Context) graphql.Marshaler {
+					return innerFunc(ctx, dfs)
+				})
+
+				// don't run the out.Concurrently() call below
+				out.Values[i] = graphql.Null
+				continue
+			}
+
+			out.Concurrently(i, func(ctx context.Context) graphql.Marshaler { return innerFunc(ctx, out) })
+		default:
+			panic("unknown field " + strconv.Quote(field.Name))
+		}
+	}
+	out.Dispatch(ctx)
+	if out.Invalids > 0 {
+		return graphql.Null
+	}
+
+	atomic.AddInt32(&ec.deferred, int32(len(deferred)))
+
+	for label, dfs := range deferred {
+		ec.processDeferredGroup(graphql.DeferredGroup{
+			Label:    label,
+			Path:     graphql.GetPath(ctx),
+			FieldSet: dfs,
+			Context:  ctx,
+		})
+	}
+
+	return out
+}
+
+var vexDocumentImplementors = []string{"VexDocument", "Node"}
+
+func (ec *executionContext) _VexDocument(ctx context.Context, sel ast.SelectionSet, obj *ent.VexDocument) graphql.Marshaler {
+	fields := graphql.CollectFields(ec.OperationContext, sel, vexDocumentImplementors)
+
+	out := graphql.NewFieldSet(fields)
+	deferred := make(map[string]*graphql.FieldSet)
+	for i, field := range fields {
+		switch field.Name {
+		case "__typename":
+			out.Values[i] = graphql.MarshalString("VexDocument")
+		case "id":
+			out.Values[i] = ec._VexDocument_id(ctx, field, obj)
+			if out.Values[i] == graphql.Null {
+				atomic.AddUint32(&out.Invalids, 1)
+			}
+		case "vexID":
+			out.Values[i] = ec._VexDocument_vexID(ctx, field, obj)
+			if out.Values[i] == graphql.Null {
+				atomic.AddUint32(&out.Invalids, 1)
+			}
+		case "vexStatements":
+			field := field
+
+			innerFunc := func(ctx context.Context, _ *graphql.FieldSet) (res graphql.Marshaler) {
+				defer func() {
+					if r := recover(); r != nil {
+						ec.Error(ctx, ec.Recover(ctx, r))
+					}
+				}()
+				res = ec._VexDocument_vexStatements(ctx, field, obj)
+				return res
+			}
+
+			if field.Deferrable != nil {
+				dfs, ok := deferred[field.Deferrable.Label]
+				di := 0
+				if ok {
+					dfs.AddField(field)
+					di = len(dfs.Values) - 1
+				} else {
+					dfs = graphql.NewFieldSet([]graphql.CollectedField{field})
+					deferred[field.Deferrable.Label] = dfs
+				}
+				dfs.Concurrently(di, func(ctx context.Context) graphql.Marshaler {
+					return innerFunc(ctx, dfs)
+				})
+
+				// don't run the out.Concurrently() call below
+				out.Values[i] = graphql.Null
+				continue
+			}
+
+			out.Concurrently(i, func(ctx context.Context) graphql.Marshaler { return innerFunc(ctx, out) })
+		case "statement":
+			field := field
+
+			innerFunc := func(ctx context.Context, fs *graphql.FieldSet) (res graphql.Marshaler) {
+				defer func() {
+					if r := recover(); r != nil {
+						ec.Error(ctx, ec.Recover(ctx, r))
+					}
+				}()
+				res = ec._VexDocument_statement(ctx, field, obj)
+				if res == graphql.Null {
+					atomic.AddUint32(&fs.Invalids, 1)
+				}
+				return res
+			}
+
+			if field.Deferrable != nil {
+				dfs, ok := deferred[field.Deferrable.Label]
+				di := 0
+				if ok {
+					dfs.AddField(field)
+					di = len(dfs.Values) - 1
+				} else {
+					dfs = graphql.NewFieldSet([]graphql.CollectedField{field})
+					deferred[field.Deferrable.Label] = dfs
+				}
+				dfs.Concurrently(di, func(ctx context.Context) graphql.Marshaler {
+					return innerFunc(ctx, dfs)
+				})
+
+				// don't run the out.Concurrently() call below
+				out.Values[i] = graphql.Null
+				continue
+			}
+
+			out.Concurrently(i, func(ctx context.Context) graphql.Marshaler { return innerFunc(ctx, out) })
+		default:
+			panic("unknown field " + strconv.Quote(field.Name))
+		}
+	}
+	out.Dispatch(ctx)
+	if out.Invalids > 0 {
+		return graphql.Null
+	}
+
+	atomic.AddInt32(&ec.deferred, int32(len(deferred)))
+
+	for label, dfs := range deferred {
+		ec.processDeferredGroup(graphql.DeferredGroup{
+			Label:    label,
+			Path:     graphql.GetPath(ctx),
+			FieldSet: dfs,
+			Context:  ctx,
+		})
+	}
+
+	return out
+}
+
+var vexStatementImplementors = []string{"VexStatement", "Node"}
+
+func (ec *executionContext) _VexStatement(ctx context.Context, sel ast.SelectionSet, obj *ent.VexStatement) graphql.Marshaler {
+	fields := graphql.CollectFields(ec.OperationContext, sel, vexStatementImplementors)
+
+	out := graphql.NewFieldSet(fields)
+	deferred := make(map[string]*graphql.FieldSet)
+	for i, field := range fields {
+		switch field.Name {
+		case "__typename":
+			out.Values[i] = graphql.MarshalString("VexStatement")
+		case "id":
+			out.Values[i] = ec._VexStatement_id(ctx, field, obj)
+			if out.Values[i] == graphql.Null {
+				atomic.AddUint32(&out.Invalids, 1)
+			}
+		case "vexID":
+			out.Values[i] = ec._VexStatement_vexID(ctx, field, obj)
+			if out.Values[i] == graphql.Null {
+				atomic.AddUint32(&out.Invalids, 1)
+			}
+		case "vexDocument":
+			field := field
+
+			innerFunc := func(ctx context.Context, fs *graphql.FieldSet) (res graphql.Marshaler) {
+				defer func() {
+					if r := recover(); r != nil {
+						ec.Error(ctx, ec.Recover(ctx, r))
+					}
+				}()
+				res = ec._VexStatement_vexDocument(ctx, field, obj)
+				if res == graphql.Null {
+					atomic.AddUint32(&fs.Invalids, 1)
+				}
 				return res
 			}
 
@@ -11064,6 +12202,26 @@ func (ec *executionContext) marshalNTimestamp2ᚖgithubᚗcomᚋinᚑtotoᚋarch
 
 func (ec *executionContext) unmarshalNTimestampWhereInput2ᚖgithubᚗcomᚋinᚑtotoᚋarchivistaᚋentᚐTimestampWhereInput(ctx context.Context, v interface{}) (*ent.TimestampWhereInput, error) {
 	res, err := ec.unmarshalInputTimestampWhereInput(ctx, v)
+	return &res, graphql.ErrorOnPath(ctx, err)
+}
+
+func (ec *executionContext) marshalNVexDocument2ᚖgithubᚗcomᚋinᚑtotoᚋarchivistaᚋentᚐVexDocument(ctx context.Context, sel ast.SelectionSet, v *ent.VexDocument) graphql.Marshaler {
+	if v == nil {
+		if !graphql.HasFieldError(ctx, graphql.GetFieldContext(ctx)) {
+			ec.Errorf(ctx, "the requested element is null which the schema does not allow")
+		}
+		return graphql.Null
+	}
+	return ec._VexDocument(ctx, sel, v)
+}
+
+func (ec *executionContext) unmarshalNVexDocumentWhereInput2ᚖgithubᚗcomᚋinᚑtotoᚋarchivistaᚋentᚐVexDocumentWhereInput(ctx context.Context, v interface{}) (*ent.VexDocumentWhereInput, error) {
+	res, err := ec.unmarshalInputVexDocumentWhereInput(ctx, v)
+	return &res, graphql.ErrorOnPath(ctx, err)
+}
+
+func (ec *executionContext) unmarshalNVexStatementWhereInput2ᚖgithubᚗcomᚋinᚑtotoᚋarchivistaᚋentᚐVexStatementWhereInput(ctx context.Context, v interface{}) (*ent.VexStatementWhereInput, error) {
+	res, err := ec.unmarshalInputVexStatementWhereInput(ctx, v)
 	return &res, graphql.ErrorOnPath(ctx, err)
 }
 
@@ -12292,6 +13450,76 @@ func (ec *executionContext) unmarshalOTimestampWhereInput2ᚖgithubᚗcomᚋin�
 		return nil, nil
 	}
 	res, err := ec.unmarshalInputTimestampWhereInput(ctx, v)
+	return &res, graphql.ErrorOnPath(ctx, err)
+}
+
+func (ec *executionContext) marshalOVexDocument2ᚖgithubᚗcomᚋinᚑtotoᚋarchivistaᚋentᚐVexDocument(ctx context.Context, sel ast.SelectionSet, v *ent.VexDocument) graphql.Marshaler {
+	if v == nil {
+		return graphql.Null
+	}
+	return ec._VexDocument(ctx, sel, v)
+}
+
+func (ec *executionContext) unmarshalOVexDocumentWhereInput2ᚕᚖgithubᚗcomᚋinᚑtotoᚋarchivistaᚋentᚐVexDocumentWhereInputᚄ(ctx context.Context, v interface{}) ([]*ent.VexDocumentWhereInput, error) {
+	if v == nil {
+		return nil, nil
+	}
+	var vSlice []interface{}
+	if v != nil {
+		vSlice = graphql.CoerceList(v)
+	}
+	var err error
+	res := make([]*ent.VexDocumentWhereInput, len(vSlice))
+	for i := range vSlice {
+		ctx := graphql.WithPathContext(ctx, graphql.NewPathWithIndex(i))
+		res[i], err = ec.unmarshalNVexDocumentWhereInput2ᚖgithubᚗcomᚋinᚑtotoᚋarchivistaᚋentᚐVexDocumentWhereInput(ctx, vSlice[i])
+		if err != nil {
+			return nil, err
+		}
+	}
+	return res, nil
+}
+
+func (ec *executionContext) unmarshalOVexDocumentWhereInput2ᚖgithubᚗcomᚋinᚑtotoᚋarchivistaᚋentᚐVexDocumentWhereInput(ctx context.Context, v interface{}) (*ent.VexDocumentWhereInput, error) {
+	if v == nil {
+		return nil, nil
+	}
+	res, err := ec.unmarshalInputVexDocumentWhereInput(ctx, v)
+	return &res, graphql.ErrorOnPath(ctx, err)
+}
+
+func (ec *executionContext) marshalOVexStatement2ᚖgithubᚗcomᚋinᚑtotoᚋarchivistaᚋentᚐVexStatement(ctx context.Context, sel ast.SelectionSet, v *ent.VexStatement) graphql.Marshaler {
+	if v == nil {
+		return graphql.Null
+	}
+	return ec._VexStatement(ctx, sel, v)
+}
+
+func (ec *executionContext) unmarshalOVexStatementWhereInput2ᚕᚖgithubᚗcomᚋinᚑtotoᚋarchivistaᚋentᚐVexStatementWhereInputᚄ(ctx context.Context, v interface{}) ([]*ent.VexStatementWhereInput, error) {
+	if v == nil {
+		return nil, nil
+	}
+	var vSlice []interface{}
+	if v != nil {
+		vSlice = graphql.CoerceList(v)
+	}
+	var err error
+	res := make([]*ent.VexStatementWhereInput, len(vSlice))
+	for i := range vSlice {
+		ctx := graphql.WithPathContext(ctx, graphql.NewPathWithIndex(i))
+		res[i], err = ec.unmarshalNVexStatementWhereInput2ᚖgithubᚗcomᚋinᚑtotoᚋarchivistaᚋentᚐVexStatementWhereInput(ctx, vSlice[i])
+		if err != nil {
+			return nil, err
+		}
+	}
+	return res, nil
+}
+
+func (ec *executionContext) unmarshalOVexStatementWhereInput2ᚖgithubᚗcomᚋinᚑtotoᚋarchivistaᚋentᚐVexStatementWhereInput(ctx context.Context, v interface{}) (*ent.VexStatementWhereInput, error) {
+	if v == nil {
+		return nil, nil
+	}
+	res, err := ec.unmarshalInputVexStatementWhereInput(ctx, v)
 	return &res, graphql.ErrorOnPath(ctx, err)
 }
 

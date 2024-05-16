@@ -22,6 +22,8 @@ import (
 	"github.com/in-toto/archivista/ent/subject"
 	"github.com/in-toto/archivista/ent/subjectdigest"
 	"github.com/in-toto/archivista/ent/timestamp"
+	"github.com/in-toto/archivista/ent/vexdocument"
+	"github.com/in-toto/archivista/ent/vexstatement"
 )
 
 const (
@@ -43,6 +45,8 @@ const (
 	TypeSubject               = "Subject"
 	TypeSubjectDigest         = "SubjectDigest"
 	TypeTimestamp             = "Timestamp"
+	TypeVexDocument           = "VexDocument"
+	TypeVexStatement          = "VexStatement"
 )
 
 // AttestationMutation represents an operation that mutates the Attestation nodes in the graph.
@@ -2918,6 +2922,8 @@ type StatementMutation struct {
 	clearedpolicy                  bool
 	attestation_collections        *int
 	clearedattestation_collections bool
+	vex_documents                  *int
+	clearedvex_documents           bool
 	dsse                           map[int]struct{}
 	removeddsse                    map[int]struct{}
 	cleareddsse                    bool
@@ -3192,6 +3198,45 @@ func (m *StatementMutation) ResetAttestationCollections() {
 	m.clearedattestation_collections = false
 }
 
+// SetVexDocumentsID sets the "vex_documents" edge to the VexDocument entity by id.
+func (m *StatementMutation) SetVexDocumentsID(id int) {
+	m.vex_documents = &id
+}
+
+// ClearVexDocuments clears the "vex_documents" edge to the VexDocument entity.
+func (m *StatementMutation) ClearVexDocuments() {
+	m.clearedvex_documents = true
+}
+
+// VexDocumentsCleared reports if the "vex_documents" edge to the VexDocument entity was cleared.
+func (m *StatementMutation) VexDocumentsCleared() bool {
+	return m.clearedvex_documents
+}
+
+// VexDocumentsID returns the "vex_documents" edge ID in the mutation.
+func (m *StatementMutation) VexDocumentsID() (id int, exists bool) {
+	if m.vex_documents != nil {
+		return *m.vex_documents, true
+	}
+	return
+}
+
+// VexDocumentsIDs returns the "vex_documents" edge IDs in the mutation.
+// Note that IDs always returns len(IDs) <= 1 for unique edges, and you should use
+// VexDocumentsID instead. It exists only for internal usage by the builders.
+func (m *StatementMutation) VexDocumentsIDs() (ids []int) {
+	if id := m.vex_documents; id != nil {
+		ids = append(ids, *id)
+	}
+	return
+}
+
+// ResetVexDocuments resets all changes to the "vex_documents" edge.
+func (m *StatementMutation) ResetVexDocuments() {
+	m.vex_documents = nil
+	m.clearedvex_documents = false
+}
+
 // AddDsseIDs adds the "dsse" edge to the Dsse entity by ids.
 func (m *StatementMutation) AddDsseIDs(ids ...int) {
 	if m.dsse == nil {
@@ -3379,7 +3424,7 @@ func (m *StatementMutation) ResetField(name string) error {
 
 // AddedEdges returns all edge names that were set/added in this mutation.
 func (m *StatementMutation) AddedEdges() []string {
-	edges := make([]string, 0, 4)
+	edges := make([]string, 0, 5)
 	if m.subjects != nil {
 		edges = append(edges, statement.EdgeSubjects)
 	}
@@ -3388,6 +3433,9 @@ func (m *StatementMutation) AddedEdges() []string {
 	}
 	if m.attestation_collections != nil {
 		edges = append(edges, statement.EdgeAttestationCollections)
+	}
+	if m.vex_documents != nil {
+		edges = append(edges, statement.EdgeVexDocuments)
 	}
 	if m.dsse != nil {
 		edges = append(edges, statement.EdgeDsse)
@@ -3413,6 +3461,10 @@ func (m *StatementMutation) AddedIDs(name string) []ent.Value {
 		if id := m.attestation_collections; id != nil {
 			return []ent.Value{*id}
 		}
+	case statement.EdgeVexDocuments:
+		if id := m.vex_documents; id != nil {
+			return []ent.Value{*id}
+		}
 	case statement.EdgeDsse:
 		ids := make([]ent.Value, 0, len(m.dsse))
 		for id := range m.dsse {
@@ -3425,7 +3477,7 @@ func (m *StatementMutation) AddedIDs(name string) []ent.Value {
 
 // RemovedEdges returns all edge names that were removed in this mutation.
 func (m *StatementMutation) RemovedEdges() []string {
-	edges := make([]string, 0, 4)
+	edges := make([]string, 0, 5)
 	if m.removedsubjects != nil {
 		edges = append(edges, statement.EdgeSubjects)
 	}
@@ -3457,7 +3509,7 @@ func (m *StatementMutation) RemovedIDs(name string) []ent.Value {
 
 // ClearedEdges returns all edge names that were cleared in this mutation.
 func (m *StatementMutation) ClearedEdges() []string {
-	edges := make([]string, 0, 4)
+	edges := make([]string, 0, 5)
 	if m.clearedsubjects {
 		edges = append(edges, statement.EdgeSubjects)
 	}
@@ -3466,6 +3518,9 @@ func (m *StatementMutation) ClearedEdges() []string {
 	}
 	if m.clearedattestation_collections {
 		edges = append(edges, statement.EdgeAttestationCollections)
+	}
+	if m.clearedvex_documents {
+		edges = append(edges, statement.EdgeVexDocuments)
 	}
 	if m.cleareddsse {
 		edges = append(edges, statement.EdgeDsse)
@@ -3483,6 +3538,8 @@ func (m *StatementMutation) EdgeCleared(name string) bool {
 		return m.clearedpolicy
 	case statement.EdgeAttestationCollections:
 		return m.clearedattestation_collections
+	case statement.EdgeVexDocuments:
+		return m.clearedvex_documents
 	case statement.EdgeDsse:
 		return m.cleareddsse
 	}
@@ -3498,6 +3555,9 @@ func (m *StatementMutation) ClearEdge(name string) error {
 		return nil
 	case statement.EdgeAttestationCollections:
 		m.ClearAttestationCollections()
+		return nil
+	case statement.EdgeVexDocuments:
+		m.ClearVexDocuments()
 		return nil
 	}
 	return fmt.Errorf("unknown Statement unique edge %s", name)
@@ -3515,6 +3575,9 @@ func (m *StatementMutation) ResetEdge(name string) error {
 		return nil
 	case statement.EdgeAttestationCollections:
 		m.ResetAttestationCollections()
+		return nil
+	case statement.EdgeVexDocuments:
+		m.ResetVexDocuments()
 		return nil
 	case statement.EdgeDsse:
 		m.ResetDsse()
@@ -4893,4 +4956,849 @@ func (m *TimestampMutation) ResetEdge(name string) error {
 		return nil
 	}
 	return fmt.Errorf("unknown Timestamp edge %s", name)
+}
+
+// VexDocumentMutation represents an operation that mutates the VexDocument nodes in the graph.
+type VexDocumentMutation struct {
+	config
+	op                    Op
+	typ                   string
+	id                    *int
+	vex_id                *string
+	clearedFields         map[string]struct{}
+	vex_statements        *int
+	clearedvex_statements bool
+	statement             *int
+	clearedstatement      bool
+	done                  bool
+	oldValue              func(context.Context) (*VexDocument, error)
+	predicates            []predicate.VexDocument
+}
+
+var _ ent.Mutation = (*VexDocumentMutation)(nil)
+
+// vexdocumentOption allows management of the mutation configuration using functional options.
+type vexdocumentOption func(*VexDocumentMutation)
+
+// newVexDocumentMutation creates new mutation for the VexDocument entity.
+func newVexDocumentMutation(c config, op Op, opts ...vexdocumentOption) *VexDocumentMutation {
+	m := &VexDocumentMutation{
+		config:        c,
+		op:            op,
+		typ:           TypeVexDocument,
+		clearedFields: make(map[string]struct{}),
+	}
+	for _, opt := range opts {
+		opt(m)
+	}
+	return m
+}
+
+// withVexDocumentID sets the ID field of the mutation.
+func withVexDocumentID(id int) vexdocumentOption {
+	return func(m *VexDocumentMutation) {
+		var (
+			err   error
+			once  sync.Once
+			value *VexDocument
+		)
+		m.oldValue = func(ctx context.Context) (*VexDocument, error) {
+			once.Do(func() {
+				if m.done {
+					err = errors.New("querying old values post mutation is not allowed")
+				} else {
+					value, err = m.Client().VexDocument.Get(ctx, id)
+				}
+			})
+			return value, err
+		}
+		m.id = &id
+	}
+}
+
+// withVexDocument sets the old VexDocument of the mutation.
+func withVexDocument(node *VexDocument) vexdocumentOption {
+	return func(m *VexDocumentMutation) {
+		m.oldValue = func(context.Context) (*VexDocument, error) {
+			return node, nil
+		}
+		m.id = &node.ID
+	}
+}
+
+// Client returns a new `ent.Client` from the mutation. If the mutation was
+// executed in a transaction (ent.Tx), a transactional client is returned.
+func (m VexDocumentMutation) Client() *Client {
+	client := &Client{config: m.config}
+	client.init()
+	return client
+}
+
+// Tx returns an `ent.Tx` for mutations that were executed in transactions;
+// it returns an error otherwise.
+func (m VexDocumentMutation) Tx() (*Tx, error) {
+	if _, ok := m.driver.(*txDriver); !ok {
+		return nil, errors.New("ent: mutation is not running in a transaction")
+	}
+	tx := &Tx{config: m.config}
+	tx.init()
+	return tx, nil
+}
+
+// ID returns the ID value in the mutation. Note that the ID is only available
+// if it was provided to the builder or after it was returned from the database.
+func (m *VexDocumentMutation) ID() (id int, exists bool) {
+	if m.id == nil {
+		return
+	}
+	return *m.id, true
+}
+
+// IDs queries the database and returns the entity ids that match the mutation's predicate.
+// That means, if the mutation is applied within a transaction with an isolation level such
+// as sql.LevelSerializable, the returned ids match the ids of the rows that will be updated
+// or updated by the mutation.
+func (m *VexDocumentMutation) IDs(ctx context.Context) ([]int, error) {
+	switch {
+	case m.op.Is(OpUpdateOne | OpDeleteOne):
+		id, exists := m.ID()
+		if exists {
+			return []int{id}, nil
+		}
+		fallthrough
+	case m.op.Is(OpUpdate | OpDelete):
+		return m.Client().VexDocument.Query().Where(m.predicates...).IDs(ctx)
+	default:
+		return nil, fmt.Errorf("IDs is not allowed on %s operations", m.op)
+	}
+}
+
+// SetVexID sets the "vex_id" field.
+func (m *VexDocumentMutation) SetVexID(s string) {
+	m.vex_id = &s
+}
+
+// VexID returns the value of the "vex_id" field in the mutation.
+func (m *VexDocumentMutation) VexID() (r string, exists bool) {
+	v := m.vex_id
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// OldVexID returns the old "vex_id" field's value of the VexDocument entity.
+// If the VexDocument object wasn't provided to the builder, the object is fetched from the database.
+// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
+func (m *VexDocumentMutation) OldVexID(ctx context.Context) (v string, err error) {
+	if !m.op.Is(OpUpdateOne) {
+		return v, errors.New("OldVexID is only allowed on UpdateOne operations")
+	}
+	if m.id == nil || m.oldValue == nil {
+		return v, errors.New("OldVexID requires an ID field in the mutation")
+	}
+	oldValue, err := m.oldValue(ctx)
+	if err != nil {
+		return v, fmt.Errorf("querying old value for OldVexID: %w", err)
+	}
+	return oldValue.VexID, nil
+}
+
+// ResetVexID resets all changes to the "vex_id" field.
+func (m *VexDocumentMutation) ResetVexID() {
+	m.vex_id = nil
+}
+
+// SetVexStatementsID sets the "vex_statements" edge to the VexStatement entity by id.
+func (m *VexDocumentMutation) SetVexStatementsID(id int) {
+	m.vex_statements = &id
+}
+
+// ClearVexStatements clears the "vex_statements" edge to the VexStatement entity.
+func (m *VexDocumentMutation) ClearVexStatements() {
+	m.clearedvex_statements = true
+}
+
+// VexStatementsCleared reports if the "vex_statements" edge to the VexStatement entity was cleared.
+func (m *VexDocumentMutation) VexStatementsCleared() bool {
+	return m.clearedvex_statements
+}
+
+// VexStatementsID returns the "vex_statements" edge ID in the mutation.
+func (m *VexDocumentMutation) VexStatementsID() (id int, exists bool) {
+	if m.vex_statements != nil {
+		return *m.vex_statements, true
+	}
+	return
+}
+
+// VexStatementsIDs returns the "vex_statements" edge IDs in the mutation.
+// Note that IDs always returns len(IDs) <= 1 for unique edges, and you should use
+// VexStatementsID instead. It exists only for internal usage by the builders.
+func (m *VexDocumentMutation) VexStatementsIDs() (ids []int) {
+	if id := m.vex_statements; id != nil {
+		ids = append(ids, *id)
+	}
+	return
+}
+
+// ResetVexStatements resets all changes to the "vex_statements" edge.
+func (m *VexDocumentMutation) ResetVexStatements() {
+	m.vex_statements = nil
+	m.clearedvex_statements = false
+}
+
+// SetStatementID sets the "statement" edge to the Statement entity by id.
+func (m *VexDocumentMutation) SetStatementID(id int) {
+	m.statement = &id
+}
+
+// ClearStatement clears the "statement" edge to the Statement entity.
+func (m *VexDocumentMutation) ClearStatement() {
+	m.clearedstatement = true
+}
+
+// StatementCleared reports if the "statement" edge to the Statement entity was cleared.
+func (m *VexDocumentMutation) StatementCleared() bool {
+	return m.clearedstatement
+}
+
+// StatementID returns the "statement" edge ID in the mutation.
+func (m *VexDocumentMutation) StatementID() (id int, exists bool) {
+	if m.statement != nil {
+		return *m.statement, true
+	}
+	return
+}
+
+// StatementIDs returns the "statement" edge IDs in the mutation.
+// Note that IDs always returns len(IDs) <= 1 for unique edges, and you should use
+// StatementID instead. It exists only for internal usage by the builders.
+func (m *VexDocumentMutation) StatementIDs() (ids []int) {
+	if id := m.statement; id != nil {
+		ids = append(ids, *id)
+	}
+	return
+}
+
+// ResetStatement resets all changes to the "statement" edge.
+func (m *VexDocumentMutation) ResetStatement() {
+	m.statement = nil
+	m.clearedstatement = false
+}
+
+// Where appends a list predicates to the VexDocumentMutation builder.
+func (m *VexDocumentMutation) Where(ps ...predicate.VexDocument) {
+	m.predicates = append(m.predicates, ps...)
+}
+
+// WhereP appends storage-level predicates to the VexDocumentMutation builder. Using this method,
+// users can use type-assertion to append predicates that do not depend on any generated package.
+func (m *VexDocumentMutation) WhereP(ps ...func(*sql.Selector)) {
+	p := make([]predicate.VexDocument, len(ps))
+	for i := range ps {
+		p[i] = ps[i]
+	}
+	m.Where(p...)
+}
+
+// Op returns the operation name.
+func (m *VexDocumentMutation) Op() Op {
+	return m.op
+}
+
+// SetOp allows setting the mutation operation.
+func (m *VexDocumentMutation) SetOp(op Op) {
+	m.op = op
+}
+
+// Type returns the node type of this mutation (VexDocument).
+func (m *VexDocumentMutation) Type() string {
+	return m.typ
+}
+
+// Fields returns all fields that were changed during this mutation. Note that in
+// order to get all numeric fields that were incremented/decremented, call
+// AddedFields().
+func (m *VexDocumentMutation) Fields() []string {
+	fields := make([]string, 0, 1)
+	if m.vex_id != nil {
+		fields = append(fields, vexdocument.FieldVexID)
+	}
+	return fields
+}
+
+// Field returns the value of a field with the given name. The second boolean
+// return value indicates that this field was not set, or was not defined in the
+// schema.
+func (m *VexDocumentMutation) Field(name string) (ent.Value, bool) {
+	switch name {
+	case vexdocument.FieldVexID:
+		return m.VexID()
+	}
+	return nil, false
+}
+
+// OldField returns the old value of the field from the database. An error is
+// returned if the mutation operation is not UpdateOne, or the query to the
+// database failed.
+func (m *VexDocumentMutation) OldField(ctx context.Context, name string) (ent.Value, error) {
+	switch name {
+	case vexdocument.FieldVexID:
+		return m.OldVexID(ctx)
+	}
+	return nil, fmt.Errorf("unknown VexDocument field %s", name)
+}
+
+// SetField sets the value of a field with the given name. It returns an error if
+// the field is not defined in the schema, or if the type mismatched the field
+// type.
+func (m *VexDocumentMutation) SetField(name string, value ent.Value) error {
+	switch name {
+	case vexdocument.FieldVexID:
+		v, ok := value.(string)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.SetVexID(v)
+		return nil
+	}
+	return fmt.Errorf("unknown VexDocument field %s", name)
+}
+
+// AddedFields returns all numeric fields that were incremented/decremented during
+// this mutation.
+func (m *VexDocumentMutation) AddedFields() []string {
+	return nil
+}
+
+// AddedField returns the numeric value that was incremented/decremented on a field
+// with the given name. The second boolean return value indicates that this field
+// was not set, or was not defined in the schema.
+func (m *VexDocumentMutation) AddedField(name string) (ent.Value, bool) {
+	return nil, false
+}
+
+// AddField adds the value to the field with the given name. It returns an error if
+// the field is not defined in the schema, or if the type mismatched the field
+// type.
+func (m *VexDocumentMutation) AddField(name string, value ent.Value) error {
+	switch name {
+	}
+	return fmt.Errorf("unknown VexDocument numeric field %s", name)
+}
+
+// ClearedFields returns all nullable fields that were cleared during this
+// mutation.
+func (m *VexDocumentMutation) ClearedFields() []string {
+	return nil
+}
+
+// FieldCleared returns a boolean indicating if a field with the given name was
+// cleared in this mutation.
+func (m *VexDocumentMutation) FieldCleared(name string) bool {
+	_, ok := m.clearedFields[name]
+	return ok
+}
+
+// ClearField clears the value of the field with the given name. It returns an
+// error if the field is not defined in the schema.
+func (m *VexDocumentMutation) ClearField(name string) error {
+	return fmt.Errorf("unknown VexDocument nullable field %s", name)
+}
+
+// ResetField resets all changes in the mutation for the field with the given name.
+// It returns an error if the field is not defined in the schema.
+func (m *VexDocumentMutation) ResetField(name string) error {
+	switch name {
+	case vexdocument.FieldVexID:
+		m.ResetVexID()
+		return nil
+	}
+	return fmt.Errorf("unknown VexDocument field %s", name)
+}
+
+// AddedEdges returns all edge names that were set/added in this mutation.
+func (m *VexDocumentMutation) AddedEdges() []string {
+	edges := make([]string, 0, 2)
+	if m.vex_statements != nil {
+		edges = append(edges, vexdocument.EdgeVexStatements)
+	}
+	if m.statement != nil {
+		edges = append(edges, vexdocument.EdgeStatement)
+	}
+	return edges
+}
+
+// AddedIDs returns all IDs (to other nodes) that were added for the given edge
+// name in this mutation.
+func (m *VexDocumentMutation) AddedIDs(name string) []ent.Value {
+	switch name {
+	case vexdocument.EdgeVexStatements:
+		if id := m.vex_statements; id != nil {
+			return []ent.Value{*id}
+		}
+	case vexdocument.EdgeStatement:
+		if id := m.statement; id != nil {
+			return []ent.Value{*id}
+		}
+	}
+	return nil
+}
+
+// RemovedEdges returns all edge names that were removed in this mutation.
+func (m *VexDocumentMutation) RemovedEdges() []string {
+	edges := make([]string, 0, 2)
+	return edges
+}
+
+// RemovedIDs returns all IDs (to other nodes) that were removed for the edge with
+// the given name in this mutation.
+func (m *VexDocumentMutation) RemovedIDs(name string) []ent.Value {
+	return nil
+}
+
+// ClearedEdges returns all edge names that were cleared in this mutation.
+func (m *VexDocumentMutation) ClearedEdges() []string {
+	edges := make([]string, 0, 2)
+	if m.clearedvex_statements {
+		edges = append(edges, vexdocument.EdgeVexStatements)
+	}
+	if m.clearedstatement {
+		edges = append(edges, vexdocument.EdgeStatement)
+	}
+	return edges
+}
+
+// EdgeCleared returns a boolean which indicates if the edge with the given name
+// was cleared in this mutation.
+func (m *VexDocumentMutation) EdgeCleared(name string) bool {
+	switch name {
+	case vexdocument.EdgeVexStatements:
+		return m.clearedvex_statements
+	case vexdocument.EdgeStatement:
+		return m.clearedstatement
+	}
+	return false
+}
+
+// ClearEdge clears the value of the edge with the given name. It returns an error
+// if that edge is not defined in the schema.
+func (m *VexDocumentMutation) ClearEdge(name string) error {
+	switch name {
+	case vexdocument.EdgeVexStatements:
+		m.ClearVexStatements()
+		return nil
+	case vexdocument.EdgeStatement:
+		m.ClearStatement()
+		return nil
+	}
+	return fmt.Errorf("unknown VexDocument unique edge %s", name)
+}
+
+// ResetEdge resets all changes to the edge with the given name in this mutation.
+// It returns an error if the edge is not defined in the schema.
+func (m *VexDocumentMutation) ResetEdge(name string) error {
+	switch name {
+	case vexdocument.EdgeVexStatements:
+		m.ResetVexStatements()
+		return nil
+	case vexdocument.EdgeStatement:
+		m.ResetStatement()
+		return nil
+	}
+	return fmt.Errorf("unknown VexDocument edge %s", name)
+}
+
+// VexStatementMutation represents an operation that mutates the VexStatement nodes in the graph.
+type VexStatementMutation struct {
+	config
+	op                  Op
+	typ                 string
+	id                  *int
+	vex_id              *string
+	clearedFields       map[string]struct{}
+	vex_document        *int
+	clearedvex_document bool
+	done                bool
+	oldValue            func(context.Context) (*VexStatement, error)
+	predicates          []predicate.VexStatement
+}
+
+var _ ent.Mutation = (*VexStatementMutation)(nil)
+
+// vexstatementOption allows management of the mutation configuration using functional options.
+type vexstatementOption func(*VexStatementMutation)
+
+// newVexStatementMutation creates new mutation for the VexStatement entity.
+func newVexStatementMutation(c config, op Op, opts ...vexstatementOption) *VexStatementMutation {
+	m := &VexStatementMutation{
+		config:        c,
+		op:            op,
+		typ:           TypeVexStatement,
+		clearedFields: make(map[string]struct{}),
+	}
+	for _, opt := range opts {
+		opt(m)
+	}
+	return m
+}
+
+// withVexStatementID sets the ID field of the mutation.
+func withVexStatementID(id int) vexstatementOption {
+	return func(m *VexStatementMutation) {
+		var (
+			err   error
+			once  sync.Once
+			value *VexStatement
+		)
+		m.oldValue = func(ctx context.Context) (*VexStatement, error) {
+			once.Do(func() {
+				if m.done {
+					err = errors.New("querying old values post mutation is not allowed")
+				} else {
+					value, err = m.Client().VexStatement.Get(ctx, id)
+				}
+			})
+			return value, err
+		}
+		m.id = &id
+	}
+}
+
+// withVexStatement sets the old VexStatement of the mutation.
+func withVexStatement(node *VexStatement) vexstatementOption {
+	return func(m *VexStatementMutation) {
+		m.oldValue = func(context.Context) (*VexStatement, error) {
+			return node, nil
+		}
+		m.id = &node.ID
+	}
+}
+
+// Client returns a new `ent.Client` from the mutation. If the mutation was
+// executed in a transaction (ent.Tx), a transactional client is returned.
+func (m VexStatementMutation) Client() *Client {
+	client := &Client{config: m.config}
+	client.init()
+	return client
+}
+
+// Tx returns an `ent.Tx` for mutations that were executed in transactions;
+// it returns an error otherwise.
+func (m VexStatementMutation) Tx() (*Tx, error) {
+	if _, ok := m.driver.(*txDriver); !ok {
+		return nil, errors.New("ent: mutation is not running in a transaction")
+	}
+	tx := &Tx{config: m.config}
+	tx.init()
+	return tx, nil
+}
+
+// ID returns the ID value in the mutation. Note that the ID is only available
+// if it was provided to the builder or after it was returned from the database.
+func (m *VexStatementMutation) ID() (id int, exists bool) {
+	if m.id == nil {
+		return
+	}
+	return *m.id, true
+}
+
+// IDs queries the database and returns the entity ids that match the mutation's predicate.
+// That means, if the mutation is applied within a transaction with an isolation level such
+// as sql.LevelSerializable, the returned ids match the ids of the rows that will be updated
+// or updated by the mutation.
+func (m *VexStatementMutation) IDs(ctx context.Context) ([]int, error) {
+	switch {
+	case m.op.Is(OpUpdateOne | OpDeleteOne):
+		id, exists := m.ID()
+		if exists {
+			return []int{id}, nil
+		}
+		fallthrough
+	case m.op.Is(OpUpdate | OpDelete):
+		return m.Client().VexStatement.Query().Where(m.predicates...).IDs(ctx)
+	default:
+		return nil, fmt.Errorf("IDs is not allowed on %s operations", m.op)
+	}
+}
+
+// SetVexID sets the "vex_id" field.
+func (m *VexStatementMutation) SetVexID(s string) {
+	m.vex_id = &s
+}
+
+// VexID returns the value of the "vex_id" field in the mutation.
+func (m *VexStatementMutation) VexID() (r string, exists bool) {
+	v := m.vex_id
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// OldVexID returns the old "vex_id" field's value of the VexStatement entity.
+// If the VexStatement object wasn't provided to the builder, the object is fetched from the database.
+// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
+func (m *VexStatementMutation) OldVexID(ctx context.Context) (v string, err error) {
+	if !m.op.Is(OpUpdateOne) {
+		return v, errors.New("OldVexID is only allowed on UpdateOne operations")
+	}
+	if m.id == nil || m.oldValue == nil {
+		return v, errors.New("OldVexID requires an ID field in the mutation")
+	}
+	oldValue, err := m.oldValue(ctx)
+	if err != nil {
+		return v, fmt.Errorf("querying old value for OldVexID: %w", err)
+	}
+	return oldValue.VexID, nil
+}
+
+// ResetVexID resets all changes to the "vex_id" field.
+func (m *VexStatementMutation) ResetVexID() {
+	m.vex_id = nil
+}
+
+// SetVexDocumentID sets the "vex_document" edge to the VexDocument entity by id.
+func (m *VexStatementMutation) SetVexDocumentID(id int) {
+	m.vex_document = &id
+}
+
+// ClearVexDocument clears the "vex_document" edge to the VexDocument entity.
+func (m *VexStatementMutation) ClearVexDocument() {
+	m.clearedvex_document = true
+}
+
+// VexDocumentCleared reports if the "vex_document" edge to the VexDocument entity was cleared.
+func (m *VexStatementMutation) VexDocumentCleared() bool {
+	return m.clearedvex_document
+}
+
+// VexDocumentID returns the "vex_document" edge ID in the mutation.
+func (m *VexStatementMutation) VexDocumentID() (id int, exists bool) {
+	if m.vex_document != nil {
+		return *m.vex_document, true
+	}
+	return
+}
+
+// VexDocumentIDs returns the "vex_document" edge IDs in the mutation.
+// Note that IDs always returns len(IDs) <= 1 for unique edges, and you should use
+// VexDocumentID instead. It exists only for internal usage by the builders.
+func (m *VexStatementMutation) VexDocumentIDs() (ids []int) {
+	if id := m.vex_document; id != nil {
+		ids = append(ids, *id)
+	}
+	return
+}
+
+// ResetVexDocument resets all changes to the "vex_document" edge.
+func (m *VexStatementMutation) ResetVexDocument() {
+	m.vex_document = nil
+	m.clearedvex_document = false
+}
+
+// Where appends a list predicates to the VexStatementMutation builder.
+func (m *VexStatementMutation) Where(ps ...predicate.VexStatement) {
+	m.predicates = append(m.predicates, ps...)
+}
+
+// WhereP appends storage-level predicates to the VexStatementMutation builder. Using this method,
+// users can use type-assertion to append predicates that do not depend on any generated package.
+func (m *VexStatementMutation) WhereP(ps ...func(*sql.Selector)) {
+	p := make([]predicate.VexStatement, len(ps))
+	for i := range ps {
+		p[i] = ps[i]
+	}
+	m.Where(p...)
+}
+
+// Op returns the operation name.
+func (m *VexStatementMutation) Op() Op {
+	return m.op
+}
+
+// SetOp allows setting the mutation operation.
+func (m *VexStatementMutation) SetOp(op Op) {
+	m.op = op
+}
+
+// Type returns the node type of this mutation (VexStatement).
+func (m *VexStatementMutation) Type() string {
+	return m.typ
+}
+
+// Fields returns all fields that were changed during this mutation. Note that in
+// order to get all numeric fields that were incremented/decremented, call
+// AddedFields().
+func (m *VexStatementMutation) Fields() []string {
+	fields := make([]string, 0, 1)
+	if m.vex_id != nil {
+		fields = append(fields, vexstatement.FieldVexID)
+	}
+	return fields
+}
+
+// Field returns the value of a field with the given name. The second boolean
+// return value indicates that this field was not set, or was not defined in the
+// schema.
+func (m *VexStatementMutation) Field(name string) (ent.Value, bool) {
+	switch name {
+	case vexstatement.FieldVexID:
+		return m.VexID()
+	}
+	return nil, false
+}
+
+// OldField returns the old value of the field from the database. An error is
+// returned if the mutation operation is not UpdateOne, or the query to the
+// database failed.
+func (m *VexStatementMutation) OldField(ctx context.Context, name string) (ent.Value, error) {
+	switch name {
+	case vexstatement.FieldVexID:
+		return m.OldVexID(ctx)
+	}
+	return nil, fmt.Errorf("unknown VexStatement field %s", name)
+}
+
+// SetField sets the value of a field with the given name. It returns an error if
+// the field is not defined in the schema, or if the type mismatched the field
+// type.
+func (m *VexStatementMutation) SetField(name string, value ent.Value) error {
+	switch name {
+	case vexstatement.FieldVexID:
+		v, ok := value.(string)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.SetVexID(v)
+		return nil
+	}
+	return fmt.Errorf("unknown VexStatement field %s", name)
+}
+
+// AddedFields returns all numeric fields that were incremented/decremented during
+// this mutation.
+func (m *VexStatementMutation) AddedFields() []string {
+	return nil
+}
+
+// AddedField returns the numeric value that was incremented/decremented on a field
+// with the given name. The second boolean return value indicates that this field
+// was not set, or was not defined in the schema.
+func (m *VexStatementMutation) AddedField(name string) (ent.Value, bool) {
+	return nil, false
+}
+
+// AddField adds the value to the field with the given name. It returns an error if
+// the field is not defined in the schema, or if the type mismatched the field
+// type.
+func (m *VexStatementMutation) AddField(name string, value ent.Value) error {
+	switch name {
+	}
+	return fmt.Errorf("unknown VexStatement numeric field %s", name)
+}
+
+// ClearedFields returns all nullable fields that were cleared during this
+// mutation.
+func (m *VexStatementMutation) ClearedFields() []string {
+	return nil
+}
+
+// FieldCleared returns a boolean indicating if a field with the given name was
+// cleared in this mutation.
+func (m *VexStatementMutation) FieldCleared(name string) bool {
+	_, ok := m.clearedFields[name]
+	return ok
+}
+
+// ClearField clears the value of the field with the given name. It returns an
+// error if the field is not defined in the schema.
+func (m *VexStatementMutation) ClearField(name string) error {
+	return fmt.Errorf("unknown VexStatement nullable field %s", name)
+}
+
+// ResetField resets all changes in the mutation for the field with the given name.
+// It returns an error if the field is not defined in the schema.
+func (m *VexStatementMutation) ResetField(name string) error {
+	switch name {
+	case vexstatement.FieldVexID:
+		m.ResetVexID()
+		return nil
+	}
+	return fmt.Errorf("unknown VexStatement field %s", name)
+}
+
+// AddedEdges returns all edge names that were set/added in this mutation.
+func (m *VexStatementMutation) AddedEdges() []string {
+	edges := make([]string, 0, 1)
+	if m.vex_document != nil {
+		edges = append(edges, vexstatement.EdgeVexDocument)
+	}
+	return edges
+}
+
+// AddedIDs returns all IDs (to other nodes) that were added for the given edge
+// name in this mutation.
+func (m *VexStatementMutation) AddedIDs(name string) []ent.Value {
+	switch name {
+	case vexstatement.EdgeVexDocument:
+		if id := m.vex_document; id != nil {
+			return []ent.Value{*id}
+		}
+	}
+	return nil
+}
+
+// RemovedEdges returns all edge names that were removed in this mutation.
+func (m *VexStatementMutation) RemovedEdges() []string {
+	edges := make([]string, 0, 1)
+	return edges
+}
+
+// RemovedIDs returns all IDs (to other nodes) that were removed for the edge with
+// the given name in this mutation.
+func (m *VexStatementMutation) RemovedIDs(name string) []ent.Value {
+	return nil
+}
+
+// ClearedEdges returns all edge names that were cleared in this mutation.
+func (m *VexStatementMutation) ClearedEdges() []string {
+	edges := make([]string, 0, 1)
+	if m.clearedvex_document {
+		edges = append(edges, vexstatement.EdgeVexDocument)
+	}
+	return edges
+}
+
+// EdgeCleared returns a boolean which indicates if the edge with the given name
+// was cleared in this mutation.
+func (m *VexStatementMutation) EdgeCleared(name string) bool {
+	switch name {
+	case vexstatement.EdgeVexDocument:
+		return m.clearedvex_document
+	}
+	return false
+}
+
+// ClearEdge clears the value of the edge with the given name. It returns an error
+// if that edge is not defined in the schema.
+func (m *VexStatementMutation) ClearEdge(name string) error {
+	switch name {
+	case vexstatement.EdgeVexDocument:
+		m.ClearVexDocument()
+		return nil
+	}
+	return fmt.Errorf("unknown VexStatement unique edge %s", name)
+}
+
+// ResetEdge resets all changes to the edge with the given name in this mutation.
+// It returns an error if the edge is not defined in the schema.
+func (m *VexStatementMutation) ResetEdge(name string) error {
+	switch name {
+	case vexstatement.EdgeVexDocument:
+		m.ResetVexDocument()
+		return nil
+	}
+	return fmt.Errorf("unknown VexStatement edge %s", name)
 }

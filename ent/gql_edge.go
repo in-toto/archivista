@@ -140,6 +140,14 @@ func (s *Statement) AttestationCollections(ctx context.Context) (*AttestationCol
 	return result, MaskNotFound(err)
 }
 
+func (s *Statement) VexDocuments(ctx context.Context) (*VexDocument, error) {
+	result, err := s.Edges.VexDocumentsOrErr()
+	if IsNotLoaded(err) {
+		result, err = s.QueryVexDocuments().Only(ctx)
+	}
+	return result, MaskNotFound(err)
+}
+
 func (s *Statement) Dsse(ctx context.Context) (result []*Dsse, err error) {
 	if fc := graphql.GetFieldContext(ctx); fc != nil && fc.Field.Alias != "" {
 		result, err = s.NamedDsse(graphql.GetFieldContext(ctx).Field.Alias)
@@ -186,4 +194,28 @@ func (t *Timestamp) Signature(ctx context.Context) (*Signature, error) {
 		result, err = t.QuerySignature().Only(ctx)
 	}
 	return result, MaskNotFound(err)
+}
+
+func (vd *VexDocument) VexStatements(ctx context.Context) (*VexStatement, error) {
+	result, err := vd.Edges.VexStatementsOrErr()
+	if IsNotLoaded(err) {
+		result, err = vd.QueryVexStatements().Only(ctx)
+	}
+	return result, MaskNotFound(err)
+}
+
+func (vd *VexDocument) Statement(ctx context.Context) (*Statement, error) {
+	result, err := vd.Edges.StatementOrErr()
+	if IsNotLoaded(err) {
+		result, err = vd.QueryStatement().Only(ctx)
+	}
+	return result, err
+}
+
+func (vs *VexStatement) VexDocument(ctx context.Context) (*VexDocument, error) {
+	result, err := vs.Edges.VexDocumentOrErr()
+	if IsNotLoaded(err) {
+		result, err = vs.QueryVexDocument().Only(ctx)
+	}
+	return result, err
 }

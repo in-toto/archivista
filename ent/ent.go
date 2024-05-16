@@ -22,6 +22,8 @@ import (
 	"github.com/in-toto/archivista/ent/subject"
 	"github.com/in-toto/archivista/ent/subjectdigest"
 	"github.com/in-toto/archivista/ent/timestamp"
+	"github.com/in-toto/archivista/ent/vexdocument"
+	"github.com/in-toto/archivista/ent/vexstatement"
 )
 
 // ent aliases to avoid import conflicts in user's code.
@@ -92,6 +94,8 @@ func checkColumn(table, column string) error {
 			subject.Table:               subject.ValidColumn,
 			subjectdigest.Table:         subjectdigest.ValidColumn,
 			timestamp.Table:             timestamp.ValidColumn,
+			vexdocument.Table:           vexdocument.ValidColumn,
+			vexstatement.Table:          vexstatement.ValidColumn,
 		})
 	})
 	return columnCheck(table, column)

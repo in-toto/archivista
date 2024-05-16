@@ -260,6 +260,60 @@ var (
 			},
 		},
 	}
+	// VexDocumentsColumns holds the columns for the "vex_documents" table.
+	VexDocumentsColumns = []*schema.Column{
+		{Name: "id", Type: field.TypeInt, Increment: true},
+		{Name: "vex_id", Type: field.TypeString},
+		{Name: "statement_vex_documents", Type: field.TypeInt, Unique: true},
+	}
+	// VexDocumentsTable holds the schema information for the "vex_documents" table.
+	VexDocumentsTable = &schema.Table{
+		Name:       "vex_documents",
+		Columns:    VexDocumentsColumns,
+		PrimaryKey: []*schema.Column{VexDocumentsColumns[0]},
+		ForeignKeys: []*schema.ForeignKey{
+			{
+				Symbol:     "vex_documents_statements_vex_documents",
+				Columns:    []*schema.Column{VexDocumentsColumns[2]},
+				RefColumns: []*schema.Column{StatementsColumns[0]},
+				OnDelete:   schema.NoAction,
+			},
+		},
+		Indexes: []*schema.Index{
+			{
+				Name:    "vexdocument_vex_id",
+				Unique:  false,
+				Columns: []*schema.Column{VexDocumentsColumns[1]},
+			},
+		},
+	}
+	// VexStatementsColumns holds the columns for the "vex_statements" table.
+	VexStatementsColumns = []*schema.Column{
+		{Name: "id", Type: field.TypeInt, Increment: true},
+		{Name: "vex_id", Type: field.TypeString},
+		{Name: "vex_document_vex_statements", Type: field.TypeInt, Unique: true},
+	}
+	// VexStatementsTable holds the schema information for the "vex_statements" table.
+	VexStatementsTable = &schema.Table{
+		Name:       "vex_statements",
+		Columns:    VexStatementsColumns,
+		PrimaryKey: []*schema.Column{VexStatementsColumns[0]},
+		ForeignKeys: []*schema.ForeignKey{
+			{
+				Symbol:     "vex_statements_vex_documents_vex_statements",
+				Columns:    []*schema.Column{VexStatementsColumns[2]},
+				RefColumns: []*schema.Column{VexDocumentsColumns[0]},
+				OnDelete:   schema.NoAction,
+			},
+		},
+		Indexes: []*schema.Index{
+			{
+				Name:    "vexstatement_vex_id",
+				Unique:  false,
+				Columns: []*schema.Column{VexStatementsColumns[1]},
+			},
+		},
+	}
 	// Tables holds all the tables in the schema.
 	Tables = []*schema.Table{
 		AttestationsTable,
@@ -272,6 +326,8 @@ var (
 		SubjectsTable,
 		SubjectDigestsTable,
 		TimestampsTable,
+		VexDocumentsTable,
+		VexStatementsTable,
 	}
 )
 
@@ -285,4 +341,6 @@ func init() {
 	SubjectsTable.ForeignKeys[0].RefTable = StatementsTable
 	SubjectDigestsTable.ForeignKeys[0].RefTable = SubjectsTable
 	TimestampsTable.ForeignKeys[0].RefTable = SignaturesTable
+	VexDocumentsTable.ForeignKeys[0].RefTable = StatementsTable
+	VexStatementsTable.ForeignKeys[0].RefTable = VexDocumentsTable
 }

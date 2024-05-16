@@ -192,6 +192,29 @@ func HasAttestationCollectionsWith(preds ...predicate.AttestationCollection) pre
 	})
 }
 
+// HasVexDocuments applies the HasEdge predicate on the "vex_documents" edge.
+func HasVexDocuments() predicate.Statement {
+	return predicate.Statement(func(s *sql.Selector) {
+		step := sqlgraph.NewStep(
+			sqlgraph.From(Table, FieldID),
+			sqlgraph.Edge(sqlgraph.O2O, false, VexDocumentsTable, VexDocumentsColumn),
+		)
+		sqlgraph.HasNeighbors(s, step)
+	})
+}
+
+// HasVexDocumentsWith applies the HasEdge predicate on the "vex_documents" edge with a given conditions (other predicates).
+func HasVexDocumentsWith(preds ...predicate.VexDocument) predicate.Statement {
+	return predicate.Statement(func(s *sql.Selector) {
+		step := newVexDocumentsStep()
+		sqlgraph.HasNeighborsWith(s, step, func(s *sql.Selector) {
+			for _, p := range preds {
+				p(s)
+			}
+		})
+	})
+}
+
 // HasDsse applies the HasEdge predicate on the "dsse" edge.
 func HasDsse() predicate.Statement {
 	return predicate.Statement(func(s *sql.Selector) {

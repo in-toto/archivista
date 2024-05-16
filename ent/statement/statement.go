@@ -20,6 +20,8 @@ const (
 	EdgePolicy = "policy"
 	// EdgeAttestationCollections holds the string denoting the attestation_collections edge name in mutations.
 	EdgeAttestationCollections = "attestation_collections"
+	// EdgeVexDocuments holds the string denoting the vex_documents edge name in mutations.
+	EdgeVexDocuments = "vex_documents"
 	// EdgeDsse holds the string denoting the dsse edge name in mutations.
 	EdgeDsse = "dsse"
 	// Table holds the table name of the statement in the database.
@@ -45,6 +47,13 @@ const (
 	AttestationCollectionsInverseTable = "attestation_collections"
 	// AttestationCollectionsColumn is the table column denoting the attestation_collections relation/edge.
 	AttestationCollectionsColumn = "statement_attestation_collections"
+	// VexDocumentsTable is the table that holds the vex_documents relation/edge.
+	VexDocumentsTable = "vex_documents"
+	// VexDocumentsInverseTable is the table name for the VexDocument entity.
+	// It exists in this package in order to avoid circular dependency with the "vexdocument" package.
+	VexDocumentsInverseTable = "vex_documents"
+	// VexDocumentsColumn is the table column denoting the vex_documents relation/edge.
+	VexDocumentsColumn = "statement_vex_documents"
 	// DsseTable is the table that holds the dsse relation/edge.
 	DsseTable = "dsses"
 	// DsseInverseTable is the table name for the Dsse entity.
@@ -116,6 +125,13 @@ func ByAttestationCollectionsField(field string, opts ...sql.OrderTermOption) Or
 	}
 }
 
+// ByVexDocumentsField orders the results by vex_documents field.
+func ByVexDocumentsField(field string, opts ...sql.OrderTermOption) OrderOption {
+	return func(s *sql.Selector) {
+		sqlgraph.OrderByNeighborTerms(s, newVexDocumentsStep(), sql.OrderByField(field, opts...))
+	}
+}
+
 // ByDsseCount orders the results by dsse count.
 func ByDsseCount(opts ...sql.OrderTermOption) OrderOption {
 	return func(s *sql.Selector) {
@@ -148,6 +164,13 @@ func newAttestationCollectionsStep() *sqlgraph.Step {
 		sqlgraph.From(Table, FieldID),
 		sqlgraph.To(AttestationCollectionsInverseTable, FieldID),
 		sqlgraph.Edge(sqlgraph.O2O, false, AttestationCollectionsTable, AttestationCollectionsColumn),
+	)
+}
+func newVexDocumentsStep() *sqlgraph.Step {
+	return sqlgraph.NewStep(
+		sqlgraph.From(Table, FieldID),
+		sqlgraph.To(VexDocumentsInverseTable, FieldID),
+		sqlgraph.Edge(sqlgraph.O2O, false, VexDocumentsTable, VexDocumentsColumn),
 	)
 }
 func newDsseStep() *sqlgraph.Step {
