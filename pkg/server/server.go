@@ -35,9 +35,9 @@ import (
 	"github.com/in-toto/archivista"
 	_ "github.com/in-toto/archivista/docs"
 	"github.com/in-toto/archivista/ent"
-	"github.com/in-toto/archivista/internal/artifactstore"
-	"github.com/in-toto/archivista/internal/config"
 	"github.com/in-toto/archivista/pkg/api"
+	"github.com/in-toto/archivista/pkg/artifactstore"
+	"github.com/in-toto/archivista/pkg/config"
 	"github.com/sirupsen/logrus"
 	httpSwagger "github.com/swaggo/http-swagger/v2"
 )
