@@ -19,7 +19,7 @@ import (
 	"encoding/json"
 
 	"github.com/in-toto/archivista/ent"
-	"github.com/in-toto/archivista/internal/metadatastorage"
+	"github.com/in-toto/archivista/pkg/metadatastorage"
 	"github.com/in-toto/go-witness/attestation"
 )
 
