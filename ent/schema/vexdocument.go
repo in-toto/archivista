@@ -15,39 +15,32 @@
 package schema
 
 import (
-	"entgo.io/contrib/entgql"
 	"entgo.io/ent"
 	"entgo.io/ent/schema/edge"
 	"entgo.io/ent/schema/field"
 	"entgo.io/ent/schema/index"
 )
 
-// Statement represents an in-toto statement from an archived dsse envelope
-type Statement struct {
+// VexDocument represents a VEX Document
+type VexDocument struct {
 	ent.Schema
 }
 
-// Fields of the Statement.
-func (Statement) Fields() []ent.Field {
+func (VexDocument) Fields() []ent.Field {
 	return []ent.Field{
-		field.String("predicate").NotEmpty(),
+		field.String("vex_id").NotEmpty(),
 	}
 }
 
-// Edges of the Statement.
-func (Statement) Edges() []ent.Edge {
+func (VexDocument) Edges() []ent.Edge {
 	return []ent.Edge{
-		edge.To("subjects", Subject.Type).Annotations(entgql.RelayConnection()),
-		edge.To("policy", AttestationPolicy.Type).Unique(),
-		edge.To("attestation_collections", AttestationCollection.Type).Unique(),
-		edge.To("vex_documents", VexDocument.Type).Unique(),
-
-		edge.From("dsse", Dsse.Type).Ref("statement"),
+		edge.To("vex_statements", VexStatement.Type).Unique(),
+		edge.From("statement", Statement.Type).Ref("vex_documents").Unique().Required(),
 	}
 }
 
-func (Statement) Indexes() []ent.Index {
+func (VexDocument) Indexes() []ent.Index {
 	return []ent.Index{
-		index.Fields("predicate"),
+		index.Fields("vex_id"),
 	}
 }

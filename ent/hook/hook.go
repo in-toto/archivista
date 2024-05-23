@@ -129,6 +129,30 @@ func (f TimestampFunc) Mutate(ctx context.Context, m ent.Mutation) (ent.Value, e
 	return nil, fmt.Errorf("unexpected mutation type %T. expect *ent.TimestampMutation", m)
 }
 
+// The VexDocumentFunc type is an adapter to allow the use of ordinary
+// function as VexDocument mutator.
+type VexDocumentFunc func(context.Context, *ent.VexDocumentMutation) (ent.Value, error)
+
+// Mutate calls f(ctx, m).
+func (f VexDocumentFunc) Mutate(ctx context.Context, m ent.Mutation) (ent.Value, error) {
+	if mv, ok := m.(*ent.VexDocumentMutation); ok {
+		return f(ctx, mv)
+	}
+	return nil, fmt.Errorf("unexpected mutation type %T. expect *ent.VexDocumentMutation", m)
+}
+
+// The VexStatementFunc type is an adapter to allow the use of ordinary
+// function as VexStatement mutator.
+type VexStatementFunc func(context.Context, *ent.VexStatementMutation) (ent.Value, error)
+
+// Mutate calls f(ctx, m).
+func (f VexStatementFunc) Mutate(ctx context.Context, m ent.Mutation) (ent.Value, error) {
+	if mv, ok := m.(*ent.VexStatementMutation); ok {
+		return f(ctx, mv)
+	}
+	return nil, fmt.Errorf("unexpected mutation type %T. expect *ent.VexStatementMutation", m)
+}
+
 // Condition is a hook condition function.
 type Condition func(context.Context, ent.Mutation) bool
 

@@ -13,6 +13,8 @@ import (
 	"github.com/in-toto/archivista/ent/statement"
 	"github.com/in-toto/archivista/ent/subject"
 	"github.com/in-toto/archivista/ent/subjectdigest"
+	"github.com/in-toto/archivista/ent/vexdocument"
+	"github.com/in-toto/archivista/ent/vexstatement"
 )
 
 // The init function reads all schema descriptors with runtime code
@@ -89,4 +91,20 @@ func init() {
 	subjectdigestDescValue := subjectdigestFields[1].Descriptor()
 	// subjectdigest.ValueValidator is a validator for the "value" field. It is called by the builders before save.
 	subjectdigest.ValueValidator = subjectdigestDescValue.Validators[0].(func(string) error)
+	vexdocumentFields := schema.VexDocument{}.Fields()
+	_ = vexdocumentFields
+	// vexdocumentDescVexID is the schema descriptor for vex_id field.
+	vexdocumentDescVexID := vexdocumentFields[0].Descriptor()
+	// vexdocument.VexIDValidator is a validator for the "vex_id" field. It is called by the builders before save.
+	vexdocument.VexIDValidator = vexdocumentDescVexID.Validators[0].(func(string) error)
+	vexstatementFields := schema.VexStatement{}.Fields()
+	_ = vexstatementFields
+	// vexstatementDescVexID is the schema descriptor for vex_id field.
+	vexstatementDescVexID := vexstatementFields[0].Descriptor()
+	// vexstatement.VexIDValidator is a validator for the "vex_id" field. It is called by the builders before save.
+	vexstatement.VexIDValidator = vexstatementDescVexID.Validators[0].(func(string) error)
+	// vexstatementDescVulnID is the schema descriptor for vuln_id field.
+	vexstatementDescVulnID := vexstatementFields[1].Descriptor()
+	// vexstatement.VulnIDValidator is a validator for the "vuln_id" field. It is called by the builders before save.
+	vexstatement.VulnIDValidator = vexstatementDescVulnID.Validators[0].(func(string) error)
 }

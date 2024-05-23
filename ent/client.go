@@ -25,6 +25,8 @@ import (
 	"github.com/in-toto/archivista/ent/subject"
 	"github.com/in-toto/archivista/ent/subjectdigest"
 	"github.com/in-toto/archivista/ent/timestamp"
+	"github.com/in-toto/archivista/ent/vexdocument"
+	"github.com/in-toto/archivista/ent/vexstatement"
 )
 
 // Client is the client that holds all ent builders.
@@ -52,6 +54,10 @@ type Client struct {
 	SubjectDigest *SubjectDigestClient
 	// Timestamp is the client for interacting with the Timestamp builders.
 	Timestamp *TimestampClient
+	// VexDocument is the client for interacting with the VexDocument builders.
+	VexDocument *VexDocumentClient
+	// VexStatement is the client for interacting with the VexStatement builders.
+	VexStatement *VexStatementClient
 	// additional fields for node api
 	tables tables
 }
@@ -75,6 +81,8 @@ func (c *Client) init() {
 	c.Subject = NewSubjectClient(c.config)
 	c.SubjectDigest = NewSubjectDigestClient(c.config)
 	c.Timestamp = NewTimestampClient(c.config)
+	c.VexDocument = NewVexDocumentClient(c.config)
+	c.VexStatement = NewVexStatementClient(c.config)
 }
 
 type (
@@ -177,6 +185,8 @@ func (c *Client) Tx(ctx context.Context) (*Tx, error) {
 		Subject:               NewSubjectClient(cfg),
 		SubjectDigest:         NewSubjectDigestClient(cfg),
 		Timestamp:             NewTimestampClient(cfg),
+		VexDocument:           NewVexDocumentClient(cfg),
+		VexStatement:          NewVexStatementClient(cfg),
 	}, nil
 }
 
@@ -206,6 +216,8 @@ func (c *Client) BeginTx(ctx context.Context, opts *sql.TxOptions) (*Tx, error) 
 		Subject:               NewSubjectClient(cfg),
 		SubjectDigest:         NewSubjectDigestClient(cfg),
 		Timestamp:             NewTimestampClient(cfg),
+		VexDocument:           NewVexDocumentClient(cfg),
+		VexStatement:          NewVexStatementClient(cfg),
 	}, nil
 }
 
@@ -237,7 +249,7 @@ func (c *Client) Use(hooks ...Hook) {
 	for _, n := range []interface{ Use(...Hook) }{
 		c.Attestation, c.AttestationCollection, c.AttestationPolicy, c.Dsse,
 		c.PayloadDigest, c.Signature, c.Statement, c.Subject, c.SubjectDigest,
-		c.Timestamp,
+		c.Timestamp, c.VexDocument, c.VexStatement,
 	} {
 		n.Use(hooks...)
 	}
@@ -249,7 +261,7 @@ func (c *Client) Intercept(interceptors ...Interceptor) {
 	for _, n := range []interface{ Intercept(...Interceptor) }{
 		c.Attestation, c.AttestationCollection, c.AttestationPolicy, c.Dsse,
 		c.PayloadDigest, c.Signature, c.Statement, c.Subject, c.SubjectDigest,
-		c.Timestamp,
+		c.Timestamp, c.VexDocument, c.VexStatement,
 	} {
 		n.Intercept(interceptors...)
 	}
@@ -278,6 +290,10 @@ func (c *Client) Mutate(ctx context.Context, m Mutation) (Value, error) {
 		return c.SubjectDigest.mutate(ctx, m)
 	case *TimestampMutation:
 		return c.Timestamp.mutate(ctx, m)
+	case *VexDocumentMutation:
+		return c.VexDocument.mutate(ctx, m)
+	case *VexStatementMutation:
+		return c.VexStatement.mutate(ctx, m)
 	default:
 		return nil, fmt.Errorf("ent: unknown mutation type %T", m)
 	}
@@ -1397,6 +1413,22 @@ func (c *StatementClient) QueryAttestationCollections(s *Statement) *Attestation
 	return query
 }
 
+// QueryVexDocuments queries the vex_documents edge of a Statement.
+func (c *StatementClient) QueryVexDocuments(s *Statement) *VexDocumentQuery {
+	query := (&VexDocumentClient{config: c.config}).Query()
+	query.path = func(context.Context) (fromV *sql.Selector, _ error) {
+		id := s.ID
+		step := sqlgraph.NewStep(
+			sqlgraph.From(statement.Table, statement.FieldID, id),
+			sqlgraph.To(vexdocument.Table, vexdocument.FieldID),
+			sqlgraph.Edge(sqlgraph.O2O, false, statement.VexDocumentsTable, statement.VexDocumentsColumn),
+		)
+		fromV = sqlgraph.Neighbors(s.driver.Dialect(), step)
+		return fromV, nil
+	}
+	return query
+}
+
 // QueryDsse queries the dsse edge of a Statement.
 func (c *StatementClient) QueryDsse(s *Statement) *DsseQuery {
 	query := (&DsseClient{config: c.config}).Query()
@@ -1901,14 +1933,330 @@ func (c *TimestampClient) mutate(ctx context.Context, m *TimestampMutation) (Val
 	}
 }
 
+// VexDocumentClient is a client for the VexDocument schema.
+type VexDocumentClient struct {
+	config
+}
+
+// NewVexDocumentClient returns a client for the VexDocument from the given config.
+func NewVexDocumentClient(c config) *VexDocumentClient {
+	return &VexDocumentClient{config: c}
+}
+
+// Use adds a list of mutation hooks to the hooks stack.
+// A call to `Use(f, g, h)` equals to `vexdocument.Hooks(f(g(h())))`.
+func (c *VexDocumentClient) Use(hooks ...Hook) {
+	c.hooks.VexDocument = append(c.hooks.VexDocument, hooks...)
+}
+
+// Intercept adds a list of query interceptors to the interceptors stack.
+// A call to `Intercept(f, g, h)` equals to `vexdocument.Intercept(f(g(h())))`.
+func (c *VexDocumentClient) Intercept(interceptors ...Interceptor) {
+	c.inters.VexDocument = append(c.inters.VexDocument, interceptors...)
+}
+
+// Create returns a builder for creating a VexDocument entity.
+func (c *VexDocumentClient) Create() *VexDocumentCreate {
+	mutation := newVexDocumentMutation(c.config, OpCreate)
+	return &VexDocumentCreate{config: c.config, hooks: c.Hooks(), mutation: mutation}
+}
+
+// CreateBulk returns a builder for creating a bulk of VexDocument entities.
+func (c *VexDocumentClient) CreateBulk(builders ...*VexDocumentCreate) *VexDocumentCreateBulk {
+	return &VexDocumentCreateBulk{config: c.config, builders: builders}
+}
+
+// MapCreateBulk creates a bulk creation builder from the given slice. For each item in the slice, the function creates
+// a builder and applies setFunc on it.
+func (c *VexDocumentClient) MapCreateBulk(slice any, setFunc func(*VexDocumentCreate, int)) *VexDocumentCreateBulk {
+	rv := reflect.ValueOf(slice)
+	if rv.Kind() != reflect.Slice {
+		return &VexDocumentCreateBulk{err: fmt.Errorf("calling to VexDocumentClient.MapCreateBulk with wrong type %T, need slice", slice)}
+	}
+	builders := make([]*VexDocumentCreate, rv.Len())
+	for i := 0; i < rv.Len(); i++ {
+		builders[i] = c.Create()
+		setFunc(builders[i], i)
+	}
+	return &VexDocumentCreateBulk{config: c.config, builders: builders}
+}
+
+// Update returns an update builder for VexDocument.
+func (c *VexDocumentClient) Update() *VexDocumentUpdate {
+	mutation := newVexDocumentMutation(c.config, OpUpdate)
+	return &VexDocumentUpdate{config: c.config, hooks: c.Hooks(), mutation: mutation}
+}
+
+// UpdateOne returns an update builder for the given entity.
+func (c *VexDocumentClient) UpdateOne(vd *VexDocument) *VexDocumentUpdateOne {
+	mutation := newVexDocumentMutation(c.config, OpUpdateOne, withVexDocument(vd))
+	return &VexDocumentUpdateOne{config: c.config, hooks: c.Hooks(), mutation: mutation}
+}
+
+// UpdateOneID returns an update builder for the given id.
+func (c *VexDocumentClient) UpdateOneID(id int) *VexDocumentUpdateOne {
+	mutation := newVexDocumentMutation(c.config, OpUpdateOne, withVexDocumentID(id))
+	return &VexDocumentUpdateOne{config: c.config, hooks: c.Hooks(), mutation: mutation}
+}
+
+// Delete returns a delete builder for VexDocument.
+func (c *VexDocumentClient) Delete() *VexDocumentDelete {
+	mutation := newVexDocumentMutation(c.config, OpDelete)
+	return &VexDocumentDelete{config: c.config, hooks: c.Hooks(), mutation: mutation}
+}
+
+// DeleteOne returns a builder for deleting the given entity.
+func (c *VexDocumentClient) DeleteOne(vd *VexDocument) *VexDocumentDeleteOne {
+	return c.DeleteOneID(vd.ID)
+}
+
+// DeleteOneID returns a builder for deleting the given entity by its id.
+func (c *VexDocumentClient) DeleteOneID(id int) *VexDocumentDeleteOne {
+	builder := c.Delete().Where(vexdocument.ID(id))
+	builder.mutation.id = &id
+	builder.mutation.op = OpDeleteOne
+	return &VexDocumentDeleteOne{builder}
+}
+
+// Query returns a query builder for VexDocument.
+func (c *VexDocumentClient) Query() *VexDocumentQuery {
+	return &VexDocumentQuery{
+		config: c.config,
+		ctx:    &QueryContext{Type: TypeVexDocument},
+		inters: c.Interceptors(),
+	}
+}
+
+// Get returns a VexDocument entity by its id.
+func (c *VexDocumentClient) Get(ctx context.Context, id int) (*VexDocument, error) {
+	return c.Query().Where(vexdocument.ID(id)).Only(ctx)
+}
+
+// GetX is like Get, but panics if an error occurs.
+func (c *VexDocumentClient) GetX(ctx context.Context, id int) *VexDocument {
+	obj, err := c.Get(ctx, id)
+	if err != nil {
+		panic(err)
+	}
+	return obj
+}
+
+// QueryVexStatements queries the vex_statements edge of a VexDocument.
+func (c *VexDocumentClient) QueryVexStatements(vd *VexDocument) *VexStatementQuery {
+	query := (&VexStatementClient{config: c.config}).Query()
+	query.path = func(context.Context) (fromV *sql.Selector, _ error) {
+		id := vd.ID
+		step := sqlgraph.NewStep(
+			sqlgraph.From(vexdocument.Table, vexdocument.FieldID, id),
+			sqlgraph.To(vexstatement.Table, vexstatement.FieldID),
+			sqlgraph.Edge(sqlgraph.O2O, false, vexdocument.VexStatementsTable, vexdocument.VexStatementsColumn),
+		)
+		fromV = sqlgraph.Neighbors(vd.driver.Dialect(), step)
+		return fromV, nil
+	}
+	return query
+}
+
+// QueryStatement queries the statement edge of a VexDocument.
+func (c *VexDocumentClient) QueryStatement(vd *VexDocument) *StatementQuery {
+	query := (&StatementClient{config: c.config}).Query()
+	query.path = func(context.Context) (fromV *sql.Selector, _ error) {
+		id := vd.ID
+		step := sqlgraph.NewStep(
+			sqlgraph.From(vexdocument.Table, vexdocument.FieldID, id),
+			sqlgraph.To(statement.Table, statement.FieldID),
+			sqlgraph.Edge(sqlgraph.O2O, true, vexdocument.StatementTable, vexdocument.StatementColumn),
+		)
+		fromV = sqlgraph.Neighbors(vd.driver.Dialect(), step)
+		return fromV, nil
+	}
+	return query
+}
+
+// Hooks returns the client hooks.
+func (c *VexDocumentClient) Hooks() []Hook {
+	return c.hooks.VexDocument
+}
+
+// Interceptors returns the client interceptors.
+func (c *VexDocumentClient) Interceptors() []Interceptor {
+	return c.inters.VexDocument
+}
+
+func (c *VexDocumentClient) mutate(ctx context.Context, m *VexDocumentMutation) (Value, error) {
+	switch m.Op() {
+	case OpCreate:
+		return (&VexDocumentCreate{config: c.config, hooks: c.Hooks(), mutation: m}).Save(ctx)
+	case OpUpdate:
+		return (&VexDocumentUpdate{config: c.config, hooks: c.Hooks(), mutation: m}).Save(ctx)
+	case OpUpdateOne:
+		return (&VexDocumentUpdateOne{config: c.config, hooks: c.Hooks(), mutation: m}).Save(ctx)
+	case OpDelete, OpDeleteOne:
+		return (&VexDocumentDelete{config: c.config, hooks: c.Hooks(), mutation: m}).Exec(ctx)
+	default:
+		return nil, fmt.Errorf("ent: unknown VexDocument mutation op: %q", m.Op())
+	}
+}
+
+// VexStatementClient is a client for the VexStatement schema.
+type VexStatementClient struct {
+	config
+}
+
+// NewVexStatementClient returns a client for the VexStatement from the given config.
+func NewVexStatementClient(c config) *VexStatementClient {
+	return &VexStatementClient{config: c}
+}
+
+// Use adds a list of mutation hooks to the hooks stack.
+// A call to `Use(f, g, h)` equals to `vexstatement.Hooks(f(g(h())))`.
+func (c *VexStatementClient) Use(hooks ...Hook) {
+	c.hooks.VexStatement = append(c.hooks.VexStatement, hooks...)
+}
+
+// Intercept adds a list of query interceptors to the interceptors stack.
+// A call to `Intercept(f, g, h)` equals to `vexstatement.Intercept(f(g(h())))`.
+func (c *VexStatementClient) Intercept(interceptors ...Interceptor) {
+	c.inters.VexStatement = append(c.inters.VexStatement, interceptors...)
+}
+
+// Create returns a builder for creating a VexStatement entity.
+func (c *VexStatementClient) Create() *VexStatementCreate {
+	mutation := newVexStatementMutation(c.config, OpCreate)
+	return &VexStatementCreate{config: c.config, hooks: c.Hooks(), mutation: mutation}
+}
+
+// CreateBulk returns a builder for creating a bulk of VexStatement entities.
+func (c *VexStatementClient) CreateBulk(builders ...*VexStatementCreate) *VexStatementCreateBulk {
+	return &VexStatementCreateBulk{config: c.config, builders: builders}
+}
+
+// MapCreateBulk creates a bulk creation builder from the given slice. For each item in the slice, the function creates
+// a builder and applies setFunc on it.
+func (c *VexStatementClient) MapCreateBulk(slice any, setFunc func(*VexStatementCreate, int)) *VexStatementCreateBulk {
+	rv := reflect.ValueOf(slice)
+	if rv.Kind() != reflect.Slice {
+		return &VexStatementCreateBulk{err: fmt.Errorf("calling to VexStatementClient.MapCreateBulk with wrong type %T, need slice", slice)}
+	}
+	builders := make([]*VexStatementCreate, rv.Len())
+	for i := 0; i < rv.Len(); i++ {
+		builders[i] = c.Create()
+		setFunc(builders[i], i)
+	}
+	return &VexStatementCreateBulk{config: c.config, builders: builders}
+}
+
+// Update returns an update builder for VexStatement.
+func (c *VexStatementClient) Update() *VexStatementUpdate {
+	mutation := newVexStatementMutation(c.config, OpUpdate)
+	return &VexStatementUpdate{config: c.config, hooks: c.Hooks(), mutation: mutation}
+}
+
+// UpdateOne returns an update builder for the given entity.
+func (c *VexStatementClient) UpdateOne(vs *VexStatement) *VexStatementUpdateOne {
+	mutation := newVexStatementMutation(c.config, OpUpdateOne, withVexStatement(vs))
+	return &VexStatementUpdateOne{config: c.config, hooks: c.Hooks(), mutation: mutation}
+}
+
+// UpdateOneID returns an update builder for the given id.
+func (c *VexStatementClient) UpdateOneID(id int) *VexStatementUpdateOne {
+	mutation := newVexStatementMutation(c.config, OpUpdateOne, withVexStatementID(id))
+	return &VexStatementUpdateOne{config: c.config, hooks: c.Hooks(), mutation: mutation}
+}
+
+// Delete returns a delete builder for VexStatement.
+func (c *VexStatementClient) Delete() *VexStatementDelete {
+	mutation := newVexStatementMutation(c.config, OpDelete)
+	return &VexStatementDelete{config: c.config, hooks: c.Hooks(), mutation: mutation}
+}
+
+// DeleteOne returns a builder for deleting the given entity.
+func (c *VexStatementClient) DeleteOne(vs *VexStatement) *VexStatementDeleteOne {
+	return c.DeleteOneID(vs.ID)
+}
+
+// DeleteOneID returns a builder for deleting the given entity by its id.
+func (c *VexStatementClient) DeleteOneID(id int) *VexStatementDeleteOne {
+	builder := c.Delete().Where(vexstatement.ID(id))
+	builder.mutation.id = &id
+	builder.mutation.op = OpDeleteOne
+	return &VexStatementDeleteOne{builder}
+}
+
+// Query returns a query builder for VexStatement.
+func (c *VexStatementClient) Query() *VexStatementQuery {
+	return &VexStatementQuery{
+		config: c.config,
+		ctx:    &QueryContext{Type: TypeVexStatement},
+		inters: c.Interceptors(),
+	}
+}
+
+// Get returns a VexStatement entity by its id.
+func (c *VexStatementClient) Get(ctx context.Context, id int) (*VexStatement, error) {
+	return c.Query().Where(vexstatement.ID(id)).Only(ctx)
+}
+
+// GetX is like Get, but panics if an error occurs.
+func (c *VexStatementClient) GetX(ctx context.Context, id int) *VexStatement {
+	obj, err := c.Get(ctx, id)
+	if err != nil {
+		panic(err)
+	}
+	return obj
+}
+
+// QueryVexDocument queries the vex_document edge of a VexStatement.
+func (c *VexStatementClient) QueryVexDocument(vs *VexStatement) *VexDocumentQuery {
+	query := (&VexDocumentClient{config: c.config}).Query()
+	query.path = func(context.Context) (fromV *sql.Selector, _ error) {
+		id := vs.ID
+		step := sqlgraph.NewStep(
+			sqlgraph.From(vexstatement.Table, vexstatement.FieldID, id),
+			sqlgraph.To(vexdocument.Table, vexdocument.FieldID),
+			sqlgraph.Edge(sqlgraph.O2O, true, vexstatement.VexDocumentTable, vexstatement.VexDocumentColumn),
+		)
+		fromV = sqlgraph.Neighbors(vs.driver.Dialect(), step)
+		return fromV, nil
+	}
+	return query
+}
+
+// Hooks returns the client hooks.
+func (c *VexStatementClient) Hooks() []Hook {
+	return c.hooks.VexStatement
+}
+
+// Interceptors returns the client interceptors.
+func (c *VexStatementClient) Interceptors() []Interceptor {
+	return c.inters.VexStatement
+}
+
+func (c *VexStatementClient) mutate(ctx context.Context, m *VexStatementMutation) (Value, error) {
+	switch m.Op() {
+	case OpCreate:
+		return (&VexStatementCreate{config: c.config, hooks: c.Hooks(), mutation: m}).Save(ctx)
+	case OpUpdate:
+		return (&VexStatementUpdate{config: c.config, hooks: c.Hooks(), mutation: m}).Save(ctx)
+	case OpUpdateOne:
+		return (&VexStatementUpdateOne{config: c.config, hooks: c.Hooks(), mutation: m}).Save(ctx)
+	case OpDelete, OpDeleteOne:
+		return (&VexStatementDelete{config: c.config, hooks: c.Hooks(), mutation: m}).Exec(ctx)
+	default:
+		return nil, fmt.Errorf("ent: unknown VexStatement mutation op: %q", m.Op())
+	}
+}
+
 // hooks and interceptors per client, for fast access.
 type (
 	hooks struct {
 		Attestation, AttestationCollection, AttestationPolicy, Dsse, PayloadDigest,
-		Signature, Statement, Subject, SubjectDigest, Timestamp []ent.Hook
+		Signature, Statement, Subject, SubjectDigest, Timestamp, VexDocument,
+		VexStatement []ent.Hook
 	}
 	inters struct {
 		Attestation, AttestationCollection, AttestationPolicy, Dsse, PayloadDigest,
-		Signature, Statement, Subject, SubjectDigest, Timestamp []ent.Interceptor
+		Signature, Statement, Subject, SubjectDigest, Timestamp, VexDocument,
+		VexStatement []ent.Interceptor
 	}
 )

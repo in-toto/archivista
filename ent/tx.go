@@ -32,6 +32,10 @@ type Tx struct {
 	SubjectDigest *SubjectDigestClient
 	// Timestamp is the client for interacting with the Timestamp builders.
 	Timestamp *TimestampClient
+	// VexDocument is the client for interacting with the VexDocument builders.
+	VexDocument *VexDocumentClient
+	// VexStatement is the client for interacting with the VexStatement builders.
+	VexStatement *VexStatementClient
 
 	// lazily loaded.
 	client     *Client
@@ -173,6 +177,8 @@ func (tx *Tx) init() {
 	tx.Subject = NewSubjectClient(tx.config)
 	tx.SubjectDigest = NewSubjectDigestClient(tx.config)
 	tx.Timestamp = NewTimestampClient(tx.config)
+	tx.VexDocument = NewVexDocumentClient(tx.config)
+	tx.VexStatement = NewVexStatementClient(tx.config)
 }
 
 // txDriver wraps the given dialect.Tx with a nop dialect.Driver implementation.

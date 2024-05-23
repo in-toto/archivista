@@ -16,6 +16,7 @@ import (
 	"github.com/in-toto/archivista/ent/predicate"
 	"github.com/in-toto/archivista/ent/statement"
 	"github.com/in-toto/archivista/ent/subject"
+	"github.com/in-toto/archivista/ent/vexdocument"
 )
 
 // StatementUpdate is the builder for updating Statement entities.
@@ -98,6 +99,25 @@ func (su *StatementUpdate) SetAttestationCollections(a *AttestationCollection) *
 	return su.SetAttestationCollectionsID(a.ID)
 }
 
+// SetVexDocumentsID sets the "vex_documents" edge to the VexDocument entity by ID.
+func (su *StatementUpdate) SetVexDocumentsID(id int) *StatementUpdate {
+	su.mutation.SetVexDocumentsID(id)
+	return su
+}
+
+// SetNillableVexDocumentsID sets the "vex_documents" edge to the VexDocument entity by ID if the given value is not nil.
+func (su *StatementUpdate) SetNillableVexDocumentsID(id *int) *StatementUpdate {
+	if id != nil {
+		su = su.SetVexDocumentsID(*id)
+	}
+	return su
+}
+
+// SetVexDocuments sets the "vex_documents" edge to the VexDocument entity.
+func (su *StatementUpdate) SetVexDocuments(v *VexDocument) *StatementUpdate {
+	return su.SetVexDocumentsID(v.ID)
+}
+
 // AddDsseIDs adds the "dsse" edge to the Dsse entity by IDs.
 func (su *StatementUpdate) AddDsseIDs(ids ...int) *StatementUpdate {
 	su.mutation.AddDsseIDs(ids...)
@@ -148,6 +168,12 @@ func (su *StatementUpdate) ClearPolicy() *StatementUpdate {
 // ClearAttestationCollections clears the "attestation_collections" edge to the AttestationCollection entity.
 func (su *StatementUpdate) ClearAttestationCollections() *StatementUpdate {
 	su.mutation.ClearAttestationCollections()
+	return su
+}
+
+// ClearVexDocuments clears the "vex_documents" edge to the VexDocument entity.
+func (su *StatementUpdate) ClearVexDocuments() *StatementUpdate {
+	su.mutation.ClearVexDocuments()
 	return su
 }
 
@@ -327,6 +353,35 @@ func (su *StatementUpdate) sqlSave(ctx context.Context) (n int, err error) {
 		}
 		_spec.Edges.Add = append(_spec.Edges.Add, edge)
 	}
+	if su.mutation.VexDocumentsCleared() {
+		edge := &sqlgraph.EdgeSpec{
+			Rel:     sqlgraph.O2O,
+			Inverse: false,
+			Table:   statement.VexDocumentsTable,
+			Columns: []string{statement.VexDocumentsColumn},
+			Bidi:    false,
+			Target: &sqlgraph.EdgeTarget{
+				IDSpec: sqlgraph.NewFieldSpec(vexdocument.FieldID, field.TypeInt),
+			},
+		}
+		_spec.Edges.Clear = append(_spec.Edges.Clear, edge)
+	}
+	if nodes := su.mutation.VexDocumentsIDs(); len(nodes) > 0 {
+		edge := &sqlgraph.EdgeSpec{
+			Rel:     sqlgraph.O2O,
+			Inverse: false,
+			Table:   statement.VexDocumentsTable,
+			Columns: []string{statement.VexDocumentsColumn},
+			Bidi:    false,
+			Target: &sqlgraph.EdgeTarget{
+				IDSpec: sqlgraph.NewFieldSpec(vexdocument.FieldID, field.TypeInt),
+			},
+		}
+		for _, k := range nodes {
+			edge.Target.Nodes = append(edge.Target.Nodes, k)
+		}
+		_spec.Edges.Add = append(_spec.Edges.Add, edge)
+	}
 	if su.mutation.DsseCleared() {
 		edge := &sqlgraph.EdgeSpec{
 			Rel:     sqlgraph.O2M,
@@ -459,6 +514,25 @@ func (suo *StatementUpdateOne) SetAttestationCollections(a *AttestationCollectio
 	return suo.SetAttestationCollectionsID(a.ID)
 }
 
+// SetVexDocumentsID sets the "vex_documents" edge to the VexDocument entity by ID.
+func (suo *StatementUpdateOne) SetVexDocumentsID(id int) *StatementUpdateOne {
+	suo.mutation.SetVexDocumentsID(id)
+	return suo
+}
+
+// SetNillableVexDocumentsID sets the "vex_documents" edge to the VexDocument entity by ID if the given value is not nil.
+func (suo *StatementUpdateOne) SetNillableVexDocumentsID(id *int) *StatementUpdateOne {
+	if id != nil {
+		suo = suo.SetVexDocumentsID(*id)
+	}
+	return suo
+}
+
+// SetVexDocuments sets the "vex_documents" edge to the VexDocument entity.
+func (suo *StatementUpdateOne) SetVexDocuments(v *VexDocument) *StatementUpdateOne {
+	return suo.SetVexDocumentsID(v.ID)
+}
+
 // AddDsseIDs adds the "dsse" edge to the Dsse entity by IDs.
 func (suo *StatementUpdateOne) AddDsseIDs(ids ...int) *StatementUpdateOne {
 	suo.mutation.AddDsseIDs(ids...)
@@ -509,6 +583,12 @@ func (suo *StatementUpdateOne) ClearPolicy() *StatementUpdateOne {
 // ClearAttestationCollections clears the "attestation_collections" edge to the AttestationCollection entity.
 func (suo *StatementUpdateOne) ClearAttestationCollections() *StatementUpdateOne {
 	suo.mutation.ClearAttestationCollections()
+	return suo
+}
+
+// ClearVexDocuments clears the "vex_documents" edge to the VexDocument entity.
+func (suo *StatementUpdateOne) ClearVexDocuments() *StatementUpdateOne {
+	suo.mutation.ClearVexDocuments()
 	return suo
 }
 
@@ -711,6 +791,35 @@ func (suo *StatementUpdateOne) sqlSave(ctx context.Context) (_node *Statement, e
 			Bidi:    false,
 			Target: &sqlgraph.EdgeTarget{
 				IDSpec: sqlgraph.NewFieldSpec(attestationcollection.FieldID, field.TypeInt),
+			},
+		}
+		for _, k := range nodes {
+			edge.Target.Nodes = append(edge.Target.Nodes, k)
+		}
+		_spec.Edges.Add = append(_spec.Edges.Add, edge)
+	}
+	if suo.mutation.VexDocumentsCleared() {
+		edge := &sqlgraph.EdgeSpec{
+			Rel:     sqlgraph.O2O,
+			Inverse: false,
+			Table:   statement.VexDocumentsTable,
+			Columns: []string{statement.VexDocumentsColumn},
+			Bidi:    false,
+			Target: &sqlgraph.EdgeTarget{
+				IDSpec: sqlgraph.NewFieldSpec(vexdocument.FieldID, field.TypeInt),
+			},
+		}
+		_spec.Edges.Clear = append(_spec.Edges.Clear, edge)
+	}
+	if nodes := suo.mutation.VexDocumentsIDs(); len(nodes) > 0 {
+		edge := &sqlgraph.EdgeSpec{
+			Rel:     sqlgraph.O2O,
+			Inverse: false,
+			Table:   statement.VexDocumentsTable,
+			Columns: []string{statement.VexDocumentsColumn},
+			Bidi:    false,
+			Target: &sqlgraph.EdgeTarget{
+				IDSpec: sqlgraph.NewFieldSpec(vexdocument.FieldID, field.TypeInt),
 			},
 		}
 		for _, k := range nodes {
