@@ -10,6 +10,7 @@ import (
 	"entgo.io/ent/dialect/sql"
 	"entgo.io/ent/dialect/sql/sqlgraph"
 	"entgo.io/ent/schema/field"
+	"github.com/google/uuid"
 	"github.com/in-toto/archivista/ent/predicate"
 	"github.com/in-toto/archivista/ent/subject"
 	"github.com/in-toto/archivista/ent/subjectdigest"
@@ -57,13 +58,13 @@ func (sdu *SubjectDigestUpdate) SetNillableValue(s *string) *SubjectDigestUpdate
 }
 
 // SetSubjectID sets the "subject" edge to the Subject entity by ID.
-func (sdu *SubjectDigestUpdate) SetSubjectID(id int) *SubjectDigestUpdate {
+func (sdu *SubjectDigestUpdate) SetSubjectID(id uuid.UUID) *SubjectDigestUpdate {
 	sdu.mutation.SetSubjectID(id)
 	return sdu
 }
 
 // SetNillableSubjectID sets the "subject" edge to the Subject entity by ID if the given value is not nil.
-func (sdu *SubjectDigestUpdate) SetNillableSubjectID(id *int) *SubjectDigestUpdate {
+func (sdu *SubjectDigestUpdate) SetNillableSubjectID(id *uuid.UUID) *SubjectDigestUpdate {
 	if id != nil {
 		sdu = sdu.SetSubjectID(*id)
 	}
@@ -132,7 +133,7 @@ func (sdu *SubjectDigestUpdate) sqlSave(ctx context.Context) (n int, err error) 
 	if err := sdu.check(); err != nil {
 		return n, err
 	}
-	_spec := sqlgraph.NewUpdateSpec(subjectdigest.Table, subjectdigest.Columns, sqlgraph.NewFieldSpec(subjectdigest.FieldID, field.TypeInt))
+	_spec := sqlgraph.NewUpdateSpec(subjectdigest.Table, subjectdigest.Columns, sqlgraph.NewFieldSpec(subjectdigest.FieldID, field.TypeUUID))
 	if ps := sdu.mutation.predicates; len(ps) > 0 {
 		_spec.Predicate = func(selector *sql.Selector) {
 			for i := range ps {
@@ -154,7 +155,7 @@ func (sdu *SubjectDigestUpdate) sqlSave(ctx context.Context) (n int, err error) 
 			Columns: []string{subjectdigest.SubjectColumn},
 			Bidi:    false,
 			Target: &sqlgraph.EdgeTarget{
-				IDSpec: sqlgraph.NewFieldSpec(subject.FieldID, field.TypeInt),
+				IDSpec: sqlgraph.NewFieldSpec(subject.FieldID, field.TypeUUID),
 			},
 		}
 		_spec.Edges.Clear = append(_spec.Edges.Clear, edge)
@@ -167,7 +168,7 @@ func (sdu *SubjectDigestUpdate) sqlSave(ctx context.Context) (n int, err error) 
 			Columns: []string{subjectdigest.SubjectColumn},
 			Bidi:    false,
 			Target: &sqlgraph.EdgeTarget{
-				IDSpec: sqlgraph.NewFieldSpec(subject.FieldID, field.TypeInt),
+				IDSpec: sqlgraph.NewFieldSpec(subject.FieldID, field.TypeUUID),
 			},
 		}
 		for _, k := range nodes {
@@ -224,13 +225,13 @@ func (sduo *SubjectDigestUpdateOne) SetNillableValue(s *string) *SubjectDigestUp
 }
 
 // SetSubjectID sets the "subject" edge to the Subject entity by ID.
-func (sduo *SubjectDigestUpdateOne) SetSubjectID(id int) *SubjectDigestUpdateOne {
+func (sduo *SubjectDigestUpdateOne) SetSubjectID(id uuid.UUID) *SubjectDigestUpdateOne {
 	sduo.mutation.SetSubjectID(id)
 	return sduo
 }
 
 // SetNillableSubjectID sets the "subject" edge to the Subject entity by ID if the given value is not nil.
-func (sduo *SubjectDigestUpdateOne) SetNillableSubjectID(id *int) *SubjectDigestUpdateOne {
+func (sduo *SubjectDigestUpdateOne) SetNillableSubjectID(id *uuid.UUID) *SubjectDigestUpdateOne {
 	if id != nil {
 		sduo = sduo.SetSubjectID(*id)
 	}
@@ -312,7 +313,7 @@ func (sduo *SubjectDigestUpdateOne) sqlSave(ctx context.Context) (_node *Subject
 	if err := sduo.check(); err != nil {
 		return _node, err
 	}
-	_spec := sqlgraph.NewUpdateSpec(subjectdigest.Table, subjectdigest.Columns, sqlgraph.NewFieldSpec(subjectdigest.FieldID, field.TypeInt))
+	_spec := sqlgraph.NewUpdateSpec(subjectdigest.Table, subjectdigest.Columns, sqlgraph.NewFieldSpec(subjectdigest.FieldID, field.TypeUUID))
 	id, ok := sduo.mutation.ID()
 	if !ok {
 		return nil, &ValidationError{Name: "id", err: errors.New(`ent: missing "SubjectDigest.id" for update`)}
@@ -351,7 +352,7 @@ func (sduo *SubjectDigestUpdateOne) sqlSave(ctx context.Context) (_node *Subject
 			Columns: []string{subjectdigest.SubjectColumn},
 			Bidi:    false,
 			Target: &sqlgraph.EdgeTarget{
-				IDSpec: sqlgraph.NewFieldSpec(subject.FieldID, field.TypeInt),
+				IDSpec: sqlgraph.NewFieldSpec(subject.FieldID, field.TypeUUID),
 			},
 		}
 		_spec.Edges.Clear = append(_spec.Edges.Clear, edge)
@@ -364,7 +365,7 @@ func (sduo *SubjectDigestUpdateOne) sqlSave(ctx context.Context) (_node *Subject
 			Columns: []string{subjectdigest.SubjectColumn},
 			Bidi:    false,
 			Target: &sqlgraph.EdgeTarget{
-				IDSpec: sqlgraph.NewFieldSpec(subject.FieldID, field.TypeInt),
+				IDSpec: sqlgraph.NewFieldSpec(subject.FieldID, field.TypeUUID),
 			},
 		}
 		for _, k := range nodes {

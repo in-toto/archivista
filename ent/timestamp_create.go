@@ -10,6 +10,7 @@ import (
 
 	"entgo.io/ent/dialect/sql/sqlgraph"
 	"entgo.io/ent/schema/field"
+	"github.com/google/uuid"
 	"github.com/in-toto/archivista/ent/signature"
 	"github.com/in-toto/archivista/ent/timestamp"
 )
@@ -33,14 +34,28 @@ func (tc *TimestampCreate) SetTimestamp(t time.Time) *TimestampCreate {
 	return tc
 }
 
+// SetID sets the "id" field.
+func (tc *TimestampCreate) SetID(u uuid.UUID) *TimestampCreate {
+	tc.mutation.SetID(u)
+	return tc
+}
+
+// SetNillableID sets the "id" field if the given value is not nil.
+func (tc *TimestampCreate) SetNillableID(u *uuid.UUID) *TimestampCreate {
+	if u != nil {
+		tc.SetID(*u)
+	}
+	return tc
+}
+
 // SetSignatureID sets the "signature" edge to the Signature entity by ID.
-func (tc *TimestampCreate) SetSignatureID(id int) *TimestampCreate {
+func (tc *TimestampCreate) SetSignatureID(id uuid.UUID) *TimestampCreate {
 	tc.mutation.SetSignatureID(id)
 	return tc
 }
 
 // SetNillableSignatureID sets the "signature" edge to the Signature entity by ID if the given value is not nil.
-func (tc *TimestampCreate) SetNillableSignatureID(id *int) *TimestampCreate {
+func (tc *TimestampCreate) SetNillableSignatureID(id *uuid.UUID) *TimestampCreate {
 	if id != nil {
 		tc = tc.SetSignatureID(*id)
 	}
@@ -59,6 +74,7 @@ func (tc *TimestampCreate) Mutation() *TimestampMutation {
 
 // Save creates the Timestamp in the database.
 func (tc *TimestampCreate) Save(ctx context.Context) (*Timestamp, error) {
+	tc.defaults()
 	return withHooks(ctx, tc.sqlSave, tc.mutation, tc.hooks)
 }
 
@@ -84,6 +100,14 @@ func (tc *TimestampCreate) ExecX(ctx context.Context) {
 	}
 }
 
+// defaults sets the default values of the builder before save.
+func (tc *TimestampCreate) defaults() {
+	if _, ok := tc.mutation.ID(); !ok {
+		v := timestamp.DefaultID()
+		tc.mutation.SetID(v)
+	}
+}
+
 // check runs all checks and user-defined validators on the builder.
 func (tc *TimestampCreate) check() error {
 	if _, ok := tc.mutation.GetType(); !ok {
@@ -106,8 +130,13 @@ func (tc *TimestampCreate) sqlSave(ctx context.Context) (*Timestamp, error) {
 		}
 		return nil, err
 	}
-	id := _spec.ID.Value.(int64)
-	_node.ID = int(id)
+	if _spec.ID.Value != nil {
+		if id, ok := _spec.ID.Value.(*uuid.UUID); ok {
+			_node.ID = *id
+		} else if err := _node.ID.Scan(_spec.ID.Value); err != nil {
+			return nil, err
+		}
+	}
 	tc.mutation.id = &_node.ID
 	tc.mutation.done = true
 	return _node, nil
@@ -116,8 +145,12 @@ func (tc *TimestampCreate) sqlSave(ctx context.Context) (*Timestamp, error) {
 func (tc *TimestampCreate) createSpec() (*Timestamp, *sqlgraph.CreateSpec) {
 	var (
 		_node = &Timestamp{config: tc.config}
-		_spec = sqlgraph.NewCreateSpec(timestamp.Table, sqlgraph.NewFieldSpec(timestamp.FieldID, field.TypeInt))
+		_spec = sqlgraph.NewCreateSpec(timestamp.Table, sqlgraph.NewFieldSpec(timestamp.FieldID, field.TypeUUID))
 	)
+	if id, ok := tc.mutation.ID(); ok {
+		_node.ID = id
+		_spec.ID.Value = &id
+	}
 	if value, ok := tc.mutation.GetType(); ok {
 		_spec.SetField(timestamp.FieldType, field.TypeString, value)
 		_node.Type = value
@@ -134,7 +167,7 @@ func (tc *TimestampCreate) createSpec() (*Timestamp, *sqlgraph.CreateSpec) {
 			Columns: []string{timestamp.SignatureColumn},
 			Bidi:    false,
 			Target: &sqlgraph.EdgeTarget{
-				IDSpec: sqlgraph.NewFieldSpec(signature.FieldID, field.TypeInt),
+				IDSpec: sqlgraph.NewFieldSpec(signature.FieldID, field.TypeUUID),
 			},
 		}
 		for _, k := range nodes {
@@ -164,6 +197,7 @@ func (tcb *TimestampCreateBulk) Save(ctx context.Context) ([]*Timestamp, error) 
 	for i := range tcb.builders {
 		func(i int, root context.Context) {
 			builder := tcb.builders[i]
+			builder.defaults()
 			var mut Mutator = MutateFunc(func(ctx context.Context, m Mutation) (Value, error) {
 				mutation, ok := m.(*TimestampMutation)
 				if !ok {
@@ -190,10 +224,6 @@ func (tcb *TimestampCreateBulk) Save(ctx context.Context) ([]*Timestamp, error) 
 					return nil, err
 				}
 				mutation.id = &nodes[i].ID
-				if specs[i].ID.Value != nil {
-					id := specs[i].ID.Value.(int64)
-					nodes[i].ID = int(id)
-				}
 				mutation.done = true
 				return nodes[i], nil
 			})

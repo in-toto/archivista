@@ -10,6 +10,7 @@ import (
 	"entgo.io/ent/dialect/sql"
 	"entgo.io/ent/dialect/sql/sqlgraph"
 	"entgo.io/ent/schema/field"
+	"github.com/google/uuid"
 	"github.com/in-toto/archivista/ent/dsse"
 	"github.com/in-toto/archivista/ent/payloaddigest"
 	"github.com/in-toto/archivista/ent/predicate"
@@ -57,13 +58,13 @@ func (pdu *PayloadDigestUpdate) SetNillableValue(s *string) *PayloadDigestUpdate
 }
 
 // SetDsseID sets the "dsse" edge to the Dsse entity by ID.
-func (pdu *PayloadDigestUpdate) SetDsseID(id int) *PayloadDigestUpdate {
+func (pdu *PayloadDigestUpdate) SetDsseID(id uuid.UUID) *PayloadDigestUpdate {
 	pdu.mutation.SetDsseID(id)
 	return pdu
 }
 
 // SetNillableDsseID sets the "dsse" edge to the Dsse entity by ID if the given value is not nil.
-func (pdu *PayloadDigestUpdate) SetNillableDsseID(id *int) *PayloadDigestUpdate {
+func (pdu *PayloadDigestUpdate) SetNillableDsseID(id *uuid.UUID) *PayloadDigestUpdate {
 	if id != nil {
 		pdu = pdu.SetDsseID(*id)
 	}
@@ -132,7 +133,7 @@ func (pdu *PayloadDigestUpdate) sqlSave(ctx context.Context) (n int, err error) 
 	if err := pdu.check(); err != nil {
 		return n, err
 	}
-	_spec := sqlgraph.NewUpdateSpec(payloaddigest.Table, payloaddigest.Columns, sqlgraph.NewFieldSpec(payloaddigest.FieldID, field.TypeInt))
+	_spec := sqlgraph.NewUpdateSpec(payloaddigest.Table, payloaddigest.Columns, sqlgraph.NewFieldSpec(payloaddigest.FieldID, field.TypeUUID))
 	if ps := pdu.mutation.predicates; len(ps) > 0 {
 		_spec.Predicate = func(selector *sql.Selector) {
 			for i := range ps {
@@ -154,7 +155,7 @@ func (pdu *PayloadDigestUpdate) sqlSave(ctx context.Context) (n int, err error) 
 			Columns: []string{payloaddigest.DsseColumn},
 			Bidi:    false,
 			Target: &sqlgraph.EdgeTarget{
-				IDSpec: sqlgraph.NewFieldSpec(dsse.FieldID, field.TypeInt),
+				IDSpec: sqlgraph.NewFieldSpec(dsse.FieldID, field.TypeUUID),
 			},
 		}
 		_spec.Edges.Clear = append(_spec.Edges.Clear, edge)
@@ -167,7 +168,7 @@ func (pdu *PayloadDigestUpdate) sqlSave(ctx context.Context) (n int, err error) 
 			Columns: []string{payloaddigest.DsseColumn},
 			Bidi:    false,
 			Target: &sqlgraph.EdgeTarget{
-				IDSpec: sqlgraph.NewFieldSpec(dsse.FieldID, field.TypeInt),
+				IDSpec: sqlgraph.NewFieldSpec(dsse.FieldID, field.TypeUUID),
 			},
 		}
 		for _, k := range nodes {
@@ -224,13 +225,13 @@ func (pduo *PayloadDigestUpdateOne) SetNillableValue(s *string) *PayloadDigestUp
 }
 
 // SetDsseID sets the "dsse" edge to the Dsse entity by ID.
-func (pduo *PayloadDigestUpdateOne) SetDsseID(id int) *PayloadDigestUpdateOne {
+func (pduo *PayloadDigestUpdateOne) SetDsseID(id uuid.UUID) *PayloadDigestUpdateOne {
 	pduo.mutation.SetDsseID(id)
 	return pduo
 }
 
 // SetNillableDsseID sets the "dsse" edge to the Dsse entity by ID if the given value is not nil.
-func (pduo *PayloadDigestUpdateOne) SetNillableDsseID(id *int) *PayloadDigestUpdateOne {
+func (pduo *PayloadDigestUpdateOne) SetNillableDsseID(id *uuid.UUID) *PayloadDigestUpdateOne {
 	if id != nil {
 		pduo = pduo.SetDsseID(*id)
 	}
@@ -312,7 +313,7 @@ func (pduo *PayloadDigestUpdateOne) sqlSave(ctx context.Context) (_node *Payload
 	if err := pduo.check(); err != nil {
 		return _node, err
 	}
-	_spec := sqlgraph.NewUpdateSpec(payloaddigest.Table, payloaddigest.Columns, sqlgraph.NewFieldSpec(payloaddigest.FieldID, field.TypeInt))
+	_spec := sqlgraph.NewUpdateSpec(payloaddigest.Table, payloaddigest.Columns, sqlgraph.NewFieldSpec(payloaddigest.FieldID, field.TypeUUID))
 	id, ok := pduo.mutation.ID()
 	if !ok {
 		return nil, &ValidationError{Name: "id", err: errors.New(`ent: missing "PayloadDigest.id" for update`)}
@@ -351,7 +352,7 @@ func (pduo *PayloadDigestUpdateOne) sqlSave(ctx context.Context) (_node *Payload
 			Columns: []string{payloaddigest.DsseColumn},
 			Bidi:    false,
 			Target: &sqlgraph.EdgeTarget{
-				IDSpec: sqlgraph.NewFieldSpec(dsse.FieldID, field.TypeInt),
+				IDSpec: sqlgraph.NewFieldSpec(dsse.FieldID, field.TypeUUID),
 			},
 		}
 		_spec.Edges.Clear = append(_spec.Edges.Clear, edge)
@@ -364,7 +365,7 @@ func (pduo *PayloadDigestUpdateOne) sqlSave(ctx context.Context) (_node *Payload
 			Columns: []string{payloaddigest.DsseColumn},
 			Bidi:    false,
 			Target: &sqlgraph.EdgeTarget{
-				IDSpec: sqlgraph.NewFieldSpec(dsse.FieldID, field.TypeInt),
+				IDSpec: sqlgraph.NewFieldSpec(dsse.FieldID, field.TypeUUID),
 			},
 		}
 		for _, k := range nodes {

@@ -11,6 +11,7 @@ import (
 	"entgo.io/ent/dialect/sql"
 	"entgo.io/ent/dialect/sql/sqlgraph"
 	"entgo.io/ent/schema/field"
+	"github.com/google/uuid"
 	"github.com/in-toto/archivista/ent/attestation"
 	"github.com/in-toto/archivista/ent/attestationcollection"
 	"github.com/in-toto/archivista/ent/predicate"
@@ -134,8 +135,8 @@ func (acq *AttestationCollectionQuery) FirstX(ctx context.Context) *AttestationC
 
 // FirstID returns the first AttestationCollection ID from the query.
 // Returns a *NotFoundError when no AttestationCollection ID was found.
-func (acq *AttestationCollectionQuery) FirstID(ctx context.Context) (id int, err error) {
-	var ids []int
+func (acq *AttestationCollectionQuery) FirstID(ctx context.Context) (id uuid.UUID, err error) {
+	var ids []uuid.UUID
 	if ids, err = acq.Limit(1).IDs(setContextOp(ctx, acq.ctx, "FirstID")); err != nil {
 		return
 	}
@@ -147,7 +148,7 @@ func (acq *AttestationCollectionQuery) FirstID(ctx context.Context) (id int, err
 }
 
 // FirstIDX is like FirstID, but panics if an error occurs.
-func (acq *AttestationCollectionQuery) FirstIDX(ctx context.Context) int {
+func (acq *AttestationCollectionQuery) FirstIDX(ctx context.Context) uuid.UUID {
 	id, err := acq.FirstID(ctx)
 	if err != nil && !IsNotFound(err) {
 		panic(err)
@@ -185,8 +186,8 @@ func (acq *AttestationCollectionQuery) OnlyX(ctx context.Context) *AttestationCo
 // OnlyID is like Only, but returns the only AttestationCollection ID in the query.
 // Returns a *NotSingularError when more than one AttestationCollection ID is found.
 // Returns a *NotFoundError when no entities are found.
-func (acq *AttestationCollectionQuery) OnlyID(ctx context.Context) (id int, err error) {
-	var ids []int
+func (acq *AttestationCollectionQuery) OnlyID(ctx context.Context) (id uuid.UUID, err error) {
+	var ids []uuid.UUID
 	if ids, err = acq.Limit(2).IDs(setContextOp(ctx, acq.ctx, "OnlyID")); err != nil {
 		return
 	}
@@ -202,7 +203,7 @@ func (acq *AttestationCollectionQuery) OnlyID(ctx context.Context) (id int, err 
 }
 
 // OnlyIDX is like OnlyID, but panics if an error occurs.
-func (acq *AttestationCollectionQuery) OnlyIDX(ctx context.Context) int {
+func (acq *AttestationCollectionQuery) OnlyIDX(ctx context.Context) uuid.UUID {
 	id, err := acq.OnlyID(ctx)
 	if err != nil {
 		panic(err)
@@ -230,7 +231,7 @@ func (acq *AttestationCollectionQuery) AllX(ctx context.Context) []*AttestationC
 }
 
 // IDs executes the query and returns a list of AttestationCollection IDs.
-func (acq *AttestationCollectionQuery) IDs(ctx context.Context) (ids []int, err error) {
+func (acq *AttestationCollectionQuery) IDs(ctx context.Context) (ids []uuid.UUID, err error) {
 	if acq.ctx.Unique == nil && acq.path != nil {
 		acq.Unique(true)
 	}
@@ -242,7 +243,7 @@ func (acq *AttestationCollectionQuery) IDs(ctx context.Context) (ids []int, err 
 }
 
 // IDsX is like IDs, but panics if an error occurs.
-func (acq *AttestationCollectionQuery) IDsX(ctx context.Context) []int {
+func (acq *AttestationCollectionQuery) IDsX(ctx context.Context) []uuid.UUID {
 	ids, err := acq.IDs(ctx)
 	if err != nil {
 		panic(err)
@@ -473,7 +474,7 @@ func (acq *AttestationCollectionQuery) sqlAll(ctx context.Context, hooks ...quer
 
 func (acq *AttestationCollectionQuery) loadAttestations(ctx context.Context, query *AttestationQuery, nodes []*AttestationCollection, init func(*AttestationCollection), assign func(*AttestationCollection, *Attestation)) error {
 	fks := make([]driver.Value, 0, len(nodes))
-	nodeids := make(map[int]*AttestationCollection)
+	nodeids := make(map[uuid.UUID]*AttestationCollection)
 	for i := range nodes {
 		fks = append(fks, nodes[i].ID)
 		nodeids[nodes[i].ID] = nodes[i]
@@ -503,8 +504,8 @@ func (acq *AttestationCollectionQuery) loadAttestations(ctx context.Context, que
 	return nil
 }
 func (acq *AttestationCollectionQuery) loadStatement(ctx context.Context, query *StatementQuery, nodes []*AttestationCollection, init func(*AttestationCollection), assign func(*AttestationCollection, *Statement)) error {
-	ids := make([]int, 0, len(nodes))
-	nodeids := make(map[int][]*AttestationCollection)
+	ids := make([]uuid.UUID, 0, len(nodes))
+	nodeids := make(map[uuid.UUID][]*AttestationCollection)
 	for i := range nodes {
 		if nodes[i].statement_attestation_collections == nil {
 			continue
@@ -548,7 +549,7 @@ func (acq *AttestationCollectionQuery) sqlCount(ctx context.Context) (int, error
 }
 
 func (acq *AttestationCollectionQuery) querySpec() *sqlgraph.QuerySpec {
-	_spec := sqlgraph.NewQuerySpec(attestationcollection.Table, attestationcollection.Columns, sqlgraph.NewFieldSpec(attestationcollection.FieldID, field.TypeInt))
+	_spec := sqlgraph.NewQuerySpec(attestationcollection.Table, attestationcollection.Columns, sqlgraph.NewFieldSpec(attestationcollection.FieldID, field.TypeUUID))
 	_spec.From = acq.sql
 	if unique := acq.ctx.Unique; unique != nil {
 		_spec.Unique = *unique

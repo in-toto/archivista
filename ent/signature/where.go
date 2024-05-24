@@ -5,51 +5,52 @@ package signature
 import (
 	"entgo.io/ent/dialect/sql"
 	"entgo.io/ent/dialect/sql/sqlgraph"
+	"github.com/google/uuid"
 	"github.com/in-toto/archivista/ent/predicate"
 )
 
 // ID filters vertices based on their ID field.
-func ID(id int) predicate.Signature {
+func ID(id uuid.UUID) predicate.Signature {
 	return predicate.Signature(sql.FieldEQ(FieldID, id))
 }
 
 // IDEQ applies the EQ predicate on the ID field.
-func IDEQ(id int) predicate.Signature {
+func IDEQ(id uuid.UUID) predicate.Signature {
 	return predicate.Signature(sql.FieldEQ(FieldID, id))
 }
 
 // IDNEQ applies the NEQ predicate on the ID field.
-func IDNEQ(id int) predicate.Signature {
+func IDNEQ(id uuid.UUID) predicate.Signature {
 	return predicate.Signature(sql.FieldNEQ(FieldID, id))
 }
 
 // IDIn applies the In predicate on the ID field.
-func IDIn(ids ...int) predicate.Signature {
+func IDIn(ids ...uuid.UUID) predicate.Signature {
 	return predicate.Signature(sql.FieldIn(FieldID, ids...))
 }
 
 // IDNotIn applies the NotIn predicate on the ID field.
-func IDNotIn(ids ...int) predicate.Signature {
+func IDNotIn(ids ...uuid.UUID) predicate.Signature {
 	return predicate.Signature(sql.FieldNotIn(FieldID, ids...))
 }
 
 // IDGT applies the GT predicate on the ID field.
-func IDGT(id int) predicate.Signature {
+func IDGT(id uuid.UUID) predicate.Signature {
 	return predicate.Signature(sql.FieldGT(FieldID, id))
 }
 
 // IDGTE applies the GTE predicate on the ID field.
-func IDGTE(id int) predicate.Signature {
+func IDGTE(id uuid.UUID) predicate.Signature {
 	return predicate.Signature(sql.FieldGTE(FieldID, id))
 }
 
 // IDLT applies the LT predicate on the ID field.
-func IDLT(id int) predicate.Signature {
+func IDLT(id uuid.UUID) predicate.Signature {
 	return predicate.Signature(sql.FieldLT(FieldID, id))
 }
 
 // IDLTE applies the LTE predicate on the ID field.
-func IDLTE(id int) predicate.Signature {
+func IDLTE(id uuid.UUID) predicate.Signature {
 	return predicate.Signature(sql.FieldLTE(FieldID, id))
 }
 

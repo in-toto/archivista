@@ -10,6 +10,7 @@ import (
 	"entgo.io/ent/dialect/sql"
 	"entgo.io/ent/dialect/sql/sqlgraph"
 	"entgo.io/ent/schema/field"
+	"github.com/google/uuid"
 	"github.com/in-toto/archivista/ent/attestation"
 	"github.com/in-toto/archivista/ent/attestationcollection"
 	"github.com/in-toto/archivista/ent/predicate"
@@ -44,14 +45,14 @@ func (acu *AttestationCollectionUpdate) SetNillableName(s *string) *AttestationC
 }
 
 // AddAttestationIDs adds the "attestations" edge to the Attestation entity by IDs.
-func (acu *AttestationCollectionUpdate) AddAttestationIDs(ids ...int) *AttestationCollectionUpdate {
+func (acu *AttestationCollectionUpdate) AddAttestationIDs(ids ...uuid.UUID) *AttestationCollectionUpdate {
 	acu.mutation.AddAttestationIDs(ids...)
 	return acu
 }
 
 // AddAttestations adds the "attestations" edges to the Attestation entity.
 func (acu *AttestationCollectionUpdate) AddAttestations(a ...*Attestation) *AttestationCollectionUpdate {
-	ids := make([]int, len(a))
+	ids := make([]uuid.UUID, len(a))
 	for i := range a {
 		ids[i] = a[i].ID
 	}
@@ -59,7 +60,7 @@ func (acu *AttestationCollectionUpdate) AddAttestations(a ...*Attestation) *Atte
 }
 
 // SetStatementID sets the "statement" edge to the Statement entity by ID.
-func (acu *AttestationCollectionUpdate) SetStatementID(id int) *AttestationCollectionUpdate {
+func (acu *AttestationCollectionUpdate) SetStatementID(id uuid.UUID) *AttestationCollectionUpdate {
 	acu.mutation.SetStatementID(id)
 	return acu
 }
@@ -81,14 +82,14 @@ func (acu *AttestationCollectionUpdate) ClearAttestations() *AttestationCollecti
 }
 
 // RemoveAttestationIDs removes the "attestations" edge to Attestation entities by IDs.
-func (acu *AttestationCollectionUpdate) RemoveAttestationIDs(ids ...int) *AttestationCollectionUpdate {
+func (acu *AttestationCollectionUpdate) RemoveAttestationIDs(ids ...uuid.UUID) *AttestationCollectionUpdate {
 	acu.mutation.RemoveAttestationIDs(ids...)
 	return acu
 }
 
 // RemoveAttestations removes "attestations" edges to Attestation entities.
 func (acu *AttestationCollectionUpdate) RemoveAttestations(a ...*Attestation) *AttestationCollectionUpdate {
-	ids := make([]int, len(a))
+	ids := make([]uuid.UUID, len(a))
 	for i := range a {
 		ids[i] = a[i].ID
 	}
@@ -145,7 +146,7 @@ func (acu *AttestationCollectionUpdate) sqlSave(ctx context.Context) (n int, err
 	if err := acu.check(); err != nil {
 		return n, err
 	}
-	_spec := sqlgraph.NewUpdateSpec(attestationcollection.Table, attestationcollection.Columns, sqlgraph.NewFieldSpec(attestationcollection.FieldID, field.TypeInt))
+	_spec := sqlgraph.NewUpdateSpec(attestationcollection.Table, attestationcollection.Columns, sqlgraph.NewFieldSpec(attestationcollection.FieldID, field.TypeUUID))
 	if ps := acu.mutation.predicates; len(ps) > 0 {
 		_spec.Predicate = func(selector *sql.Selector) {
 			for i := range ps {
@@ -164,7 +165,7 @@ func (acu *AttestationCollectionUpdate) sqlSave(ctx context.Context) (n int, err
 			Columns: []string{attestationcollection.AttestationsColumn},
 			Bidi:    false,
 			Target: &sqlgraph.EdgeTarget{
-				IDSpec: sqlgraph.NewFieldSpec(attestation.FieldID, field.TypeInt),
+				IDSpec: sqlgraph.NewFieldSpec(attestation.FieldID, field.TypeUUID),
 			},
 		}
 		_spec.Edges.Clear = append(_spec.Edges.Clear, edge)
@@ -177,7 +178,7 @@ func (acu *AttestationCollectionUpdate) sqlSave(ctx context.Context) (n int, err
 			Columns: []string{attestationcollection.AttestationsColumn},
 			Bidi:    false,
 			Target: &sqlgraph.EdgeTarget{
-				IDSpec: sqlgraph.NewFieldSpec(attestation.FieldID, field.TypeInt),
+				IDSpec: sqlgraph.NewFieldSpec(attestation.FieldID, field.TypeUUID),
 			},
 		}
 		for _, k := range nodes {
@@ -193,7 +194,7 @@ func (acu *AttestationCollectionUpdate) sqlSave(ctx context.Context) (n int, err
 			Columns: []string{attestationcollection.AttestationsColumn},
 			Bidi:    false,
 			Target: &sqlgraph.EdgeTarget{
-				IDSpec: sqlgraph.NewFieldSpec(attestation.FieldID, field.TypeInt),
+				IDSpec: sqlgraph.NewFieldSpec(attestation.FieldID, field.TypeUUID),
 			},
 		}
 		for _, k := range nodes {
@@ -209,7 +210,7 @@ func (acu *AttestationCollectionUpdate) sqlSave(ctx context.Context) (n int, err
 			Columns: []string{attestationcollection.StatementColumn},
 			Bidi:    false,
 			Target: &sqlgraph.EdgeTarget{
-				IDSpec: sqlgraph.NewFieldSpec(statement.FieldID, field.TypeInt),
+				IDSpec: sqlgraph.NewFieldSpec(statement.FieldID, field.TypeUUID),
 			},
 		}
 		_spec.Edges.Clear = append(_spec.Edges.Clear, edge)
@@ -222,7 +223,7 @@ func (acu *AttestationCollectionUpdate) sqlSave(ctx context.Context) (n int, err
 			Columns: []string{attestationcollection.StatementColumn},
 			Bidi:    false,
 			Target: &sqlgraph.EdgeTarget{
-				IDSpec: sqlgraph.NewFieldSpec(statement.FieldID, field.TypeInt),
+				IDSpec: sqlgraph.NewFieldSpec(statement.FieldID, field.TypeUUID),
 			},
 		}
 		for _, k := range nodes {
@@ -265,14 +266,14 @@ func (acuo *AttestationCollectionUpdateOne) SetNillableName(s *string) *Attestat
 }
 
 // AddAttestationIDs adds the "attestations" edge to the Attestation entity by IDs.
-func (acuo *AttestationCollectionUpdateOne) AddAttestationIDs(ids ...int) *AttestationCollectionUpdateOne {
+func (acuo *AttestationCollectionUpdateOne) AddAttestationIDs(ids ...uuid.UUID) *AttestationCollectionUpdateOne {
 	acuo.mutation.AddAttestationIDs(ids...)
 	return acuo
 }
 
 // AddAttestations adds the "attestations" edges to the Attestation entity.
 func (acuo *AttestationCollectionUpdateOne) AddAttestations(a ...*Attestation) *AttestationCollectionUpdateOne {
-	ids := make([]int, len(a))
+	ids := make([]uuid.UUID, len(a))
 	for i := range a {
 		ids[i] = a[i].ID
 	}
@@ -280,7 +281,7 @@ func (acuo *AttestationCollectionUpdateOne) AddAttestations(a ...*Attestation) *
 }
 
 // SetStatementID sets the "statement" edge to the Statement entity by ID.
-func (acuo *AttestationCollectionUpdateOne) SetStatementID(id int) *AttestationCollectionUpdateOne {
+func (acuo *AttestationCollectionUpdateOne) SetStatementID(id uuid.UUID) *AttestationCollectionUpdateOne {
 	acuo.mutation.SetStatementID(id)
 	return acuo
 }
@@ -302,14 +303,14 @@ func (acuo *AttestationCollectionUpdateOne) ClearAttestations() *AttestationColl
 }
 
 // RemoveAttestationIDs removes the "attestations" edge to Attestation entities by IDs.
-func (acuo *AttestationCollectionUpdateOne) RemoveAttestationIDs(ids ...int) *AttestationCollectionUpdateOne {
+func (acuo *AttestationCollectionUpdateOne) RemoveAttestationIDs(ids ...uuid.UUID) *AttestationCollectionUpdateOne {
 	acuo.mutation.RemoveAttestationIDs(ids...)
 	return acuo
 }
 
 // RemoveAttestations removes "attestations" edges to Attestation entities.
 func (acuo *AttestationCollectionUpdateOne) RemoveAttestations(a ...*Attestation) *AttestationCollectionUpdateOne {
-	ids := make([]int, len(a))
+	ids := make([]uuid.UUID, len(a))
 	for i := range a {
 		ids[i] = a[i].ID
 	}
@@ -379,7 +380,7 @@ func (acuo *AttestationCollectionUpdateOne) sqlSave(ctx context.Context) (_node 
 	if err := acuo.check(); err != nil {
 		return _node, err
 	}
-	_spec := sqlgraph.NewUpdateSpec(attestationcollection.Table, attestationcollection.Columns, sqlgraph.NewFieldSpec(attestationcollection.FieldID, field.TypeInt))
+	_spec := sqlgraph.NewUpdateSpec(attestationcollection.Table, attestationcollection.Columns, sqlgraph.NewFieldSpec(attestationcollection.FieldID, field.TypeUUID))
 	id, ok := acuo.mutation.ID()
 	if !ok {
 		return nil, &ValidationError{Name: "id", err: errors.New(`ent: missing "AttestationCollection.id" for update`)}
@@ -415,7 +416,7 @@ func (acuo *AttestationCollectionUpdateOne) sqlSave(ctx context.Context) (_node 
 			Columns: []string{attestationcollection.AttestationsColumn},
 			Bidi:    false,
 			Target: &sqlgraph.EdgeTarget{
-				IDSpec: sqlgraph.NewFieldSpec(attestation.FieldID, field.TypeInt),
+				IDSpec: sqlgraph.NewFieldSpec(attestation.FieldID, field.TypeUUID),
 			},
 		}
 		_spec.Edges.Clear = append(_spec.Edges.Clear, edge)
@@ -428,7 +429,7 @@ func (acuo *AttestationCollectionUpdateOne) sqlSave(ctx context.Context) (_node 
 			Columns: []string{attestationcollection.AttestationsColumn},
 			Bidi:    false,
 			Target: &sqlgraph.EdgeTarget{
-				IDSpec: sqlgraph.NewFieldSpec(attestation.FieldID, field.TypeInt),
+				IDSpec: sqlgraph.NewFieldSpec(attestation.FieldID, field.TypeUUID),
 			},
 		}
 		for _, k := range nodes {
@@ -444,7 +445,7 @@ func (acuo *AttestationCollectionUpdateOne) sqlSave(ctx context.Context) (_node 
 			Columns: []string{attestationcollection.AttestationsColumn},
 			Bidi:    false,
 			Target: &sqlgraph.EdgeTarget{
-				IDSpec: sqlgraph.NewFieldSpec(attestation.FieldID, field.TypeInt),
+				IDSpec: sqlgraph.NewFieldSpec(attestation.FieldID, field.TypeUUID),
 			},
 		}
 		for _, k := range nodes {
@@ -460,7 +461,7 @@ func (acuo *AttestationCollectionUpdateOne) sqlSave(ctx context.Context) (_node 
 			Columns: []string{attestationcollection.StatementColumn},
 			Bidi:    false,
 			Target: &sqlgraph.EdgeTarget{
-				IDSpec: sqlgraph.NewFieldSpec(statement.FieldID, field.TypeInt),
+				IDSpec: sqlgraph.NewFieldSpec(statement.FieldID, field.TypeUUID),
 			},
 		}
 		_spec.Edges.Clear = append(_spec.Edges.Clear, edge)
@@ -473,7 +474,7 @@ func (acuo *AttestationCollectionUpdateOne) sqlSave(ctx context.Context) (_node 
 			Columns: []string{attestationcollection.StatementColumn},
 			Bidi:    false,
 			Target: &sqlgraph.EdgeTarget{
-				IDSpec: sqlgraph.NewFieldSpec(statement.FieldID, field.TypeInt),
+				IDSpec: sqlgraph.NewFieldSpec(statement.FieldID, field.TypeUUID),
 			},
 		}
 		for _, k := range nodes {

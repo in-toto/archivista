@@ -10,6 +10,7 @@ import (
 	"entgo.io/ent/dialect/sql"
 	"entgo.io/ent/dialect/sql/sqlgraph"
 	"entgo.io/ent/schema/field"
+	"github.com/google/uuid"
 	"github.com/in-toto/archivista/ent/attestationcollection"
 	"github.com/in-toto/archivista/ent/attestationpolicy"
 	"github.com/in-toto/archivista/ent/dsse"
@@ -46,14 +47,14 @@ func (su *StatementUpdate) SetNillablePredicate(s *string) *StatementUpdate {
 }
 
 // AddSubjectIDs adds the "subjects" edge to the Subject entity by IDs.
-func (su *StatementUpdate) AddSubjectIDs(ids ...int) *StatementUpdate {
+func (su *StatementUpdate) AddSubjectIDs(ids ...uuid.UUID) *StatementUpdate {
 	su.mutation.AddSubjectIDs(ids...)
 	return su
 }
 
 // AddSubjects adds the "subjects" edges to the Subject entity.
 func (su *StatementUpdate) AddSubjects(s ...*Subject) *StatementUpdate {
-	ids := make([]int, len(s))
+	ids := make([]uuid.UUID, len(s))
 	for i := range s {
 		ids[i] = s[i].ID
 	}
@@ -61,13 +62,13 @@ func (su *StatementUpdate) AddSubjects(s ...*Subject) *StatementUpdate {
 }
 
 // SetPolicyID sets the "policy" edge to the AttestationPolicy entity by ID.
-func (su *StatementUpdate) SetPolicyID(id int) *StatementUpdate {
+func (su *StatementUpdate) SetPolicyID(id uuid.UUID) *StatementUpdate {
 	su.mutation.SetPolicyID(id)
 	return su
 }
 
 // SetNillablePolicyID sets the "policy" edge to the AttestationPolicy entity by ID if the given value is not nil.
-func (su *StatementUpdate) SetNillablePolicyID(id *int) *StatementUpdate {
+func (su *StatementUpdate) SetNillablePolicyID(id *uuid.UUID) *StatementUpdate {
 	if id != nil {
 		su = su.SetPolicyID(*id)
 	}
@@ -80,13 +81,13 @@ func (su *StatementUpdate) SetPolicy(a *AttestationPolicy) *StatementUpdate {
 }
 
 // SetAttestationCollectionsID sets the "attestation_collections" edge to the AttestationCollection entity by ID.
-func (su *StatementUpdate) SetAttestationCollectionsID(id int) *StatementUpdate {
+func (su *StatementUpdate) SetAttestationCollectionsID(id uuid.UUID) *StatementUpdate {
 	su.mutation.SetAttestationCollectionsID(id)
 	return su
 }
 
 // SetNillableAttestationCollectionsID sets the "attestation_collections" edge to the AttestationCollection entity by ID if the given value is not nil.
-func (su *StatementUpdate) SetNillableAttestationCollectionsID(id *int) *StatementUpdate {
+func (su *StatementUpdate) SetNillableAttestationCollectionsID(id *uuid.UUID) *StatementUpdate {
 	if id != nil {
 		su = su.SetAttestationCollectionsID(*id)
 	}
@@ -99,14 +100,14 @@ func (su *StatementUpdate) SetAttestationCollections(a *AttestationCollection) *
 }
 
 // AddDsseIDs adds the "dsse" edge to the Dsse entity by IDs.
-func (su *StatementUpdate) AddDsseIDs(ids ...int) *StatementUpdate {
+func (su *StatementUpdate) AddDsseIDs(ids ...uuid.UUID) *StatementUpdate {
 	su.mutation.AddDsseIDs(ids...)
 	return su
 }
 
 // AddDsse adds the "dsse" edges to the Dsse entity.
 func (su *StatementUpdate) AddDsse(d ...*Dsse) *StatementUpdate {
-	ids := make([]int, len(d))
+	ids := make([]uuid.UUID, len(d))
 	for i := range d {
 		ids[i] = d[i].ID
 	}
@@ -125,14 +126,14 @@ func (su *StatementUpdate) ClearSubjects() *StatementUpdate {
 }
 
 // RemoveSubjectIDs removes the "subjects" edge to Subject entities by IDs.
-func (su *StatementUpdate) RemoveSubjectIDs(ids ...int) *StatementUpdate {
+func (su *StatementUpdate) RemoveSubjectIDs(ids ...uuid.UUID) *StatementUpdate {
 	su.mutation.RemoveSubjectIDs(ids...)
 	return su
 }
 
 // RemoveSubjects removes "subjects" edges to Subject entities.
 func (su *StatementUpdate) RemoveSubjects(s ...*Subject) *StatementUpdate {
-	ids := make([]int, len(s))
+	ids := make([]uuid.UUID, len(s))
 	for i := range s {
 		ids[i] = s[i].ID
 	}
@@ -158,14 +159,14 @@ func (su *StatementUpdate) ClearDsse() *StatementUpdate {
 }
 
 // RemoveDsseIDs removes the "dsse" edge to Dsse entities by IDs.
-func (su *StatementUpdate) RemoveDsseIDs(ids ...int) *StatementUpdate {
+func (su *StatementUpdate) RemoveDsseIDs(ids ...uuid.UUID) *StatementUpdate {
 	su.mutation.RemoveDsseIDs(ids...)
 	return su
 }
 
 // RemoveDsse removes "dsse" edges to Dsse entities.
 func (su *StatementUpdate) RemoveDsse(d ...*Dsse) *StatementUpdate {
-	ids := make([]int, len(d))
+	ids := make([]uuid.UUID, len(d))
 	for i := range d {
 		ids[i] = d[i].ID
 	}
@@ -213,7 +214,7 @@ func (su *StatementUpdate) sqlSave(ctx context.Context) (n int, err error) {
 	if err := su.check(); err != nil {
 		return n, err
 	}
-	_spec := sqlgraph.NewUpdateSpec(statement.Table, statement.Columns, sqlgraph.NewFieldSpec(statement.FieldID, field.TypeInt))
+	_spec := sqlgraph.NewUpdateSpec(statement.Table, statement.Columns, sqlgraph.NewFieldSpec(statement.FieldID, field.TypeUUID))
 	if ps := su.mutation.predicates; len(ps) > 0 {
 		_spec.Predicate = func(selector *sql.Selector) {
 			for i := range ps {
@@ -232,7 +233,7 @@ func (su *StatementUpdate) sqlSave(ctx context.Context) (n int, err error) {
 			Columns: []string{statement.SubjectsColumn},
 			Bidi:    false,
 			Target: &sqlgraph.EdgeTarget{
-				IDSpec: sqlgraph.NewFieldSpec(subject.FieldID, field.TypeInt),
+				IDSpec: sqlgraph.NewFieldSpec(subject.FieldID, field.TypeUUID),
 			},
 		}
 		_spec.Edges.Clear = append(_spec.Edges.Clear, edge)
@@ -245,7 +246,7 @@ func (su *StatementUpdate) sqlSave(ctx context.Context) (n int, err error) {
 			Columns: []string{statement.SubjectsColumn},
 			Bidi:    false,
 			Target: &sqlgraph.EdgeTarget{
-				IDSpec: sqlgraph.NewFieldSpec(subject.FieldID, field.TypeInt),
+				IDSpec: sqlgraph.NewFieldSpec(subject.FieldID, field.TypeUUID),
 			},
 		}
 		for _, k := range nodes {
@@ -261,7 +262,7 @@ func (su *StatementUpdate) sqlSave(ctx context.Context) (n int, err error) {
 			Columns: []string{statement.SubjectsColumn},
 			Bidi:    false,
 			Target: &sqlgraph.EdgeTarget{
-				IDSpec: sqlgraph.NewFieldSpec(subject.FieldID, field.TypeInt),
+				IDSpec: sqlgraph.NewFieldSpec(subject.FieldID, field.TypeUUID),
 			},
 		}
 		for _, k := range nodes {
@@ -277,7 +278,7 @@ func (su *StatementUpdate) sqlSave(ctx context.Context) (n int, err error) {
 			Columns: []string{statement.PolicyColumn},
 			Bidi:    false,
 			Target: &sqlgraph.EdgeTarget{
-				IDSpec: sqlgraph.NewFieldSpec(attestationpolicy.FieldID, field.TypeInt),
+				IDSpec: sqlgraph.NewFieldSpec(attestationpolicy.FieldID, field.TypeUUID),
 			},
 		}
 		_spec.Edges.Clear = append(_spec.Edges.Clear, edge)
@@ -290,7 +291,7 @@ func (su *StatementUpdate) sqlSave(ctx context.Context) (n int, err error) {
 			Columns: []string{statement.PolicyColumn},
 			Bidi:    false,
 			Target: &sqlgraph.EdgeTarget{
-				IDSpec: sqlgraph.NewFieldSpec(attestationpolicy.FieldID, field.TypeInt),
+				IDSpec: sqlgraph.NewFieldSpec(attestationpolicy.FieldID, field.TypeUUID),
 			},
 		}
 		for _, k := range nodes {
@@ -306,7 +307,7 @@ func (su *StatementUpdate) sqlSave(ctx context.Context) (n int, err error) {
 			Columns: []string{statement.AttestationCollectionsColumn},
 			Bidi:    false,
 			Target: &sqlgraph.EdgeTarget{
-				IDSpec: sqlgraph.NewFieldSpec(attestationcollection.FieldID, field.TypeInt),
+				IDSpec: sqlgraph.NewFieldSpec(attestationcollection.FieldID, field.TypeUUID),
 			},
 		}
 		_spec.Edges.Clear = append(_spec.Edges.Clear, edge)
@@ -319,7 +320,7 @@ func (su *StatementUpdate) sqlSave(ctx context.Context) (n int, err error) {
 			Columns: []string{statement.AttestationCollectionsColumn},
 			Bidi:    false,
 			Target: &sqlgraph.EdgeTarget{
-				IDSpec: sqlgraph.NewFieldSpec(attestationcollection.FieldID, field.TypeInt),
+				IDSpec: sqlgraph.NewFieldSpec(attestationcollection.FieldID, field.TypeUUID),
 			},
 		}
 		for _, k := range nodes {
@@ -335,7 +336,7 @@ func (su *StatementUpdate) sqlSave(ctx context.Context) (n int, err error) {
 			Columns: []string{statement.DsseColumn},
 			Bidi:    false,
 			Target: &sqlgraph.EdgeTarget{
-				IDSpec: sqlgraph.NewFieldSpec(dsse.FieldID, field.TypeInt),
+				IDSpec: sqlgraph.NewFieldSpec(dsse.FieldID, field.TypeUUID),
 			},
 		}
 		_spec.Edges.Clear = append(_spec.Edges.Clear, edge)
@@ -348,7 +349,7 @@ func (su *StatementUpdate) sqlSave(ctx context.Context) (n int, err error) {
 			Columns: []string{statement.DsseColumn},
 			Bidi:    false,
 			Target: &sqlgraph.EdgeTarget{
-				IDSpec: sqlgraph.NewFieldSpec(dsse.FieldID, field.TypeInt),
+				IDSpec: sqlgraph.NewFieldSpec(dsse.FieldID, field.TypeUUID),
 			},
 		}
 		for _, k := range nodes {
@@ -364,7 +365,7 @@ func (su *StatementUpdate) sqlSave(ctx context.Context) (n int, err error) {
 			Columns: []string{statement.DsseColumn},
 			Bidi:    false,
 			Target: &sqlgraph.EdgeTarget{
-				IDSpec: sqlgraph.NewFieldSpec(dsse.FieldID, field.TypeInt),
+				IDSpec: sqlgraph.NewFieldSpec(dsse.FieldID, field.TypeUUID),
 			},
 		}
 		for _, k := range nodes {
@@ -407,14 +408,14 @@ func (suo *StatementUpdateOne) SetNillablePredicate(s *string) *StatementUpdateO
 }
 
 // AddSubjectIDs adds the "subjects" edge to the Subject entity by IDs.
-func (suo *StatementUpdateOne) AddSubjectIDs(ids ...int) *StatementUpdateOne {
+func (suo *StatementUpdateOne) AddSubjectIDs(ids ...uuid.UUID) *StatementUpdateOne {
 	suo.mutation.AddSubjectIDs(ids...)
 	return suo
 }
 
 // AddSubjects adds the "subjects" edges to the Subject entity.
 func (suo *StatementUpdateOne) AddSubjects(s ...*Subject) *StatementUpdateOne {
-	ids := make([]int, len(s))
+	ids := make([]uuid.UUID, len(s))
 	for i := range s {
 		ids[i] = s[i].ID
 	}
@@ -422,13 +423,13 @@ func (suo *StatementUpdateOne) AddSubjects(s ...*Subject) *StatementUpdateOne {
 }
 
 // SetPolicyID sets the "policy" edge to the AttestationPolicy entity by ID.
-func (suo *StatementUpdateOne) SetPolicyID(id int) *StatementUpdateOne {
+func (suo *StatementUpdateOne) SetPolicyID(id uuid.UUID) *StatementUpdateOne {
 	suo.mutation.SetPolicyID(id)
 	return suo
 }
 
 // SetNillablePolicyID sets the "policy" edge to the AttestationPolicy entity by ID if the given value is not nil.
-func (suo *StatementUpdateOne) SetNillablePolicyID(id *int) *StatementUpdateOne {
+func (suo *StatementUpdateOne) SetNillablePolicyID(id *uuid.UUID) *StatementUpdateOne {
 	if id != nil {
 		suo = suo.SetPolicyID(*id)
 	}
@@ -441,13 +442,13 @@ func (suo *StatementUpdateOne) SetPolicy(a *AttestationPolicy) *StatementUpdateO
 }
 
 // SetAttestationCollectionsID sets the "attestation_collections" edge to the AttestationCollection entity by ID.
-func (suo *StatementUpdateOne) SetAttestationCollectionsID(id int) *StatementUpdateOne {
+func (suo *StatementUpdateOne) SetAttestationCollectionsID(id uuid.UUID) *StatementUpdateOne {
 	suo.mutation.SetAttestationCollectionsID(id)
 	return suo
 }
 
 // SetNillableAttestationCollectionsID sets the "attestation_collections" edge to the AttestationCollection entity by ID if the given value is not nil.
-func (suo *StatementUpdateOne) SetNillableAttestationCollectionsID(id *int) *StatementUpdateOne {
+func (suo *StatementUpdateOne) SetNillableAttestationCollectionsID(id *uuid.UUID) *StatementUpdateOne {
 	if id != nil {
 		suo = suo.SetAttestationCollectionsID(*id)
 	}
@@ -460,14 +461,14 @@ func (suo *StatementUpdateOne) SetAttestationCollections(a *AttestationCollectio
 }
 
 // AddDsseIDs adds the "dsse" edge to the Dsse entity by IDs.
-func (suo *StatementUpdateOne) AddDsseIDs(ids ...int) *StatementUpdateOne {
+func (suo *StatementUpdateOne) AddDsseIDs(ids ...uuid.UUID) *StatementUpdateOne {
 	suo.mutation.AddDsseIDs(ids...)
 	return suo
 }
 
 // AddDsse adds the "dsse" edges to the Dsse entity.
 func (suo *StatementUpdateOne) AddDsse(d ...*Dsse) *StatementUpdateOne {
-	ids := make([]int, len(d))
+	ids := make([]uuid.UUID, len(d))
 	for i := range d {
 		ids[i] = d[i].ID
 	}
@@ -486,14 +487,14 @@ func (suo *StatementUpdateOne) ClearSubjects() *StatementUpdateOne {
 }
 
 // RemoveSubjectIDs removes the "subjects" edge to Subject entities by IDs.
-func (suo *StatementUpdateOne) RemoveSubjectIDs(ids ...int) *StatementUpdateOne {
+func (suo *StatementUpdateOne) RemoveSubjectIDs(ids ...uuid.UUID) *StatementUpdateOne {
 	suo.mutation.RemoveSubjectIDs(ids...)
 	return suo
 }
 
 // RemoveSubjects removes "subjects" edges to Subject entities.
 func (suo *StatementUpdateOne) RemoveSubjects(s ...*Subject) *StatementUpdateOne {
-	ids := make([]int, len(s))
+	ids := make([]uuid.UUID, len(s))
 	for i := range s {
 		ids[i] = s[i].ID
 	}
@@ -519,14 +520,14 @@ func (suo *StatementUpdateOne) ClearDsse() *StatementUpdateOne {
 }
 
 // RemoveDsseIDs removes the "dsse" edge to Dsse entities by IDs.
-func (suo *StatementUpdateOne) RemoveDsseIDs(ids ...int) *StatementUpdateOne {
+func (suo *StatementUpdateOne) RemoveDsseIDs(ids ...uuid.UUID) *StatementUpdateOne {
 	suo.mutation.RemoveDsseIDs(ids...)
 	return suo
 }
 
 // RemoveDsse removes "dsse" edges to Dsse entities.
 func (suo *StatementUpdateOne) RemoveDsse(d ...*Dsse) *StatementUpdateOne {
-	ids := make([]int, len(d))
+	ids := make([]uuid.UUID, len(d))
 	for i := range d {
 		ids[i] = d[i].ID
 	}
@@ -587,7 +588,7 @@ func (suo *StatementUpdateOne) sqlSave(ctx context.Context) (_node *Statement, e
 	if err := suo.check(); err != nil {
 		return _node, err
 	}
-	_spec := sqlgraph.NewUpdateSpec(statement.Table, statement.Columns, sqlgraph.NewFieldSpec(statement.FieldID, field.TypeInt))
+	_spec := sqlgraph.NewUpdateSpec(statement.Table, statement.Columns, sqlgraph.NewFieldSpec(statement.FieldID, field.TypeUUID))
 	id, ok := suo.mutation.ID()
 	if !ok {
 		return nil, &ValidationError{Name: "id", err: errors.New(`ent: missing "Statement.id" for update`)}
@@ -623,7 +624,7 @@ func (suo *StatementUpdateOne) sqlSave(ctx context.Context) (_node *Statement, e
 			Columns: []string{statement.SubjectsColumn},
 			Bidi:    false,
 			Target: &sqlgraph.EdgeTarget{
-				IDSpec: sqlgraph.NewFieldSpec(subject.FieldID, field.TypeInt),
+				IDSpec: sqlgraph.NewFieldSpec(subject.FieldID, field.TypeUUID),
 			},
 		}
 		_spec.Edges.Clear = append(_spec.Edges.Clear, edge)
@@ -636,7 +637,7 @@ func (suo *StatementUpdateOne) sqlSave(ctx context.Context) (_node *Statement, e
 			Columns: []string{statement.SubjectsColumn},
 			Bidi:    false,
 			Target: &sqlgraph.EdgeTarget{
-				IDSpec: sqlgraph.NewFieldSpec(subject.FieldID, field.TypeInt),
+				IDSpec: sqlgraph.NewFieldSpec(subject.FieldID, field.TypeUUID),
 			},
 		}
 		for _, k := range nodes {
@@ -652,7 +653,7 @@ func (suo *StatementUpdateOne) sqlSave(ctx context.Context) (_node *Statement, e
 			Columns: []string{statement.SubjectsColumn},
 			Bidi:    false,
 			Target: &sqlgraph.EdgeTarget{
-				IDSpec: sqlgraph.NewFieldSpec(subject.FieldID, field.TypeInt),
+				IDSpec: sqlgraph.NewFieldSpec(subject.FieldID, field.TypeUUID),
 			},
 		}
 		for _, k := range nodes {
@@ -668,7 +669,7 @@ func (suo *StatementUpdateOne) sqlSave(ctx context.Context) (_node *Statement, e
 			Columns: []string{statement.PolicyColumn},
 			Bidi:    false,
 			Target: &sqlgraph.EdgeTarget{
-				IDSpec: sqlgraph.NewFieldSpec(attestationpolicy.FieldID, field.TypeInt),
+				IDSpec: sqlgraph.NewFieldSpec(attestationpolicy.FieldID, field.TypeUUID),
 			},
 		}
 		_spec.Edges.Clear = append(_spec.Edges.Clear, edge)
@@ -681,7 +682,7 @@ func (suo *StatementUpdateOne) sqlSave(ctx context.Context) (_node *Statement, e
 			Columns: []string{statement.PolicyColumn},
 			Bidi:    false,
 			Target: &sqlgraph.EdgeTarget{
-				IDSpec: sqlgraph.NewFieldSpec(attestationpolicy.FieldID, field.TypeInt),
+				IDSpec: sqlgraph.NewFieldSpec(attestationpolicy.FieldID, field.TypeUUID),
 			},
 		}
 		for _, k := range nodes {
@@ -697,7 +698,7 @@ func (suo *StatementUpdateOne) sqlSave(ctx context.Context) (_node *Statement, e
 			Columns: []string{statement.AttestationCollectionsColumn},
 			Bidi:    false,
 			Target: &sqlgraph.EdgeTarget{
-				IDSpec: sqlgraph.NewFieldSpec(attestationcollection.FieldID, field.TypeInt),
+				IDSpec: sqlgraph.NewFieldSpec(attestationcollection.FieldID, field.TypeUUID),
 			},
 		}
 		_spec.Edges.Clear = append(_spec.Edges.Clear, edge)
@@ -710,7 +711,7 @@ func (suo *StatementUpdateOne) sqlSave(ctx context.Context) (_node *Statement, e
 			Columns: []string{statement.AttestationCollectionsColumn},
 			Bidi:    false,
 			Target: &sqlgraph.EdgeTarget{
-				IDSpec: sqlgraph.NewFieldSpec(attestationcollection.FieldID, field.TypeInt),
+				IDSpec: sqlgraph.NewFieldSpec(attestationcollection.FieldID, field.TypeUUID),
 			},
 		}
 		for _, k := range nodes {
@@ -726,7 +727,7 @@ func (suo *StatementUpdateOne) sqlSave(ctx context.Context) (_node *Statement, e
 			Columns: []string{statement.DsseColumn},
 			Bidi:    false,
 			Target: &sqlgraph.EdgeTarget{
-				IDSpec: sqlgraph.NewFieldSpec(dsse.FieldID, field.TypeInt),
+				IDSpec: sqlgraph.NewFieldSpec(dsse.FieldID, field.TypeUUID),
 			},
 		}
 		_spec.Edges.Clear = append(_spec.Edges.Clear, edge)
@@ -739,7 +740,7 @@ func (suo *StatementUpdateOne) sqlSave(ctx context.Context) (_node *Statement, e
 			Columns: []string{statement.DsseColumn},
 			Bidi:    false,
 			Target: &sqlgraph.EdgeTarget{
-				IDSpec: sqlgraph.NewFieldSpec(dsse.FieldID, field.TypeInt),
+				IDSpec: sqlgraph.NewFieldSpec(dsse.FieldID, field.TypeUUID),
 			},
 		}
 		for _, k := range nodes {
@@ -755,7 +756,7 @@ func (suo *StatementUpdateOne) sqlSave(ctx context.Context) (_node *Statement, e
 			Columns: []string{statement.DsseColumn},
 			Bidi:    false,
 			Target: &sqlgraph.EdgeTarget{
-				IDSpec: sqlgraph.NewFieldSpec(dsse.FieldID, field.TypeInt),
+				IDSpec: sqlgraph.NewFieldSpec(dsse.FieldID, field.TypeUUID),
 			},
 		}
 		for _, k := range nodes {

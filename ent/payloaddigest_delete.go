@@ -40,7 +40,7 @@ func (pdd *PayloadDigestDelete) ExecX(ctx context.Context) int {
 }
 
 func (pdd *PayloadDigestDelete) sqlExec(ctx context.Context) (int, error) {
-	_spec := sqlgraph.NewDeleteSpec(payloaddigest.Table, sqlgraph.NewFieldSpec(payloaddigest.FieldID, field.TypeInt))
+	_spec := sqlgraph.NewDeleteSpec(payloaddigest.Table, sqlgraph.NewFieldSpec(payloaddigest.FieldID, field.TypeUUID))
 	if ps := pdd.mutation.predicates; len(ps) > 0 {
 		_spec.Predicate = func(selector *sql.Selector) {
 			for i := range ps {

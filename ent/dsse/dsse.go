@@ -5,6 +5,7 @@ package dsse
 import (
 	"entgo.io/ent/dialect/sql"
 	"entgo.io/ent/dialect/sql/sqlgraph"
+	"github.com/google/uuid"
 )
 
 const (
@@ -80,6 +81,8 @@ var (
 	GitoidSha256Validator func(string) error
 	// PayloadTypeValidator is a validator for the "payload_type" field. It is called by the builders before save.
 	PayloadTypeValidator func(string) error
+	// DefaultID holds the default value on creation for the "id" field.
+	DefaultID func() uuid.UUID
 )
 
 // OrderOption defines the ordering options for the Dsse queries.

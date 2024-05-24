@@ -8,6 +8,7 @@ import (
 
 	"entgo.io/ent"
 	"entgo.io/ent/dialect/sql"
+	"github.com/google/uuid"
 	"github.com/in-toto/archivista/ent/dsse"
 	"github.com/in-toto/archivista/ent/payloaddigest"
 )
@@ -16,7 +17,7 @@ import (
 type PayloadDigest struct {
 	config `json:"-"`
 	// ID of the ent.
-	ID int `json:"id,omitempty"`
+	ID uuid.UUID `json:"id,omitempty"`
 	// Algorithm holds the value of the "algorithm" field.
 	Algorithm string `json:"algorithm,omitempty"`
 	// Value holds the value of the "value" field.
@@ -24,7 +25,7 @@ type PayloadDigest struct {
 	// Edges holds the relations/edges for other nodes in the graph.
 	// The values are being populated by the PayloadDigestQuery when eager-loading is set.
 	Edges                PayloadDigestEdges `json:"edges"`
-	dsse_payload_digests *int
+	dsse_payload_digests *uuid.UUID
 	selectValues         sql.SelectValues
 }
 
@@ -55,12 +56,12 @@ func (*PayloadDigest) scanValues(columns []string) ([]any, error) {
 	values := make([]any, len(columns))
 	for i := range columns {
 		switch columns[i] {
-		case payloaddigest.FieldID:
-			values[i] = new(sql.NullInt64)
 		case payloaddigest.FieldAlgorithm, payloaddigest.FieldValue:
 			values[i] = new(sql.NullString)
+		case payloaddigest.FieldID:
+			values[i] = new(uuid.UUID)
 		case payloaddigest.ForeignKeys[0]: // dsse_payload_digests
-			values[i] = new(sql.NullInt64)
+			values[i] = &sql.NullScanner{S: new(uuid.UUID)}
 		default:
 			values[i] = new(sql.UnknownType)
 		}
@@ -77,11 +78,11 @@ func (pd *PayloadDigest) assignValues(columns []string, values []any) error {
 	for i := range columns {
 		switch columns[i] {
 		case payloaddigest.FieldID:
-			value, ok := values[i].(*sql.NullInt64)
-			if !ok {
-				return fmt.Errorf("unexpected type %T for field id", value)
+			if value, ok := values[i].(*uuid.UUID); !ok {
+				return fmt.Errorf("unexpected type %T for field id", values[i])
+			} else if value != nil {
+				pd.ID = *value
 			}
-			pd.ID = int(value.Int64)
 		case payloaddigest.FieldAlgorithm:
 			if value, ok := values[i].(*sql.NullString); !ok {
 				return fmt.Errorf("unexpected type %T for field algorithm", values[i])
@@ -95,11 +96,11 @@ func (pd *PayloadDigest) assignValues(columns []string, values []any) error {
 				pd.Value = value.String
 			}
 		case payloaddigest.ForeignKeys[0]:
-			if value, ok := values[i].(*sql.NullInt64); !ok {
-				return fmt.Errorf("unexpected type %T for edge-field dsse_payload_digests", value)
+			if value, ok := values[i].(*sql.NullScanner); !ok {
+				return fmt.Errorf("unexpected type %T for field dsse_payload_digests", values[i])
 			} else if value.Valid {
-				pd.dsse_payload_digests = new(int)
-				*pd.dsse_payload_digests = int(value.Int64)
+				pd.dsse_payload_digests = new(uuid.UUID)
+				*pd.dsse_payload_digests = *value.S.(*uuid.UUID)
 			}
 		default:
 			pd.selectValues.Set(columns[i], values[i])

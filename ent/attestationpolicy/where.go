@@ -5,51 +5,52 @@ package attestationpolicy
 import (
 	"entgo.io/ent/dialect/sql"
 	"entgo.io/ent/dialect/sql/sqlgraph"
+	"github.com/google/uuid"
 	"github.com/in-toto/archivista/ent/predicate"
 )
 
 // ID filters vertices based on their ID field.
-func ID(id int) predicate.AttestationPolicy {
+func ID(id uuid.UUID) predicate.AttestationPolicy {
 	return predicate.AttestationPolicy(sql.FieldEQ(FieldID, id))
 }
 
 // IDEQ applies the EQ predicate on the ID field.
-func IDEQ(id int) predicate.AttestationPolicy {
+func IDEQ(id uuid.UUID) predicate.AttestationPolicy {
 	return predicate.AttestationPolicy(sql.FieldEQ(FieldID, id))
 }
 
 // IDNEQ applies the NEQ predicate on the ID field.
-func IDNEQ(id int) predicate.AttestationPolicy {
+func IDNEQ(id uuid.UUID) predicate.AttestationPolicy {
 	return predicate.AttestationPolicy(sql.FieldNEQ(FieldID, id))
 }
 
 // IDIn applies the In predicate on the ID field.
-func IDIn(ids ...int) predicate.AttestationPolicy {
+func IDIn(ids ...uuid.UUID) predicate.AttestationPolicy {
 	return predicate.AttestationPolicy(sql.FieldIn(FieldID, ids...))
 }
 
 // IDNotIn applies the NotIn predicate on the ID field.
-func IDNotIn(ids ...int) predicate.AttestationPolicy {
+func IDNotIn(ids ...uuid.UUID) predicate.AttestationPolicy {
 	return predicate.AttestationPolicy(sql.FieldNotIn(FieldID, ids...))
 }
 
 // IDGT applies the GT predicate on the ID field.
-func IDGT(id int) predicate.AttestationPolicy {
+func IDGT(id uuid.UUID) predicate.AttestationPolicy {
 	return predicate.AttestationPolicy(sql.FieldGT(FieldID, id))
 }
 
 // IDGTE applies the GTE predicate on the ID field.
-func IDGTE(id int) predicate.AttestationPolicy {
+func IDGTE(id uuid.UUID) predicate.AttestationPolicy {
 	return predicate.AttestationPolicy(sql.FieldGTE(FieldID, id))
 }
 
 // IDLT applies the LT predicate on the ID field.
-func IDLT(id int) predicate.AttestationPolicy {
+func IDLT(id uuid.UUID) predicate.AttestationPolicy {
 	return predicate.AttestationPolicy(sql.FieldLT(FieldID, id))
 }
 
 // IDLTE applies the LTE predicate on the ID field.
-func IDLTE(id int) predicate.AttestationPolicy {
+func IDLTE(id uuid.UUID) predicate.AttestationPolicy {
 	return predicate.AttestationPolicy(sql.FieldLTE(FieldID, id))
 }
 

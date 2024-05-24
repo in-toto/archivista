@@ -40,7 +40,7 @@ func (apd *AttestationPolicyDelete) ExecX(ctx context.Context) int {
 }
 
 func (apd *AttestationPolicyDelete) sqlExec(ctx context.Context) (int, error) {
-	_spec := sqlgraph.NewDeleteSpec(attestationpolicy.Table, sqlgraph.NewFieldSpec(attestationpolicy.FieldID, field.TypeInt))
+	_spec := sqlgraph.NewDeleteSpec(attestationpolicy.Table, sqlgraph.NewFieldSpec(attestationpolicy.FieldID, field.TypeUUID))
 	if ps := apd.mutation.predicates; len(ps) > 0 {
 		_spec.Predicate = func(selector *sql.Selector) {
 			for i := range ps {

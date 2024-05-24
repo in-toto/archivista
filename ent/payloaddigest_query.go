@@ -10,6 +10,7 @@ import (
 	"entgo.io/ent/dialect/sql"
 	"entgo.io/ent/dialect/sql/sqlgraph"
 	"entgo.io/ent/schema/field"
+	"github.com/google/uuid"
 	"github.com/in-toto/archivista/ent/dsse"
 	"github.com/in-toto/archivista/ent/payloaddigest"
 	"github.com/in-toto/archivista/ent/predicate"
@@ -108,8 +109,8 @@ func (pdq *PayloadDigestQuery) FirstX(ctx context.Context) *PayloadDigest {
 
 // FirstID returns the first PayloadDigest ID from the query.
 // Returns a *NotFoundError when no PayloadDigest ID was found.
-func (pdq *PayloadDigestQuery) FirstID(ctx context.Context) (id int, err error) {
-	var ids []int
+func (pdq *PayloadDigestQuery) FirstID(ctx context.Context) (id uuid.UUID, err error) {
+	var ids []uuid.UUID
 	if ids, err = pdq.Limit(1).IDs(setContextOp(ctx, pdq.ctx, "FirstID")); err != nil {
 		return
 	}
@@ -121,7 +122,7 @@ func (pdq *PayloadDigestQuery) FirstID(ctx context.Context) (id int, err error) 
 }
 
 // FirstIDX is like FirstID, but panics if an error occurs.
-func (pdq *PayloadDigestQuery) FirstIDX(ctx context.Context) int {
+func (pdq *PayloadDigestQuery) FirstIDX(ctx context.Context) uuid.UUID {
 	id, err := pdq.FirstID(ctx)
 	if err != nil && !IsNotFound(err) {
 		panic(err)
@@ -159,8 +160,8 @@ func (pdq *PayloadDigestQuery) OnlyX(ctx context.Context) *PayloadDigest {
 // OnlyID is like Only, but returns the only PayloadDigest ID in the query.
 // Returns a *NotSingularError when more than one PayloadDigest ID is found.
 // Returns a *NotFoundError when no entities are found.
-func (pdq *PayloadDigestQuery) OnlyID(ctx context.Context) (id int, err error) {
-	var ids []int
+func (pdq *PayloadDigestQuery) OnlyID(ctx context.Context) (id uuid.UUID, err error) {
+	var ids []uuid.UUID
 	if ids, err = pdq.Limit(2).IDs(setContextOp(ctx, pdq.ctx, "OnlyID")); err != nil {
 		return
 	}
@@ -176,7 +177,7 @@ func (pdq *PayloadDigestQuery) OnlyID(ctx context.Context) (id int, err error) {
 }
 
 // OnlyIDX is like OnlyID, but panics if an error occurs.
-func (pdq *PayloadDigestQuery) OnlyIDX(ctx context.Context) int {
+func (pdq *PayloadDigestQuery) OnlyIDX(ctx context.Context) uuid.UUID {
 	id, err := pdq.OnlyID(ctx)
 	if err != nil {
 		panic(err)
@@ -204,7 +205,7 @@ func (pdq *PayloadDigestQuery) AllX(ctx context.Context) []*PayloadDigest {
 }
 
 // IDs executes the query and returns a list of PayloadDigest IDs.
-func (pdq *PayloadDigestQuery) IDs(ctx context.Context) (ids []int, err error) {
+func (pdq *PayloadDigestQuery) IDs(ctx context.Context) (ids []uuid.UUID, err error) {
 	if pdq.ctx.Unique == nil && pdq.path != nil {
 		pdq.Unique(true)
 	}
@@ -216,7 +217,7 @@ func (pdq *PayloadDigestQuery) IDs(ctx context.Context) (ids []int, err error) {
 }
 
 // IDsX is like IDs, but panics if an error occurs.
-func (pdq *PayloadDigestQuery) IDsX(ctx context.Context) []int {
+func (pdq *PayloadDigestQuery) IDsX(ctx context.Context) []uuid.UUID {
 	ids, err := pdq.IDs(ctx)
 	if err != nil {
 		panic(err)
@@ -419,8 +420,8 @@ func (pdq *PayloadDigestQuery) sqlAll(ctx context.Context, hooks ...queryHook) (
 }
 
 func (pdq *PayloadDigestQuery) loadDsse(ctx context.Context, query *DsseQuery, nodes []*PayloadDigest, init func(*PayloadDigest), assign func(*PayloadDigest, *Dsse)) error {
-	ids := make([]int, 0, len(nodes))
-	nodeids := make(map[int][]*PayloadDigest)
+	ids := make([]uuid.UUID, 0, len(nodes))
+	nodeids := make(map[uuid.UUID][]*PayloadDigest)
 	for i := range nodes {
 		if nodes[i].dsse_payload_digests == nil {
 			continue
@@ -464,7 +465,7 @@ func (pdq *PayloadDigestQuery) sqlCount(ctx context.Context) (int, error) {
 }
 
 func (pdq *PayloadDigestQuery) querySpec() *sqlgraph.QuerySpec {
-	_spec := sqlgraph.NewQuerySpec(payloaddigest.Table, payloaddigest.Columns, sqlgraph.NewFieldSpec(payloaddigest.FieldID, field.TypeInt))
+	_spec := sqlgraph.NewQuerySpec(payloaddigest.Table, payloaddigest.Columns, sqlgraph.NewFieldSpec(payloaddigest.FieldID, field.TypeUUID))
 	_spec.From = pdq.sql
 	if unique := pdq.ctx.Unique; unique != nil {
 		_spec.Unique = *unique

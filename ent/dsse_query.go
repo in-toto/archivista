@@ -11,6 +11,7 @@ import (
 	"entgo.io/ent/dialect/sql"
 	"entgo.io/ent/dialect/sql/sqlgraph"
 	"entgo.io/ent/schema/field"
+	"github.com/google/uuid"
 	"github.com/in-toto/archivista/ent/dsse"
 	"github.com/in-toto/archivista/ent/payloaddigest"
 	"github.com/in-toto/archivista/ent/predicate"
@@ -159,8 +160,8 @@ func (dq *DsseQuery) FirstX(ctx context.Context) *Dsse {
 
 // FirstID returns the first Dsse ID from the query.
 // Returns a *NotFoundError when no Dsse ID was found.
-func (dq *DsseQuery) FirstID(ctx context.Context) (id int, err error) {
-	var ids []int
+func (dq *DsseQuery) FirstID(ctx context.Context) (id uuid.UUID, err error) {
+	var ids []uuid.UUID
 	if ids, err = dq.Limit(1).IDs(setContextOp(ctx, dq.ctx, "FirstID")); err != nil {
 		return
 	}
@@ -172,7 +173,7 @@ func (dq *DsseQuery) FirstID(ctx context.Context) (id int, err error) {
 }
 
 // FirstIDX is like FirstID, but panics if an error occurs.
-func (dq *DsseQuery) FirstIDX(ctx context.Context) int {
+func (dq *DsseQuery) FirstIDX(ctx context.Context) uuid.UUID {
 	id, err := dq.FirstID(ctx)
 	if err != nil && !IsNotFound(err) {
 		panic(err)
@@ -210,8 +211,8 @@ func (dq *DsseQuery) OnlyX(ctx context.Context) *Dsse {
 // OnlyID is like Only, but returns the only Dsse ID in the query.
 // Returns a *NotSingularError when more than one Dsse ID is found.
 // Returns a *NotFoundError when no entities are found.
-func (dq *DsseQuery) OnlyID(ctx context.Context) (id int, err error) {
-	var ids []int
+func (dq *DsseQuery) OnlyID(ctx context.Context) (id uuid.UUID, err error) {
+	var ids []uuid.UUID
 	if ids, err = dq.Limit(2).IDs(setContextOp(ctx, dq.ctx, "OnlyID")); err != nil {
 		return
 	}
@@ -227,7 +228,7 @@ func (dq *DsseQuery) OnlyID(ctx context.Context) (id int, err error) {
 }
 
 // OnlyIDX is like OnlyID, but panics if an error occurs.
-func (dq *DsseQuery) OnlyIDX(ctx context.Context) int {
+func (dq *DsseQuery) OnlyIDX(ctx context.Context) uuid.UUID {
 	id, err := dq.OnlyID(ctx)
 	if err != nil {
 		panic(err)
@@ -255,7 +256,7 @@ func (dq *DsseQuery) AllX(ctx context.Context) []*Dsse {
 }
 
 // IDs executes the query and returns a list of Dsse IDs.
-func (dq *DsseQuery) IDs(ctx context.Context) (ids []int, err error) {
+func (dq *DsseQuery) IDs(ctx context.Context) (ids []uuid.UUID, err error) {
 	if dq.ctx.Unique == nil && dq.path != nil {
 		dq.Unique(true)
 	}
@@ -267,7 +268,7 @@ func (dq *DsseQuery) IDs(ctx context.Context) (ids []int, err error) {
 }
 
 // IDsX is like IDs, but panics if an error occurs.
-func (dq *DsseQuery) IDsX(ctx context.Context) []int {
+func (dq *DsseQuery) IDsX(ctx context.Context) []uuid.UUID {
 	ids, err := dq.IDs(ctx)
 	if err != nil {
 		panic(err)
@@ -524,8 +525,8 @@ func (dq *DsseQuery) sqlAll(ctx context.Context, hooks ...queryHook) ([]*Dsse, e
 }
 
 func (dq *DsseQuery) loadStatement(ctx context.Context, query *StatementQuery, nodes []*Dsse, init func(*Dsse), assign func(*Dsse, *Statement)) error {
-	ids := make([]int, 0, len(nodes))
-	nodeids := make(map[int][]*Dsse)
+	ids := make([]uuid.UUID, 0, len(nodes))
+	nodeids := make(map[uuid.UUID][]*Dsse)
 	for i := range nodes {
 		if nodes[i].dsse_statement == nil {
 			continue
@@ -557,7 +558,7 @@ func (dq *DsseQuery) loadStatement(ctx context.Context, query *StatementQuery, n
 }
 func (dq *DsseQuery) loadSignatures(ctx context.Context, query *SignatureQuery, nodes []*Dsse, init func(*Dsse), assign func(*Dsse, *Signature)) error {
 	fks := make([]driver.Value, 0, len(nodes))
-	nodeids := make(map[int]*Dsse)
+	nodeids := make(map[uuid.UUID]*Dsse)
 	for i := range nodes {
 		fks = append(fks, nodes[i].ID)
 		nodeids[nodes[i].ID] = nodes[i]
@@ -588,7 +589,7 @@ func (dq *DsseQuery) loadSignatures(ctx context.Context, query *SignatureQuery, 
 }
 func (dq *DsseQuery) loadPayloadDigests(ctx context.Context, query *PayloadDigestQuery, nodes []*Dsse, init func(*Dsse), assign func(*Dsse, *PayloadDigest)) error {
 	fks := make([]driver.Value, 0, len(nodes))
-	nodeids := make(map[int]*Dsse)
+	nodeids := make(map[uuid.UUID]*Dsse)
 	for i := range nodes {
 		fks = append(fks, nodes[i].ID)
 		nodeids[nodes[i].ID] = nodes[i]
@@ -631,7 +632,7 @@ func (dq *DsseQuery) sqlCount(ctx context.Context) (int, error) {
 }
 
 func (dq *DsseQuery) querySpec() *sqlgraph.QuerySpec {
-	_spec := sqlgraph.NewQuerySpec(dsse.Table, dsse.Columns, sqlgraph.NewFieldSpec(dsse.FieldID, field.TypeInt))
+	_spec := sqlgraph.NewQuerySpec(dsse.Table, dsse.Columns, sqlgraph.NewFieldSpec(dsse.FieldID, field.TypeUUID))
 	_spec.From = dq.sql
 	if unique := dq.ctx.Unique; unique != nil {
 		_spec.Unique = *unique

@@ -10,6 +10,7 @@ import (
 	"entgo.io/ent/dialect/sql"
 	"entgo.io/ent/dialect/sql/sqlgraph"
 	"entgo.io/ent/schema/field"
+	"github.com/google/uuid"
 	"github.com/in-toto/archivista/ent/predicate"
 	"github.com/in-toto/archivista/ent/subject"
 	"github.com/in-toto/archivista/ent/subjectdigest"
@@ -108,8 +109,8 @@ func (sdq *SubjectDigestQuery) FirstX(ctx context.Context) *SubjectDigest {
 
 // FirstID returns the first SubjectDigest ID from the query.
 // Returns a *NotFoundError when no SubjectDigest ID was found.
-func (sdq *SubjectDigestQuery) FirstID(ctx context.Context) (id int, err error) {
-	var ids []int
+func (sdq *SubjectDigestQuery) FirstID(ctx context.Context) (id uuid.UUID, err error) {
+	var ids []uuid.UUID
 	if ids, err = sdq.Limit(1).IDs(setContextOp(ctx, sdq.ctx, "FirstID")); err != nil {
 		return
 	}
@@ -121,7 +122,7 @@ func (sdq *SubjectDigestQuery) FirstID(ctx context.Context) (id int, err error) 
 }
 
 // FirstIDX is like FirstID, but panics if an error occurs.
-func (sdq *SubjectDigestQuery) FirstIDX(ctx context.Context) int {
+func (sdq *SubjectDigestQuery) FirstIDX(ctx context.Context) uuid.UUID {
 	id, err := sdq.FirstID(ctx)
 	if err != nil && !IsNotFound(err) {
 		panic(err)
@@ -159,8 +160,8 @@ func (sdq *SubjectDigestQuery) OnlyX(ctx context.Context) *SubjectDigest {
 // OnlyID is like Only, but returns the only SubjectDigest ID in the query.
 // Returns a *NotSingularError when more than one SubjectDigest ID is found.
 // Returns a *NotFoundError when no entities are found.
-func (sdq *SubjectDigestQuery) OnlyID(ctx context.Context) (id int, err error) {
-	var ids []int
+func (sdq *SubjectDigestQuery) OnlyID(ctx context.Context) (id uuid.UUID, err error) {
+	var ids []uuid.UUID
 	if ids, err = sdq.Limit(2).IDs(setContextOp(ctx, sdq.ctx, "OnlyID")); err != nil {
 		return
 	}
@@ -176,7 +177,7 @@ func (sdq *SubjectDigestQuery) OnlyID(ctx context.Context) (id int, err error) {
 }
 
 // OnlyIDX is like OnlyID, but panics if an error occurs.
-func (sdq *SubjectDigestQuery) OnlyIDX(ctx context.Context) int {
+func (sdq *SubjectDigestQuery) OnlyIDX(ctx context.Context) uuid.UUID {
 	id, err := sdq.OnlyID(ctx)
 	if err != nil {
 		panic(err)
@@ -204,7 +205,7 @@ func (sdq *SubjectDigestQuery) AllX(ctx context.Context) []*SubjectDigest {
 }
 
 // IDs executes the query and returns a list of SubjectDigest IDs.
-func (sdq *SubjectDigestQuery) IDs(ctx context.Context) (ids []int, err error) {
+func (sdq *SubjectDigestQuery) IDs(ctx context.Context) (ids []uuid.UUID, err error) {
 	if sdq.ctx.Unique == nil && sdq.path != nil {
 		sdq.Unique(true)
 	}
@@ -216,7 +217,7 @@ func (sdq *SubjectDigestQuery) IDs(ctx context.Context) (ids []int, err error) {
 }
 
 // IDsX is like IDs, but panics if an error occurs.
-func (sdq *SubjectDigestQuery) IDsX(ctx context.Context) []int {
+func (sdq *SubjectDigestQuery) IDsX(ctx context.Context) []uuid.UUID {
 	ids, err := sdq.IDs(ctx)
 	if err != nil {
 		panic(err)
@@ -419,8 +420,8 @@ func (sdq *SubjectDigestQuery) sqlAll(ctx context.Context, hooks ...queryHook) (
 }
 
 func (sdq *SubjectDigestQuery) loadSubject(ctx context.Context, query *SubjectQuery, nodes []*SubjectDigest, init func(*SubjectDigest), assign func(*SubjectDigest, *Subject)) error {
-	ids := make([]int, 0, len(nodes))
-	nodeids := make(map[int][]*SubjectDigest)
+	ids := make([]uuid.UUID, 0, len(nodes))
+	nodeids := make(map[uuid.UUID][]*SubjectDigest)
 	for i := range nodes {
 		if nodes[i].subject_subject_digests == nil {
 			continue
@@ -464,7 +465,7 @@ func (sdq *SubjectDigestQuery) sqlCount(ctx context.Context) (int, error) {
 }
 
 func (sdq *SubjectDigestQuery) querySpec() *sqlgraph.QuerySpec {
-	_spec := sqlgraph.NewQuerySpec(subjectdigest.Table, subjectdigest.Columns, sqlgraph.NewFieldSpec(subjectdigest.FieldID, field.TypeInt))
+	_spec := sqlgraph.NewQuerySpec(subjectdigest.Table, subjectdigest.Columns, sqlgraph.NewFieldSpec(subjectdigest.FieldID, field.TypeUUID))
 	_spec.From = sdq.sql
 	if unique := sdq.ctx.Unique; unique != nil {
 		_spec.Unique = *unique

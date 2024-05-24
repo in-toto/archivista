@@ -9,6 +9,7 @@ import (
 
 	"entgo.io/ent/dialect/sql/sqlgraph"
 	"entgo.io/ent/schema/field"
+	"github.com/google/uuid"
 	"github.com/in-toto/archivista/ent/dsse"
 	"github.com/in-toto/archivista/ent/payloaddigest"
 )
@@ -32,14 +33,28 @@ func (pdc *PayloadDigestCreate) SetValue(s string) *PayloadDigestCreate {
 	return pdc
 }
 
+// SetID sets the "id" field.
+func (pdc *PayloadDigestCreate) SetID(u uuid.UUID) *PayloadDigestCreate {
+	pdc.mutation.SetID(u)
+	return pdc
+}
+
+// SetNillableID sets the "id" field if the given value is not nil.
+func (pdc *PayloadDigestCreate) SetNillableID(u *uuid.UUID) *PayloadDigestCreate {
+	if u != nil {
+		pdc.SetID(*u)
+	}
+	return pdc
+}
+
 // SetDsseID sets the "dsse" edge to the Dsse entity by ID.
-func (pdc *PayloadDigestCreate) SetDsseID(id int) *PayloadDigestCreate {
+func (pdc *PayloadDigestCreate) SetDsseID(id uuid.UUID) *PayloadDigestCreate {
 	pdc.mutation.SetDsseID(id)
 	return pdc
 }
 
 // SetNillableDsseID sets the "dsse" edge to the Dsse entity by ID if the given value is not nil.
-func (pdc *PayloadDigestCreate) SetNillableDsseID(id *int) *PayloadDigestCreate {
+func (pdc *PayloadDigestCreate) SetNillableDsseID(id *uuid.UUID) *PayloadDigestCreate {
 	if id != nil {
 		pdc = pdc.SetDsseID(*id)
 	}
@@ -58,6 +73,7 @@ func (pdc *PayloadDigestCreate) Mutation() *PayloadDigestMutation {
 
 // Save creates the PayloadDigest in the database.
 func (pdc *PayloadDigestCreate) Save(ctx context.Context) (*PayloadDigest, error) {
+	pdc.defaults()
 	return withHooks(ctx, pdc.sqlSave, pdc.mutation, pdc.hooks)
 }
 
@@ -80,6 +96,14 @@ func (pdc *PayloadDigestCreate) Exec(ctx context.Context) error {
 func (pdc *PayloadDigestCreate) ExecX(ctx context.Context) {
 	if err := pdc.Exec(ctx); err != nil {
 		panic(err)
+	}
+}
+
+// defaults sets the default values of the builder before save.
+func (pdc *PayloadDigestCreate) defaults() {
+	if _, ok := pdc.mutation.ID(); !ok {
+		v := payloaddigest.DefaultID()
+		pdc.mutation.SetID(v)
 	}
 }
 
@@ -115,8 +139,13 @@ func (pdc *PayloadDigestCreate) sqlSave(ctx context.Context) (*PayloadDigest, er
 		}
 		return nil, err
 	}
-	id := _spec.ID.Value.(int64)
-	_node.ID = int(id)
+	if _spec.ID.Value != nil {
+		if id, ok := _spec.ID.Value.(*uuid.UUID); ok {
+			_node.ID = *id
+		} else if err := _node.ID.Scan(_spec.ID.Value); err != nil {
+			return nil, err
+		}
+	}
 	pdc.mutation.id = &_node.ID
 	pdc.mutation.done = true
 	return _node, nil
@@ -125,8 +154,12 @@ func (pdc *PayloadDigestCreate) sqlSave(ctx context.Context) (*PayloadDigest, er
 func (pdc *PayloadDigestCreate) createSpec() (*PayloadDigest, *sqlgraph.CreateSpec) {
 	var (
 		_node = &PayloadDigest{config: pdc.config}
-		_spec = sqlgraph.NewCreateSpec(payloaddigest.Table, sqlgraph.NewFieldSpec(payloaddigest.FieldID, field.TypeInt))
+		_spec = sqlgraph.NewCreateSpec(payloaddigest.Table, sqlgraph.NewFieldSpec(payloaddigest.FieldID, field.TypeUUID))
 	)
+	if id, ok := pdc.mutation.ID(); ok {
+		_node.ID = id
+		_spec.ID.Value = &id
+	}
 	if value, ok := pdc.mutation.Algorithm(); ok {
 		_spec.SetField(payloaddigest.FieldAlgorithm, field.TypeString, value)
 		_node.Algorithm = value
@@ -143,7 +176,7 @@ func (pdc *PayloadDigestCreate) createSpec() (*PayloadDigest, *sqlgraph.CreateSp
 			Columns: []string{payloaddigest.DsseColumn},
 			Bidi:    false,
 			Target: &sqlgraph.EdgeTarget{
-				IDSpec: sqlgraph.NewFieldSpec(dsse.FieldID, field.TypeInt),
+				IDSpec: sqlgraph.NewFieldSpec(dsse.FieldID, field.TypeUUID),
 			},
 		}
 		for _, k := range nodes {
@@ -173,6 +206,7 @@ func (pdcb *PayloadDigestCreateBulk) Save(ctx context.Context) ([]*PayloadDigest
 	for i := range pdcb.builders {
 		func(i int, root context.Context) {
 			builder := pdcb.builders[i]
+			builder.defaults()
 			var mut Mutator = MutateFunc(func(ctx context.Context, m Mutation) (Value, error) {
 				mutation, ok := m.(*PayloadDigestMutation)
 				if !ok {
@@ -199,10 +233,6 @@ func (pdcb *PayloadDigestCreateBulk) Save(ctx context.Context) ([]*PayloadDigest
 					return nil, err
 				}
 				mutation.id = &nodes[i].ID
-				if specs[i].ID.Value != nil {
-					id := specs[i].ID.Value.(int64)
-					nodes[i].ID = int(id)
-				}
 				mutation.done = true
 				return nodes[i], nil
 			})

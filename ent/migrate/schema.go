@@ -10,9 +10,9 @@ import (
 var (
 	// AttestationsColumns holds the columns for the "attestations" table.
 	AttestationsColumns = []*schema.Column{
-		{Name: "id", Type: field.TypeInt, Increment: true},
+		{Name: "id", Type: field.TypeUUID, Unique: true},
 		{Name: "type", Type: field.TypeString},
-		{Name: "attestation_collection_attestations", Type: field.TypeInt},
+		{Name: "attestation_collection_attestations", Type: field.TypeUUID},
 	}
 	// AttestationsTable holds the schema information for the "attestations" table.
 	AttestationsTable = &schema.Table{
@@ -37,9 +37,9 @@ var (
 	}
 	// AttestationCollectionsColumns holds the columns for the "attestation_collections" table.
 	AttestationCollectionsColumns = []*schema.Column{
-		{Name: "id", Type: field.TypeInt, Increment: true},
+		{Name: "id", Type: field.TypeUUID, Unique: true},
 		{Name: "name", Type: field.TypeString},
-		{Name: "statement_attestation_collections", Type: field.TypeInt, Unique: true},
+		{Name: "statement_attestation_collections", Type: field.TypeUUID, Unique: true},
 	}
 	// AttestationCollectionsTable holds the schema information for the "attestation_collections" table.
 	AttestationCollectionsTable = &schema.Table{
@@ -64,9 +64,9 @@ var (
 	}
 	// AttestationPoliciesColumns holds the columns for the "attestation_policies" table.
 	AttestationPoliciesColumns = []*schema.Column{
-		{Name: "id", Type: field.TypeInt, Increment: true},
+		{Name: "id", Type: field.TypeUUID, Unique: true},
 		{Name: "name", Type: field.TypeString},
-		{Name: "statement_policy", Type: field.TypeInt, Unique: true, Nullable: true},
+		{Name: "statement_policy", Type: field.TypeUUID, Unique: true, Nullable: true},
 	}
 	// AttestationPoliciesTable holds the schema information for the "attestation_policies" table.
 	AttestationPoliciesTable = &schema.Table{
@@ -91,10 +91,10 @@ var (
 	}
 	// DssesColumns holds the columns for the "dsses" table.
 	DssesColumns = []*schema.Column{
-		{Name: "id", Type: field.TypeInt, Increment: true},
+		{Name: "id", Type: field.TypeUUID, Unique: true},
 		{Name: "gitoid_sha256", Type: field.TypeString, Unique: true},
 		{Name: "payload_type", Type: field.TypeString},
-		{Name: "dsse_statement", Type: field.TypeInt, Nullable: true},
+		{Name: "dsse_statement", Type: field.TypeUUID, Nullable: true},
 	}
 	// DssesTable holds the schema information for the "dsses" table.
 	DssesTable = &schema.Table{
@@ -112,10 +112,10 @@ var (
 	}
 	// PayloadDigestsColumns holds the columns for the "payload_digests" table.
 	PayloadDigestsColumns = []*schema.Column{
-		{Name: "id", Type: field.TypeInt, Increment: true},
+		{Name: "id", Type: field.TypeUUID, Unique: true},
 		{Name: "algorithm", Type: field.TypeString},
 		{Name: "value", Type: field.TypeString},
-		{Name: "dsse_payload_digests", Type: field.TypeInt, Nullable: true},
+		{Name: "dsse_payload_digests", Type: field.TypeUUID, Nullable: true},
 	}
 	// PayloadDigestsTable holds the schema information for the "payload_digests" table.
 	PayloadDigestsTable = &schema.Table{
@@ -140,10 +140,10 @@ var (
 	}
 	// SignaturesColumns holds the columns for the "signatures" table.
 	SignaturesColumns = []*schema.Column{
-		{Name: "id", Type: field.TypeInt, Increment: true},
+		{Name: "id", Type: field.TypeUUID, Unique: true},
 		{Name: "key_id", Type: field.TypeString},
 		{Name: "signature", Type: field.TypeString, SchemaType: map[string]string{"mysql": "text"}},
-		{Name: "dsse_signatures", Type: field.TypeInt, Nullable: true},
+		{Name: "dsse_signatures", Type: field.TypeUUID, Nullable: true},
 	}
 	// SignaturesTable holds the schema information for the "signatures" table.
 	SignaturesTable = &schema.Table{
@@ -168,7 +168,7 @@ var (
 	}
 	// StatementsColumns holds the columns for the "statements" table.
 	StatementsColumns = []*schema.Column{
-		{Name: "id", Type: field.TypeInt, Increment: true},
+		{Name: "id", Type: field.TypeUUID, Unique: true},
 		{Name: "predicate", Type: field.TypeString},
 	}
 	// StatementsTable holds the schema information for the "statements" table.
@@ -186,9 +186,9 @@ var (
 	}
 	// SubjectsColumns holds the columns for the "subjects" table.
 	SubjectsColumns = []*schema.Column{
-		{Name: "id", Type: field.TypeInt, Increment: true},
+		{Name: "id", Type: field.TypeUUID, Unique: true},
 		{Name: "name", Type: field.TypeString},
-		{Name: "statement_subjects", Type: field.TypeInt, Nullable: true},
+		{Name: "statement_subjects", Type: field.TypeUUID, Nullable: true},
 	}
 	// SubjectsTable holds the schema information for the "subjects" table.
 	SubjectsTable = &schema.Table{
@@ -213,10 +213,10 @@ var (
 	}
 	// SubjectDigestsColumns holds the columns for the "subject_digests" table.
 	SubjectDigestsColumns = []*schema.Column{
-		{Name: "id", Type: field.TypeInt, Increment: true},
+		{Name: "id", Type: field.TypeUUID, Unique: true},
 		{Name: "algorithm", Type: field.TypeString},
 		{Name: "value", Type: field.TypeString},
-		{Name: "subject_subject_digests", Type: field.TypeInt, Nullable: true},
+		{Name: "subject_subject_digests", Type: field.TypeUUID, Nullable: true},
 	}
 	// SubjectDigestsTable holds the schema information for the "subject_digests" table.
 	SubjectDigestsTable = &schema.Table{
@@ -241,10 +241,10 @@ var (
 	}
 	// TimestampsColumns holds the columns for the "timestamps" table.
 	TimestampsColumns = []*schema.Column{
-		{Name: "id", Type: field.TypeInt, Increment: true},
+		{Name: "id", Type: field.TypeUUID, Unique: true},
 		{Name: "type", Type: field.TypeString},
 		{Name: "timestamp", Type: field.TypeTime},
-		{Name: "signature_timestamps", Type: field.TypeInt, Nullable: true},
+		{Name: "signature_timestamps", Type: field.TypeUUID, Nullable: true},
 	}
 	// TimestampsTable holds the schema information for the "timestamps" table.
 	TimestampsTable = &schema.Table{

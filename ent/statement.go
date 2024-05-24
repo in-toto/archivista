@@ -8,6 +8,7 @@ import (
 
 	"entgo.io/ent"
 	"entgo.io/ent/dialect/sql"
+	"github.com/google/uuid"
 	"github.com/in-toto/archivista/ent/attestationcollection"
 	"github.com/in-toto/archivista/ent/attestationpolicy"
 	"github.com/in-toto/archivista/ent/statement"
@@ -17,7 +18,7 @@ import (
 type Statement struct {
 	config `json:"-"`
 	// ID of the ent.
-	ID int `json:"id,omitempty"`
+	ID uuid.UUID `json:"id,omitempty"`
 	// Predicate holds the value of the "predicate" field.
 	Predicate string `json:"predicate,omitempty"`
 	// Edges holds the relations/edges for other nodes in the graph.
@@ -91,10 +92,10 @@ func (*Statement) scanValues(columns []string) ([]any, error) {
 	values := make([]any, len(columns))
 	for i := range columns {
 		switch columns[i] {
-		case statement.FieldID:
-			values[i] = new(sql.NullInt64)
 		case statement.FieldPredicate:
 			values[i] = new(sql.NullString)
+		case statement.FieldID:
+			values[i] = new(uuid.UUID)
 		default:
 			values[i] = new(sql.UnknownType)
 		}
@@ -111,11 +112,11 @@ func (s *Statement) assignValues(columns []string, values []any) error {
 	for i := range columns {
 		switch columns[i] {
 		case statement.FieldID:
-			value, ok := values[i].(*sql.NullInt64)
-			if !ok {
-				return fmt.Errorf("unexpected type %T for field id", value)
+			if value, ok := values[i].(*uuid.UUID); !ok {
+				return fmt.Errorf("unexpected type %T for field id", values[i])
+			} else if value != nil {
+				s.ID = *value
 			}
-			s.ID = int(value.Int64)
 		case statement.FieldPredicate:
 			if value, ok := values[i].(*sql.NullString); !ok {
 				return fmt.Errorf("unexpected type %T for field predicate", values[i])

@@ -8,6 +8,7 @@ import (
 
 	"entgo.io/ent"
 	"entgo.io/ent/dialect/sql"
+	"github.com/google/uuid"
 	"github.com/in-toto/archivista/ent/subject"
 	"github.com/in-toto/archivista/ent/subjectdigest"
 )
@@ -16,7 +17,7 @@ import (
 type SubjectDigest struct {
 	config `json:"-"`
 	// ID of the ent.
-	ID int `json:"id,omitempty"`
+	ID uuid.UUID `json:"id,omitempty"`
 	// Algorithm holds the value of the "algorithm" field.
 	Algorithm string `json:"algorithm,omitempty"`
 	// Value holds the value of the "value" field.
@@ -24,7 +25,7 @@ type SubjectDigest struct {
 	// Edges holds the relations/edges for other nodes in the graph.
 	// The values are being populated by the SubjectDigestQuery when eager-loading is set.
 	Edges                   SubjectDigestEdges `json:"edges"`
-	subject_subject_digests *int
+	subject_subject_digests *uuid.UUID
 	selectValues            sql.SelectValues
 }
 
@@ -55,12 +56,12 @@ func (*SubjectDigest) scanValues(columns []string) ([]any, error) {
 	values := make([]any, len(columns))
 	for i := range columns {
 		switch columns[i] {
-		case subjectdigest.FieldID:
-			values[i] = new(sql.NullInt64)
 		case subjectdigest.FieldAlgorithm, subjectdigest.FieldValue:
 			values[i] = new(sql.NullString)
+		case subjectdigest.FieldID:
+			values[i] = new(uuid.UUID)
 		case subjectdigest.ForeignKeys[0]: // subject_subject_digests
-			values[i] = new(sql.NullInt64)
+			values[i] = &sql.NullScanner{S: new(uuid.UUID)}
 		default:
 			values[i] = new(sql.UnknownType)
 		}
@@ -77,11 +78,11 @@ func (sd *SubjectDigest) assignValues(columns []string, values []any) error {
 	for i := range columns {
 		switch columns[i] {
 		case subjectdigest.FieldID:
-			value, ok := values[i].(*sql.NullInt64)
-			if !ok {
-				return fmt.Errorf("unexpected type %T for field id", value)
+			if value, ok := values[i].(*uuid.UUID); !ok {
+				return fmt.Errorf("unexpected type %T for field id", values[i])
+			} else if value != nil {
+				sd.ID = *value
 			}
-			sd.ID = int(value.Int64)
 		case subjectdigest.FieldAlgorithm:
 			if value, ok := values[i].(*sql.NullString); !ok {
 				return fmt.Errorf("unexpected type %T for field algorithm", values[i])
@@ -95,11 +96,11 @@ func (sd *SubjectDigest) assignValues(columns []string, values []any) error {
 				sd.Value = value.String
 			}
 		case subjectdigest.ForeignKeys[0]:
-			if value, ok := values[i].(*sql.NullInt64); !ok {
-				return fmt.Errorf("unexpected type %T for edge-field subject_subject_digests", value)
+			if value, ok := values[i].(*sql.NullScanner); !ok {
+				return fmt.Errorf("unexpected type %T for field subject_subject_digests", values[i])
 			} else if value.Valid {
-				sd.subject_subject_digests = new(int)
-				*sd.subject_subject_digests = int(value.Int64)
+				sd.subject_subject_digests = new(uuid.UUID)
+				*sd.subject_subject_digests = *value.S.(*uuid.UUID)
 			}
 		default:
 			sd.selectValues.Set(columns[i], values[i])

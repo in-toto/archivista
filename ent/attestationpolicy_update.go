@@ -10,6 +10,7 @@ import (
 	"entgo.io/ent/dialect/sql"
 	"entgo.io/ent/dialect/sql/sqlgraph"
 	"entgo.io/ent/schema/field"
+	"github.com/google/uuid"
 	"github.com/in-toto/archivista/ent/attestationpolicy"
 	"github.com/in-toto/archivista/ent/predicate"
 	"github.com/in-toto/archivista/ent/statement"
@@ -43,13 +44,13 @@ func (apu *AttestationPolicyUpdate) SetNillableName(s *string) *AttestationPolic
 }
 
 // SetStatementID sets the "statement" edge to the Statement entity by ID.
-func (apu *AttestationPolicyUpdate) SetStatementID(id int) *AttestationPolicyUpdate {
+func (apu *AttestationPolicyUpdate) SetStatementID(id uuid.UUID) *AttestationPolicyUpdate {
 	apu.mutation.SetStatementID(id)
 	return apu
 }
 
 // SetNillableStatementID sets the "statement" edge to the Statement entity by ID if the given value is not nil.
-func (apu *AttestationPolicyUpdate) SetNillableStatementID(id *int) *AttestationPolicyUpdate {
+func (apu *AttestationPolicyUpdate) SetNillableStatementID(id *uuid.UUID) *AttestationPolicyUpdate {
 	if id != nil {
 		apu = apu.SetStatementID(*id)
 	}
@@ -113,7 +114,7 @@ func (apu *AttestationPolicyUpdate) sqlSave(ctx context.Context) (n int, err err
 	if err := apu.check(); err != nil {
 		return n, err
 	}
-	_spec := sqlgraph.NewUpdateSpec(attestationpolicy.Table, attestationpolicy.Columns, sqlgraph.NewFieldSpec(attestationpolicy.FieldID, field.TypeInt))
+	_spec := sqlgraph.NewUpdateSpec(attestationpolicy.Table, attestationpolicy.Columns, sqlgraph.NewFieldSpec(attestationpolicy.FieldID, field.TypeUUID))
 	if ps := apu.mutation.predicates; len(ps) > 0 {
 		_spec.Predicate = func(selector *sql.Selector) {
 			for i := range ps {
@@ -132,7 +133,7 @@ func (apu *AttestationPolicyUpdate) sqlSave(ctx context.Context) (n int, err err
 			Columns: []string{attestationpolicy.StatementColumn},
 			Bidi:    false,
 			Target: &sqlgraph.EdgeTarget{
-				IDSpec: sqlgraph.NewFieldSpec(statement.FieldID, field.TypeInt),
+				IDSpec: sqlgraph.NewFieldSpec(statement.FieldID, field.TypeUUID),
 			},
 		}
 		_spec.Edges.Clear = append(_spec.Edges.Clear, edge)
@@ -145,7 +146,7 @@ func (apu *AttestationPolicyUpdate) sqlSave(ctx context.Context) (n int, err err
 			Columns: []string{attestationpolicy.StatementColumn},
 			Bidi:    false,
 			Target: &sqlgraph.EdgeTarget{
-				IDSpec: sqlgraph.NewFieldSpec(statement.FieldID, field.TypeInt),
+				IDSpec: sqlgraph.NewFieldSpec(statement.FieldID, field.TypeUUID),
 			},
 		}
 		for _, k := range nodes {
@@ -188,13 +189,13 @@ func (apuo *AttestationPolicyUpdateOne) SetNillableName(s *string) *AttestationP
 }
 
 // SetStatementID sets the "statement" edge to the Statement entity by ID.
-func (apuo *AttestationPolicyUpdateOne) SetStatementID(id int) *AttestationPolicyUpdateOne {
+func (apuo *AttestationPolicyUpdateOne) SetStatementID(id uuid.UUID) *AttestationPolicyUpdateOne {
 	apuo.mutation.SetStatementID(id)
 	return apuo
 }
 
 // SetNillableStatementID sets the "statement" edge to the Statement entity by ID if the given value is not nil.
-func (apuo *AttestationPolicyUpdateOne) SetNillableStatementID(id *int) *AttestationPolicyUpdateOne {
+func (apuo *AttestationPolicyUpdateOne) SetNillableStatementID(id *uuid.UUID) *AttestationPolicyUpdateOne {
 	if id != nil {
 		apuo = apuo.SetStatementID(*id)
 	}
@@ -271,7 +272,7 @@ func (apuo *AttestationPolicyUpdateOne) sqlSave(ctx context.Context) (_node *Att
 	if err := apuo.check(); err != nil {
 		return _node, err
 	}
-	_spec := sqlgraph.NewUpdateSpec(attestationpolicy.Table, attestationpolicy.Columns, sqlgraph.NewFieldSpec(attestationpolicy.FieldID, field.TypeInt))
+	_spec := sqlgraph.NewUpdateSpec(attestationpolicy.Table, attestationpolicy.Columns, sqlgraph.NewFieldSpec(attestationpolicy.FieldID, field.TypeUUID))
 	id, ok := apuo.mutation.ID()
 	if !ok {
 		return nil, &ValidationError{Name: "id", err: errors.New(`ent: missing "AttestationPolicy.id" for update`)}
@@ -307,7 +308,7 @@ func (apuo *AttestationPolicyUpdateOne) sqlSave(ctx context.Context) (_node *Att
 			Columns: []string{attestationpolicy.StatementColumn},
 			Bidi:    false,
 			Target: &sqlgraph.EdgeTarget{
-				IDSpec: sqlgraph.NewFieldSpec(statement.FieldID, field.TypeInt),
+				IDSpec: sqlgraph.NewFieldSpec(statement.FieldID, field.TypeUUID),
 			},
 		}
 		_spec.Edges.Clear = append(_spec.Edges.Clear, edge)
@@ -320,7 +321,7 @@ func (apuo *AttestationPolicyUpdateOne) sqlSave(ctx context.Context) (_node *Att
 			Columns: []string{attestationpolicy.StatementColumn},
 			Bidi:    false,
 			Target: &sqlgraph.EdgeTarget{
-				IDSpec: sqlgraph.NewFieldSpec(statement.FieldID, field.TypeInt),
+				IDSpec: sqlgraph.NewFieldSpec(statement.FieldID, field.TypeUUID),
 			},
 		}
 		for _, k := range nodes {

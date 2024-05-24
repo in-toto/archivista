@@ -11,6 +11,7 @@ import (
 	"entgo.io/ent/dialect/sql"
 	"entgo.io/ent/dialect/sql/sqlgraph"
 	"entgo.io/ent/schema/field"
+	"github.com/google/uuid"
 	"github.com/in-toto/archivista/ent/attestationcollection"
 	"github.com/in-toto/archivista/ent/attestationpolicy"
 	"github.com/in-toto/archivista/ent/dsse"
@@ -182,8 +183,8 @@ func (sq *StatementQuery) FirstX(ctx context.Context) *Statement {
 
 // FirstID returns the first Statement ID from the query.
 // Returns a *NotFoundError when no Statement ID was found.
-func (sq *StatementQuery) FirstID(ctx context.Context) (id int, err error) {
-	var ids []int
+func (sq *StatementQuery) FirstID(ctx context.Context) (id uuid.UUID, err error) {
+	var ids []uuid.UUID
 	if ids, err = sq.Limit(1).IDs(setContextOp(ctx, sq.ctx, "FirstID")); err != nil {
 		return
 	}
@@ -195,7 +196,7 @@ func (sq *StatementQuery) FirstID(ctx context.Context) (id int, err error) {
 }
 
 // FirstIDX is like FirstID, but panics if an error occurs.
-func (sq *StatementQuery) FirstIDX(ctx context.Context) int {
+func (sq *StatementQuery) FirstIDX(ctx context.Context) uuid.UUID {
 	id, err := sq.FirstID(ctx)
 	if err != nil && !IsNotFound(err) {
 		panic(err)
@@ -233,8 +234,8 @@ func (sq *StatementQuery) OnlyX(ctx context.Context) *Statement {
 // OnlyID is like Only, but returns the only Statement ID in the query.
 // Returns a *NotSingularError when more than one Statement ID is found.
 // Returns a *NotFoundError when no entities are found.
-func (sq *StatementQuery) OnlyID(ctx context.Context) (id int, err error) {
-	var ids []int
+func (sq *StatementQuery) OnlyID(ctx context.Context) (id uuid.UUID, err error) {
+	var ids []uuid.UUID
 	if ids, err = sq.Limit(2).IDs(setContextOp(ctx, sq.ctx, "OnlyID")); err != nil {
 		return
 	}
@@ -250,7 +251,7 @@ func (sq *StatementQuery) OnlyID(ctx context.Context) (id int, err error) {
 }
 
 // OnlyIDX is like OnlyID, but panics if an error occurs.
-func (sq *StatementQuery) OnlyIDX(ctx context.Context) int {
+func (sq *StatementQuery) OnlyIDX(ctx context.Context) uuid.UUID {
 	id, err := sq.OnlyID(ctx)
 	if err != nil {
 		panic(err)
@@ -278,7 +279,7 @@ func (sq *StatementQuery) AllX(ctx context.Context) []*Statement {
 }
 
 // IDs executes the query and returns a list of Statement IDs.
-func (sq *StatementQuery) IDs(ctx context.Context) (ids []int, err error) {
+func (sq *StatementQuery) IDs(ctx context.Context) (ids []uuid.UUID, err error) {
 	if sq.ctx.Unique == nil && sq.path != nil {
 		sq.Unique(true)
 	}
@@ -290,7 +291,7 @@ func (sq *StatementQuery) IDs(ctx context.Context) (ids []int, err error) {
 }
 
 // IDsX is like IDs, but panics if an error occurs.
-func (sq *StatementQuery) IDsX(ctx context.Context) []int {
+func (sq *StatementQuery) IDsX(ctx context.Context) []uuid.UUID {
 	ids, err := sq.IDs(ctx)
 	if err != nil {
 		panic(err)
@@ -560,7 +561,7 @@ func (sq *StatementQuery) sqlAll(ctx context.Context, hooks ...queryHook) ([]*St
 
 func (sq *StatementQuery) loadSubjects(ctx context.Context, query *SubjectQuery, nodes []*Statement, init func(*Statement), assign func(*Statement, *Subject)) error {
 	fks := make([]driver.Value, 0, len(nodes))
-	nodeids := make(map[int]*Statement)
+	nodeids := make(map[uuid.UUID]*Statement)
 	for i := range nodes {
 		fks = append(fks, nodes[i].ID)
 		nodeids[nodes[i].ID] = nodes[i]
@@ -591,7 +592,7 @@ func (sq *StatementQuery) loadSubjects(ctx context.Context, query *SubjectQuery,
 }
 func (sq *StatementQuery) loadPolicy(ctx context.Context, query *AttestationPolicyQuery, nodes []*Statement, init func(*Statement), assign func(*Statement, *AttestationPolicy)) error {
 	fks := make([]driver.Value, 0, len(nodes))
-	nodeids := make(map[int]*Statement)
+	nodeids := make(map[uuid.UUID]*Statement)
 	for i := range nodes {
 		fks = append(fks, nodes[i].ID)
 		nodeids[nodes[i].ID] = nodes[i]
@@ -619,7 +620,7 @@ func (sq *StatementQuery) loadPolicy(ctx context.Context, query *AttestationPoli
 }
 func (sq *StatementQuery) loadAttestationCollections(ctx context.Context, query *AttestationCollectionQuery, nodes []*Statement, init func(*Statement), assign func(*Statement, *AttestationCollection)) error {
 	fks := make([]driver.Value, 0, len(nodes))
-	nodeids := make(map[int]*Statement)
+	nodeids := make(map[uuid.UUID]*Statement)
 	for i := range nodes {
 		fks = append(fks, nodes[i].ID)
 		nodeids[nodes[i].ID] = nodes[i]
@@ -647,7 +648,7 @@ func (sq *StatementQuery) loadAttestationCollections(ctx context.Context, query 
 }
 func (sq *StatementQuery) loadDsse(ctx context.Context, query *DsseQuery, nodes []*Statement, init func(*Statement), assign func(*Statement, *Dsse)) error {
 	fks := make([]driver.Value, 0, len(nodes))
-	nodeids := make(map[int]*Statement)
+	nodeids := make(map[uuid.UUID]*Statement)
 	for i := range nodes {
 		fks = append(fks, nodes[i].ID)
 		nodeids[nodes[i].ID] = nodes[i]
@@ -690,7 +691,7 @@ func (sq *StatementQuery) sqlCount(ctx context.Context) (int, error) {
 }
 
 func (sq *StatementQuery) querySpec() *sqlgraph.QuerySpec {
-	_spec := sqlgraph.NewQuerySpec(statement.Table, statement.Columns, sqlgraph.NewFieldSpec(statement.FieldID, field.TypeInt))
+	_spec := sqlgraph.NewQuerySpec(statement.Table, statement.Columns, sqlgraph.NewFieldSpec(statement.FieldID, field.TypeUUID))
 	_spec.From = sq.sql
 	if unique := sq.ctx.Unique; unique != nil {
 		_spec.Unique = *unique

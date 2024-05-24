@@ -9,6 +9,7 @@ import (
 
 	"entgo.io/ent"
 	"entgo.io/ent/dialect/sql"
+	"github.com/google/uuid"
 	"github.com/in-toto/archivista/ent/signature"
 	"github.com/in-toto/archivista/ent/timestamp"
 )
@@ -17,7 +18,7 @@ import (
 type Timestamp struct {
 	config `json:"-"`
 	// ID of the ent.
-	ID int `json:"id,omitempty"`
+	ID uuid.UUID `json:"id,omitempty"`
 	// Type holds the value of the "type" field.
 	Type string `json:"type,omitempty"`
 	// Timestamp holds the value of the "timestamp" field.
@@ -25,7 +26,7 @@ type Timestamp struct {
 	// Edges holds the relations/edges for other nodes in the graph.
 	// The values are being populated by the TimestampQuery when eager-loading is set.
 	Edges                TimestampEdges `json:"edges"`
-	signature_timestamps *int
+	signature_timestamps *uuid.UUID
 	selectValues         sql.SelectValues
 }
 
@@ -56,14 +57,14 @@ func (*Timestamp) scanValues(columns []string) ([]any, error) {
 	values := make([]any, len(columns))
 	for i := range columns {
 		switch columns[i] {
-		case timestamp.FieldID:
-			values[i] = new(sql.NullInt64)
 		case timestamp.FieldType:
 			values[i] = new(sql.NullString)
 		case timestamp.FieldTimestamp:
 			values[i] = new(sql.NullTime)
+		case timestamp.FieldID:
+			values[i] = new(uuid.UUID)
 		case timestamp.ForeignKeys[0]: // signature_timestamps
-			values[i] = new(sql.NullInt64)
+			values[i] = &sql.NullScanner{S: new(uuid.UUID)}
 		default:
 			values[i] = new(sql.UnknownType)
 		}
@@ -80,11 +81,11 @@ func (t *Timestamp) assignValues(columns []string, values []any) error {
 	for i := range columns {
 		switch columns[i] {
 		case timestamp.FieldID:
-			value, ok := values[i].(*sql.NullInt64)
-			if !ok {
-				return fmt.Errorf("unexpected type %T for field id", value)
+			if value, ok := values[i].(*uuid.UUID); !ok {
+				return fmt.Errorf("unexpected type %T for field id", values[i])
+			} else if value != nil {
+				t.ID = *value
 			}
-			t.ID = int(value.Int64)
 		case timestamp.FieldType:
 			if value, ok := values[i].(*sql.NullString); !ok {
 				return fmt.Errorf("unexpected type %T for field type", values[i])
@@ -98,11 +99,11 @@ func (t *Timestamp) assignValues(columns []string, values []any) error {
 				t.Timestamp = value.Time
 			}
 		case timestamp.ForeignKeys[0]:
-			if value, ok := values[i].(*sql.NullInt64); !ok {
-				return fmt.Errorf("unexpected type %T for edge-field signature_timestamps", value)
+			if value, ok := values[i].(*sql.NullScanner); !ok {
+				return fmt.Errorf("unexpected type %T for field signature_timestamps", values[i])
 			} else if value.Valid {
-				t.signature_timestamps = new(int)
-				*t.signature_timestamps = int(value.Int64)
+				t.signature_timestamps = new(uuid.UUID)
+				*t.signature_timestamps = *value.S.(*uuid.UUID)
 			}
 		default:
 			t.selectValues.Set(columns[i], values[i])

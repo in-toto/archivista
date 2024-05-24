@@ -9,6 +9,7 @@ import (
 
 	"entgo.io/ent/dialect/sql/sqlgraph"
 	"entgo.io/ent/schema/field"
+	"github.com/google/uuid"
 	"github.com/in-toto/archivista/ent/attestationcollection"
 	"github.com/in-toto/archivista/ent/attestationpolicy"
 	"github.com/in-toto/archivista/ent/dsse"
@@ -29,15 +30,29 @@ func (sc *StatementCreate) SetPredicate(s string) *StatementCreate {
 	return sc
 }
 
+// SetID sets the "id" field.
+func (sc *StatementCreate) SetID(u uuid.UUID) *StatementCreate {
+	sc.mutation.SetID(u)
+	return sc
+}
+
+// SetNillableID sets the "id" field if the given value is not nil.
+func (sc *StatementCreate) SetNillableID(u *uuid.UUID) *StatementCreate {
+	if u != nil {
+		sc.SetID(*u)
+	}
+	return sc
+}
+
 // AddSubjectIDs adds the "subjects" edge to the Subject entity by IDs.
-func (sc *StatementCreate) AddSubjectIDs(ids ...int) *StatementCreate {
+func (sc *StatementCreate) AddSubjectIDs(ids ...uuid.UUID) *StatementCreate {
 	sc.mutation.AddSubjectIDs(ids...)
 	return sc
 }
 
 // AddSubjects adds the "subjects" edges to the Subject entity.
 func (sc *StatementCreate) AddSubjects(s ...*Subject) *StatementCreate {
-	ids := make([]int, len(s))
+	ids := make([]uuid.UUID, len(s))
 	for i := range s {
 		ids[i] = s[i].ID
 	}
@@ -45,13 +60,13 @@ func (sc *StatementCreate) AddSubjects(s ...*Subject) *StatementCreate {
 }
 
 // SetPolicyID sets the "policy" edge to the AttestationPolicy entity by ID.
-func (sc *StatementCreate) SetPolicyID(id int) *StatementCreate {
+func (sc *StatementCreate) SetPolicyID(id uuid.UUID) *StatementCreate {
 	sc.mutation.SetPolicyID(id)
 	return sc
 }
 
 // SetNillablePolicyID sets the "policy" edge to the AttestationPolicy entity by ID if the given value is not nil.
-func (sc *StatementCreate) SetNillablePolicyID(id *int) *StatementCreate {
+func (sc *StatementCreate) SetNillablePolicyID(id *uuid.UUID) *StatementCreate {
 	if id != nil {
 		sc = sc.SetPolicyID(*id)
 	}
@@ -64,13 +79,13 @@ func (sc *StatementCreate) SetPolicy(a *AttestationPolicy) *StatementCreate {
 }
 
 // SetAttestationCollectionsID sets the "attestation_collections" edge to the AttestationCollection entity by ID.
-func (sc *StatementCreate) SetAttestationCollectionsID(id int) *StatementCreate {
+func (sc *StatementCreate) SetAttestationCollectionsID(id uuid.UUID) *StatementCreate {
 	sc.mutation.SetAttestationCollectionsID(id)
 	return sc
 }
 
 // SetNillableAttestationCollectionsID sets the "attestation_collections" edge to the AttestationCollection entity by ID if the given value is not nil.
-func (sc *StatementCreate) SetNillableAttestationCollectionsID(id *int) *StatementCreate {
+func (sc *StatementCreate) SetNillableAttestationCollectionsID(id *uuid.UUID) *StatementCreate {
 	if id != nil {
 		sc = sc.SetAttestationCollectionsID(*id)
 	}
@@ -83,14 +98,14 @@ func (sc *StatementCreate) SetAttestationCollections(a *AttestationCollection) *
 }
 
 // AddDsseIDs adds the "dsse" edge to the Dsse entity by IDs.
-func (sc *StatementCreate) AddDsseIDs(ids ...int) *StatementCreate {
+func (sc *StatementCreate) AddDsseIDs(ids ...uuid.UUID) *StatementCreate {
 	sc.mutation.AddDsseIDs(ids...)
 	return sc
 }
 
 // AddDsse adds the "dsse" edges to the Dsse entity.
 func (sc *StatementCreate) AddDsse(d ...*Dsse) *StatementCreate {
-	ids := make([]int, len(d))
+	ids := make([]uuid.UUID, len(d))
 	for i := range d {
 		ids[i] = d[i].ID
 	}
@@ -104,6 +119,7 @@ func (sc *StatementCreate) Mutation() *StatementMutation {
 
 // Save creates the Statement in the database.
 func (sc *StatementCreate) Save(ctx context.Context) (*Statement, error) {
+	sc.defaults()
 	return withHooks(ctx, sc.sqlSave, sc.mutation, sc.hooks)
 }
 
@@ -126,6 +142,14 @@ func (sc *StatementCreate) Exec(ctx context.Context) error {
 func (sc *StatementCreate) ExecX(ctx context.Context) {
 	if err := sc.Exec(ctx); err != nil {
 		panic(err)
+	}
+}
+
+// defaults sets the default values of the builder before save.
+func (sc *StatementCreate) defaults() {
+	if _, ok := sc.mutation.ID(); !ok {
+		v := statement.DefaultID()
+		sc.mutation.SetID(v)
 	}
 }
 
@@ -153,8 +177,13 @@ func (sc *StatementCreate) sqlSave(ctx context.Context) (*Statement, error) {
 		}
 		return nil, err
 	}
-	id := _spec.ID.Value.(int64)
-	_node.ID = int(id)
+	if _spec.ID.Value != nil {
+		if id, ok := _spec.ID.Value.(*uuid.UUID); ok {
+			_node.ID = *id
+		} else if err := _node.ID.Scan(_spec.ID.Value); err != nil {
+			return nil, err
+		}
+	}
 	sc.mutation.id = &_node.ID
 	sc.mutation.done = true
 	return _node, nil
@@ -163,8 +192,12 @@ func (sc *StatementCreate) sqlSave(ctx context.Context) (*Statement, error) {
 func (sc *StatementCreate) createSpec() (*Statement, *sqlgraph.CreateSpec) {
 	var (
 		_node = &Statement{config: sc.config}
-		_spec = sqlgraph.NewCreateSpec(statement.Table, sqlgraph.NewFieldSpec(statement.FieldID, field.TypeInt))
+		_spec = sqlgraph.NewCreateSpec(statement.Table, sqlgraph.NewFieldSpec(statement.FieldID, field.TypeUUID))
 	)
+	if id, ok := sc.mutation.ID(); ok {
+		_node.ID = id
+		_spec.ID.Value = &id
+	}
 	if value, ok := sc.mutation.Predicate(); ok {
 		_spec.SetField(statement.FieldPredicate, field.TypeString, value)
 		_node.Predicate = value
@@ -177,7 +210,7 @@ func (sc *StatementCreate) createSpec() (*Statement, *sqlgraph.CreateSpec) {
 			Columns: []string{statement.SubjectsColumn},
 			Bidi:    false,
 			Target: &sqlgraph.EdgeTarget{
-				IDSpec: sqlgraph.NewFieldSpec(subject.FieldID, field.TypeInt),
+				IDSpec: sqlgraph.NewFieldSpec(subject.FieldID, field.TypeUUID),
 			},
 		}
 		for _, k := range nodes {
@@ -193,7 +226,7 @@ func (sc *StatementCreate) createSpec() (*Statement, *sqlgraph.CreateSpec) {
 			Columns: []string{statement.PolicyColumn},
 			Bidi:    false,
 			Target: &sqlgraph.EdgeTarget{
-				IDSpec: sqlgraph.NewFieldSpec(attestationpolicy.FieldID, field.TypeInt),
+				IDSpec: sqlgraph.NewFieldSpec(attestationpolicy.FieldID, field.TypeUUID),
 			},
 		}
 		for _, k := range nodes {
@@ -209,7 +242,7 @@ func (sc *StatementCreate) createSpec() (*Statement, *sqlgraph.CreateSpec) {
 			Columns: []string{statement.AttestationCollectionsColumn},
 			Bidi:    false,
 			Target: &sqlgraph.EdgeTarget{
-				IDSpec: sqlgraph.NewFieldSpec(attestationcollection.FieldID, field.TypeInt),
+				IDSpec: sqlgraph.NewFieldSpec(attestationcollection.FieldID, field.TypeUUID),
 			},
 		}
 		for _, k := range nodes {
@@ -225,7 +258,7 @@ func (sc *StatementCreate) createSpec() (*Statement, *sqlgraph.CreateSpec) {
 			Columns: []string{statement.DsseColumn},
 			Bidi:    false,
 			Target: &sqlgraph.EdgeTarget{
-				IDSpec: sqlgraph.NewFieldSpec(dsse.FieldID, field.TypeInt),
+				IDSpec: sqlgraph.NewFieldSpec(dsse.FieldID, field.TypeUUID),
 			},
 		}
 		for _, k := range nodes {
@@ -254,6 +287,7 @@ func (scb *StatementCreateBulk) Save(ctx context.Context) ([]*Statement, error) 
 	for i := range scb.builders {
 		func(i int, root context.Context) {
 			builder := scb.builders[i]
+			builder.defaults()
 			var mut Mutator = MutateFunc(func(ctx context.Context, m Mutation) (Value, error) {
 				mutation, ok := m.(*StatementMutation)
 				if !ok {
@@ -280,10 +314,6 @@ func (scb *StatementCreateBulk) Save(ctx context.Context) ([]*Statement, error) 
 					return nil, err
 				}
 				mutation.id = &nodes[i].ID
-				if specs[i].ID.Value != nil {
-					id := specs[i].ID.Value.(int64)
-					nodes[i].ID = int(id)
-				}
 				mutation.done = true
 				return nodes[i], nil
 			})

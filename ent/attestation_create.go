@@ -9,6 +9,7 @@ import (
 
 	"entgo.io/ent/dialect/sql/sqlgraph"
 	"entgo.io/ent/schema/field"
+	"github.com/google/uuid"
 	"github.com/in-toto/archivista/ent/attestation"
 	"github.com/in-toto/archivista/ent/attestationcollection"
 )
@@ -26,8 +27,22 @@ func (ac *AttestationCreate) SetType(s string) *AttestationCreate {
 	return ac
 }
 
+// SetID sets the "id" field.
+func (ac *AttestationCreate) SetID(u uuid.UUID) *AttestationCreate {
+	ac.mutation.SetID(u)
+	return ac
+}
+
+// SetNillableID sets the "id" field if the given value is not nil.
+func (ac *AttestationCreate) SetNillableID(u *uuid.UUID) *AttestationCreate {
+	if u != nil {
+		ac.SetID(*u)
+	}
+	return ac
+}
+
 // SetAttestationCollectionID sets the "attestation_collection" edge to the AttestationCollection entity by ID.
-func (ac *AttestationCreate) SetAttestationCollectionID(id int) *AttestationCreate {
+func (ac *AttestationCreate) SetAttestationCollectionID(id uuid.UUID) *AttestationCreate {
 	ac.mutation.SetAttestationCollectionID(id)
 	return ac
 }
@@ -44,6 +59,7 @@ func (ac *AttestationCreate) Mutation() *AttestationMutation {
 
 // Save creates the Attestation in the database.
 func (ac *AttestationCreate) Save(ctx context.Context) (*Attestation, error) {
+	ac.defaults()
 	return withHooks(ctx, ac.sqlSave, ac.mutation, ac.hooks)
 }
 
@@ -66,6 +82,14 @@ func (ac *AttestationCreate) Exec(ctx context.Context) error {
 func (ac *AttestationCreate) ExecX(ctx context.Context) {
 	if err := ac.Exec(ctx); err != nil {
 		panic(err)
+	}
+}
+
+// defaults sets the default values of the builder before save.
+func (ac *AttestationCreate) defaults() {
+	if _, ok := ac.mutation.ID(); !ok {
+		v := attestation.DefaultID()
+		ac.mutation.SetID(v)
 	}
 }
 
@@ -96,8 +120,13 @@ func (ac *AttestationCreate) sqlSave(ctx context.Context) (*Attestation, error) 
 		}
 		return nil, err
 	}
-	id := _spec.ID.Value.(int64)
-	_node.ID = int(id)
+	if _spec.ID.Value != nil {
+		if id, ok := _spec.ID.Value.(*uuid.UUID); ok {
+			_node.ID = *id
+		} else if err := _node.ID.Scan(_spec.ID.Value); err != nil {
+			return nil, err
+		}
+	}
 	ac.mutation.id = &_node.ID
 	ac.mutation.done = true
 	return _node, nil
@@ -106,8 +135,12 @@ func (ac *AttestationCreate) sqlSave(ctx context.Context) (*Attestation, error) 
 func (ac *AttestationCreate) createSpec() (*Attestation, *sqlgraph.CreateSpec) {
 	var (
 		_node = &Attestation{config: ac.config}
-		_spec = sqlgraph.NewCreateSpec(attestation.Table, sqlgraph.NewFieldSpec(attestation.FieldID, field.TypeInt))
+		_spec = sqlgraph.NewCreateSpec(attestation.Table, sqlgraph.NewFieldSpec(attestation.FieldID, field.TypeUUID))
 	)
+	if id, ok := ac.mutation.ID(); ok {
+		_node.ID = id
+		_spec.ID.Value = &id
+	}
 	if value, ok := ac.mutation.GetType(); ok {
 		_spec.SetField(attestation.FieldType, field.TypeString, value)
 		_node.Type = value
@@ -120,7 +153,7 @@ func (ac *AttestationCreate) createSpec() (*Attestation, *sqlgraph.CreateSpec) {
 			Columns: []string{attestation.AttestationCollectionColumn},
 			Bidi:    false,
 			Target: &sqlgraph.EdgeTarget{
-				IDSpec: sqlgraph.NewFieldSpec(attestationcollection.FieldID, field.TypeInt),
+				IDSpec: sqlgraph.NewFieldSpec(attestationcollection.FieldID, field.TypeUUID),
 			},
 		}
 		for _, k := range nodes {
@@ -150,6 +183,7 @@ func (acb *AttestationCreateBulk) Save(ctx context.Context) ([]*Attestation, err
 	for i := range acb.builders {
 		func(i int, root context.Context) {
 			builder := acb.builders[i]
+			builder.defaults()
 			var mut Mutator = MutateFunc(func(ctx context.Context, m Mutation) (Value, error) {
 				mutation, ok := m.(*AttestationMutation)
 				if !ok {
@@ -176,10 +210,6 @@ func (acb *AttestationCreateBulk) Save(ctx context.Context) ([]*Attestation, err
 					return nil, err
 				}
 				mutation.id = &nodes[i].ID
-				if specs[i].ID.Value != nil {
-					id := specs[i].ID.Value.(int64)
-					nodes[i].ID = int(id)
-				}
 				mutation.done = true
 				return nodes[i], nil
 			})

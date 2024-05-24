@@ -11,6 +11,7 @@ import (
 
 	"entgo.io/ent"
 	"entgo.io/ent/dialect/sql"
+	"github.com/google/uuid"
 	"github.com/in-toto/archivista/ent/attestation"
 	"github.com/in-toto/archivista/ent/attestationcollection"
 	"github.com/in-toto/archivista/ent/attestationpolicy"
@@ -50,10 +51,10 @@ type AttestationMutation struct {
 	config
 	op                            Op
 	typ                           string
-	id                            *int
+	id                            *uuid.UUID
 	_type                         *string
 	clearedFields                 map[string]struct{}
-	attestation_collection        *int
+	attestation_collection        *uuid.UUID
 	clearedattestation_collection bool
 	done                          bool
 	oldValue                      func(context.Context) (*Attestation, error)
@@ -80,7 +81,7 @@ func newAttestationMutation(c config, op Op, opts ...attestationOption) *Attesta
 }
 
 // withAttestationID sets the ID field of the mutation.
-func withAttestationID(id int) attestationOption {
+func withAttestationID(id uuid.UUID) attestationOption {
 	return func(m *AttestationMutation) {
 		var (
 			err   error
@@ -130,9 +131,15 @@ func (m AttestationMutation) Tx() (*Tx, error) {
 	return tx, nil
 }
 
+// SetID sets the value of the id field. Note that this
+// operation is only accepted on creation of Attestation entities.
+func (m *AttestationMutation) SetID(id uuid.UUID) {
+	m.id = &id
+}
+
 // ID returns the ID value in the mutation. Note that the ID is only available
 // if it was provided to the builder or after it was returned from the database.
-func (m *AttestationMutation) ID() (id int, exists bool) {
+func (m *AttestationMutation) ID() (id uuid.UUID, exists bool) {
 	if m.id == nil {
 		return
 	}
@@ -143,12 +150,12 @@ func (m *AttestationMutation) ID() (id int, exists bool) {
 // That means, if the mutation is applied within a transaction with an isolation level such
 // as sql.LevelSerializable, the returned ids match the ids of the rows that will be updated
 // or updated by the mutation.
-func (m *AttestationMutation) IDs(ctx context.Context) ([]int, error) {
+func (m *AttestationMutation) IDs(ctx context.Context) ([]uuid.UUID, error) {
 	switch {
 	case m.op.Is(OpUpdateOne | OpDeleteOne):
 		id, exists := m.ID()
 		if exists {
-			return []int{id}, nil
+			return []uuid.UUID{id}, nil
 		}
 		fallthrough
 	case m.op.Is(OpUpdate | OpDelete):
@@ -195,7 +202,7 @@ func (m *AttestationMutation) ResetType() {
 }
 
 // SetAttestationCollectionID sets the "attestation_collection" edge to the AttestationCollection entity by id.
-func (m *AttestationMutation) SetAttestationCollectionID(id int) {
+func (m *AttestationMutation) SetAttestationCollectionID(id uuid.UUID) {
 	m.attestation_collection = &id
 }
 
@@ -210,7 +217,7 @@ func (m *AttestationMutation) AttestationCollectionCleared() bool {
 }
 
 // AttestationCollectionID returns the "attestation_collection" edge ID in the mutation.
-func (m *AttestationMutation) AttestationCollectionID() (id int, exists bool) {
+func (m *AttestationMutation) AttestationCollectionID() (id uuid.UUID, exists bool) {
 	if m.attestation_collection != nil {
 		return *m.attestation_collection, true
 	}
@@ -220,7 +227,7 @@ func (m *AttestationMutation) AttestationCollectionID() (id int, exists bool) {
 // AttestationCollectionIDs returns the "attestation_collection" edge IDs in the mutation.
 // Note that IDs always returns len(IDs) <= 1 for unique edges, and you should use
 // AttestationCollectionID instead. It exists only for internal usage by the builders.
-func (m *AttestationMutation) AttestationCollectionIDs() (ids []int) {
+func (m *AttestationMutation) AttestationCollectionIDs() (ids []uuid.UUID) {
 	if id := m.attestation_collection; id != nil {
 		ids = append(ids, *id)
 	}
@@ -443,13 +450,13 @@ type AttestationCollectionMutation struct {
 	config
 	op                  Op
 	typ                 string
-	id                  *int
+	id                  *uuid.UUID
 	name                *string
 	clearedFields       map[string]struct{}
-	attestations        map[int]struct{}
-	removedattestations map[int]struct{}
+	attestations        map[uuid.UUID]struct{}
+	removedattestations map[uuid.UUID]struct{}
 	clearedattestations bool
-	statement           *int
+	statement           *uuid.UUID
 	clearedstatement    bool
 	done                bool
 	oldValue            func(context.Context) (*AttestationCollection, error)
@@ -476,7 +483,7 @@ func newAttestationCollectionMutation(c config, op Op, opts ...attestationcollec
 }
 
 // withAttestationCollectionID sets the ID field of the mutation.
-func withAttestationCollectionID(id int) attestationcollectionOption {
+func withAttestationCollectionID(id uuid.UUID) attestationcollectionOption {
 	return func(m *AttestationCollectionMutation) {
 		var (
 			err   error
@@ -526,9 +533,15 @@ func (m AttestationCollectionMutation) Tx() (*Tx, error) {
 	return tx, nil
 }
 
+// SetID sets the value of the id field. Note that this
+// operation is only accepted on creation of AttestationCollection entities.
+func (m *AttestationCollectionMutation) SetID(id uuid.UUID) {
+	m.id = &id
+}
+
 // ID returns the ID value in the mutation. Note that the ID is only available
 // if it was provided to the builder or after it was returned from the database.
-func (m *AttestationCollectionMutation) ID() (id int, exists bool) {
+func (m *AttestationCollectionMutation) ID() (id uuid.UUID, exists bool) {
 	if m.id == nil {
 		return
 	}
@@ -539,12 +552,12 @@ func (m *AttestationCollectionMutation) ID() (id int, exists bool) {
 // That means, if the mutation is applied within a transaction with an isolation level such
 // as sql.LevelSerializable, the returned ids match the ids of the rows that will be updated
 // or updated by the mutation.
-func (m *AttestationCollectionMutation) IDs(ctx context.Context) ([]int, error) {
+func (m *AttestationCollectionMutation) IDs(ctx context.Context) ([]uuid.UUID, error) {
 	switch {
 	case m.op.Is(OpUpdateOne | OpDeleteOne):
 		id, exists := m.ID()
 		if exists {
-			return []int{id}, nil
+			return []uuid.UUID{id}, nil
 		}
 		fallthrough
 	case m.op.Is(OpUpdate | OpDelete):
@@ -591,9 +604,9 @@ func (m *AttestationCollectionMutation) ResetName() {
 }
 
 // AddAttestationIDs adds the "attestations" edge to the Attestation entity by ids.
-func (m *AttestationCollectionMutation) AddAttestationIDs(ids ...int) {
+func (m *AttestationCollectionMutation) AddAttestationIDs(ids ...uuid.UUID) {
 	if m.attestations == nil {
-		m.attestations = make(map[int]struct{})
+		m.attestations = make(map[uuid.UUID]struct{})
 	}
 	for i := range ids {
 		m.attestations[ids[i]] = struct{}{}
@@ -611,9 +624,9 @@ func (m *AttestationCollectionMutation) AttestationsCleared() bool {
 }
 
 // RemoveAttestationIDs removes the "attestations" edge to the Attestation entity by IDs.
-func (m *AttestationCollectionMutation) RemoveAttestationIDs(ids ...int) {
+func (m *AttestationCollectionMutation) RemoveAttestationIDs(ids ...uuid.UUID) {
 	if m.removedattestations == nil {
-		m.removedattestations = make(map[int]struct{})
+		m.removedattestations = make(map[uuid.UUID]struct{})
 	}
 	for i := range ids {
 		delete(m.attestations, ids[i])
@@ -622,7 +635,7 @@ func (m *AttestationCollectionMutation) RemoveAttestationIDs(ids ...int) {
 }
 
 // RemovedAttestations returns the removed IDs of the "attestations" edge to the Attestation entity.
-func (m *AttestationCollectionMutation) RemovedAttestationsIDs() (ids []int) {
+func (m *AttestationCollectionMutation) RemovedAttestationsIDs() (ids []uuid.UUID) {
 	for id := range m.removedattestations {
 		ids = append(ids, id)
 	}
@@ -630,7 +643,7 @@ func (m *AttestationCollectionMutation) RemovedAttestationsIDs() (ids []int) {
 }
 
 // AttestationsIDs returns the "attestations" edge IDs in the mutation.
-func (m *AttestationCollectionMutation) AttestationsIDs() (ids []int) {
+func (m *AttestationCollectionMutation) AttestationsIDs() (ids []uuid.UUID) {
 	for id := range m.attestations {
 		ids = append(ids, id)
 	}
@@ -645,7 +658,7 @@ func (m *AttestationCollectionMutation) ResetAttestations() {
 }
 
 // SetStatementID sets the "statement" edge to the Statement entity by id.
-func (m *AttestationCollectionMutation) SetStatementID(id int) {
+func (m *AttestationCollectionMutation) SetStatementID(id uuid.UUID) {
 	m.statement = &id
 }
 
@@ -660,7 +673,7 @@ func (m *AttestationCollectionMutation) StatementCleared() bool {
 }
 
 // StatementID returns the "statement" edge ID in the mutation.
-func (m *AttestationCollectionMutation) StatementID() (id int, exists bool) {
+func (m *AttestationCollectionMutation) StatementID() (id uuid.UUID, exists bool) {
 	if m.statement != nil {
 		return *m.statement, true
 	}
@@ -670,7 +683,7 @@ func (m *AttestationCollectionMutation) StatementID() (id int, exists bool) {
 // StatementIDs returns the "statement" edge IDs in the mutation.
 // Note that IDs always returns len(IDs) <= 1 for unique edges, and you should use
 // StatementID instead. It exists only for internal usage by the builders.
-func (m *AttestationCollectionMutation) StatementIDs() (ids []int) {
+func (m *AttestationCollectionMutation) StatementIDs() (ids []uuid.UUID) {
 	if id := m.statement; id != nil {
 		ids = append(ids, *id)
 	}
@@ -921,10 +934,10 @@ type AttestationPolicyMutation struct {
 	config
 	op               Op
 	typ              string
-	id               *int
+	id               *uuid.UUID
 	name             *string
 	clearedFields    map[string]struct{}
-	statement        *int
+	statement        *uuid.UUID
 	clearedstatement bool
 	done             bool
 	oldValue         func(context.Context) (*AttestationPolicy, error)
@@ -951,7 +964,7 @@ func newAttestationPolicyMutation(c config, op Op, opts ...attestationpolicyOpti
 }
 
 // withAttestationPolicyID sets the ID field of the mutation.
-func withAttestationPolicyID(id int) attestationpolicyOption {
+func withAttestationPolicyID(id uuid.UUID) attestationpolicyOption {
 	return func(m *AttestationPolicyMutation) {
 		var (
 			err   error
@@ -1001,9 +1014,15 @@ func (m AttestationPolicyMutation) Tx() (*Tx, error) {
 	return tx, nil
 }
 
+// SetID sets the value of the id field. Note that this
+// operation is only accepted on creation of AttestationPolicy entities.
+func (m *AttestationPolicyMutation) SetID(id uuid.UUID) {
+	m.id = &id
+}
+
 // ID returns the ID value in the mutation. Note that the ID is only available
 // if it was provided to the builder or after it was returned from the database.
-func (m *AttestationPolicyMutation) ID() (id int, exists bool) {
+func (m *AttestationPolicyMutation) ID() (id uuid.UUID, exists bool) {
 	if m.id == nil {
 		return
 	}
@@ -1014,12 +1033,12 @@ func (m *AttestationPolicyMutation) ID() (id int, exists bool) {
 // That means, if the mutation is applied within a transaction with an isolation level such
 // as sql.LevelSerializable, the returned ids match the ids of the rows that will be updated
 // or updated by the mutation.
-func (m *AttestationPolicyMutation) IDs(ctx context.Context) ([]int, error) {
+func (m *AttestationPolicyMutation) IDs(ctx context.Context) ([]uuid.UUID, error) {
 	switch {
 	case m.op.Is(OpUpdateOne | OpDeleteOne):
 		id, exists := m.ID()
 		if exists {
-			return []int{id}, nil
+			return []uuid.UUID{id}, nil
 		}
 		fallthrough
 	case m.op.Is(OpUpdate | OpDelete):
@@ -1066,7 +1085,7 @@ func (m *AttestationPolicyMutation) ResetName() {
 }
 
 // SetStatementID sets the "statement" edge to the Statement entity by id.
-func (m *AttestationPolicyMutation) SetStatementID(id int) {
+func (m *AttestationPolicyMutation) SetStatementID(id uuid.UUID) {
 	m.statement = &id
 }
 
@@ -1081,7 +1100,7 @@ func (m *AttestationPolicyMutation) StatementCleared() bool {
 }
 
 // StatementID returns the "statement" edge ID in the mutation.
-func (m *AttestationPolicyMutation) StatementID() (id int, exists bool) {
+func (m *AttestationPolicyMutation) StatementID() (id uuid.UUID, exists bool) {
 	if m.statement != nil {
 		return *m.statement, true
 	}
@@ -1091,7 +1110,7 @@ func (m *AttestationPolicyMutation) StatementID() (id int, exists bool) {
 // StatementIDs returns the "statement" edge IDs in the mutation.
 // Note that IDs always returns len(IDs) <= 1 for unique edges, and you should use
 // StatementID instead. It exists only for internal usage by the builders.
-func (m *AttestationPolicyMutation) StatementIDs() (ids []int) {
+func (m *AttestationPolicyMutation) StatementIDs() (ids []uuid.UUID) {
 	if id := m.statement; id != nil {
 		ids = append(ids, *id)
 	}
@@ -1314,17 +1333,17 @@ type DsseMutation struct {
 	config
 	op                     Op
 	typ                    string
-	id                     *int
+	id                     *uuid.UUID
 	gitoid_sha256          *string
 	payload_type           *string
 	clearedFields          map[string]struct{}
-	statement              *int
+	statement              *uuid.UUID
 	clearedstatement       bool
-	signatures             map[int]struct{}
-	removedsignatures      map[int]struct{}
+	signatures             map[uuid.UUID]struct{}
+	removedsignatures      map[uuid.UUID]struct{}
 	clearedsignatures      bool
-	payload_digests        map[int]struct{}
-	removedpayload_digests map[int]struct{}
+	payload_digests        map[uuid.UUID]struct{}
+	removedpayload_digests map[uuid.UUID]struct{}
 	clearedpayload_digests bool
 	done                   bool
 	oldValue               func(context.Context) (*Dsse, error)
@@ -1351,7 +1370,7 @@ func newDsseMutation(c config, op Op, opts ...dsseOption) *DsseMutation {
 }
 
 // withDsseID sets the ID field of the mutation.
-func withDsseID(id int) dsseOption {
+func withDsseID(id uuid.UUID) dsseOption {
 	return func(m *DsseMutation) {
 		var (
 			err   error
@@ -1401,9 +1420,15 @@ func (m DsseMutation) Tx() (*Tx, error) {
 	return tx, nil
 }
 
+// SetID sets the value of the id field. Note that this
+// operation is only accepted on creation of Dsse entities.
+func (m *DsseMutation) SetID(id uuid.UUID) {
+	m.id = &id
+}
+
 // ID returns the ID value in the mutation. Note that the ID is only available
 // if it was provided to the builder or after it was returned from the database.
-func (m *DsseMutation) ID() (id int, exists bool) {
+func (m *DsseMutation) ID() (id uuid.UUID, exists bool) {
 	if m.id == nil {
 		return
 	}
@@ -1414,12 +1439,12 @@ func (m *DsseMutation) ID() (id int, exists bool) {
 // That means, if the mutation is applied within a transaction with an isolation level such
 // as sql.LevelSerializable, the returned ids match the ids of the rows that will be updated
 // or updated by the mutation.
-func (m *DsseMutation) IDs(ctx context.Context) ([]int, error) {
+func (m *DsseMutation) IDs(ctx context.Context) ([]uuid.UUID, error) {
 	switch {
 	case m.op.Is(OpUpdateOne | OpDeleteOne):
 		id, exists := m.ID()
 		if exists {
-			return []int{id}, nil
+			return []uuid.UUID{id}, nil
 		}
 		fallthrough
 	case m.op.Is(OpUpdate | OpDelete):
@@ -1502,7 +1527,7 @@ func (m *DsseMutation) ResetPayloadType() {
 }
 
 // SetStatementID sets the "statement" edge to the Statement entity by id.
-func (m *DsseMutation) SetStatementID(id int) {
+func (m *DsseMutation) SetStatementID(id uuid.UUID) {
 	m.statement = &id
 }
 
@@ -1517,7 +1542,7 @@ func (m *DsseMutation) StatementCleared() bool {
 }
 
 // StatementID returns the "statement" edge ID in the mutation.
-func (m *DsseMutation) StatementID() (id int, exists bool) {
+func (m *DsseMutation) StatementID() (id uuid.UUID, exists bool) {
 	if m.statement != nil {
 		return *m.statement, true
 	}
@@ -1527,7 +1552,7 @@ func (m *DsseMutation) StatementID() (id int, exists bool) {
 // StatementIDs returns the "statement" edge IDs in the mutation.
 // Note that IDs always returns len(IDs) <= 1 for unique edges, and you should use
 // StatementID instead. It exists only for internal usage by the builders.
-func (m *DsseMutation) StatementIDs() (ids []int) {
+func (m *DsseMutation) StatementIDs() (ids []uuid.UUID) {
 	if id := m.statement; id != nil {
 		ids = append(ids, *id)
 	}
@@ -1541,9 +1566,9 @@ func (m *DsseMutation) ResetStatement() {
 }
 
 // AddSignatureIDs adds the "signatures" edge to the Signature entity by ids.
-func (m *DsseMutation) AddSignatureIDs(ids ...int) {
+func (m *DsseMutation) AddSignatureIDs(ids ...uuid.UUID) {
 	if m.signatures == nil {
-		m.signatures = make(map[int]struct{})
+		m.signatures = make(map[uuid.UUID]struct{})
 	}
 	for i := range ids {
 		m.signatures[ids[i]] = struct{}{}
@@ -1561,9 +1586,9 @@ func (m *DsseMutation) SignaturesCleared() bool {
 }
 
 // RemoveSignatureIDs removes the "signatures" edge to the Signature entity by IDs.
-func (m *DsseMutation) RemoveSignatureIDs(ids ...int) {
+func (m *DsseMutation) RemoveSignatureIDs(ids ...uuid.UUID) {
 	if m.removedsignatures == nil {
-		m.removedsignatures = make(map[int]struct{})
+		m.removedsignatures = make(map[uuid.UUID]struct{})
 	}
 	for i := range ids {
 		delete(m.signatures, ids[i])
@@ -1572,7 +1597,7 @@ func (m *DsseMutation) RemoveSignatureIDs(ids ...int) {
 }
 
 // RemovedSignatures returns the removed IDs of the "signatures" edge to the Signature entity.
-func (m *DsseMutation) RemovedSignaturesIDs() (ids []int) {
+func (m *DsseMutation) RemovedSignaturesIDs() (ids []uuid.UUID) {
 	for id := range m.removedsignatures {
 		ids = append(ids, id)
 	}
@@ -1580,7 +1605,7 @@ func (m *DsseMutation) RemovedSignaturesIDs() (ids []int) {
 }
 
 // SignaturesIDs returns the "signatures" edge IDs in the mutation.
-func (m *DsseMutation) SignaturesIDs() (ids []int) {
+func (m *DsseMutation) SignaturesIDs() (ids []uuid.UUID) {
 	for id := range m.signatures {
 		ids = append(ids, id)
 	}
@@ -1595,9 +1620,9 @@ func (m *DsseMutation) ResetSignatures() {
 }
 
 // AddPayloadDigestIDs adds the "payload_digests" edge to the PayloadDigest entity by ids.
-func (m *DsseMutation) AddPayloadDigestIDs(ids ...int) {
+func (m *DsseMutation) AddPayloadDigestIDs(ids ...uuid.UUID) {
 	if m.payload_digests == nil {
-		m.payload_digests = make(map[int]struct{})
+		m.payload_digests = make(map[uuid.UUID]struct{})
 	}
 	for i := range ids {
 		m.payload_digests[ids[i]] = struct{}{}
@@ -1615,9 +1640,9 @@ func (m *DsseMutation) PayloadDigestsCleared() bool {
 }
 
 // RemovePayloadDigestIDs removes the "payload_digests" edge to the PayloadDigest entity by IDs.
-func (m *DsseMutation) RemovePayloadDigestIDs(ids ...int) {
+func (m *DsseMutation) RemovePayloadDigestIDs(ids ...uuid.UUID) {
 	if m.removedpayload_digests == nil {
-		m.removedpayload_digests = make(map[int]struct{})
+		m.removedpayload_digests = make(map[uuid.UUID]struct{})
 	}
 	for i := range ids {
 		delete(m.payload_digests, ids[i])
@@ -1626,7 +1651,7 @@ func (m *DsseMutation) RemovePayloadDigestIDs(ids ...int) {
 }
 
 // RemovedPayloadDigests returns the removed IDs of the "payload_digests" edge to the PayloadDigest entity.
-func (m *DsseMutation) RemovedPayloadDigestsIDs() (ids []int) {
+func (m *DsseMutation) RemovedPayloadDigestsIDs() (ids []uuid.UUID) {
 	for id := range m.removedpayload_digests {
 		ids = append(ids, id)
 	}
@@ -1634,7 +1659,7 @@ func (m *DsseMutation) RemovedPayloadDigestsIDs() (ids []int) {
 }
 
 // PayloadDigestsIDs returns the "payload_digests" edge IDs in the mutation.
-func (m *DsseMutation) PayloadDigestsIDs() (ids []int) {
+func (m *DsseMutation) PayloadDigestsIDs() (ids []uuid.UUID) {
 	for id := range m.payload_digests {
 		ids = append(ids, id)
 	}
@@ -1929,11 +1954,11 @@ type PayloadDigestMutation struct {
 	config
 	op            Op
 	typ           string
-	id            *int
+	id            *uuid.UUID
 	algorithm     *string
 	value         *string
 	clearedFields map[string]struct{}
-	dsse          *int
+	dsse          *uuid.UUID
 	cleareddsse   bool
 	done          bool
 	oldValue      func(context.Context) (*PayloadDigest, error)
@@ -1960,7 +1985,7 @@ func newPayloadDigestMutation(c config, op Op, opts ...payloaddigestOption) *Pay
 }
 
 // withPayloadDigestID sets the ID field of the mutation.
-func withPayloadDigestID(id int) payloaddigestOption {
+func withPayloadDigestID(id uuid.UUID) payloaddigestOption {
 	return func(m *PayloadDigestMutation) {
 		var (
 			err   error
@@ -2010,9 +2035,15 @@ func (m PayloadDigestMutation) Tx() (*Tx, error) {
 	return tx, nil
 }
 
+// SetID sets the value of the id field. Note that this
+// operation is only accepted on creation of PayloadDigest entities.
+func (m *PayloadDigestMutation) SetID(id uuid.UUID) {
+	m.id = &id
+}
+
 // ID returns the ID value in the mutation. Note that the ID is only available
 // if it was provided to the builder or after it was returned from the database.
-func (m *PayloadDigestMutation) ID() (id int, exists bool) {
+func (m *PayloadDigestMutation) ID() (id uuid.UUID, exists bool) {
 	if m.id == nil {
 		return
 	}
@@ -2023,12 +2054,12 @@ func (m *PayloadDigestMutation) ID() (id int, exists bool) {
 // That means, if the mutation is applied within a transaction with an isolation level such
 // as sql.LevelSerializable, the returned ids match the ids of the rows that will be updated
 // or updated by the mutation.
-func (m *PayloadDigestMutation) IDs(ctx context.Context) ([]int, error) {
+func (m *PayloadDigestMutation) IDs(ctx context.Context) ([]uuid.UUID, error) {
 	switch {
 	case m.op.Is(OpUpdateOne | OpDeleteOne):
 		id, exists := m.ID()
 		if exists {
-			return []int{id}, nil
+			return []uuid.UUID{id}, nil
 		}
 		fallthrough
 	case m.op.Is(OpUpdate | OpDelete):
@@ -2111,7 +2142,7 @@ func (m *PayloadDigestMutation) ResetValue() {
 }
 
 // SetDsseID sets the "dsse" edge to the Dsse entity by id.
-func (m *PayloadDigestMutation) SetDsseID(id int) {
+func (m *PayloadDigestMutation) SetDsseID(id uuid.UUID) {
 	m.dsse = &id
 }
 
@@ -2126,7 +2157,7 @@ func (m *PayloadDigestMutation) DsseCleared() bool {
 }
 
 // DsseID returns the "dsse" edge ID in the mutation.
-func (m *PayloadDigestMutation) DsseID() (id int, exists bool) {
+func (m *PayloadDigestMutation) DsseID() (id uuid.UUID, exists bool) {
 	if m.dsse != nil {
 		return *m.dsse, true
 	}
@@ -2136,7 +2167,7 @@ func (m *PayloadDigestMutation) DsseID() (id int, exists bool) {
 // DsseIDs returns the "dsse" edge IDs in the mutation.
 // Note that IDs always returns len(IDs) <= 1 for unique edges, and you should use
 // DsseID instead. It exists only for internal usage by the builders.
-func (m *PayloadDigestMutation) DsseIDs() (ids []int) {
+func (m *PayloadDigestMutation) DsseIDs() (ids []uuid.UUID) {
 	if id := m.dsse; id != nil {
 		ids = append(ids, *id)
 	}
@@ -2376,14 +2407,14 @@ type SignatureMutation struct {
 	config
 	op                Op
 	typ               string
-	id                *int
+	id                *uuid.UUID
 	key_id            *string
 	signature         *string
 	clearedFields     map[string]struct{}
-	dsse              *int
+	dsse              *uuid.UUID
 	cleareddsse       bool
-	timestamps        map[int]struct{}
-	removedtimestamps map[int]struct{}
+	timestamps        map[uuid.UUID]struct{}
+	removedtimestamps map[uuid.UUID]struct{}
 	clearedtimestamps bool
 	done              bool
 	oldValue          func(context.Context) (*Signature, error)
@@ -2410,7 +2441,7 @@ func newSignatureMutation(c config, op Op, opts ...signatureOption) *SignatureMu
 }
 
 // withSignatureID sets the ID field of the mutation.
-func withSignatureID(id int) signatureOption {
+func withSignatureID(id uuid.UUID) signatureOption {
 	return func(m *SignatureMutation) {
 		var (
 			err   error
@@ -2460,9 +2491,15 @@ func (m SignatureMutation) Tx() (*Tx, error) {
 	return tx, nil
 }
 
+// SetID sets the value of the id field. Note that this
+// operation is only accepted on creation of Signature entities.
+func (m *SignatureMutation) SetID(id uuid.UUID) {
+	m.id = &id
+}
+
 // ID returns the ID value in the mutation. Note that the ID is only available
 // if it was provided to the builder or after it was returned from the database.
-func (m *SignatureMutation) ID() (id int, exists bool) {
+func (m *SignatureMutation) ID() (id uuid.UUID, exists bool) {
 	if m.id == nil {
 		return
 	}
@@ -2473,12 +2510,12 @@ func (m *SignatureMutation) ID() (id int, exists bool) {
 // That means, if the mutation is applied within a transaction with an isolation level such
 // as sql.LevelSerializable, the returned ids match the ids of the rows that will be updated
 // or updated by the mutation.
-func (m *SignatureMutation) IDs(ctx context.Context) ([]int, error) {
+func (m *SignatureMutation) IDs(ctx context.Context) ([]uuid.UUID, error) {
 	switch {
 	case m.op.Is(OpUpdateOne | OpDeleteOne):
 		id, exists := m.ID()
 		if exists {
-			return []int{id}, nil
+			return []uuid.UUID{id}, nil
 		}
 		fallthrough
 	case m.op.Is(OpUpdate | OpDelete):
@@ -2561,7 +2598,7 @@ func (m *SignatureMutation) ResetSignature() {
 }
 
 // SetDsseID sets the "dsse" edge to the Dsse entity by id.
-func (m *SignatureMutation) SetDsseID(id int) {
+func (m *SignatureMutation) SetDsseID(id uuid.UUID) {
 	m.dsse = &id
 }
 
@@ -2576,7 +2613,7 @@ func (m *SignatureMutation) DsseCleared() bool {
 }
 
 // DsseID returns the "dsse" edge ID in the mutation.
-func (m *SignatureMutation) DsseID() (id int, exists bool) {
+func (m *SignatureMutation) DsseID() (id uuid.UUID, exists bool) {
 	if m.dsse != nil {
 		return *m.dsse, true
 	}
@@ -2586,7 +2623,7 @@ func (m *SignatureMutation) DsseID() (id int, exists bool) {
 // DsseIDs returns the "dsse" edge IDs in the mutation.
 // Note that IDs always returns len(IDs) <= 1 for unique edges, and you should use
 // DsseID instead. It exists only for internal usage by the builders.
-func (m *SignatureMutation) DsseIDs() (ids []int) {
+func (m *SignatureMutation) DsseIDs() (ids []uuid.UUID) {
 	if id := m.dsse; id != nil {
 		ids = append(ids, *id)
 	}
@@ -2600,9 +2637,9 @@ func (m *SignatureMutation) ResetDsse() {
 }
 
 // AddTimestampIDs adds the "timestamps" edge to the Timestamp entity by ids.
-func (m *SignatureMutation) AddTimestampIDs(ids ...int) {
+func (m *SignatureMutation) AddTimestampIDs(ids ...uuid.UUID) {
 	if m.timestamps == nil {
-		m.timestamps = make(map[int]struct{})
+		m.timestamps = make(map[uuid.UUID]struct{})
 	}
 	for i := range ids {
 		m.timestamps[ids[i]] = struct{}{}
@@ -2620,9 +2657,9 @@ func (m *SignatureMutation) TimestampsCleared() bool {
 }
 
 // RemoveTimestampIDs removes the "timestamps" edge to the Timestamp entity by IDs.
-func (m *SignatureMutation) RemoveTimestampIDs(ids ...int) {
+func (m *SignatureMutation) RemoveTimestampIDs(ids ...uuid.UUID) {
 	if m.removedtimestamps == nil {
-		m.removedtimestamps = make(map[int]struct{})
+		m.removedtimestamps = make(map[uuid.UUID]struct{})
 	}
 	for i := range ids {
 		delete(m.timestamps, ids[i])
@@ -2631,7 +2668,7 @@ func (m *SignatureMutation) RemoveTimestampIDs(ids ...int) {
 }
 
 // RemovedTimestamps returns the removed IDs of the "timestamps" edge to the Timestamp entity.
-func (m *SignatureMutation) RemovedTimestampsIDs() (ids []int) {
+func (m *SignatureMutation) RemovedTimestampsIDs() (ids []uuid.UUID) {
 	for id := range m.removedtimestamps {
 		ids = append(ids, id)
 	}
@@ -2639,7 +2676,7 @@ func (m *SignatureMutation) RemovedTimestampsIDs() (ids []int) {
 }
 
 // TimestampsIDs returns the "timestamps" edge IDs in the mutation.
-func (m *SignatureMutation) TimestampsIDs() (ids []int) {
+func (m *SignatureMutation) TimestampsIDs() (ids []uuid.UUID) {
 	for id := range m.timestamps {
 		ids = append(ids, id)
 	}
@@ -2908,18 +2945,18 @@ type StatementMutation struct {
 	config
 	op                             Op
 	typ                            string
-	id                             *int
+	id                             *uuid.UUID
 	predicate                      *string
 	clearedFields                  map[string]struct{}
-	subjects                       map[int]struct{}
-	removedsubjects                map[int]struct{}
+	subjects                       map[uuid.UUID]struct{}
+	removedsubjects                map[uuid.UUID]struct{}
 	clearedsubjects                bool
-	policy                         *int
+	policy                         *uuid.UUID
 	clearedpolicy                  bool
-	attestation_collections        *int
+	attestation_collections        *uuid.UUID
 	clearedattestation_collections bool
-	dsse                           map[int]struct{}
-	removeddsse                    map[int]struct{}
+	dsse                           map[uuid.UUID]struct{}
+	removeddsse                    map[uuid.UUID]struct{}
 	cleareddsse                    bool
 	done                           bool
 	oldValue                       func(context.Context) (*Statement, error)
@@ -2946,7 +2983,7 @@ func newStatementMutation(c config, op Op, opts ...statementOption) *StatementMu
 }
 
 // withStatementID sets the ID field of the mutation.
-func withStatementID(id int) statementOption {
+func withStatementID(id uuid.UUID) statementOption {
 	return func(m *StatementMutation) {
 		var (
 			err   error
@@ -2996,9 +3033,15 @@ func (m StatementMutation) Tx() (*Tx, error) {
 	return tx, nil
 }
 
+// SetID sets the value of the id field. Note that this
+// operation is only accepted on creation of Statement entities.
+func (m *StatementMutation) SetID(id uuid.UUID) {
+	m.id = &id
+}
+
 // ID returns the ID value in the mutation. Note that the ID is only available
 // if it was provided to the builder or after it was returned from the database.
-func (m *StatementMutation) ID() (id int, exists bool) {
+func (m *StatementMutation) ID() (id uuid.UUID, exists bool) {
 	if m.id == nil {
 		return
 	}
@@ -3009,12 +3052,12 @@ func (m *StatementMutation) ID() (id int, exists bool) {
 // That means, if the mutation is applied within a transaction with an isolation level such
 // as sql.LevelSerializable, the returned ids match the ids of the rows that will be updated
 // or updated by the mutation.
-func (m *StatementMutation) IDs(ctx context.Context) ([]int, error) {
+func (m *StatementMutation) IDs(ctx context.Context) ([]uuid.UUID, error) {
 	switch {
 	case m.op.Is(OpUpdateOne | OpDeleteOne):
 		id, exists := m.ID()
 		if exists {
-			return []int{id}, nil
+			return []uuid.UUID{id}, nil
 		}
 		fallthrough
 	case m.op.Is(OpUpdate | OpDelete):
@@ -3061,9 +3104,9 @@ func (m *StatementMutation) ResetPredicate() {
 }
 
 // AddSubjectIDs adds the "subjects" edge to the Subject entity by ids.
-func (m *StatementMutation) AddSubjectIDs(ids ...int) {
+func (m *StatementMutation) AddSubjectIDs(ids ...uuid.UUID) {
 	if m.subjects == nil {
-		m.subjects = make(map[int]struct{})
+		m.subjects = make(map[uuid.UUID]struct{})
 	}
 	for i := range ids {
 		m.subjects[ids[i]] = struct{}{}
@@ -3081,9 +3124,9 @@ func (m *StatementMutation) SubjectsCleared() bool {
 }
 
 // RemoveSubjectIDs removes the "subjects" edge to the Subject entity by IDs.
-func (m *StatementMutation) RemoveSubjectIDs(ids ...int) {
+func (m *StatementMutation) RemoveSubjectIDs(ids ...uuid.UUID) {
 	if m.removedsubjects == nil {
-		m.removedsubjects = make(map[int]struct{})
+		m.removedsubjects = make(map[uuid.UUID]struct{})
 	}
 	for i := range ids {
 		delete(m.subjects, ids[i])
@@ -3092,7 +3135,7 @@ func (m *StatementMutation) RemoveSubjectIDs(ids ...int) {
 }
 
 // RemovedSubjects returns the removed IDs of the "subjects" edge to the Subject entity.
-func (m *StatementMutation) RemovedSubjectsIDs() (ids []int) {
+func (m *StatementMutation) RemovedSubjectsIDs() (ids []uuid.UUID) {
 	for id := range m.removedsubjects {
 		ids = append(ids, id)
 	}
@@ -3100,7 +3143,7 @@ func (m *StatementMutation) RemovedSubjectsIDs() (ids []int) {
 }
 
 // SubjectsIDs returns the "subjects" edge IDs in the mutation.
-func (m *StatementMutation) SubjectsIDs() (ids []int) {
+func (m *StatementMutation) SubjectsIDs() (ids []uuid.UUID) {
 	for id := range m.subjects {
 		ids = append(ids, id)
 	}
@@ -3115,7 +3158,7 @@ func (m *StatementMutation) ResetSubjects() {
 }
 
 // SetPolicyID sets the "policy" edge to the AttestationPolicy entity by id.
-func (m *StatementMutation) SetPolicyID(id int) {
+func (m *StatementMutation) SetPolicyID(id uuid.UUID) {
 	m.policy = &id
 }
 
@@ -3130,7 +3173,7 @@ func (m *StatementMutation) PolicyCleared() bool {
 }
 
 // PolicyID returns the "policy" edge ID in the mutation.
-func (m *StatementMutation) PolicyID() (id int, exists bool) {
+func (m *StatementMutation) PolicyID() (id uuid.UUID, exists bool) {
 	if m.policy != nil {
 		return *m.policy, true
 	}
@@ -3140,7 +3183,7 @@ func (m *StatementMutation) PolicyID() (id int, exists bool) {
 // PolicyIDs returns the "policy" edge IDs in the mutation.
 // Note that IDs always returns len(IDs) <= 1 for unique edges, and you should use
 // PolicyID instead. It exists only for internal usage by the builders.
-func (m *StatementMutation) PolicyIDs() (ids []int) {
+func (m *StatementMutation) PolicyIDs() (ids []uuid.UUID) {
 	if id := m.policy; id != nil {
 		ids = append(ids, *id)
 	}
@@ -3154,7 +3197,7 @@ func (m *StatementMutation) ResetPolicy() {
 }
 
 // SetAttestationCollectionsID sets the "attestation_collections" edge to the AttestationCollection entity by id.
-func (m *StatementMutation) SetAttestationCollectionsID(id int) {
+func (m *StatementMutation) SetAttestationCollectionsID(id uuid.UUID) {
 	m.attestation_collections = &id
 }
 
@@ -3169,7 +3212,7 @@ func (m *StatementMutation) AttestationCollectionsCleared() bool {
 }
 
 // AttestationCollectionsID returns the "attestation_collections" edge ID in the mutation.
-func (m *StatementMutation) AttestationCollectionsID() (id int, exists bool) {
+func (m *StatementMutation) AttestationCollectionsID() (id uuid.UUID, exists bool) {
 	if m.attestation_collections != nil {
 		return *m.attestation_collections, true
 	}
@@ -3179,7 +3222,7 @@ func (m *StatementMutation) AttestationCollectionsID() (id int, exists bool) {
 // AttestationCollectionsIDs returns the "attestation_collections" edge IDs in the mutation.
 // Note that IDs always returns len(IDs) <= 1 for unique edges, and you should use
 // AttestationCollectionsID instead. It exists only for internal usage by the builders.
-func (m *StatementMutation) AttestationCollectionsIDs() (ids []int) {
+func (m *StatementMutation) AttestationCollectionsIDs() (ids []uuid.UUID) {
 	if id := m.attestation_collections; id != nil {
 		ids = append(ids, *id)
 	}
@@ -3193,9 +3236,9 @@ func (m *StatementMutation) ResetAttestationCollections() {
 }
 
 // AddDsseIDs adds the "dsse" edge to the Dsse entity by ids.
-func (m *StatementMutation) AddDsseIDs(ids ...int) {
+func (m *StatementMutation) AddDsseIDs(ids ...uuid.UUID) {
 	if m.dsse == nil {
-		m.dsse = make(map[int]struct{})
+		m.dsse = make(map[uuid.UUID]struct{})
 	}
 	for i := range ids {
 		m.dsse[ids[i]] = struct{}{}
@@ -3213,9 +3256,9 @@ func (m *StatementMutation) DsseCleared() bool {
 }
 
 // RemoveDsseIDs removes the "dsse" edge to the Dsse entity by IDs.
-func (m *StatementMutation) RemoveDsseIDs(ids ...int) {
+func (m *StatementMutation) RemoveDsseIDs(ids ...uuid.UUID) {
 	if m.removeddsse == nil {
-		m.removeddsse = make(map[int]struct{})
+		m.removeddsse = make(map[uuid.UUID]struct{})
 	}
 	for i := range ids {
 		delete(m.dsse, ids[i])
@@ -3224,7 +3267,7 @@ func (m *StatementMutation) RemoveDsseIDs(ids ...int) {
 }
 
 // RemovedDsse returns the removed IDs of the "dsse" edge to the Dsse entity.
-func (m *StatementMutation) RemovedDsseIDs() (ids []int) {
+func (m *StatementMutation) RemovedDsseIDs() (ids []uuid.UUID) {
 	for id := range m.removeddsse {
 		ids = append(ids, id)
 	}
@@ -3232,7 +3275,7 @@ func (m *StatementMutation) RemovedDsseIDs() (ids []int) {
 }
 
 // DsseIDs returns the "dsse" edge IDs in the mutation.
-func (m *StatementMutation) DsseIDs() (ids []int) {
+func (m *StatementMutation) DsseIDs() (ids []uuid.UUID) {
 	for id := range m.dsse {
 		ids = append(ids, id)
 	}
@@ -3528,13 +3571,13 @@ type SubjectMutation struct {
 	config
 	op                     Op
 	typ                    string
-	id                     *int
+	id                     *uuid.UUID
 	name                   *string
 	clearedFields          map[string]struct{}
-	subject_digests        map[int]struct{}
-	removedsubject_digests map[int]struct{}
+	subject_digests        map[uuid.UUID]struct{}
+	removedsubject_digests map[uuid.UUID]struct{}
 	clearedsubject_digests bool
-	statement              *int
+	statement              *uuid.UUID
 	clearedstatement       bool
 	done                   bool
 	oldValue               func(context.Context) (*Subject, error)
@@ -3561,7 +3604,7 @@ func newSubjectMutation(c config, op Op, opts ...subjectOption) *SubjectMutation
 }
 
 // withSubjectID sets the ID field of the mutation.
-func withSubjectID(id int) subjectOption {
+func withSubjectID(id uuid.UUID) subjectOption {
 	return func(m *SubjectMutation) {
 		var (
 			err   error
@@ -3611,9 +3654,15 @@ func (m SubjectMutation) Tx() (*Tx, error) {
 	return tx, nil
 }
 
+// SetID sets the value of the id field. Note that this
+// operation is only accepted on creation of Subject entities.
+func (m *SubjectMutation) SetID(id uuid.UUID) {
+	m.id = &id
+}
+
 // ID returns the ID value in the mutation. Note that the ID is only available
 // if it was provided to the builder or after it was returned from the database.
-func (m *SubjectMutation) ID() (id int, exists bool) {
+func (m *SubjectMutation) ID() (id uuid.UUID, exists bool) {
 	if m.id == nil {
 		return
 	}
@@ -3624,12 +3673,12 @@ func (m *SubjectMutation) ID() (id int, exists bool) {
 // That means, if the mutation is applied within a transaction with an isolation level such
 // as sql.LevelSerializable, the returned ids match the ids of the rows that will be updated
 // or updated by the mutation.
-func (m *SubjectMutation) IDs(ctx context.Context) ([]int, error) {
+func (m *SubjectMutation) IDs(ctx context.Context) ([]uuid.UUID, error) {
 	switch {
 	case m.op.Is(OpUpdateOne | OpDeleteOne):
 		id, exists := m.ID()
 		if exists {
-			return []int{id}, nil
+			return []uuid.UUID{id}, nil
 		}
 		fallthrough
 	case m.op.Is(OpUpdate | OpDelete):
@@ -3676,9 +3725,9 @@ func (m *SubjectMutation) ResetName() {
 }
 
 // AddSubjectDigestIDs adds the "subject_digests" edge to the SubjectDigest entity by ids.
-func (m *SubjectMutation) AddSubjectDigestIDs(ids ...int) {
+func (m *SubjectMutation) AddSubjectDigestIDs(ids ...uuid.UUID) {
 	if m.subject_digests == nil {
-		m.subject_digests = make(map[int]struct{})
+		m.subject_digests = make(map[uuid.UUID]struct{})
 	}
 	for i := range ids {
 		m.subject_digests[ids[i]] = struct{}{}
@@ -3696,9 +3745,9 @@ func (m *SubjectMutation) SubjectDigestsCleared() bool {
 }
 
 // RemoveSubjectDigestIDs removes the "subject_digests" edge to the SubjectDigest entity by IDs.
-func (m *SubjectMutation) RemoveSubjectDigestIDs(ids ...int) {
+func (m *SubjectMutation) RemoveSubjectDigestIDs(ids ...uuid.UUID) {
 	if m.removedsubject_digests == nil {
-		m.removedsubject_digests = make(map[int]struct{})
+		m.removedsubject_digests = make(map[uuid.UUID]struct{})
 	}
 	for i := range ids {
 		delete(m.subject_digests, ids[i])
@@ -3707,7 +3756,7 @@ func (m *SubjectMutation) RemoveSubjectDigestIDs(ids ...int) {
 }
 
 // RemovedSubjectDigests returns the removed IDs of the "subject_digests" edge to the SubjectDigest entity.
-func (m *SubjectMutation) RemovedSubjectDigestsIDs() (ids []int) {
+func (m *SubjectMutation) RemovedSubjectDigestsIDs() (ids []uuid.UUID) {
 	for id := range m.removedsubject_digests {
 		ids = append(ids, id)
 	}
@@ -3715,7 +3764,7 @@ func (m *SubjectMutation) RemovedSubjectDigestsIDs() (ids []int) {
 }
 
 // SubjectDigestsIDs returns the "subject_digests" edge IDs in the mutation.
-func (m *SubjectMutation) SubjectDigestsIDs() (ids []int) {
+func (m *SubjectMutation) SubjectDigestsIDs() (ids []uuid.UUID) {
 	for id := range m.subject_digests {
 		ids = append(ids, id)
 	}
@@ -3730,7 +3779,7 @@ func (m *SubjectMutation) ResetSubjectDigests() {
 }
 
 // SetStatementID sets the "statement" edge to the Statement entity by id.
-func (m *SubjectMutation) SetStatementID(id int) {
+func (m *SubjectMutation) SetStatementID(id uuid.UUID) {
 	m.statement = &id
 }
 
@@ -3745,7 +3794,7 @@ func (m *SubjectMutation) StatementCleared() bool {
 }
 
 // StatementID returns the "statement" edge ID in the mutation.
-func (m *SubjectMutation) StatementID() (id int, exists bool) {
+func (m *SubjectMutation) StatementID() (id uuid.UUID, exists bool) {
 	if m.statement != nil {
 		return *m.statement, true
 	}
@@ -3755,7 +3804,7 @@ func (m *SubjectMutation) StatementID() (id int, exists bool) {
 // StatementIDs returns the "statement" edge IDs in the mutation.
 // Note that IDs always returns len(IDs) <= 1 for unique edges, and you should use
 // StatementID instead. It exists only for internal usage by the builders.
-func (m *SubjectMutation) StatementIDs() (ids []int) {
+func (m *SubjectMutation) StatementIDs() (ids []uuid.UUID) {
 	if id := m.statement; id != nil {
 		ids = append(ids, *id)
 	}
@@ -4006,11 +4055,11 @@ type SubjectDigestMutation struct {
 	config
 	op             Op
 	typ            string
-	id             *int
+	id             *uuid.UUID
 	algorithm      *string
 	value          *string
 	clearedFields  map[string]struct{}
-	subject        *int
+	subject        *uuid.UUID
 	clearedsubject bool
 	done           bool
 	oldValue       func(context.Context) (*SubjectDigest, error)
@@ -4037,7 +4086,7 @@ func newSubjectDigestMutation(c config, op Op, opts ...subjectdigestOption) *Sub
 }
 
 // withSubjectDigestID sets the ID field of the mutation.
-func withSubjectDigestID(id int) subjectdigestOption {
+func withSubjectDigestID(id uuid.UUID) subjectdigestOption {
 	return func(m *SubjectDigestMutation) {
 		var (
 			err   error
@@ -4087,9 +4136,15 @@ func (m SubjectDigestMutation) Tx() (*Tx, error) {
 	return tx, nil
 }
 
+// SetID sets the value of the id field. Note that this
+// operation is only accepted on creation of SubjectDigest entities.
+func (m *SubjectDigestMutation) SetID(id uuid.UUID) {
+	m.id = &id
+}
+
 // ID returns the ID value in the mutation. Note that the ID is only available
 // if it was provided to the builder or after it was returned from the database.
-func (m *SubjectDigestMutation) ID() (id int, exists bool) {
+func (m *SubjectDigestMutation) ID() (id uuid.UUID, exists bool) {
 	if m.id == nil {
 		return
 	}
@@ -4100,12 +4155,12 @@ func (m *SubjectDigestMutation) ID() (id int, exists bool) {
 // That means, if the mutation is applied within a transaction with an isolation level such
 // as sql.LevelSerializable, the returned ids match the ids of the rows that will be updated
 // or updated by the mutation.
-func (m *SubjectDigestMutation) IDs(ctx context.Context) ([]int, error) {
+func (m *SubjectDigestMutation) IDs(ctx context.Context) ([]uuid.UUID, error) {
 	switch {
 	case m.op.Is(OpUpdateOne | OpDeleteOne):
 		id, exists := m.ID()
 		if exists {
-			return []int{id}, nil
+			return []uuid.UUID{id}, nil
 		}
 		fallthrough
 	case m.op.Is(OpUpdate | OpDelete):
@@ -4188,7 +4243,7 @@ func (m *SubjectDigestMutation) ResetValue() {
 }
 
 // SetSubjectID sets the "subject" edge to the Subject entity by id.
-func (m *SubjectDigestMutation) SetSubjectID(id int) {
+func (m *SubjectDigestMutation) SetSubjectID(id uuid.UUID) {
 	m.subject = &id
 }
 
@@ -4203,7 +4258,7 @@ func (m *SubjectDigestMutation) SubjectCleared() bool {
 }
 
 // SubjectID returns the "subject" edge ID in the mutation.
-func (m *SubjectDigestMutation) SubjectID() (id int, exists bool) {
+func (m *SubjectDigestMutation) SubjectID() (id uuid.UUID, exists bool) {
 	if m.subject != nil {
 		return *m.subject, true
 	}
@@ -4213,7 +4268,7 @@ func (m *SubjectDigestMutation) SubjectID() (id int, exists bool) {
 // SubjectIDs returns the "subject" edge IDs in the mutation.
 // Note that IDs always returns len(IDs) <= 1 for unique edges, and you should use
 // SubjectID instead. It exists only for internal usage by the builders.
-func (m *SubjectDigestMutation) SubjectIDs() (ids []int) {
+func (m *SubjectDigestMutation) SubjectIDs() (ids []uuid.UUID) {
 	if id := m.subject; id != nil {
 		ids = append(ids, *id)
 	}
@@ -4453,11 +4508,11 @@ type TimestampMutation struct {
 	config
 	op               Op
 	typ              string
-	id               *int
+	id               *uuid.UUID
 	_type            *string
 	timestamp        *time.Time
 	clearedFields    map[string]struct{}
-	signature        *int
+	signature        *uuid.UUID
 	clearedsignature bool
 	done             bool
 	oldValue         func(context.Context) (*Timestamp, error)
@@ -4484,7 +4539,7 @@ func newTimestampMutation(c config, op Op, opts ...timestampOption) *TimestampMu
 }
 
 // withTimestampID sets the ID field of the mutation.
-func withTimestampID(id int) timestampOption {
+func withTimestampID(id uuid.UUID) timestampOption {
 	return func(m *TimestampMutation) {
 		var (
 			err   error
@@ -4534,9 +4589,15 @@ func (m TimestampMutation) Tx() (*Tx, error) {
 	return tx, nil
 }
 
+// SetID sets the value of the id field. Note that this
+// operation is only accepted on creation of Timestamp entities.
+func (m *TimestampMutation) SetID(id uuid.UUID) {
+	m.id = &id
+}
+
 // ID returns the ID value in the mutation. Note that the ID is only available
 // if it was provided to the builder or after it was returned from the database.
-func (m *TimestampMutation) ID() (id int, exists bool) {
+func (m *TimestampMutation) ID() (id uuid.UUID, exists bool) {
 	if m.id == nil {
 		return
 	}
@@ -4547,12 +4608,12 @@ func (m *TimestampMutation) ID() (id int, exists bool) {
 // That means, if the mutation is applied within a transaction with an isolation level such
 // as sql.LevelSerializable, the returned ids match the ids of the rows that will be updated
 // or updated by the mutation.
-func (m *TimestampMutation) IDs(ctx context.Context) ([]int, error) {
+func (m *TimestampMutation) IDs(ctx context.Context) ([]uuid.UUID, error) {
 	switch {
 	case m.op.Is(OpUpdateOne | OpDeleteOne):
 		id, exists := m.ID()
 		if exists {
-			return []int{id}, nil
+			return []uuid.UUID{id}, nil
 		}
 		fallthrough
 	case m.op.Is(OpUpdate | OpDelete):
@@ -4635,7 +4696,7 @@ func (m *TimestampMutation) ResetTimestamp() {
 }
 
 // SetSignatureID sets the "signature" edge to the Signature entity by id.
-func (m *TimestampMutation) SetSignatureID(id int) {
+func (m *TimestampMutation) SetSignatureID(id uuid.UUID) {
 	m.signature = &id
 }
 
@@ -4650,7 +4711,7 @@ func (m *TimestampMutation) SignatureCleared() bool {
 }
 
 // SignatureID returns the "signature" edge ID in the mutation.
-func (m *TimestampMutation) SignatureID() (id int, exists bool) {
+func (m *TimestampMutation) SignatureID() (id uuid.UUID, exists bool) {
 	if m.signature != nil {
 		return *m.signature, true
 	}
@@ -4660,7 +4721,7 @@ func (m *TimestampMutation) SignatureID() (id int, exists bool) {
 // SignatureIDs returns the "signature" edge IDs in the mutation.
 // Note that IDs always returns len(IDs) <= 1 for unique edges, and you should use
 // SignatureID instead. It exists only for internal usage by the builders.
-func (m *TimestampMutation) SignatureIDs() (ids []int) {
+func (m *TimestampMutation) SignatureIDs() (ids []uuid.UUID) {
 	if id := m.signature; id != nil {
 		ids = append(ids, *id)
 	}

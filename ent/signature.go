@@ -8,6 +8,7 @@ import (
 
 	"entgo.io/ent"
 	"entgo.io/ent/dialect/sql"
+	"github.com/google/uuid"
 	"github.com/in-toto/archivista/ent/dsse"
 	"github.com/in-toto/archivista/ent/signature"
 )
@@ -16,7 +17,7 @@ import (
 type Signature struct {
 	config `json:"-"`
 	// ID of the ent.
-	ID int `json:"id,omitempty"`
+	ID uuid.UUID `json:"id,omitempty"`
 	// KeyID holds the value of the "key_id" field.
 	KeyID string `json:"key_id,omitempty"`
 	// Signature holds the value of the "signature" field.
@@ -24,7 +25,7 @@ type Signature struct {
 	// Edges holds the relations/edges for other nodes in the graph.
 	// The values are being populated by the SignatureQuery when eager-loading is set.
 	Edges           SignatureEdges `json:"edges"`
-	dsse_signatures *int
+	dsse_signatures *uuid.UUID
 	selectValues    sql.SelectValues
 }
 
@@ -68,12 +69,12 @@ func (*Signature) scanValues(columns []string) ([]any, error) {
 	values := make([]any, len(columns))
 	for i := range columns {
 		switch columns[i] {
-		case signature.FieldID:
-			values[i] = new(sql.NullInt64)
 		case signature.FieldKeyID, signature.FieldSignature:
 			values[i] = new(sql.NullString)
+		case signature.FieldID:
+			values[i] = new(uuid.UUID)
 		case signature.ForeignKeys[0]: // dsse_signatures
-			values[i] = new(sql.NullInt64)
+			values[i] = &sql.NullScanner{S: new(uuid.UUID)}
 		default:
 			values[i] = new(sql.UnknownType)
 		}
@@ -90,11 +91,11 @@ func (s *Signature) assignValues(columns []string, values []any) error {
 	for i := range columns {
 		switch columns[i] {
 		case signature.FieldID:
-			value, ok := values[i].(*sql.NullInt64)
-			if !ok {
-				return fmt.Errorf("unexpected type %T for field id", value)
+			if value, ok := values[i].(*uuid.UUID); !ok {
+				return fmt.Errorf("unexpected type %T for field id", values[i])
+			} else if value != nil {
+				s.ID = *value
 			}
-			s.ID = int(value.Int64)
 		case signature.FieldKeyID:
 			if value, ok := values[i].(*sql.NullString); !ok {
 				return fmt.Errorf("unexpected type %T for field key_id", values[i])
@@ -108,11 +109,11 @@ func (s *Signature) assignValues(columns []string, values []any) error {
 				s.Signature = value.String
 			}
 		case signature.ForeignKeys[0]:
-			if value, ok := values[i].(*sql.NullInt64); !ok {
-				return fmt.Errorf("unexpected type %T for edge-field dsse_signatures", value)
+			if value, ok := values[i].(*sql.NullScanner); !ok {
+				return fmt.Errorf("unexpected type %T for field dsse_signatures", values[i])
 			} else if value.Valid {
-				s.dsse_signatures = new(int)
-				*s.dsse_signatures = int(value.Int64)
+				s.dsse_signatures = new(uuid.UUID)
+				*s.dsse_signatures = *value.S.(*uuid.UUID)
 			}
 		default:
 			s.selectValues.Set(columns[i], values[i])

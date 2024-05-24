@@ -9,6 +9,7 @@ import (
 
 	"entgo.io/ent/dialect/sql/sqlgraph"
 	"entgo.io/ent/schema/field"
+	"github.com/google/uuid"
 	"github.com/in-toto/archivista/ent/attestationpolicy"
 	"github.com/in-toto/archivista/ent/statement"
 )
@@ -26,14 +27,28 @@ func (apc *AttestationPolicyCreate) SetName(s string) *AttestationPolicyCreate {
 	return apc
 }
 
+// SetID sets the "id" field.
+func (apc *AttestationPolicyCreate) SetID(u uuid.UUID) *AttestationPolicyCreate {
+	apc.mutation.SetID(u)
+	return apc
+}
+
+// SetNillableID sets the "id" field if the given value is not nil.
+func (apc *AttestationPolicyCreate) SetNillableID(u *uuid.UUID) *AttestationPolicyCreate {
+	if u != nil {
+		apc.SetID(*u)
+	}
+	return apc
+}
+
 // SetStatementID sets the "statement" edge to the Statement entity by ID.
-func (apc *AttestationPolicyCreate) SetStatementID(id int) *AttestationPolicyCreate {
+func (apc *AttestationPolicyCreate) SetStatementID(id uuid.UUID) *AttestationPolicyCreate {
 	apc.mutation.SetStatementID(id)
 	return apc
 }
 
 // SetNillableStatementID sets the "statement" edge to the Statement entity by ID if the given value is not nil.
-func (apc *AttestationPolicyCreate) SetNillableStatementID(id *int) *AttestationPolicyCreate {
+func (apc *AttestationPolicyCreate) SetNillableStatementID(id *uuid.UUID) *AttestationPolicyCreate {
 	if id != nil {
 		apc = apc.SetStatementID(*id)
 	}
@@ -52,6 +67,7 @@ func (apc *AttestationPolicyCreate) Mutation() *AttestationPolicyMutation {
 
 // Save creates the AttestationPolicy in the database.
 func (apc *AttestationPolicyCreate) Save(ctx context.Context) (*AttestationPolicy, error) {
+	apc.defaults()
 	return withHooks(ctx, apc.sqlSave, apc.mutation, apc.hooks)
 }
 
@@ -74,6 +90,14 @@ func (apc *AttestationPolicyCreate) Exec(ctx context.Context) error {
 func (apc *AttestationPolicyCreate) ExecX(ctx context.Context) {
 	if err := apc.Exec(ctx); err != nil {
 		panic(err)
+	}
+}
+
+// defaults sets the default values of the builder before save.
+func (apc *AttestationPolicyCreate) defaults() {
+	if _, ok := apc.mutation.ID(); !ok {
+		v := attestationpolicy.DefaultID()
+		apc.mutation.SetID(v)
 	}
 }
 
@@ -101,8 +125,13 @@ func (apc *AttestationPolicyCreate) sqlSave(ctx context.Context) (*AttestationPo
 		}
 		return nil, err
 	}
-	id := _spec.ID.Value.(int64)
-	_node.ID = int(id)
+	if _spec.ID.Value != nil {
+		if id, ok := _spec.ID.Value.(*uuid.UUID); ok {
+			_node.ID = *id
+		} else if err := _node.ID.Scan(_spec.ID.Value); err != nil {
+			return nil, err
+		}
+	}
 	apc.mutation.id = &_node.ID
 	apc.mutation.done = true
 	return _node, nil
@@ -111,8 +140,12 @@ func (apc *AttestationPolicyCreate) sqlSave(ctx context.Context) (*AttestationPo
 func (apc *AttestationPolicyCreate) createSpec() (*AttestationPolicy, *sqlgraph.CreateSpec) {
 	var (
 		_node = &AttestationPolicy{config: apc.config}
-		_spec = sqlgraph.NewCreateSpec(attestationpolicy.Table, sqlgraph.NewFieldSpec(attestationpolicy.FieldID, field.TypeInt))
+		_spec = sqlgraph.NewCreateSpec(attestationpolicy.Table, sqlgraph.NewFieldSpec(attestationpolicy.FieldID, field.TypeUUID))
 	)
+	if id, ok := apc.mutation.ID(); ok {
+		_node.ID = id
+		_spec.ID.Value = &id
+	}
 	if value, ok := apc.mutation.Name(); ok {
 		_spec.SetField(attestationpolicy.FieldName, field.TypeString, value)
 		_node.Name = value
@@ -125,7 +158,7 @@ func (apc *AttestationPolicyCreate) createSpec() (*AttestationPolicy, *sqlgraph.
 			Columns: []string{attestationpolicy.StatementColumn},
 			Bidi:    false,
 			Target: &sqlgraph.EdgeTarget{
-				IDSpec: sqlgraph.NewFieldSpec(statement.FieldID, field.TypeInt),
+				IDSpec: sqlgraph.NewFieldSpec(statement.FieldID, field.TypeUUID),
 			},
 		}
 		for _, k := range nodes {
@@ -155,6 +188,7 @@ func (apcb *AttestationPolicyCreateBulk) Save(ctx context.Context) ([]*Attestati
 	for i := range apcb.builders {
 		func(i int, root context.Context) {
 			builder := apcb.builders[i]
+			builder.defaults()
 			var mut Mutator = MutateFunc(func(ctx context.Context, m Mutation) (Value, error) {
 				mutation, ok := m.(*AttestationPolicyMutation)
 				if !ok {
@@ -181,10 +215,6 @@ func (apcb *AttestationPolicyCreateBulk) Save(ctx context.Context) ([]*Attestati
 					return nil, err
 				}
 				mutation.id = &nodes[i].ID
-				if specs[i].ID.Value != nil {
-					id := specs[i].ID.Value.(int64)
-					nodes[i].ID = int(id)
-				}
 				mutation.done = true
 				return nodes[i], nil
 			})

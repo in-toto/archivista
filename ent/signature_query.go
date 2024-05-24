@@ -11,6 +11,7 @@ import (
 	"entgo.io/ent/dialect/sql"
 	"entgo.io/ent/dialect/sql/sqlgraph"
 	"entgo.io/ent/schema/field"
+	"github.com/google/uuid"
 	"github.com/in-toto/archivista/ent/dsse"
 	"github.com/in-toto/archivista/ent/predicate"
 	"github.com/in-toto/archivista/ent/signature"
@@ -134,8 +135,8 @@ func (sq *SignatureQuery) FirstX(ctx context.Context) *Signature {
 
 // FirstID returns the first Signature ID from the query.
 // Returns a *NotFoundError when no Signature ID was found.
-func (sq *SignatureQuery) FirstID(ctx context.Context) (id int, err error) {
-	var ids []int
+func (sq *SignatureQuery) FirstID(ctx context.Context) (id uuid.UUID, err error) {
+	var ids []uuid.UUID
 	if ids, err = sq.Limit(1).IDs(setContextOp(ctx, sq.ctx, "FirstID")); err != nil {
 		return
 	}
@@ -147,7 +148,7 @@ func (sq *SignatureQuery) FirstID(ctx context.Context) (id int, err error) {
 }
 
 // FirstIDX is like FirstID, but panics if an error occurs.
-func (sq *SignatureQuery) FirstIDX(ctx context.Context) int {
+func (sq *SignatureQuery) FirstIDX(ctx context.Context) uuid.UUID {
 	id, err := sq.FirstID(ctx)
 	if err != nil && !IsNotFound(err) {
 		panic(err)
@@ -185,8 +186,8 @@ func (sq *SignatureQuery) OnlyX(ctx context.Context) *Signature {
 // OnlyID is like Only, but returns the only Signature ID in the query.
 // Returns a *NotSingularError when more than one Signature ID is found.
 // Returns a *NotFoundError when no entities are found.
-func (sq *SignatureQuery) OnlyID(ctx context.Context) (id int, err error) {
-	var ids []int
+func (sq *SignatureQuery) OnlyID(ctx context.Context) (id uuid.UUID, err error) {
+	var ids []uuid.UUID
 	if ids, err = sq.Limit(2).IDs(setContextOp(ctx, sq.ctx, "OnlyID")); err != nil {
 		return
 	}
@@ -202,7 +203,7 @@ func (sq *SignatureQuery) OnlyID(ctx context.Context) (id int, err error) {
 }
 
 // OnlyIDX is like OnlyID, but panics if an error occurs.
-func (sq *SignatureQuery) OnlyIDX(ctx context.Context) int {
+func (sq *SignatureQuery) OnlyIDX(ctx context.Context) uuid.UUID {
 	id, err := sq.OnlyID(ctx)
 	if err != nil {
 		panic(err)
@@ -230,7 +231,7 @@ func (sq *SignatureQuery) AllX(ctx context.Context) []*Signature {
 }
 
 // IDs executes the query and returns a list of Signature IDs.
-func (sq *SignatureQuery) IDs(ctx context.Context) (ids []int, err error) {
+func (sq *SignatureQuery) IDs(ctx context.Context) (ids []uuid.UUID, err error) {
 	if sq.ctx.Unique == nil && sq.path != nil {
 		sq.Unique(true)
 	}
@@ -242,7 +243,7 @@ func (sq *SignatureQuery) IDs(ctx context.Context) (ids []int, err error) {
 }
 
 // IDsX is like IDs, but panics if an error occurs.
-func (sq *SignatureQuery) IDsX(ctx context.Context) []int {
+func (sq *SignatureQuery) IDsX(ctx context.Context) []uuid.UUID {
 	ids, err := sq.IDs(ctx)
 	if err != nil {
 		panic(err)
@@ -472,8 +473,8 @@ func (sq *SignatureQuery) sqlAll(ctx context.Context, hooks ...queryHook) ([]*Si
 }
 
 func (sq *SignatureQuery) loadDsse(ctx context.Context, query *DsseQuery, nodes []*Signature, init func(*Signature), assign func(*Signature, *Dsse)) error {
-	ids := make([]int, 0, len(nodes))
-	nodeids := make(map[int][]*Signature)
+	ids := make([]uuid.UUID, 0, len(nodes))
+	nodeids := make(map[uuid.UUID][]*Signature)
 	for i := range nodes {
 		if nodes[i].dsse_signatures == nil {
 			continue
@@ -505,7 +506,7 @@ func (sq *SignatureQuery) loadDsse(ctx context.Context, query *DsseQuery, nodes 
 }
 func (sq *SignatureQuery) loadTimestamps(ctx context.Context, query *TimestampQuery, nodes []*Signature, init func(*Signature), assign func(*Signature, *Timestamp)) error {
 	fks := make([]driver.Value, 0, len(nodes))
-	nodeids := make(map[int]*Signature)
+	nodeids := make(map[uuid.UUID]*Signature)
 	for i := range nodes {
 		fks = append(fks, nodes[i].ID)
 		nodeids[nodes[i].ID] = nodes[i]
@@ -548,7 +549,7 @@ func (sq *SignatureQuery) sqlCount(ctx context.Context) (int, error) {
 }
 
 func (sq *SignatureQuery) querySpec() *sqlgraph.QuerySpec {
-	_spec := sqlgraph.NewQuerySpec(signature.Table, signature.Columns, sqlgraph.NewFieldSpec(signature.FieldID, field.TypeInt))
+	_spec := sqlgraph.NewQuerySpec(signature.Table, signature.Columns, sqlgraph.NewFieldSpec(signature.FieldID, field.TypeUUID))
 	_spec.From = sq.sql
 	if unique := sq.ctx.Unique; unique != nil {
 		_spec.Unique = *unique

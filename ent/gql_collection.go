@@ -7,8 +7,10 @@ import (
 	"database/sql/driver"
 	"fmt"
 
+	"entgo.io/contrib/entgql"
 	"entgo.io/ent/dialect/sql"
 	"github.com/99designs/gqlgen/graphql"
+	"github.com/google/uuid"
 	"github.com/in-toto/archivista/ent/attestation"
 	"github.com/in-toto/archivista/ent/attestationcollection"
 	"github.com/in-toto/archivista/ent/attestationpolicy"
@@ -27,13 +29,13 @@ func (a *AttestationQuery) CollectFields(ctx context.Context, satisfies ...strin
 	if fc == nil {
 		return a, nil
 	}
-	if err := a.collectField(ctx, graphql.GetOperationContext(ctx), fc.Field, nil, satisfies...); err != nil {
+	if err := a.collectField(ctx, false, graphql.GetOperationContext(ctx), fc.Field, nil, satisfies...); err != nil {
 		return nil, err
 	}
 	return a, nil
 }
 
-func (a *AttestationQuery) collectField(ctx context.Context, opCtx *graphql.OperationContext, collected graphql.CollectedField, path []string, satisfies ...string) error {
+func (a *AttestationQuery) collectField(ctx context.Context, oneNode bool, opCtx *graphql.OperationContext, collected graphql.CollectedField, path []string, satisfies ...string) error {
 	path = append([]string(nil), path...)
 	var (
 		unknownSeen    bool
@@ -42,13 +44,14 @@ func (a *AttestationQuery) collectField(ctx context.Context, opCtx *graphql.Oper
 	)
 	for _, field := range graphql.CollectFields(opCtx, collected.Selections, satisfies) {
 		switch field.Name {
+
 		case "attestationCollection":
 			var (
 				alias = field.Alias
 				path  = append(path, alias)
 				query = (&AttestationCollectionClient{config: a.config}).Query()
 			)
-			if err := query.collectField(ctx, opCtx, field, path, satisfies...); err != nil {
+			if err := query.collectField(ctx, oneNode, opCtx, field, path, mayAddCondition(satisfies, attestationcollectionImplementors)...); err != nil {
 				return err
 			}
 			a.withAttestationCollection = query
@@ -104,13 +107,13 @@ func (ac *AttestationCollectionQuery) CollectFields(ctx context.Context, satisfi
 	if fc == nil {
 		return ac, nil
 	}
-	if err := ac.collectField(ctx, graphql.GetOperationContext(ctx), fc.Field, nil, satisfies...); err != nil {
+	if err := ac.collectField(ctx, false, graphql.GetOperationContext(ctx), fc.Field, nil, satisfies...); err != nil {
 		return nil, err
 	}
 	return ac, nil
 }
 
-func (ac *AttestationCollectionQuery) collectField(ctx context.Context, opCtx *graphql.OperationContext, collected graphql.CollectedField, path []string, satisfies ...string) error {
+func (ac *AttestationCollectionQuery) collectField(ctx context.Context, oneNode bool, opCtx *graphql.OperationContext, collected graphql.CollectedField, path []string, satisfies ...string) error {
 	path = append([]string(nil), path...)
 	var (
 		unknownSeen    bool
@@ -119,25 +122,27 @@ func (ac *AttestationCollectionQuery) collectField(ctx context.Context, opCtx *g
 	)
 	for _, field := range graphql.CollectFields(opCtx, collected.Selections, satisfies) {
 		switch field.Name {
+
 		case "attestations":
 			var (
 				alias = field.Alias
 				path  = append(path, alias)
 				query = (&AttestationClient{config: ac.config}).Query()
 			)
-			if err := query.collectField(ctx, opCtx, field, path, satisfies...); err != nil {
+			if err := query.collectField(ctx, false, opCtx, field, path, mayAddCondition(satisfies, attestationImplementors)...); err != nil {
 				return err
 			}
 			ac.WithNamedAttestations(alias, func(wq *AttestationQuery) {
 				*wq = *query
 			})
+
 		case "statement":
 			var (
 				alias = field.Alias
 				path  = append(path, alias)
 				query = (&StatementClient{config: ac.config}).Query()
 			)
-			if err := query.collectField(ctx, opCtx, field, path, satisfies...); err != nil {
+			if err := query.collectField(ctx, oneNode, opCtx, field, path, mayAddCondition(satisfies, statementImplementors)...); err != nil {
 				return err
 			}
 			ac.withStatement = query
@@ -193,13 +198,13 @@ func (ap *AttestationPolicyQuery) CollectFields(ctx context.Context, satisfies .
 	if fc == nil {
 		return ap, nil
 	}
-	if err := ap.collectField(ctx, graphql.GetOperationContext(ctx), fc.Field, nil, satisfies...); err != nil {
+	if err := ap.collectField(ctx, false, graphql.GetOperationContext(ctx), fc.Field, nil, satisfies...); err != nil {
 		return nil, err
 	}
 	return ap, nil
 }
 
-func (ap *AttestationPolicyQuery) collectField(ctx context.Context, opCtx *graphql.OperationContext, collected graphql.CollectedField, path []string, satisfies ...string) error {
+func (ap *AttestationPolicyQuery) collectField(ctx context.Context, oneNode bool, opCtx *graphql.OperationContext, collected graphql.CollectedField, path []string, satisfies ...string) error {
 	path = append([]string(nil), path...)
 	var (
 		unknownSeen    bool
@@ -208,13 +213,14 @@ func (ap *AttestationPolicyQuery) collectField(ctx context.Context, opCtx *graph
 	)
 	for _, field := range graphql.CollectFields(opCtx, collected.Selections, satisfies) {
 		switch field.Name {
+
 		case "statement":
 			var (
 				alias = field.Alias
 				path  = append(path, alias)
 				query = (&StatementClient{config: ap.config}).Query()
 			)
-			if err := query.collectField(ctx, opCtx, field, path, satisfies...); err != nil {
+			if err := query.collectField(ctx, oneNode, opCtx, field, path, mayAddCondition(satisfies, statementImplementors)...); err != nil {
 				return err
 			}
 			ap.withStatement = query
@@ -270,13 +276,13 @@ func (d *DsseQuery) CollectFields(ctx context.Context, satisfies ...string) (*Ds
 	if fc == nil {
 		return d, nil
 	}
-	if err := d.collectField(ctx, graphql.GetOperationContext(ctx), fc.Field, nil, satisfies...); err != nil {
+	if err := d.collectField(ctx, false, graphql.GetOperationContext(ctx), fc.Field, nil, satisfies...); err != nil {
 		return nil, err
 	}
 	return d, nil
 }
 
-func (d *DsseQuery) collectField(ctx context.Context, opCtx *graphql.OperationContext, collected graphql.CollectedField, path []string, satisfies ...string) error {
+func (d *DsseQuery) collectField(ctx context.Context, oneNode bool, opCtx *graphql.OperationContext, collected graphql.CollectedField, path []string, satisfies ...string) error {
 	path = append([]string(nil), path...)
 	var (
 		unknownSeen    bool
@@ -285,35 +291,38 @@ func (d *DsseQuery) collectField(ctx context.Context, opCtx *graphql.OperationCo
 	)
 	for _, field := range graphql.CollectFields(opCtx, collected.Selections, satisfies) {
 		switch field.Name {
+
 		case "statement":
 			var (
 				alias = field.Alias
 				path  = append(path, alias)
 				query = (&StatementClient{config: d.config}).Query()
 			)
-			if err := query.collectField(ctx, opCtx, field, path, satisfies...); err != nil {
+			if err := query.collectField(ctx, oneNode, opCtx, field, path, mayAddCondition(satisfies, statementImplementors)...); err != nil {
 				return err
 			}
 			d.withStatement = query
+
 		case "signatures":
 			var (
 				alias = field.Alias
 				path  = append(path, alias)
 				query = (&SignatureClient{config: d.config}).Query()
 			)
-			if err := query.collectField(ctx, opCtx, field, path, satisfies...); err != nil {
+			if err := query.collectField(ctx, false, opCtx, field, path, mayAddCondition(satisfies, signatureImplementors)...); err != nil {
 				return err
 			}
 			d.WithNamedSignatures(alias, func(wq *SignatureQuery) {
 				*wq = *query
 			})
+
 		case "payloadDigests":
 			var (
 				alias = field.Alias
 				path  = append(path, alias)
 				query = (&PayloadDigestClient{config: d.config}).Query()
 			)
-			if err := query.collectField(ctx, opCtx, field, path, satisfies...); err != nil {
+			if err := query.collectField(ctx, false, opCtx, field, path, mayAddCondition(satisfies, payloaddigestImplementors)...); err != nil {
 				return err
 			}
 			d.WithNamedPayloadDigests(alias, func(wq *PayloadDigestQuery) {
@@ -376,13 +385,13 @@ func (pd *PayloadDigestQuery) CollectFields(ctx context.Context, satisfies ...st
 	if fc == nil {
 		return pd, nil
 	}
-	if err := pd.collectField(ctx, graphql.GetOperationContext(ctx), fc.Field, nil, satisfies...); err != nil {
+	if err := pd.collectField(ctx, false, graphql.GetOperationContext(ctx), fc.Field, nil, satisfies...); err != nil {
 		return nil, err
 	}
 	return pd, nil
 }
 
-func (pd *PayloadDigestQuery) collectField(ctx context.Context, opCtx *graphql.OperationContext, collected graphql.CollectedField, path []string, satisfies ...string) error {
+func (pd *PayloadDigestQuery) collectField(ctx context.Context, oneNode bool, opCtx *graphql.OperationContext, collected graphql.CollectedField, path []string, satisfies ...string) error {
 	path = append([]string(nil), path...)
 	var (
 		unknownSeen    bool
@@ -391,13 +400,14 @@ func (pd *PayloadDigestQuery) collectField(ctx context.Context, opCtx *graphql.O
 	)
 	for _, field := range graphql.CollectFields(opCtx, collected.Selections, satisfies) {
 		switch field.Name {
+
 		case "dsse":
 			var (
 				alias = field.Alias
 				path  = append(path, alias)
 				query = (&DsseClient{config: pd.config}).Query()
 			)
-			if err := query.collectField(ctx, opCtx, field, path, satisfies...); err != nil {
+			if err := query.collectField(ctx, oneNode, opCtx, field, path, mayAddCondition(satisfies, dsseImplementors)...); err != nil {
 				return err
 			}
 			pd.withDsse = query
@@ -458,13 +468,13 @@ func (s *SignatureQuery) CollectFields(ctx context.Context, satisfies ...string)
 	if fc == nil {
 		return s, nil
 	}
-	if err := s.collectField(ctx, graphql.GetOperationContext(ctx), fc.Field, nil, satisfies...); err != nil {
+	if err := s.collectField(ctx, false, graphql.GetOperationContext(ctx), fc.Field, nil, satisfies...); err != nil {
 		return nil, err
 	}
 	return s, nil
 }
 
-func (s *SignatureQuery) collectField(ctx context.Context, opCtx *graphql.OperationContext, collected graphql.CollectedField, path []string, satisfies ...string) error {
+func (s *SignatureQuery) collectField(ctx context.Context, oneNode bool, opCtx *graphql.OperationContext, collected graphql.CollectedField, path []string, satisfies ...string) error {
 	path = append([]string(nil), path...)
 	var (
 		unknownSeen    bool
@@ -473,23 +483,25 @@ func (s *SignatureQuery) collectField(ctx context.Context, opCtx *graphql.Operat
 	)
 	for _, field := range graphql.CollectFields(opCtx, collected.Selections, satisfies) {
 		switch field.Name {
+
 		case "dsse":
 			var (
 				alias = field.Alias
 				path  = append(path, alias)
 				query = (&DsseClient{config: s.config}).Query()
 			)
-			if err := query.collectField(ctx, opCtx, field, path, satisfies...); err != nil {
+			if err := query.collectField(ctx, oneNode, opCtx, field, path, mayAddCondition(satisfies, dsseImplementors)...); err != nil {
 				return err
 			}
 			s.withDsse = query
+
 		case "timestamps":
 			var (
 				alias = field.Alias
 				path  = append(path, alias)
 				query = (&TimestampClient{config: s.config}).Query()
 			)
-			if err := query.collectField(ctx, opCtx, field, path, satisfies...); err != nil {
+			if err := query.collectField(ctx, false, opCtx, field, path, mayAddCondition(satisfies, timestampImplementors)...); err != nil {
 				return err
 			}
 			s.WithNamedTimestamps(alias, func(wq *TimestampQuery) {
@@ -552,13 +564,13 @@ func (s *StatementQuery) CollectFields(ctx context.Context, satisfies ...string)
 	if fc == nil {
 		return s, nil
 	}
-	if err := s.collectField(ctx, graphql.GetOperationContext(ctx), fc.Field, nil, satisfies...); err != nil {
+	if err := s.collectField(ctx, false, graphql.GetOperationContext(ctx), fc.Field, nil, satisfies...); err != nil {
 		return nil, err
 	}
 	return s, nil
 }
 
-func (s *StatementQuery) collectField(ctx context.Context, opCtx *graphql.OperationContext, collected graphql.CollectedField, path []string, satisfies ...string) error {
+func (s *StatementQuery) collectField(ctx context.Context, oneNode bool, opCtx *graphql.OperationContext, collected graphql.CollectedField, path []string, satisfies ...string) error {
 	path = append([]string(nil), path...)
 	var (
 		unknownSeen    bool
@@ -567,6 +579,7 @@ func (s *StatementQuery) collectField(ctx context.Context, opCtx *graphql.Operat
 	)
 	for _, field := range graphql.CollectFields(opCtx, collected.Selections, satisfies) {
 		switch field.Name {
+
 		case "subjects":
 			var (
 				alias = field.Alias
@@ -595,8 +608,8 @@ func (s *StatementQuery) collectField(ctx context.Context, opCtx *graphql.Operat
 							ids[i] = nodes[i].ID
 						}
 						var v []struct {
-							NodeID int `sql:"statement_subjects"`
-							Count  int `sql:"count"`
+							NodeID uuid.UUID `sql:"statement_subjects"`
+							Count  int       `sql:"count"`
 						}
 						query.Where(func(s *sql.Selector) {
 							s.Where(sql.InValues(s.C(statement.SubjectsColumn), ids...))
@@ -604,7 +617,7 @@ func (s *StatementQuery) collectField(ctx context.Context, opCtx *graphql.Operat
 						if err := query.GroupBy(statement.SubjectsColumn).Aggregate(Count()).Scan(ctx, &v); err != nil {
 							return err
 						}
-						m := make(map[int]int, len(v))
+						m := make(map[uuid.UUID]int, len(v))
 						for i := range v {
 							m[v[i].NodeID] = v[i].Count
 						}
@@ -638,46 +651,53 @@ func (s *StatementQuery) collectField(ctx context.Context, opCtx *graphql.Operat
 			}
 			path = append(path, edgesField, nodeField)
 			if field := collectedField(ctx, path...); field != nil {
-				if err := query.collectField(ctx, opCtx, *field, path, mayAddCondition(satisfies, "Subject")...); err != nil {
+				if err := query.collectField(ctx, false, opCtx, *field, path, mayAddCondition(satisfies, subjectImplementors)...); err != nil {
 					return err
 				}
 			}
 			if limit := paginateLimit(args.first, args.last); limit > 0 {
-				modify := limitRows(statement.SubjectsColumn, limit, pager.orderExpr(query))
-				query.modifiers = append(query.modifiers, modify)
+				if oneNode {
+					pager.applyOrder(query.Limit(limit))
+				} else {
+					modify := entgql.LimitPerRow(statement.SubjectsColumn, limit, pager.orderExpr(query))
+					query.modifiers = append(query.modifiers, modify)
+				}
 			} else {
 				query = pager.applyOrder(query)
 			}
 			s.WithNamedSubjects(alias, func(wq *SubjectQuery) {
 				*wq = *query
 			})
+
 		case "policy":
 			var (
 				alias = field.Alias
 				path  = append(path, alias)
 				query = (&AttestationPolicyClient{config: s.config}).Query()
 			)
-			if err := query.collectField(ctx, opCtx, field, path, satisfies...); err != nil {
+			if err := query.collectField(ctx, oneNode, opCtx, field, path, mayAddCondition(satisfies, attestationpolicyImplementors)...); err != nil {
 				return err
 			}
 			s.withPolicy = query
+
 		case "attestationCollections":
 			var (
 				alias = field.Alias
 				path  = append(path, alias)
 				query = (&AttestationCollectionClient{config: s.config}).Query()
 			)
-			if err := query.collectField(ctx, opCtx, field, path, satisfies...); err != nil {
+			if err := query.collectField(ctx, oneNode, opCtx, field, path, mayAddCondition(satisfies, attestationcollectionImplementors)...); err != nil {
 				return err
 			}
 			s.withAttestationCollections = query
+
 		case "dsse":
 			var (
 				alias = field.Alias
 				path  = append(path, alias)
 				query = (&DsseClient{config: s.config}).Query()
 			)
-			if err := query.collectField(ctx, opCtx, field, path, satisfies...); err != nil {
+			if err := query.collectField(ctx, false, opCtx, field, path, mayAddCondition(satisfies, dsseImplementors)...); err != nil {
 				return err
 			}
 			s.WithNamedDsse(alias, func(wq *DsseQuery) {
@@ -735,13 +755,13 @@ func (s *SubjectQuery) CollectFields(ctx context.Context, satisfies ...string) (
 	if fc == nil {
 		return s, nil
 	}
-	if err := s.collectField(ctx, graphql.GetOperationContext(ctx), fc.Field, nil, satisfies...); err != nil {
+	if err := s.collectField(ctx, false, graphql.GetOperationContext(ctx), fc.Field, nil, satisfies...); err != nil {
 		return nil, err
 	}
 	return s, nil
 }
 
-func (s *SubjectQuery) collectField(ctx context.Context, opCtx *graphql.OperationContext, collected graphql.CollectedField, path []string, satisfies ...string) error {
+func (s *SubjectQuery) collectField(ctx context.Context, oneNode bool, opCtx *graphql.OperationContext, collected graphql.CollectedField, path []string, satisfies ...string) error {
 	path = append([]string(nil), path...)
 	var (
 		unknownSeen    bool
@@ -750,25 +770,27 @@ func (s *SubjectQuery) collectField(ctx context.Context, opCtx *graphql.Operatio
 	)
 	for _, field := range graphql.CollectFields(opCtx, collected.Selections, satisfies) {
 		switch field.Name {
+
 		case "subjectDigests":
 			var (
 				alias = field.Alias
 				path  = append(path, alias)
 				query = (&SubjectDigestClient{config: s.config}).Query()
 			)
-			if err := query.collectField(ctx, opCtx, field, path, satisfies...); err != nil {
+			if err := query.collectField(ctx, false, opCtx, field, path, mayAddCondition(satisfies, subjectdigestImplementors)...); err != nil {
 				return err
 			}
 			s.WithNamedSubjectDigests(alias, func(wq *SubjectDigestQuery) {
 				*wq = *query
 			})
+
 		case "statement":
 			var (
 				alias = field.Alias
 				path  = append(path, alias)
 				query = (&StatementClient{config: s.config}).Query()
 			)
-			if err := query.collectField(ctx, opCtx, field, path, satisfies...); err != nil {
+			if err := query.collectField(ctx, oneNode, opCtx, field, path, mayAddCondition(satisfies, statementImplementors)...); err != nil {
 				return err
 			}
 			s.withStatement = query
@@ -824,13 +846,13 @@ func (sd *SubjectDigestQuery) CollectFields(ctx context.Context, satisfies ...st
 	if fc == nil {
 		return sd, nil
 	}
-	if err := sd.collectField(ctx, graphql.GetOperationContext(ctx), fc.Field, nil, satisfies...); err != nil {
+	if err := sd.collectField(ctx, false, graphql.GetOperationContext(ctx), fc.Field, nil, satisfies...); err != nil {
 		return nil, err
 	}
 	return sd, nil
 }
 
-func (sd *SubjectDigestQuery) collectField(ctx context.Context, opCtx *graphql.OperationContext, collected graphql.CollectedField, path []string, satisfies ...string) error {
+func (sd *SubjectDigestQuery) collectField(ctx context.Context, oneNode bool, opCtx *graphql.OperationContext, collected graphql.CollectedField, path []string, satisfies ...string) error {
 	path = append([]string(nil), path...)
 	var (
 		unknownSeen    bool
@@ -839,13 +861,14 @@ func (sd *SubjectDigestQuery) collectField(ctx context.Context, opCtx *graphql.O
 	)
 	for _, field := range graphql.CollectFields(opCtx, collected.Selections, satisfies) {
 		switch field.Name {
+
 		case "subject":
 			var (
 				alias = field.Alias
 				path  = append(path, alias)
 				query = (&SubjectClient{config: sd.config}).Query()
 			)
-			if err := query.collectField(ctx, opCtx, field, path, satisfies...); err != nil {
+			if err := query.collectField(ctx, oneNode, opCtx, field, path, mayAddCondition(satisfies, subjectImplementors)...); err != nil {
 				return err
 			}
 			sd.withSubject = query
@@ -906,13 +929,13 @@ func (t *TimestampQuery) CollectFields(ctx context.Context, satisfies ...string)
 	if fc == nil {
 		return t, nil
 	}
-	if err := t.collectField(ctx, graphql.GetOperationContext(ctx), fc.Field, nil, satisfies...); err != nil {
+	if err := t.collectField(ctx, false, graphql.GetOperationContext(ctx), fc.Field, nil, satisfies...); err != nil {
 		return nil, err
 	}
 	return t, nil
 }
 
-func (t *TimestampQuery) collectField(ctx context.Context, opCtx *graphql.OperationContext, collected graphql.CollectedField, path []string, satisfies ...string) error {
+func (t *TimestampQuery) collectField(ctx context.Context, oneNode bool, opCtx *graphql.OperationContext, collected graphql.CollectedField, path []string, satisfies ...string) error {
 	path = append([]string(nil), path...)
 	var (
 		unknownSeen    bool
@@ -921,13 +944,14 @@ func (t *TimestampQuery) collectField(ctx context.Context, opCtx *graphql.Operat
 	)
 	for _, field := range graphql.CollectFields(opCtx, collected.Selections, satisfies) {
 		switch field.Name {
+
 		case "signature":
 			var (
 				alias = field.Alias
 				path  = append(path, alias)
 				query = (&SignatureClient{config: t.config}).Query()
 			)
-			if err := query.collectField(ctx, opCtx, field, path, satisfies...); err != nil {
+			if err := query.collectField(ctx, oneNode, opCtx, field, path, mayAddCondition(satisfies, signatureImplementors)...); err != nil {
 				return err
 			}
 			t.withSignature = query
@@ -1034,39 +1058,17 @@ func unmarshalArgs(ctx context.Context, whereInput any, args map[string]any) map
 	return args
 }
 
-func limitRows(partitionBy string, limit int, orderBy ...sql.Querier) func(s *sql.Selector) {
-	return func(s *sql.Selector) {
-		d := sql.Dialect(s.Dialect())
-		s.SetDistinct(false)
-		with := d.With("src_query").
-			As(s.Clone()).
-			With("limited_query").
-			As(
-				d.Select("*").
-					AppendSelectExprAs(
-						sql.RowNumber().PartitionBy(partitionBy).OrderExpr(orderBy...),
-						"row_number",
-					).
-					From(d.Table("src_query")),
-			)
-		t := d.Table("limited_query").As(s.TableName())
-		*s = *d.Select(s.UnqualifiedColumns()...).
-			From(t).
-			Where(sql.LTE(t.C("row_number"), limit)).
-			Prefix(with)
-	}
-}
-
 // mayAddCondition appends another type condition to the satisfies list
-// if condition is enabled (Node/Nodes) and it does not exist in the list.
-func mayAddCondition(satisfies []string, typeCond string) []string {
-	if len(satisfies) == 0 {
-		return satisfies
-	}
-	for _, s := range satisfies {
-		if typeCond == s {
-			return satisfies
+// if it does not exist in the list.
+func mayAddCondition(satisfies []string, typeCond []string) []string {
+Cond:
+	for _, c := range typeCond {
+		for _, s := range satisfies {
+			if c == s {
+				continue Cond
+			}
 		}
+		satisfies = append(satisfies, c)
 	}
-	return append(satisfies, typeCond)
+	return satisfies
 }
