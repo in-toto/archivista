@@ -17,11 +17,12 @@ package metadatastorage
 import (
 	"context"
 
+	"github.com/google/uuid"
 	"github.com/in-toto/archivista/ent"
 )
 
 type ParserFunc func([]byte) (Storer, error)
 
 type Storer interface {
-	Store(ctx context.Context, tx *ent.Tx, stmtID int) error
+	Store(ctx context.Context, tx *ent.Tx, stmtID uuid.UUID) error
 }
