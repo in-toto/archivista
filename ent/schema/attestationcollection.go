@@ -19,6 +19,7 @@ import (
 	"entgo.io/ent/schema/edge"
 	"entgo.io/ent/schema/field"
 	"entgo.io/ent/schema/index"
+	"github.com/google/uuid"
 )
 
 // AttestationCollection represents a witness attestation collection
@@ -28,6 +29,7 @@ type AttestationCollection struct {
 
 func (AttestationCollection) Fields() []ent.Field {
 	return []ent.Field{
+		field.UUID("id", uuid.UUID{}).Default(uuid.New).Immutable().Unique(),
 		field.String("name").NotEmpty(),
 	}
 }

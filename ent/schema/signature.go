@@ -20,6 +20,7 @@ import (
 	"entgo.io/ent/schema/edge"
 	"entgo.io/ent/schema/field"
 	"entgo.io/ent/schema/index"
+	"github.com/google/uuid"
 )
 
 // Signature represents signatures on a DSSE envelope
@@ -30,6 +31,7 @@ type Signature struct {
 // Fields of the Signature.
 func (Signature) Fields() []ent.Field {
 	return []ent.Field{
+		field.UUID("id", uuid.UUID{}).Default(uuid.New).Immutable().Unique(),
 		field.String("key_id").NotEmpty(),
 		field.String("signature").NotEmpty().SchemaType(map[string]string{dialect.MySQL: "text"}),
 	}

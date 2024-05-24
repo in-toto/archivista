@@ -21,6 +21,7 @@ import (
 	"entgo.io/ent/schema/edge"
 	"entgo.io/ent/schema/field"
 	"entgo.io/ent/schema/index"
+	"github.com/google/uuid"
 )
 
 // Subject represents subjects from an in-toto statement.
@@ -31,6 +32,7 @@ type Subject struct {
 // Fields of the Subject.
 func (Subject) Fields() []ent.Field {
 	return []ent.Field{
+		field.UUID("id", uuid.UUID{}).Default(uuid.New).Immutable().Unique(),
 		field.String("name").NotEmpty(),
 	}
 }

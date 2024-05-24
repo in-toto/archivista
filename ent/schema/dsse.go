@@ -20,6 +20,7 @@ import (
 	"entgo.io/ent/schema"
 	"entgo.io/ent/schema/edge"
 	"entgo.io/ent/schema/field"
+	"github.com/google/uuid"
 )
 
 // Dsse represents some metadata about an archived DSSE envelope
@@ -30,6 +31,7 @@ type Dsse struct {
 // Fields of the Statement.
 func (Dsse) Fields() []ent.Field {
 	return []ent.Field{
+		field.UUID("id", uuid.UUID{}).Default(uuid.New).Immutable().Unique(),
 		field.String("gitoid_sha256").NotEmpty().Unique(),
 		field.String("payload_type").NotEmpty(),
 	}
