@@ -40,4 +40,4 @@ jobs:
         - name: Check license headers
           run: |
             set -e
-            addlicense --check -l apache -c 'The Archivista Contributors' --ignore "ent/migrate/migrations/**" --ignore "docs/**" --ignore "chart/**/*.yaml" -v ./
+            addlicense --check -l apache -c 'The Archivista Contributors' --ignore "generated.go" --ignore "ent.resolvers.go" --ignore "ent/migrate/migrations/**" --ignore "docs/**" --ignore "chart/**/*.yaml" -v ./
