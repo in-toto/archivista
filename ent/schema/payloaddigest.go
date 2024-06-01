@@ -19,6 +19,7 @@ import (
 	"entgo.io/ent/schema/edge"
 	"entgo.io/ent/schema/field"
 	"entgo.io/ent/schema/index"
+	"github.com/google/uuid"
 )
 
 // PayloadDigest represents the digest of the payload of a DSSE envelope
@@ -29,6 +30,7 @@ type PayloadDigest struct {
 // Fields of the Digest.
 func (PayloadDigest) Fields() []ent.Field {
 	return []ent.Field{
+		field.UUID("id", uuid.UUID{}).Default(uuid.New).Immutable().Unique(),
 		field.String("algorithm").NotEmpty(),
 		field.String("value").NotEmpty(),
 	}

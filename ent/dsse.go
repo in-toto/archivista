@@ -8,6 +8,7 @@ import (
 
 	"entgo.io/ent"
 	"entgo.io/ent/dialect/sql"
+	"github.com/google/uuid"
 	"github.com/in-toto/archivista/ent/dsse"
 	"github.com/in-toto/archivista/ent/statement"
 )
@@ -16,7 +17,7 @@ import (
 type Dsse struct {
 	config `json:"-"`
 	// ID of the ent.
-	ID int `json:"id,omitempty"`
+	ID uuid.UUID `json:"id,omitempty"`
 	// GitoidSha256 holds the value of the "gitoid_sha256" field.
 	GitoidSha256 string `json:"gitoid_sha256,omitempty"`
 	// PayloadType holds the value of the "payload_type" field.
@@ -24,7 +25,7 @@ type Dsse struct {
 	// Edges holds the relations/edges for other nodes in the graph.
 	// The values are being populated by the DsseQuery when eager-loading is set.
 	Edges          DsseEdges `json:"edges"`
-	dsse_statement *int
+	dsse_statement *uuid.UUID
 	selectValues   sql.SelectValues
 }
 
@@ -80,12 +81,12 @@ func (*Dsse) scanValues(columns []string) ([]any, error) {
 	values := make([]any, len(columns))
 	for i := range columns {
 		switch columns[i] {
-		case dsse.FieldID:
-			values[i] = new(sql.NullInt64)
 		case dsse.FieldGitoidSha256, dsse.FieldPayloadType:
 			values[i] = new(sql.NullString)
+		case dsse.FieldID:
+			values[i] = new(uuid.UUID)
 		case dsse.ForeignKeys[0]: // dsse_statement
-			values[i] = new(sql.NullInt64)
+			values[i] = &sql.NullScanner{S: new(uuid.UUID)}
 		default:
 			values[i] = new(sql.UnknownType)
 		}
@@ -102,11 +103,11 @@ func (d *Dsse) assignValues(columns []string, values []any) error {
 	for i := range columns {
 		switch columns[i] {
 		case dsse.FieldID:
-			value, ok := values[i].(*sql.NullInt64)
-			if !ok {
-				return fmt.Errorf("unexpected type %T for field id", value)
+			if value, ok := values[i].(*uuid.UUID); !ok {
+				return fmt.Errorf("unexpected type %T for field id", values[i])
+			} else if value != nil {
+				d.ID = *value
 			}
-			d.ID = int(value.Int64)
 		case dsse.FieldGitoidSha256:
 			if value, ok := values[i].(*sql.NullString); !ok {
 				return fmt.Errorf("unexpected type %T for field gitoid_sha256", values[i])
@@ -120,11 +121,11 @@ func (d *Dsse) assignValues(columns []string, values []any) error {
 				d.PayloadType = value.String
 			}
 		case dsse.ForeignKeys[0]:
-			if value, ok := values[i].(*sql.NullInt64); !ok {
-				return fmt.Errorf("unexpected type %T for edge-field dsse_statement", value)
+			if value, ok := values[i].(*sql.NullScanner); !ok {
+				return fmt.Errorf("unexpected type %T for field dsse_statement", values[i])
 			} else if value.Valid {
-				d.dsse_statement = new(int)
-				*d.dsse_statement = int(value.Int64)
+				d.dsse_statement = new(uuid.UUID)
+				*d.dsse_statement = *value.S.(*uuid.UUID)
 			}
 		default:
 			d.selectValues.Set(columns[i], values[i])

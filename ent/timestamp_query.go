@@ -10,6 +10,7 @@ import (
 	"entgo.io/ent/dialect/sql"
 	"entgo.io/ent/dialect/sql/sqlgraph"
 	"entgo.io/ent/schema/field"
+	"github.com/google/uuid"
 	"github.com/in-toto/archivista/ent/predicate"
 	"github.com/in-toto/archivista/ent/signature"
 	"github.com/in-toto/archivista/ent/timestamp"
@@ -108,8 +109,8 @@ func (tq *TimestampQuery) FirstX(ctx context.Context) *Timestamp {
 
 // FirstID returns the first Timestamp ID from the query.
 // Returns a *NotFoundError when no Timestamp ID was found.
-func (tq *TimestampQuery) FirstID(ctx context.Context) (id int, err error) {
-	var ids []int
+func (tq *TimestampQuery) FirstID(ctx context.Context) (id uuid.UUID, err error) {
+	var ids []uuid.UUID
 	if ids, err = tq.Limit(1).IDs(setContextOp(ctx, tq.ctx, "FirstID")); err != nil {
 		return
 	}
@@ -121,7 +122,7 @@ func (tq *TimestampQuery) FirstID(ctx context.Context) (id int, err error) {
 }
 
 // FirstIDX is like FirstID, but panics if an error occurs.
-func (tq *TimestampQuery) FirstIDX(ctx context.Context) int {
+func (tq *TimestampQuery) FirstIDX(ctx context.Context) uuid.UUID {
 	id, err := tq.FirstID(ctx)
 	if err != nil && !IsNotFound(err) {
 		panic(err)
@@ -159,8 +160,8 @@ func (tq *TimestampQuery) OnlyX(ctx context.Context) *Timestamp {
 // OnlyID is like Only, but returns the only Timestamp ID in the query.
 // Returns a *NotSingularError when more than one Timestamp ID is found.
 // Returns a *NotFoundError when no entities are found.
-func (tq *TimestampQuery) OnlyID(ctx context.Context) (id int, err error) {
-	var ids []int
+func (tq *TimestampQuery) OnlyID(ctx context.Context) (id uuid.UUID, err error) {
+	var ids []uuid.UUID
 	if ids, err = tq.Limit(2).IDs(setContextOp(ctx, tq.ctx, "OnlyID")); err != nil {
 		return
 	}
@@ -176,7 +177,7 @@ func (tq *TimestampQuery) OnlyID(ctx context.Context) (id int, err error) {
 }
 
 // OnlyIDX is like OnlyID, but panics if an error occurs.
-func (tq *TimestampQuery) OnlyIDX(ctx context.Context) int {
+func (tq *TimestampQuery) OnlyIDX(ctx context.Context) uuid.UUID {
 	id, err := tq.OnlyID(ctx)
 	if err != nil {
 		panic(err)
@@ -204,7 +205,7 @@ func (tq *TimestampQuery) AllX(ctx context.Context) []*Timestamp {
 }
 
 // IDs executes the query and returns a list of Timestamp IDs.
-func (tq *TimestampQuery) IDs(ctx context.Context) (ids []int, err error) {
+func (tq *TimestampQuery) IDs(ctx context.Context) (ids []uuid.UUID, err error) {
 	if tq.ctx.Unique == nil && tq.path != nil {
 		tq.Unique(true)
 	}
@@ -216,7 +217,7 @@ func (tq *TimestampQuery) IDs(ctx context.Context) (ids []int, err error) {
 }
 
 // IDsX is like IDs, but panics if an error occurs.
-func (tq *TimestampQuery) IDsX(ctx context.Context) []int {
+func (tq *TimestampQuery) IDsX(ctx context.Context) []uuid.UUID {
 	ids, err := tq.IDs(ctx)
 	if err != nil {
 		panic(err)
@@ -419,8 +420,8 @@ func (tq *TimestampQuery) sqlAll(ctx context.Context, hooks ...queryHook) ([]*Ti
 }
 
 func (tq *TimestampQuery) loadSignature(ctx context.Context, query *SignatureQuery, nodes []*Timestamp, init func(*Timestamp), assign func(*Timestamp, *Signature)) error {
-	ids := make([]int, 0, len(nodes))
-	nodeids := make(map[int][]*Timestamp)
+	ids := make([]uuid.UUID, 0, len(nodes))
+	nodeids := make(map[uuid.UUID][]*Timestamp)
 	for i := range nodes {
 		if nodes[i].signature_timestamps == nil {
 			continue
@@ -464,7 +465,7 @@ func (tq *TimestampQuery) sqlCount(ctx context.Context) (int, error) {
 }
 
 func (tq *TimestampQuery) querySpec() *sqlgraph.QuerySpec {
-	_spec := sqlgraph.NewQuerySpec(timestamp.Table, timestamp.Columns, sqlgraph.NewFieldSpec(timestamp.FieldID, field.TypeInt))
+	_spec := sqlgraph.NewQuerySpec(timestamp.Table, timestamp.Columns, sqlgraph.NewFieldSpec(timestamp.FieldID, field.TypeUUID))
 	_spec.From = tq.sql
 	if unique := tq.ctx.Unique; unique != nil {
 		_spec.Unique = *unique

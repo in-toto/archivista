@@ -18,6 +18,7 @@ import (
 	"context"
 	"encoding/json"
 
+	"github.com/google/uuid"
 	"github.com/in-toto/archivista/ent"
 	"github.com/in-toto/archivista/internal/metadatastorage"
 	"github.com/in-toto/go-witness/attestation"
@@ -47,7 +48,7 @@ func Parse(data []byte) (metadatastorage.Storer, error) {
 	return parsedCollection, nil
 }
 
-func (parsedCollection ParsedCollection) Store(ctx context.Context, tx *ent.Tx, stmtID int) error {
+func (parsedCollection ParsedCollection) Store(ctx context.Context, tx *ent.Tx, stmtID uuid.UUID) error {
 	collection, err := tx.AttestationCollection.Create().
 		SetStatementID(stmtID).
 		SetName(parsedCollection.Name).

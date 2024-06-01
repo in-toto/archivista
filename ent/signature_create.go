@@ -9,6 +9,7 @@ import (
 
 	"entgo.io/ent/dialect/sql/sqlgraph"
 	"entgo.io/ent/schema/field"
+	"github.com/google/uuid"
 	"github.com/in-toto/archivista/ent/dsse"
 	"github.com/in-toto/archivista/ent/signature"
 	"github.com/in-toto/archivista/ent/timestamp"
@@ -33,14 +34,28 @@ func (sc *SignatureCreate) SetSignature(s string) *SignatureCreate {
 	return sc
 }
 
+// SetID sets the "id" field.
+func (sc *SignatureCreate) SetID(u uuid.UUID) *SignatureCreate {
+	sc.mutation.SetID(u)
+	return sc
+}
+
+// SetNillableID sets the "id" field if the given value is not nil.
+func (sc *SignatureCreate) SetNillableID(u *uuid.UUID) *SignatureCreate {
+	if u != nil {
+		sc.SetID(*u)
+	}
+	return sc
+}
+
 // SetDsseID sets the "dsse" edge to the Dsse entity by ID.
-func (sc *SignatureCreate) SetDsseID(id int) *SignatureCreate {
+func (sc *SignatureCreate) SetDsseID(id uuid.UUID) *SignatureCreate {
 	sc.mutation.SetDsseID(id)
 	return sc
 }
 
 // SetNillableDsseID sets the "dsse" edge to the Dsse entity by ID if the given value is not nil.
-func (sc *SignatureCreate) SetNillableDsseID(id *int) *SignatureCreate {
+func (sc *SignatureCreate) SetNillableDsseID(id *uuid.UUID) *SignatureCreate {
 	if id != nil {
 		sc = sc.SetDsseID(*id)
 	}
@@ -53,14 +68,14 @@ func (sc *SignatureCreate) SetDsse(d *Dsse) *SignatureCreate {
 }
 
 // AddTimestampIDs adds the "timestamps" edge to the Timestamp entity by IDs.
-func (sc *SignatureCreate) AddTimestampIDs(ids ...int) *SignatureCreate {
+func (sc *SignatureCreate) AddTimestampIDs(ids ...uuid.UUID) *SignatureCreate {
 	sc.mutation.AddTimestampIDs(ids...)
 	return sc
 }
 
 // AddTimestamps adds the "timestamps" edges to the Timestamp entity.
 func (sc *SignatureCreate) AddTimestamps(t ...*Timestamp) *SignatureCreate {
-	ids := make([]int, len(t))
+	ids := make([]uuid.UUID, len(t))
 	for i := range t {
 		ids[i] = t[i].ID
 	}
@@ -74,6 +89,7 @@ func (sc *SignatureCreate) Mutation() *SignatureMutation {
 
 // Save creates the Signature in the database.
 func (sc *SignatureCreate) Save(ctx context.Context) (*Signature, error) {
+	sc.defaults()
 	return withHooks(ctx, sc.sqlSave, sc.mutation, sc.hooks)
 }
 
@@ -96,6 +112,14 @@ func (sc *SignatureCreate) Exec(ctx context.Context) error {
 func (sc *SignatureCreate) ExecX(ctx context.Context) {
 	if err := sc.Exec(ctx); err != nil {
 		panic(err)
+	}
+}
+
+// defaults sets the default values of the builder before save.
+func (sc *SignatureCreate) defaults() {
+	if _, ok := sc.mutation.ID(); !ok {
+		v := signature.DefaultID()
+		sc.mutation.SetID(v)
 	}
 }
 
@@ -131,8 +155,13 @@ func (sc *SignatureCreate) sqlSave(ctx context.Context) (*Signature, error) {
 		}
 		return nil, err
 	}
-	id := _spec.ID.Value.(int64)
-	_node.ID = int(id)
+	if _spec.ID.Value != nil {
+		if id, ok := _spec.ID.Value.(*uuid.UUID); ok {
+			_node.ID = *id
+		} else if err := _node.ID.Scan(_spec.ID.Value); err != nil {
+			return nil, err
+		}
+	}
 	sc.mutation.id = &_node.ID
 	sc.mutation.done = true
 	return _node, nil
@@ -141,8 +170,12 @@ func (sc *SignatureCreate) sqlSave(ctx context.Context) (*Signature, error) {
 func (sc *SignatureCreate) createSpec() (*Signature, *sqlgraph.CreateSpec) {
 	var (
 		_node = &Signature{config: sc.config}
-		_spec = sqlgraph.NewCreateSpec(signature.Table, sqlgraph.NewFieldSpec(signature.FieldID, field.TypeInt))
+		_spec = sqlgraph.NewCreateSpec(signature.Table, sqlgraph.NewFieldSpec(signature.FieldID, field.TypeUUID))
 	)
+	if id, ok := sc.mutation.ID(); ok {
+		_node.ID = id
+		_spec.ID.Value = &id
+	}
 	if value, ok := sc.mutation.KeyID(); ok {
 		_spec.SetField(signature.FieldKeyID, field.TypeString, value)
 		_node.KeyID = value
@@ -159,7 +192,7 @@ func (sc *SignatureCreate) createSpec() (*Signature, *sqlgraph.CreateSpec) {
 			Columns: []string{signature.DsseColumn},
 			Bidi:    false,
 			Target: &sqlgraph.EdgeTarget{
-				IDSpec: sqlgraph.NewFieldSpec(dsse.FieldID, field.TypeInt),
+				IDSpec: sqlgraph.NewFieldSpec(dsse.FieldID, field.TypeUUID),
 			},
 		}
 		for _, k := range nodes {
@@ -176,7 +209,7 @@ func (sc *SignatureCreate) createSpec() (*Signature, *sqlgraph.CreateSpec) {
 			Columns: []string{signature.TimestampsColumn},
 			Bidi:    false,
 			Target: &sqlgraph.EdgeTarget{
-				IDSpec: sqlgraph.NewFieldSpec(timestamp.FieldID, field.TypeInt),
+				IDSpec: sqlgraph.NewFieldSpec(timestamp.FieldID, field.TypeUUID),
 			},
 		}
 		for _, k := range nodes {
@@ -205,6 +238,7 @@ func (scb *SignatureCreateBulk) Save(ctx context.Context) ([]*Signature, error) 
 	for i := range scb.builders {
 		func(i int, root context.Context) {
 			builder := scb.builders[i]
+			builder.defaults()
 			var mut Mutator = MutateFunc(func(ctx context.Context, m Mutation) (Value, error) {
 				mutation, ok := m.(*SignatureMutation)
 				if !ok {
@@ -231,10 +265,6 @@ func (scb *SignatureCreateBulk) Save(ctx context.Context) ([]*Signature, error) 
 					return nil, err
 				}
 				mutation.id = &nodes[i].ID
-				if specs[i].ID.Value != nil {
-					id := specs[i].ID.Value.(int64)
-					nodes[i].ID = int(id)
-				}
 				mutation.done = true
 				return nodes[i], nil
 			})

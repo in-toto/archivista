@@ -19,6 +19,7 @@ import (
 	"entgo.io/ent/schema/edge"
 	"entgo.io/ent/schema/field"
 	"entgo.io/ent/schema/index"
+	"github.com/google/uuid"
 )
 
 // SubjectDigest represents the digests of a subject from an in-toto statement
@@ -29,6 +30,7 @@ type SubjectDigest struct {
 // Fields of the Digest.
 func (SubjectDigest) Fields() []ent.Field {
 	return []ent.Field{
+		field.UUID("id", uuid.UUID{}).Default(uuid.New).Immutable().Unique(),
 		field.String("algorithm").NotEmpty(),
 		field.String("value").NotEmpty(),
 	}

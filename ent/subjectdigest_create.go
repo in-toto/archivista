@@ -9,6 +9,7 @@ import (
 
 	"entgo.io/ent/dialect/sql/sqlgraph"
 	"entgo.io/ent/schema/field"
+	"github.com/google/uuid"
 	"github.com/in-toto/archivista/ent/subject"
 	"github.com/in-toto/archivista/ent/subjectdigest"
 )
@@ -32,14 +33,28 @@ func (sdc *SubjectDigestCreate) SetValue(s string) *SubjectDigestCreate {
 	return sdc
 }
 
+// SetID sets the "id" field.
+func (sdc *SubjectDigestCreate) SetID(u uuid.UUID) *SubjectDigestCreate {
+	sdc.mutation.SetID(u)
+	return sdc
+}
+
+// SetNillableID sets the "id" field if the given value is not nil.
+func (sdc *SubjectDigestCreate) SetNillableID(u *uuid.UUID) *SubjectDigestCreate {
+	if u != nil {
+		sdc.SetID(*u)
+	}
+	return sdc
+}
+
 // SetSubjectID sets the "subject" edge to the Subject entity by ID.
-func (sdc *SubjectDigestCreate) SetSubjectID(id int) *SubjectDigestCreate {
+func (sdc *SubjectDigestCreate) SetSubjectID(id uuid.UUID) *SubjectDigestCreate {
 	sdc.mutation.SetSubjectID(id)
 	return sdc
 }
 
 // SetNillableSubjectID sets the "subject" edge to the Subject entity by ID if the given value is not nil.
-func (sdc *SubjectDigestCreate) SetNillableSubjectID(id *int) *SubjectDigestCreate {
+func (sdc *SubjectDigestCreate) SetNillableSubjectID(id *uuid.UUID) *SubjectDigestCreate {
 	if id != nil {
 		sdc = sdc.SetSubjectID(*id)
 	}
@@ -58,6 +73,7 @@ func (sdc *SubjectDigestCreate) Mutation() *SubjectDigestMutation {
 
 // Save creates the SubjectDigest in the database.
 func (sdc *SubjectDigestCreate) Save(ctx context.Context) (*SubjectDigest, error) {
+	sdc.defaults()
 	return withHooks(ctx, sdc.sqlSave, sdc.mutation, sdc.hooks)
 }
 
@@ -80,6 +96,14 @@ func (sdc *SubjectDigestCreate) Exec(ctx context.Context) error {
 func (sdc *SubjectDigestCreate) ExecX(ctx context.Context) {
 	if err := sdc.Exec(ctx); err != nil {
 		panic(err)
+	}
+}
+
+// defaults sets the default values of the builder before save.
+func (sdc *SubjectDigestCreate) defaults() {
+	if _, ok := sdc.mutation.ID(); !ok {
+		v := subjectdigest.DefaultID()
+		sdc.mutation.SetID(v)
 	}
 }
 
@@ -115,8 +139,13 @@ func (sdc *SubjectDigestCreate) sqlSave(ctx context.Context) (*SubjectDigest, er
 		}
 		return nil, err
 	}
-	id := _spec.ID.Value.(int64)
-	_node.ID = int(id)
+	if _spec.ID.Value != nil {
+		if id, ok := _spec.ID.Value.(*uuid.UUID); ok {
+			_node.ID = *id
+		} else if err := _node.ID.Scan(_spec.ID.Value); err != nil {
+			return nil, err
+		}
+	}
 	sdc.mutation.id = &_node.ID
 	sdc.mutation.done = true
 	return _node, nil
@@ -125,8 +154,12 @@ func (sdc *SubjectDigestCreate) sqlSave(ctx context.Context) (*SubjectDigest, er
 func (sdc *SubjectDigestCreate) createSpec() (*SubjectDigest, *sqlgraph.CreateSpec) {
 	var (
 		_node = &SubjectDigest{config: sdc.config}
-		_spec = sqlgraph.NewCreateSpec(subjectdigest.Table, sqlgraph.NewFieldSpec(subjectdigest.FieldID, field.TypeInt))
+		_spec = sqlgraph.NewCreateSpec(subjectdigest.Table, sqlgraph.NewFieldSpec(subjectdigest.FieldID, field.TypeUUID))
 	)
+	if id, ok := sdc.mutation.ID(); ok {
+		_node.ID = id
+		_spec.ID.Value = &id
+	}
 	if value, ok := sdc.mutation.Algorithm(); ok {
 		_spec.SetField(subjectdigest.FieldAlgorithm, field.TypeString, value)
 		_node.Algorithm = value
@@ -143,7 +176,7 @@ func (sdc *SubjectDigestCreate) createSpec() (*SubjectDigest, *sqlgraph.CreateSp
 			Columns: []string{subjectdigest.SubjectColumn},
 			Bidi:    false,
 			Target: &sqlgraph.EdgeTarget{
-				IDSpec: sqlgraph.NewFieldSpec(subject.FieldID, field.TypeInt),
+				IDSpec: sqlgraph.NewFieldSpec(subject.FieldID, field.TypeUUID),
 			},
 		}
 		for _, k := range nodes {
@@ -173,6 +206,7 @@ func (sdcb *SubjectDigestCreateBulk) Save(ctx context.Context) ([]*SubjectDigest
 	for i := range sdcb.builders {
 		func(i int, root context.Context) {
 			builder := sdcb.builders[i]
+			builder.defaults()
 			var mut Mutator = MutateFunc(func(ctx context.Context, m Mutation) (Value, error) {
 				mutation, ok := m.(*SubjectDigestMutation)
 				if !ok {
@@ -199,10 +233,6 @@ func (sdcb *SubjectDigestCreateBulk) Save(ctx context.Context) ([]*SubjectDigest
 					return nil, err
 				}
 				mutation.id = &nodes[i].ID
-				if specs[i].ID.Value != nil {
-					id := specs[i].ID.Value.(int64)
-					nodes[i].ID = int(id)
-				}
 				mutation.done = true
 				return nodes[i], nil
 			})

@@ -9,6 +9,7 @@ import (
 
 	"entgo.io/ent/dialect/sql/sqlgraph"
 	"entgo.io/ent/schema/field"
+	"github.com/google/uuid"
 	"github.com/in-toto/archivista/ent/dsse"
 	"github.com/in-toto/archivista/ent/payloaddigest"
 	"github.com/in-toto/archivista/ent/signature"
@@ -34,14 +35,28 @@ func (dc *DsseCreate) SetPayloadType(s string) *DsseCreate {
 	return dc
 }
 
+// SetID sets the "id" field.
+func (dc *DsseCreate) SetID(u uuid.UUID) *DsseCreate {
+	dc.mutation.SetID(u)
+	return dc
+}
+
+// SetNillableID sets the "id" field if the given value is not nil.
+func (dc *DsseCreate) SetNillableID(u *uuid.UUID) *DsseCreate {
+	if u != nil {
+		dc.SetID(*u)
+	}
+	return dc
+}
+
 // SetStatementID sets the "statement" edge to the Statement entity by ID.
-func (dc *DsseCreate) SetStatementID(id int) *DsseCreate {
+func (dc *DsseCreate) SetStatementID(id uuid.UUID) *DsseCreate {
 	dc.mutation.SetStatementID(id)
 	return dc
 }
 
 // SetNillableStatementID sets the "statement" edge to the Statement entity by ID if the given value is not nil.
-func (dc *DsseCreate) SetNillableStatementID(id *int) *DsseCreate {
+func (dc *DsseCreate) SetNillableStatementID(id *uuid.UUID) *DsseCreate {
 	if id != nil {
 		dc = dc.SetStatementID(*id)
 	}
@@ -54,14 +69,14 @@ func (dc *DsseCreate) SetStatement(s *Statement) *DsseCreate {
 }
 
 // AddSignatureIDs adds the "signatures" edge to the Signature entity by IDs.
-func (dc *DsseCreate) AddSignatureIDs(ids ...int) *DsseCreate {
+func (dc *DsseCreate) AddSignatureIDs(ids ...uuid.UUID) *DsseCreate {
 	dc.mutation.AddSignatureIDs(ids...)
 	return dc
 }
 
 // AddSignatures adds the "signatures" edges to the Signature entity.
 func (dc *DsseCreate) AddSignatures(s ...*Signature) *DsseCreate {
-	ids := make([]int, len(s))
+	ids := make([]uuid.UUID, len(s))
 	for i := range s {
 		ids[i] = s[i].ID
 	}
@@ -69,14 +84,14 @@ func (dc *DsseCreate) AddSignatures(s ...*Signature) *DsseCreate {
 }
 
 // AddPayloadDigestIDs adds the "payload_digests" edge to the PayloadDigest entity by IDs.
-func (dc *DsseCreate) AddPayloadDigestIDs(ids ...int) *DsseCreate {
+func (dc *DsseCreate) AddPayloadDigestIDs(ids ...uuid.UUID) *DsseCreate {
 	dc.mutation.AddPayloadDigestIDs(ids...)
 	return dc
 }
 
 // AddPayloadDigests adds the "payload_digests" edges to the PayloadDigest entity.
 func (dc *DsseCreate) AddPayloadDigests(p ...*PayloadDigest) *DsseCreate {
-	ids := make([]int, len(p))
+	ids := make([]uuid.UUID, len(p))
 	for i := range p {
 		ids[i] = p[i].ID
 	}
@@ -90,6 +105,7 @@ func (dc *DsseCreate) Mutation() *DsseMutation {
 
 // Save creates the Dsse in the database.
 func (dc *DsseCreate) Save(ctx context.Context) (*Dsse, error) {
+	dc.defaults()
 	return withHooks(ctx, dc.sqlSave, dc.mutation, dc.hooks)
 }
 
@@ -112,6 +128,14 @@ func (dc *DsseCreate) Exec(ctx context.Context) error {
 func (dc *DsseCreate) ExecX(ctx context.Context) {
 	if err := dc.Exec(ctx); err != nil {
 		panic(err)
+	}
+}
+
+// defaults sets the default values of the builder before save.
+func (dc *DsseCreate) defaults() {
+	if _, ok := dc.mutation.ID(); !ok {
+		v := dsse.DefaultID()
+		dc.mutation.SetID(v)
 	}
 }
 
@@ -147,8 +171,13 @@ func (dc *DsseCreate) sqlSave(ctx context.Context) (*Dsse, error) {
 		}
 		return nil, err
 	}
-	id := _spec.ID.Value.(int64)
-	_node.ID = int(id)
+	if _spec.ID.Value != nil {
+		if id, ok := _spec.ID.Value.(*uuid.UUID); ok {
+			_node.ID = *id
+		} else if err := _node.ID.Scan(_spec.ID.Value); err != nil {
+			return nil, err
+		}
+	}
 	dc.mutation.id = &_node.ID
 	dc.mutation.done = true
 	return _node, nil
@@ -157,8 +186,12 @@ func (dc *DsseCreate) sqlSave(ctx context.Context) (*Dsse, error) {
 func (dc *DsseCreate) createSpec() (*Dsse, *sqlgraph.CreateSpec) {
 	var (
 		_node = &Dsse{config: dc.config}
-		_spec = sqlgraph.NewCreateSpec(dsse.Table, sqlgraph.NewFieldSpec(dsse.FieldID, field.TypeInt))
+		_spec = sqlgraph.NewCreateSpec(dsse.Table, sqlgraph.NewFieldSpec(dsse.FieldID, field.TypeUUID))
 	)
+	if id, ok := dc.mutation.ID(); ok {
+		_node.ID = id
+		_spec.ID.Value = &id
+	}
 	if value, ok := dc.mutation.GitoidSha256(); ok {
 		_spec.SetField(dsse.FieldGitoidSha256, field.TypeString, value)
 		_node.GitoidSha256 = value
@@ -175,7 +208,7 @@ func (dc *DsseCreate) createSpec() (*Dsse, *sqlgraph.CreateSpec) {
 			Columns: []string{dsse.StatementColumn},
 			Bidi:    false,
 			Target: &sqlgraph.EdgeTarget{
-				IDSpec: sqlgraph.NewFieldSpec(statement.FieldID, field.TypeInt),
+				IDSpec: sqlgraph.NewFieldSpec(statement.FieldID, field.TypeUUID),
 			},
 		}
 		for _, k := range nodes {
@@ -192,7 +225,7 @@ func (dc *DsseCreate) createSpec() (*Dsse, *sqlgraph.CreateSpec) {
 			Columns: []string{dsse.SignaturesColumn},
 			Bidi:    false,
 			Target: &sqlgraph.EdgeTarget{
-				IDSpec: sqlgraph.NewFieldSpec(signature.FieldID, field.TypeInt),
+				IDSpec: sqlgraph.NewFieldSpec(signature.FieldID, field.TypeUUID),
 			},
 		}
 		for _, k := range nodes {
@@ -208,7 +241,7 @@ func (dc *DsseCreate) createSpec() (*Dsse, *sqlgraph.CreateSpec) {
 			Columns: []string{dsse.PayloadDigestsColumn},
 			Bidi:    false,
 			Target: &sqlgraph.EdgeTarget{
-				IDSpec: sqlgraph.NewFieldSpec(payloaddigest.FieldID, field.TypeInt),
+				IDSpec: sqlgraph.NewFieldSpec(payloaddigest.FieldID, field.TypeUUID),
 			},
 		}
 		for _, k := range nodes {
@@ -237,6 +270,7 @@ func (dcb *DsseCreateBulk) Save(ctx context.Context) ([]*Dsse, error) {
 	for i := range dcb.builders {
 		func(i int, root context.Context) {
 			builder := dcb.builders[i]
+			builder.defaults()
 			var mut Mutator = MutateFunc(func(ctx context.Context, m Mutation) (Value, error) {
 				mutation, ok := m.(*DsseMutation)
 				if !ok {
@@ -263,10 +297,6 @@ func (dcb *DsseCreateBulk) Save(ctx context.Context) ([]*Dsse, error) {
 					return nil, err
 				}
 				mutation.id = &nodes[i].ID
-				if specs[i].ID.Value != nil {
-					id := specs[i].ID.Value.(int64)
-					nodes[i].ID = int(id)
-				}
 				mutation.done = true
 				return nodes[i], nil
 			})

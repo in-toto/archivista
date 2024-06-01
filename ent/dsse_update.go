@@ -10,6 +10,7 @@ import (
 	"entgo.io/ent/dialect/sql"
 	"entgo.io/ent/dialect/sql/sqlgraph"
 	"entgo.io/ent/schema/field"
+	"github.com/google/uuid"
 	"github.com/in-toto/archivista/ent/dsse"
 	"github.com/in-toto/archivista/ent/payloaddigest"
 	"github.com/in-toto/archivista/ent/predicate"
@@ -59,13 +60,13 @@ func (du *DsseUpdate) SetNillablePayloadType(s *string) *DsseUpdate {
 }
 
 // SetStatementID sets the "statement" edge to the Statement entity by ID.
-func (du *DsseUpdate) SetStatementID(id int) *DsseUpdate {
+func (du *DsseUpdate) SetStatementID(id uuid.UUID) *DsseUpdate {
 	du.mutation.SetStatementID(id)
 	return du
 }
 
 // SetNillableStatementID sets the "statement" edge to the Statement entity by ID if the given value is not nil.
-func (du *DsseUpdate) SetNillableStatementID(id *int) *DsseUpdate {
+func (du *DsseUpdate) SetNillableStatementID(id *uuid.UUID) *DsseUpdate {
 	if id != nil {
 		du = du.SetStatementID(*id)
 	}
@@ -78,14 +79,14 @@ func (du *DsseUpdate) SetStatement(s *Statement) *DsseUpdate {
 }
 
 // AddSignatureIDs adds the "signatures" edge to the Signature entity by IDs.
-func (du *DsseUpdate) AddSignatureIDs(ids ...int) *DsseUpdate {
+func (du *DsseUpdate) AddSignatureIDs(ids ...uuid.UUID) *DsseUpdate {
 	du.mutation.AddSignatureIDs(ids...)
 	return du
 }
 
 // AddSignatures adds the "signatures" edges to the Signature entity.
 func (du *DsseUpdate) AddSignatures(s ...*Signature) *DsseUpdate {
-	ids := make([]int, len(s))
+	ids := make([]uuid.UUID, len(s))
 	for i := range s {
 		ids[i] = s[i].ID
 	}
@@ -93,14 +94,14 @@ func (du *DsseUpdate) AddSignatures(s ...*Signature) *DsseUpdate {
 }
 
 // AddPayloadDigestIDs adds the "payload_digests" edge to the PayloadDigest entity by IDs.
-func (du *DsseUpdate) AddPayloadDigestIDs(ids ...int) *DsseUpdate {
+func (du *DsseUpdate) AddPayloadDigestIDs(ids ...uuid.UUID) *DsseUpdate {
 	du.mutation.AddPayloadDigestIDs(ids...)
 	return du
 }
 
 // AddPayloadDigests adds the "payload_digests" edges to the PayloadDigest entity.
 func (du *DsseUpdate) AddPayloadDigests(p ...*PayloadDigest) *DsseUpdate {
-	ids := make([]int, len(p))
+	ids := make([]uuid.UUID, len(p))
 	for i := range p {
 		ids[i] = p[i].ID
 	}
@@ -125,14 +126,14 @@ func (du *DsseUpdate) ClearSignatures() *DsseUpdate {
 }
 
 // RemoveSignatureIDs removes the "signatures" edge to Signature entities by IDs.
-func (du *DsseUpdate) RemoveSignatureIDs(ids ...int) *DsseUpdate {
+func (du *DsseUpdate) RemoveSignatureIDs(ids ...uuid.UUID) *DsseUpdate {
 	du.mutation.RemoveSignatureIDs(ids...)
 	return du
 }
 
 // RemoveSignatures removes "signatures" edges to Signature entities.
 func (du *DsseUpdate) RemoveSignatures(s ...*Signature) *DsseUpdate {
-	ids := make([]int, len(s))
+	ids := make([]uuid.UUID, len(s))
 	for i := range s {
 		ids[i] = s[i].ID
 	}
@@ -146,14 +147,14 @@ func (du *DsseUpdate) ClearPayloadDigests() *DsseUpdate {
 }
 
 // RemovePayloadDigestIDs removes the "payload_digests" edge to PayloadDigest entities by IDs.
-func (du *DsseUpdate) RemovePayloadDigestIDs(ids ...int) *DsseUpdate {
+func (du *DsseUpdate) RemovePayloadDigestIDs(ids ...uuid.UUID) *DsseUpdate {
 	du.mutation.RemovePayloadDigestIDs(ids...)
 	return du
 }
 
 // RemovePayloadDigests removes "payload_digests" edges to PayloadDigest entities.
 func (du *DsseUpdate) RemovePayloadDigests(p ...*PayloadDigest) *DsseUpdate {
-	ids := make([]int, len(p))
+	ids := make([]uuid.UUID, len(p))
 	for i := range p {
 		ids[i] = p[i].ID
 	}
@@ -206,7 +207,7 @@ func (du *DsseUpdate) sqlSave(ctx context.Context) (n int, err error) {
 	if err := du.check(); err != nil {
 		return n, err
 	}
-	_spec := sqlgraph.NewUpdateSpec(dsse.Table, dsse.Columns, sqlgraph.NewFieldSpec(dsse.FieldID, field.TypeInt))
+	_spec := sqlgraph.NewUpdateSpec(dsse.Table, dsse.Columns, sqlgraph.NewFieldSpec(dsse.FieldID, field.TypeUUID))
 	if ps := du.mutation.predicates; len(ps) > 0 {
 		_spec.Predicate = func(selector *sql.Selector) {
 			for i := range ps {
@@ -228,7 +229,7 @@ func (du *DsseUpdate) sqlSave(ctx context.Context) (n int, err error) {
 			Columns: []string{dsse.StatementColumn},
 			Bidi:    false,
 			Target: &sqlgraph.EdgeTarget{
-				IDSpec: sqlgraph.NewFieldSpec(statement.FieldID, field.TypeInt),
+				IDSpec: sqlgraph.NewFieldSpec(statement.FieldID, field.TypeUUID),
 			},
 		}
 		_spec.Edges.Clear = append(_spec.Edges.Clear, edge)
@@ -241,7 +242,7 @@ func (du *DsseUpdate) sqlSave(ctx context.Context) (n int, err error) {
 			Columns: []string{dsse.StatementColumn},
 			Bidi:    false,
 			Target: &sqlgraph.EdgeTarget{
-				IDSpec: sqlgraph.NewFieldSpec(statement.FieldID, field.TypeInt),
+				IDSpec: sqlgraph.NewFieldSpec(statement.FieldID, field.TypeUUID),
 			},
 		}
 		for _, k := range nodes {
@@ -257,7 +258,7 @@ func (du *DsseUpdate) sqlSave(ctx context.Context) (n int, err error) {
 			Columns: []string{dsse.SignaturesColumn},
 			Bidi:    false,
 			Target: &sqlgraph.EdgeTarget{
-				IDSpec: sqlgraph.NewFieldSpec(signature.FieldID, field.TypeInt),
+				IDSpec: sqlgraph.NewFieldSpec(signature.FieldID, field.TypeUUID),
 			},
 		}
 		_spec.Edges.Clear = append(_spec.Edges.Clear, edge)
@@ -270,7 +271,7 @@ func (du *DsseUpdate) sqlSave(ctx context.Context) (n int, err error) {
 			Columns: []string{dsse.SignaturesColumn},
 			Bidi:    false,
 			Target: &sqlgraph.EdgeTarget{
-				IDSpec: sqlgraph.NewFieldSpec(signature.FieldID, field.TypeInt),
+				IDSpec: sqlgraph.NewFieldSpec(signature.FieldID, field.TypeUUID),
 			},
 		}
 		for _, k := range nodes {
@@ -286,7 +287,7 @@ func (du *DsseUpdate) sqlSave(ctx context.Context) (n int, err error) {
 			Columns: []string{dsse.SignaturesColumn},
 			Bidi:    false,
 			Target: &sqlgraph.EdgeTarget{
-				IDSpec: sqlgraph.NewFieldSpec(signature.FieldID, field.TypeInt),
+				IDSpec: sqlgraph.NewFieldSpec(signature.FieldID, field.TypeUUID),
 			},
 		}
 		for _, k := range nodes {
@@ -302,7 +303,7 @@ func (du *DsseUpdate) sqlSave(ctx context.Context) (n int, err error) {
 			Columns: []string{dsse.PayloadDigestsColumn},
 			Bidi:    false,
 			Target: &sqlgraph.EdgeTarget{
-				IDSpec: sqlgraph.NewFieldSpec(payloaddigest.FieldID, field.TypeInt),
+				IDSpec: sqlgraph.NewFieldSpec(payloaddigest.FieldID, field.TypeUUID),
 			},
 		}
 		_spec.Edges.Clear = append(_spec.Edges.Clear, edge)
@@ -315,7 +316,7 @@ func (du *DsseUpdate) sqlSave(ctx context.Context) (n int, err error) {
 			Columns: []string{dsse.PayloadDigestsColumn},
 			Bidi:    false,
 			Target: &sqlgraph.EdgeTarget{
-				IDSpec: sqlgraph.NewFieldSpec(payloaddigest.FieldID, field.TypeInt),
+				IDSpec: sqlgraph.NewFieldSpec(payloaddigest.FieldID, field.TypeUUID),
 			},
 		}
 		for _, k := range nodes {
@@ -331,7 +332,7 @@ func (du *DsseUpdate) sqlSave(ctx context.Context) (n int, err error) {
 			Columns: []string{dsse.PayloadDigestsColumn},
 			Bidi:    false,
 			Target: &sqlgraph.EdgeTarget{
-				IDSpec: sqlgraph.NewFieldSpec(payloaddigest.FieldID, field.TypeInt),
+				IDSpec: sqlgraph.NewFieldSpec(payloaddigest.FieldID, field.TypeUUID),
 			},
 		}
 		for _, k := range nodes {
@@ -388,13 +389,13 @@ func (duo *DsseUpdateOne) SetNillablePayloadType(s *string) *DsseUpdateOne {
 }
 
 // SetStatementID sets the "statement" edge to the Statement entity by ID.
-func (duo *DsseUpdateOne) SetStatementID(id int) *DsseUpdateOne {
+func (duo *DsseUpdateOne) SetStatementID(id uuid.UUID) *DsseUpdateOne {
 	duo.mutation.SetStatementID(id)
 	return duo
 }
 
 // SetNillableStatementID sets the "statement" edge to the Statement entity by ID if the given value is not nil.
-func (duo *DsseUpdateOne) SetNillableStatementID(id *int) *DsseUpdateOne {
+func (duo *DsseUpdateOne) SetNillableStatementID(id *uuid.UUID) *DsseUpdateOne {
 	if id != nil {
 		duo = duo.SetStatementID(*id)
 	}
@@ -407,14 +408,14 @@ func (duo *DsseUpdateOne) SetStatement(s *Statement) *DsseUpdateOne {
 }
 
 // AddSignatureIDs adds the "signatures" edge to the Signature entity by IDs.
-func (duo *DsseUpdateOne) AddSignatureIDs(ids ...int) *DsseUpdateOne {
+func (duo *DsseUpdateOne) AddSignatureIDs(ids ...uuid.UUID) *DsseUpdateOne {
 	duo.mutation.AddSignatureIDs(ids...)
 	return duo
 }
 
 // AddSignatures adds the "signatures" edges to the Signature entity.
 func (duo *DsseUpdateOne) AddSignatures(s ...*Signature) *DsseUpdateOne {
-	ids := make([]int, len(s))
+	ids := make([]uuid.UUID, len(s))
 	for i := range s {
 		ids[i] = s[i].ID
 	}
@@ -422,14 +423,14 @@ func (duo *DsseUpdateOne) AddSignatures(s ...*Signature) *DsseUpdateOne {
 }
 
 // AddPayloadDigestIDs adds the "payload_digests" edge to the PayloadDigest entity by IDs.
-func (duo *DsseUpdateOne) AddPayloadDigestIDs(ids ...int) *DsseUpdateOne {
+func (duo *DsseUpdateOne) AddPayloadDigestIDs(ids ...uuid.UUID) *DsseUpdateOne {
 	duo.mutation.AddPayloadDigestIDs(ids...)
 	return duo
 }
 
 // AddPayloadDigests adds the "payload_digests" edges to the PayloadDigest entity.
 func (duo *DsseUpdateOne) AddPayloadDigests(p ...*PayloadDigest) *DsseUpdateOne {
-	ids := make([]int, len(p))
+	ids := make([]uuid.UUID, len(p))
 	for i := range p {
 		ids[i] = p[i].ID
 	}
@@ -454,14 +455,14 @@ func (duo *DsseUpdateOne) ClearSignatures() *DsseUpdateOne {
 }
 
 // RemoveSignatureIDs removes the "signatures" edge to Signature entities by IDs.
-func (duo *DsseUpdateOne) RemoveSignatureIDs(ids ...int) *DsseUpdateOne {
+func (duo *DsseUpdateOne) RemoveSignatureIDs(ids ...uuid.UUID) *DsseUpdateOne {
 	duo.mutation.RemoveSignatureIDs(ids...)
 	return duo
 }
 
 // RemoveSignatures removes "signatures" edges to Signature entities.
 func (duo *DsseUpdateOne) RemoveSignatures(s ...*Signature) *DsseUpdateOne {
-	ids := make([]int, len(s))
+	ids := make([]uuid.UUID, len(s))
 	for i := range s {
 		ids[i] = s[i].ID
 	}
@@ -475,14 +476,14 @@ func (duo *DsseUpdateOne) ClearPayloadDigests() *DsseUpdateOne {
 }
 
 // RemovePayloadDigestIDs removes the "payload_digests" edge to PayloadDigest entities by IDs.
-func (duo *DsseUpdateOne) RemovePayloadDigestIDs(ids ...int) *DsseUpdateOne {
+func (duo *DsseUpdateOne) RemovePayloadDigestIDs(ids ...uuid.UUID) *DsseUpdateOne {
 	duo.mutation.RemovePayloadDigestIDs(ids...)
 	return duo
 }
 
 // RemovePayloadDigests removes "payload_digests" edges to PayloadDigest entities.
 func (duo *DsseUpdateOne) RemovePayloadDigests(p ...*PayloadDigest) *DsseUpdateOne {
-	ids := make([]int, len(p))
+	ids := make([]uuid.UUID, len(p))
 	for i := range p {
 		ids[i] = p[i].ID
 	}
@@ -548,7 +549,7 @@ func (duo *DsseUpdateOne) sqlSave(ctx context.Context) (_node *Dsse, err error) 
 	if err := duo.check(); err != nil {
 		return _node, err
 	}
-	_spec := sqlgraph.NewUpdateSpec(dsse.Table, dsse.Columns, sqlgraph.NewFieldSpec(dsse.FieldID, field.TypeInt))
+	_spec := sqlgraph.NewUpdateSpec(dsse.Table, dsse.Columns, sqlgraph.NewFieldSpec(dsse.FieldID, field.TypeUUID))
 	id, ok := duo.mutation.ID()
 	if !ok {
 		return nil, &ValidationError{Name: "id", err: errors.New(`ent: missing "Dsse.id" for update`)}
@@ -587,7 +588,7 @@ func (duo *DsseUpdateOne) sqlSave(ctx context.Context) (_node *Dsse, err error) 
 			Columns: []string{dsse.StatementColumn},
 			Bidi:    false,
 			Target: &sqlgraph.EdgeTarget{
-				IDSpec: sqlgraph.NewFieldSpec(statement.FieldID, field.TypeInt),
+				IDSpec: sqlgraph.NewFieldSpec(statement.FieldID, field.TypeUUID),
 			},
 		}
 		_spec.Edges.Clear = append(_spec.Edges.Clear, edge)
@@ -600,7 +601,7 @@ func (duo *DsseUpdateOne) sqlSave(ctx context.Context) (_node *Dsse, err error) 
 			Columns: []string{dsse.StatementColumn},
 			Bidi:    false,
 			Target: &sqlgraph.EdgeTarget{
-				IDSpec: sqlgraph.NewFieldSpec(statement.FieldID, field.TypeInt),
+				IDSpec: sqlgraph.NewFieldSpec(statement.FieldID, field.TypeUUID),
 			},
 		}
 		for _, k := range nodes {
@@ -616,7 +617,7 @@ func (duo *DsseUpdateOne) sqlSave(ctx context.Context) (_node *Dsse, err error) 
 			Columns: []string{dsse.SignaturesColumn},
 			Bidi:    false,
 			Target: &sqlgraph.EdgeTarget{
-				IDSpec: sqlgraph.NewFieldSpec(signature.FieldID, field.TypeInt),
+				IDSpec: sqlgraph.NewFieldSpec(signature.FieldID, field.TypeUUID),
 			},
 		}
 		_spec.Edges.Clear = append(_spec.Edges.Clear, edge)
@@ -629,7 +630,7 @@ func (duo *DsseUpdateOne) sqlSave(ctx context.Context) (_node *Dsse, err error) 
 			Columns: []string{dsse.SignaturesColumn},
 			Bidi:    false,
 			Target: &sqlgraph.EdgeTarget{
-				IDSpec: sqlgraph.NewFieldSpec(signature.FieldID, field.TypeInt),
+				IDSpec: sqlgraph.NewFieldSpec(signature.FieldID, field.TypeUUID),
 			},
 		}
 		for _, k := range nodes {
@@ -645,7 +646,7 @@ func (duo *DsseUpdateOne) sqlSave(ctx context.Context) (_node *Dsse, err error) 
 			Columns: []string{dsse.SignaturesColumn},
 			Bidi:    false,
 			Target: &sqlgraph.EdgeTarget{
-				IDSpec: sqlgraph.NewFieldSpec(signature.FieldID, field.TypeInt),
+				IDSpec: sqlgraph.NewFieldSpec(signature.FieldID, field.TypeUUID),
 			},
 		}
 		for _, k := range nodes {
@@ -661,7 +662,7 @@ func (duo *DsseUpdateOne) sqlSave(ctx context.Context) (_node *Dsse, err error) 
 			Columns: []string{dsse.PayloadDigestsColumn},
 			Bidi:    false,
 			Target: &sqlgraph.EdgeTarget{
-				IDSpec: sqlgraph.NewFieldSpec(payloaddigest.FieldID, field.TypeInt),
+				IDSpec: sqlgraph.NewFieldSpec(payloaddigest.FieldID, field.TypeUUID),
 			},
 		}
 		_spec.Edges.Clear = append(_spec.Edges.Clear, edge)
@@ -674,7 +675,7 @@ func (duo *DsseUpdateOne) sqlSave(ctx context.Context) (_node *Dsse, err error) 
 			Columns: []string{dsse.PayloadDigestsColumn},
 			Bidi:    false,
 			Target: &sqlgraph.EdgeTarget{
-				IDSpec: sqlgraph.NewFieldSpec(payloaddigest.FieldID, field.TypeInt),
+				IDSpec: sqlgraph.NewFieldSpec(payloaddigest.FieldID, field.TypeUUID),
 			},
 		}
 		for _, k := range nodes {
@@ -690,7 +691,7 @@ func (duo *DsseUpdateOne) sqlSave(ctx context.Context) (_node *Dsse, err error) 
 			Columns: []string{dsse.PayloadDigestsColumn},
 			Bidi:    false,
 			Target: &sqlgraph.EdgeTarget{
-				IDSpec: sqlgraph.NewFieldSpec(payloaddigest.FieldID, field.TypeInt),
+				IDSpec: sqlgraph.NewFieldSpec(payloaddigest.FieldID, field.TypeUUID),
 			},
 		}
 		for _, k := range nodes {

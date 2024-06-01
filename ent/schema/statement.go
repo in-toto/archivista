@@ -20,6 +20,7 @@ import (
 	"entgo.io/ent/schema/edge"
 	"entgo.io/ent/schema/field"
 	"entgo.io/ent/schema/index"
+	"github.com/google/uuid"
 )
 
 // Statement represents an in-toto statement from an archived dsse envelope
@@ -30,6 +31,7 @@ type Statement struct {
 // Fields of the Statement.
 func (Statement) Fields() []ent.Field {
 	return []ent.Field{
+		field.UUID("id", uuid.UUID{}).Default(uuid.New).Immutable().Unique(),
 		field.String("predicate").NotEmpty(),
 	}
 }

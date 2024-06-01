@@ -11,6 +11,7 @@ import (
 	"entgo.io/ent/dialect/sql"
 	"entgo.io/ent/dialect/sql/sqlgraph"
 	"entgo.io/ent/schema/field"
+	"github.com/google/uuid"
 	"github.com/in-toto/archivista/ent/predicate"
 	"github.com/in-toto/archivista/ent/statement"
 	"github.com/in-toto/archivista/ent/subject"
@@ -134,8 +135,8 @@ func (sq *SubjectQuery) FirstX(ctx context.Context) *Subject {
 
 // FirstID returns the first Subject ID from the query.
 // Returns a *NotFoundError when no Subject ID was found.
-func (sq *SubjectQuery) FirstID(ctx context.Context) (id int, err error) {
-	var ids []int
+func (sq *SubjectQuery) FirstID(ctx context.Context) (id uuid.UUID, err error) {
+	var ids []uuid.UUID
 	if ids, err = sq.Limit(1).IDs(setContextOp(ctx, sq.ctx, "FirstID")); err != nil {
 		return
 	}
@@ -147,7 +148,7 @@ func (sq *SubjectQuery) FirstID(ctx context.Context) (id int, err error) {
 }
 
 // FirstIDX is like FirstID, but panics if an error occurs.
-func (sq *SubjectQuery) FirstIDX(ctx context.Context) int {
+func (sq *SubjectQuery) FirstIDX(ctx context.Context) uuid.UUID {
 	id, err := sq.FirstID(ctx)
 	if err != nil && !IsNotFound(err) {
 		panic(err)
@@ -185,8 +186,8 @@ func (sq *SubjectQuery) OnlyX(ctx context.Context) *Subject {
 // OnlyID is like Only, but returns the only Subject ID in the query.
 // Returns a *NotSingularError when more than one Subject ID is found.
 // Returns a *NotFoundError when no entities are found.
-func (sq *SubjectQuery) OnlyID(ctx context.Context) (id int, err error) {
-	var ids []int
+func (sq *SubjectQuery) OnlyID(ctx context.Context) (id uuid.UUID, err error) {
+	var ids []uuid.UUID
 	if ids, err = sq.Limit(2).IDs(setContextOp(ctx, sq.ctx, "OnlyID")); err != nil {
 		return
 	}
@@ -202,7 +203,7 @@ func (sq *SubjectQuery) OnlyID(ctx context.Context) (id int, err error) {
 }
 
 // OnlyIDX is like OnlyID, but panics if an error occurs.
-func (sq *SubjectQuery) OnlyIDX(ctx context.Context) int {
+func (sq *SubjectQuery) OnlyIDX(ctx context.Context) uuid.UUID {
 	id, err := sq.OnlyID(ctx)
 	if err != nil {
 		panic(err)
@@ -230,7 +231,7 @@ func (sq *SubjectQuery) AllX(ctx context.Context) []*Subject {
 }
 
 // IDs executes the query and returns a list of Subject IDs.
-func (sq *SubjectQuery) IDs(ctx context.Context) (ids []int, err error) {
+func (sq *SubjectQuery) IDs(ctx context.Context) (ids []uuid.UUID, err error) {
 	if sq.ctx.Unique == nil && sq.path != nil {
 		sq.Unique(true)
 	}
@@ -242,7 +243,7 @@ func (sq *SubjectQuery) IDs(ctx context.Context) (ids []int, err error) {
 }
 
 // IDsX is like IDs, but panics if an error occurs.
-func (sq *SubjectQuery) IDsX(ctx context.Context) []int {
+func (sq *SubjectQuery) IDsX(ctx context.Context) []uuid.UUID {
 	ids, err := sq.IDs(ctx)
 	if err != nil {
 		panic(err)
@@ -473,7 +474,7 @@ func (sq *SubjectQuery) sqlAll(ctx context.Context, hooks ...queryHook) ([]*Subj
 
 func (sq *SubjectQuery) loadSubjectDigests(ctx context.Context, query *SubjectDigestQuery, nodes []*Subject, init func(*Subject), assign func(*Subject, *SubjectDigest)) error {
 	fks := make([]driver.Value, 0, len(nodes))
-	nodeids := make(map[int]*Subject)
+	nodeids := make(map[uuid.UUID]*Subject)
 	for i := range nodes {
 		fks = append(fks, nodes[i].ID)
 		nodeids[nodes[i].ID] = nodes[i]
@@ -503,8 +504,8 @@ func (sq *SubjectQuery) loadSubjectDigests(ctx context.Context, query *SubjectDi
 	return nil
 }
 func (sq *SubjectQuery) loadStatement(ctx context.Context, query *StatementQuery, nodes []*Subject, init func(*Subject), assign func(*Subject, *Statement)) error {
-	ids := make([]int, 0, len(nodes))
-	nodeids := make(map[int][]*Subject)
+	ids := make([]uuid.UUID, 0, len(nodes))
+	nodeids := make(map[uuid.UUID][]*Subject)
 	for i := range nodes {
 		if nodes[i].statement_subjects == nil {
 			continue
@@ -548,7 +549,7 @@ func (sq *SubjectQuery) sqlCount(ctx context.Context) (int, error) {
 }
 
 func (sq *SubjectQuery) querySpec() *sqlgraph.QuerySpec {
-	_spec := sqlgraph.NewQuerySpec(subject.Table, subject.Columns, sqlgraph.NewFieldSpec(subject.FieldID, field.TypeInt))
+	_spec := sqlgraph.NewQuerySpec(subject.Table, subject.Columns, sqlgraph.NewFieldSpec(subject.FieldID, field.TypeUUID))
 	_spec.From = sq.sql
 	if unique := sq.ctx.Unique; unique != nil {
 		_spec.Unique = *unique

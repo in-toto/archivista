@@ -10,6 +10,7 @@ import (
 	"entgo.io/ent/dialect/sql"
 	"entgo.io/ent/dialect/sql/sqlgraph"
 	"entgo.io/ent/schema/field"
+	"github.com/google/uuid"
 	"github.com/in-toto/archivista/ent/attestationpolicy"
 	"github.com/in-toto/archivista/ent/predicate"
 	"github.com/in-toto/archivista/ent/statement"
@@ -108,8 +109,8 @@ func (apq *AttestationPolicyQuery) FirstX(ctx context.Context) *AttestationPolic
 
 // FirstID returns the first AttestationPolicy ID from the query.
 // Returns a *NotFoundError when no AttestationPolicy ID was found.
-func (apq *AttestationPolicyQuery) FirstID(ctx context.Context) (id int, err error) {
-	var ids []int
+func (apq *AttestationPolicyQuery) FirstID(ctx context.Context) (id uuid.UUID, err error) {
+	var ids []uuid.UUID
 	if ids, err = apq.Limit(1).IDs(setContextOp(ctx, apq.ctx, "FirstID")); err != nil {
 		return
 	}
@@ -121,7 +122,7 @@ func (apq *AttestationPolicyQuery) FirstID(ctx context.Context) (id int, err err
 }
 
 // FirstIDX is like FirstID, but panics if an error occurs.
-func (apq *AttestationPolicyQuery) FirstIDX(ctx context.Context) int {
+func (apq *AttestationPolicyQuery) FirstIDX(ctx context.Context) uuid.UUID {
 	id, err := apq.FirstID(ctx)
 	if err != nil && !IsNotFound(err) {
 		panic(err)
@@ -159,8 +160,8 @@ func (apq *AttestationPolicyQuery) OnlyX(ctx context.Context) *AttestationPolicy
 // OnlyID is like Only, but returns the only AttestationPolicy ID in the query.
 // Returns a *NotSingularError when more than one AttestationPolicy ID is found.
 // Returns a *NotFoundError when no entities are found.
-func (apq *AttestationPolicyQuery) OnlyID(ctx context.Context) (id int, err error) {
-	var ids []int
+func (apq *AttestationPolicyQuery) OnlyID(ctx context.Context) (id uuid.UUID, err error) {
+	var ids []uuid.UUID
 	if ids, err = apq.Limit(2).IDs(setContextOp(ctx, apq.ctx, "OnlyID")); err != nil {
 		return
 	}
@@ -176,7 +177,7 @@ func (apq *AttestationPolicyQuery) OnlyID(ctx context.Context) (id int, err erro
 }
 
 // OnlyIDX is like OnlyID, but panics if an error occurs.
-func (apq *AttestationPolicyQuery) OnlyIDX(ctx context.Context) int {
+func (apq *AttestationPolicyQuery) OnlyIDX(ctx context.Context) uuid.UUID {
 	id, err := apq.OnlyID(ctx)
 	if err != nil {
 		panic(err)
@@ -204,7 +205,7 @@ func (apq *AttestationPolicyQuery) AllX(ctx context.Context) []*AttestationPolic
 }
 
 // IDs executes the query and returns a list of AttestationPolicy IDs.
-func (apq *AttestationPolicyQuery) IDs(ctx context.Context) (ids []int, err error) {
+func (apq *AttestationPolicyQuery) IDs(ctx context.Context) (ids []uuid.UUID, err error) {
 	if apq.ctx.Unique == nil && apq.path != nil {
 		apq.Unique(true)
 	}
@@ -216,7 +217,7 @@ func (apq *AttestationPolicyQuery) IDs(ctx context.Context) (ids []int, err erro
 }
 
 // IDsX is like IDs, but panics if an error occurs.
-func (apq *AttestationPolicyQuery) IDsX(ctx context.Context) []int {
+func (apq *AttestationPolicyQuery) IDsX(ctx context.Context) []uuid.UUID {
 	ids, err := apq.IDs(ctx)
 	if err != nil {
 		panic(err)
@@ -419,8 +420,8 @@ func (apq *AttestationPolicyQuery) sqlAll(ctx context.Context, hooks ...queryHoo
 }
 
 func (apq *AttestationPolicyQuery) loadStatement(ctx context.Context, query *StatementQuery, nodes []*AttestationPolicy, init func(*AttestationPolicy), assign func(*AttestationPolicy, *Statement)) error {
-	ids := make([]int, 0, len(nodes))
-	nodeids := make(map[int][]*AttestationPolicy)
+	ids := make([]uuid.UUID, 0, len(nodes))
+	nodeids := make(map[uuid.UUID][]*AttestationPolicy)
 	for i := range nodes {
 		if nodes[i].statement_policy == nil {
 			continue
@@ -464,7 +465,7 @@ func (apq *AttestationPolicyQuery) sqlCount(ctx context.Context) (int, error) {
 }
 
 func (apq *AttestationPolicyQuery) querySpec() *sqlgraph.QuerySpec {
-	_spec := sqlgraph.NewQuerySpec(attestationpolicy.Table, attestationpolicy.Columns, sqlgraph.NewFieldSpec(attestationpolicy.FieldID, field.TypeInt))
+	_spec := sqlgraph.NewQuerySpec(attestationpolicy.Table, attestationpolicy.Columns, sqlgraph.NewFieldSpec(attestationpolicy.FieldID, field.TypeUUID))
 	_spec.From = apq.sql
 	if unique := apq.ctx.Unique; unique != nil {
 		_spec.Unique = *unique

@@ -8,6 +8,7 @@ import (
 
 	"entgo.io/ent"
 	"entgo.io/ent/dialect/sql"
+	"github.com/google/uuid"
 	"github.com/in-toto/archivista/ent/attestationcollection"
 	"github.com/in-toto/archivista/ent/statement"
 )
@@ -16,13 +17,13 @@ import (
 type AttestationCollection struct {
 	config `json:"-"`
 	// ID of the ent.
-	ID int `json:"id,omitempty"`
+	ID uuid.UUID `json:"id,omitempty"`
 	// Name holds the value of the "name" field.
 	Name string `json:"name,omitempty"`
 	// Edges holds the relations/edges for other nodes in the graph.
 	// The values are being populated by the AttestationCollectionQuery when eager-loading is set.
 	Edges                             AttestationCollectionEdges `json:"edges"`
-	statement_attestation_collections *int
+	statement_attestation_collections *uuid.UUID
 	selectValues                      sql.SelectValues
 }
 
@@ -66,12 +67,12 @@ func (*AttestationCollection) scanValues(columns []string) ([]any, error) {
 	values := make([]any, len(columns))
 	for i := range columns {
 		switch columns[i] {
-		case attestationcollection.FieldID:
-			values[i] = new(sql.NullInt64)
 		case attestationcollection.FieldName:
 			values[i] = new(sql.NullString)
+		case attestationcollection.FieldID:
+			values[i] = new(uuid.UUID)
 		case attestationcollection.ForeignKeys[0]: // statement_attestation_collections
-			values[i] = new(sql.NullInt64)
+			values[i] = &sql.NullScanner{S: new(uuid.UUID)}
 		default:
 			values[i] = new(sql.UnknownType)
 		}
@@ -88,11 +89,11 @@ func (ac *AttestationCollection) assignValues(columns []string, values []any) er
 	for i := range columns {
 		switch columns[i] {
 		case attestationcollection.FieldID:
-			value, ok := values[i].(*sql.NullInt64)
-			if !ok {
-				return fmt.Errorf("unexpected type %T for field id", value)
+			if value, ok := values[i].(*uuid.UUID); !ok {
+				return fmt.Errorf("unexpected type %T for field id", values[i])
+			} else if value != nil {
+				ac.ID = *value
 			}
-			ac.ID = int(value.Int64)
 		case attestationcollection.FieldName:
 			if value, ok := values[i].(*sql.NullString); !ok {
 				return fmt.Errorf("unexpected type %T for field name", values[i])
@@ -100,11 +101,11 @@ func (ac *AttestationCollection) assignValues(columns []string, values []any) er
 				ac.Name = value.String
 			}
 		case attestationcollection.ForeignKeys[0]:
-			if value, ok := values[i].(*sql.NullInt64); !ok {
-				return fmt.Errorf("unexpected type %T for edge-field statement_attestation_collections", value)
+			if value, ok := values[i].(*sql.NullScanner); !ok {
+				return fmt.Errorf("unexpected type %T for field statement_attestation_collections", values[i])
 			} else if value.Valid {
-				ac.statement_attestation_collections = new(int)
-				*ac.statement_attestation_collections = int(value.Int64)
+				ac.statement_attestation_collections = new(uuid.UUID)
+				*ac.statement_attestation_collections = *value.S.(*uuid.UUID)
 			}
 		default:
 			ac.selectValues.Set(columns[i], values[i])

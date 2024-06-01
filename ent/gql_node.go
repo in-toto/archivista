@@ -5,14 +5,10 @@ package ent
 import (
 	"context"
 	"fmt"
-	"sync"
-	"sync/atomic"
 
 	"entgo.io/contrib/entgql"
-	"entgo.io/ent/dialect"
-	"entgo.io/ent/dialect/sql"
-	"entgo.io/ent/dialect/sql/schema"
 	"github.com/99designs/gqlgen/graphql"
+	"github.com/google/uuid"
 	"github.com/hashicorp/go-multierror"
 	"github.com/in-toto/archivista/ent/attestation"
 	"github.com/in-toto/archivista/ent/attestationcollection"
@@ -24,7 +20,6 @@ import (
 	"github.com/in-toto/archivista/ent/subject"
 	"github.com/in-toto/archivista/ent/subjectdigest"
 	"github.com/in-toto/archivista/ent/timestamp"
-	"golang.org/x/sync/semaphore"
 )
 
 // Noder wraps the basic Node method.
@@ -32,35 +27,55 @@ type Noder interface {
 	IsNode()
 }
 
-// IsNode implements the Node interface check for GQLGen.
-func (n *Attestation) IsNode() {}
+var attestationImplementors = []string{"Attestation", "Node"}
 
 // IsNode implements the Node interface check for GQLGen.
-func (n *AttestationCollection) IsNode() {}
+func (*Attestation) IsNode() {}
+
+var attestationcollectionImplementors = []string{"AttestationCollection", "Node"}
 
 // IsNode implements the Node interface check for GQLGen.
-func (n *AttestationPolicy) IsNode() {}
+func (*AttestationCollection) IsNode() {}
+
+var attestationpolicyImplementors = []string{"AttestationPolicy", "Node"}
 
 // IsNode implements the Node interface check for GQLGen.
-func (n *Dsse) IsNode() {}
+func (*AttestationPolicy) IsNode() {}
+
+var dsseImplementors = []string{"Dsse", "Node"}
 
 // IsNode implements the Node interface check for GQLGen.
-func (n *PayloadDigest) IsNode() {}
+func (*Dsse) IsNode() {}
+
+var payloaddigestImplementors = []string{"PayloadDigest", "Node"}
 
 // IsNode implements the Node interface check for GQLGen.
-func (n *Signature) IsNode() {}
+func (*PayloadDigest) IsNode() {}
+
+var signatureImplementors = []string{"Signature", "Node"}
 
 // IsNode implements the Node interface check for GQLGen.
-func (n *Statement) IsNode() {}
+func (*Signature) IsNode() {}
+
+var statementImplementors = []string{"Statement", "Node"}
 
 // IsNode implements the Node interface check for GQLGen.
-func (n *Subject) IsNode() {}
+func (*Statement) IsNode() {}
+
+var subjectImplementors = []string{"Subject", "Node"}
 
 // IsNode implements the Node interface check for GQLGen.
-func (n *SubjectDigest) IsNode() {}
+func (*Subject) IsNode() {}
+
+var subjectdigestImplementors = []string{"SubjectDigest", "Node"}
 
 // IsNode implements the Node interface check for GQLGen.
-func (n *Timestamp) IsNode() {}
+func (*SubjectDigest) IsNode() {}
+
+var timestampImplementors = []string{"Timestamp", "Node"}
+
+// IsNode implements the Node interface check for GQLGen.
+func (*Timestamp) IsNode() {}
 
 var errNodeInvalidID = &NotFoundError{"node"}
 
@@ -70,7 +85,7 @@ type NodeOption func(*nodeOptions)
 // WithNodeType sets the node Type resolver function (i.e. the table to query).
 // If was not provided, the table will be derived from the universal-id
 // configuration as described in: https://entgo.io/docs/migrate/#universal-ids.
-func WithNodeType(f func(context.Context, int) (string, error)) NodeOption {
+func WithNodeType(f func(context.Context, uuid.UUID) (string, error)) NodeOption {
 	return func(o *nodeOptions) {
 		o.nodeType = f
 	}
@@ -78,13 +93,13 @@ func WithNodeType(f func(context.Context, int) (string, error)) NodeOption {
 
 // WithFixedNodeType sets the Type of the node to a fixed value.
 func WithFixedNodeType(t string) NodeOption {
-	return WithNodeType(func(context.Context, int) (string, error) {
+	return WithNodeType(func(context.Context, uuid.UUID) (string, error) {
 		return t, nil
 	})
 }
 
 type nodeOptions struct {
-	nodeType func(context.Context, int) (string, error)
+	nodeType func(context.Context, uuid.UUID) (string, error)
 }
 
 func (c *Client) newNodeOpts(opts []NodeOption) *nodeOptions {
@@ -93,8 +108,8 @@ func (c *Client) newNodeOpts(opts []NodeOption) *nodeOptions {
 		opt(nopts)
 	}
 	if nopts.nodeType == nil {
-		nopts.nodeType = func(ctx context.Context, id int) (string, error) {
-			return c.tables.nodeType(ctx, c.driver, id)
+		nopts.nodeType = func(ctx context.Context, id uuid.UUID) (string, error) {
+			return "", fmt.Errorf("cannot resolve noder (%v) without its type", id)
 		}
 	}
 	return nopts
@@ -105,7 +120,7 @@ func (c *Client) newNodeOpts(opts []NodeOption) *nodeOptions {
 //
 //	c.Noder(ctx, id)
 //	c.Noder(ctx, id, ent.WithNodeType(typeResolver))
-func (c *Client) Noder(ctx context.Context, id int, opts ...NodeOption) (_ Noder, err error) {
+func (c *Client) Noder(ctx context.Context, id uuid.UUID, opts ...NodeOption) (_ Noder, err error) {
 	defer func() {
 		if IsNotFound(err) {
 			err = multierror.Append(err, entgql.ErrNodeNotFound(id))
@@ -118,134 +133,104 @@ func (c *Client) Noder(ctx context.Context, id int, opts ...NodeOption) (_ Noder
 	return c.noder(ctx, table, id)
 }
 
-func (c *Client) noder(ctx context.Context, table string, id int) (Noder, error) {
+func (c *Client) noder(ctx context.Context, table string, id uuid.UUID) (Noder, error) {
 	switch table {
 	case attestation.Table:
 		query := c.Attestation.Query().
 			Where(attestation.ID(id))
-		query, err := query.CollectFields(ctx, "Attestation")
-		if err != nil {
-			return nil, err
+		if fc := graphql.GetFieldContext(ctx); fc != nil {
+			if err := query.collectField(ctx, true, graphql.GetOperationContext(ctx), fc.Field, nil, attestationImplementors...); err != nil {
+				return nil, err
+			}
 		}
-		n, err := query.Only(ctx)
-		if err != nil {
-			return nil, err
-		}
-		return n, nil
+		return query.Only(ctx)
 	case attestationcollection.Table:
 		query := c.AttestationCollection.Query().
 			Where(attestationcollection.ID(id))
-		query, err := query.CollectFields(ctx, "AttestationCollection")
-		if err != nil {
-			return nil, err
+		if fc := graphql.GetFieldContext(ctx); fc != nil {
+			if err := query.collectField(ctx, true, graphql.GetOperationContext(ctx), fc.Field, nil, attestationcollectionImplementors...); err != nil {
+				return nil, err
+			}
 		}
-		n, err := query.Only(ctx)
-		if err != nil {
-			return nil, err
-		}
-		return n, nil
+		return query.Only(ctx)
 	case attestationpolicy.Table:
 		query := c.AttestationPolicy.Query().
 			Where(attestationpolicy.ID(id))
-		query, err := query.CollectFields(ctx, "AttestationPolicy")
-		if err != nil {
-			return nil, err
+		if fc := graphql.GetFieldContext(ctx); fc != nil {
+			if err := query.collectField(ctx, true, graphql.GetOperationContext(ctx), fc.Field, nil, attestationpolicyImplementors...); err != nil {
+				return nil, err
+			}
 		}
-		n, err := query.Only(ctx)
-		if err != nil {
-			return nil, err
-		}
-		return n, nil
+		return query.Only(ctx)
 	case dsse.Table:
 		query := c.Dsse.Query().
 			Where(dsse.ID(id))
-		query, err := query.CollectFields(ctx, "Dsse")
-		if err != nil {
-			return nil, err
+		if fc := graphql.GetFieldContext(ctx); fc != nil {
+			if err := query.collectField(ctx, true, graphql.GetOperationContext(ctx), fc.Field, nil, dsseImplementors...); err != nil {
+				return nil, err
+			}
 		}
-		n, err := query.Only(ctx)
-		if err != nil {
-			return nil, err
-		}
-		return n, nil
+		return query.Only(ctx)
 	case payloaddigest.Table:
 		query := c.PayloadDigest.Query().
 			Where(payloaddigest.ID(id))
-		query, err := query.CollectFields(ctx, "PayloadDigest")
-		if err != nil {
-			return nil, err
+		if fc := graphql.GetFieldContext(ctx); fc != nil {
+			if err := query.collectField(ctx, true, graphql.GetOperationContext(ctx), fc.Field, nil, payloaddigestImplementors...); err != nil {
+				return nil, err
+			}
 		}
-		n, err := query.Only(ctx)
-		if err != nil {
-			return nil, err
-		}
-		return n, nil
+		return query.Only(ctx)
 	case signature.Table:
 		query := c.Signature.Query().
 			Where(signature.ID(id))
-		query, err := query.CollectFields(ctx, "Signature")
-		if err != nil {
-			return nil, err
+		if fc := graphql.GetFieldContext(ctx); fc != nil {
+			if err := query.collectField(ctx, true, graphql.GetOperationContext(ctx), fc.Field, nil, signatureImplementors...); err != nil {
+				return nil, err
+			}
 		}
-		n, err := query.Only(ctx)
-		if err != nil {
-			return nil, err
-		}
-		return n, nil
+		return query.Only(ctx)
 	case statement.Table:
 		query := c.Statement.Query().
 			Where(statement.ID(id))
-		query, err := query.CollectFields(ctx, "Statement")
-		if err != nil {
-			return nil, err
+		if fc := graphql.GetFieldContext(ctx); fc != nil {
+			if err := query.collectField(ctx, true, graphql.GetOperationContext(ctx), fc.Field, nil, statementImplementors...); err != nil {
+				return nil, err
+			}
 		}
-		n, err := query.Only(ctx)
-		if err != nil {
-			return nil, err
-		}
-		return n, nil
+		return query.Only(ctx)
 	case subject.Table:
 		query := c.Subject.Query().
 			Where(subject.ID(id))
-		query, err := query.CollectFields(ctx, "Subject")
-		if err != nil {
-			return nil, err
+		if fc := graphql.GetFieldContext(ctx); fc != nil {
+			if err := query.collectField(ctx, true, graphql.GetOperationContext(ctx), fc.Field, nil, subjectImplementors...); err != nil {
+				return nil, err
+			}
 		}
-		n, err := query.Only(ctx)
-		if err != nil {
-			return nil, err
-		}
-		return n, nil
+		return query.Only(ctx)
 	case subjectdigest.Table:
 		query := c.SubjectDigest.Query().
 			Where(subjectdigest.ID(id))
-		query, err := query.CollectFields(ctx, "SubjectDigest")
-		if err != nil {
-			return nil, err
+		if fc := graphql.GetFieldContext(ctx); fc != nil {
+			if err := query.collectField(ctx, true, graphql.GetOperationContext(ctx), fc.Field, nil, subjectdigestImplementors...); err != nil {
+				return nil, err
+			}
 		}
-		n, err := query.Only(ctx)
-		if err != nil {
-			return nil, err
-		}
-		return n, nil
+		return query.Only(ctx)
 	case timestamp.Table:
 		query := c.Timestamp.Query().
 			Where(timestamp.ID(id))
-		query, err := query.CollectFields(ctx, "Timestamp")
-		if err != nil {
-			return nil, err
+		if fc := graphql.GetFieldContext(ctx); fc != nil {
+			if err := query.collectField(ctx, true, graphql.GetOperationContext(ctx), fc.Field, nil, timestampImplementors...); err != nil {
+				return nil, err
+			}
 		}
-		n, err := query.Only(ctx)
-		if err != nil {
-			return nil, err
-		}
-		return n, nil
+		return query.Only(ctx)
 	default:
 		return nil, fmt.Errorf("cannot resolve noder from table %q: %w", table, errNodeInvalidID)
 	}
 }
 
-func (c *Client) Noders(ctx context.Context, ids []int, opts ...NodeOption) ([]Noder, error) {
+func (c *Client) Noders(ctx context.Context, ids []uuid.UUID, opts ...NodeOption) ([]Noder, error) {
 	switch len(ids) {
 	case 1:
 		noder, err := c.Noder(ctx, ids[0], opts...)
@@ -259,8 +244,8 @@ func (c *Client) Noders(ctx context.Context, ids []int, opts ...NodeOption) ([]N
 
 	noders := make([]Noder, len(ids))
 	errors := make([]error, len(ids))
-	tables := make(map[string][]int)
-	id2idx := make(map[int][]int, len(ids))
+	tables := make(map[string][]uuid.UUID)
+	id2idx := make(map[uuid.UUID][]int, len(ids))
 	nopts := c.newNodeOpts(opts)
 	for i, id := range ids {
 		table, err := nopts.nodeType(ctx, id)
@@ -306,9 +291,9 @@ func (c *Client) Noders(ctx context.Context, ids []int, opts ...NodeOption) ([]N
 	return noders, nil
 }
 
-func (c *Client) noders(ctx context.Context, table string, ids []int) ([]Noder, error) {
+func (c *Client) noders(ctx context.Context, table string, ids []uuid.UUID) ([]Noder, error) {
 	noders := make([]Noder, len(ids))
-	idmap := make(map[int][]*Noder, len(ids))
+	idmap := make(map[uuid.UUID][]*Noder, len(ids))
 	for i, id := range ids {
 		idmap[id] = append(idmap[id], &noders[i])
 	}
@@ -316,7 +301,7 @@ func (c *Client) noders(ctx context.Context, table string, ids []int) ([]Noder, 
 	case attestation.Table:
 		query := c.Attestation.Query().
 			Where(attestation.IDIn(ids...))
-		query, err := query.CollectFields(ctx, "Attestation")
+		query, err := query.CollectFields(ctx, attestationImplementors...)
 		if err != nil {
 			return nil, err
 		}
@@ -332,7 +317,7 @@ func (c *Client) noders(ctx context.Context, table string, ids []int) ([]Noder, 
 	case attestationcollection.Table:
 		query := c.AttestationCollection.Query().
 			Where(attestationcollection.IDIn(ids...))
-		query, err := query.CollectFields(ctx, "AttestationCollection")
+		query, err := query.CollectFields(ctx, attestationcollectionImplementors...)
 		if err != nil {
 			return nil, err
 		}
@@ -348,7 +333,7 @@ func (c *Client) noders(ctx context.Context, table string, ids []int) ([]Noder, 
 	case attestationpolicy.Table:
 		query := c.AttestationPolicy.Query().
 			Where(attestationpolicy.IDIn(ids...))
-		query, err := query.CollectFields(ctx, "AttestationPolicy")
+		query, err := query.CollectFields(ctx, attestationpolicyImplementors...)
 		if err != nil {
 			return nil, err
 		}
@@ -364,7 +349,7 @@ func (c *Client) noders(ctx context.Context, table string, ids []int) ([]Noder, 
 	case dsse.Table:
 		query := c.Dsse.Query().
 			Where(dsse.IDIn(ids...))
-		query, err := query.CollectFields(ctx, "Dsse")
+		query, err := query.CollectFields(ctx, dsseImplementors...)
 		if err != nil {
 			return nil, err
 		}
@@ -380,7 +365,7 @@ func (c *Client) noders(ctx context.Context, table string, ids []int) ([]Noder, 
 	case payloaddigest.Table:
 		query := c.PayloadDigest.Query().
 			Where(payloaddigest.IDIn(ids...))
-		query, err := query.CollectFields(ctx, "PayloadDigest")
+		query, err := query.CollectFields(ctx, payloaddigestImplementors...)
 		if err != nil {
 			return nil, err
 		}
@@ -396,7 +381,7 @@ func (c *Client) noders(ctx context.Context, table string, ids []int) ([]Noder, 
 	case signature.Table:
 		query := c.Signature.Query().
 			Where(signature.IDIn(ids...))
-		query, err := query.CollectFields(ctx, "Signature")
+		query, err := query.CollectFields(ctx, signatureImplementors...)
 		if err != nil {
 			return nil, err
 		}
@@ -412,7 +397,7 @@ func (c *Client) noders(ctx context.Context, table string, ids []int) ([]Noder, 
 	case statement.Table:
 		query := c.Statement.Query().
 			Where(statement.IDIn(ids...))
-		query, err := query.CollectFields(ctx, "Statement")
+		query, err := query.CollectFields(ctx, statementImplementors...)
 		if err != nil {
 			return nil, err
 		}
@@ -428,7 +413,7 @@ func (c *Client) noders(ctx context.Context, table string, ids []int) ([]Noder, 
 	case subject.Table:
 		query := c.Subject.Query().
 			Where(subject.IDIn(ids...))
-		query, err := query.CollectFields(ctx, "Subject")
+		query, err := query.CollectFields(ctx, subjectImplementors...)
 		if err != nil {
 			return nil, err
 		}
@@ -444,7 +429,7 @@ func (c *Client) noders(ctx context.Context, table string, ids []int) ([]Noder, 
 	case subjectdigest.Table:
 		query := c.SubjectDigest.Query().
 			Where(subjectdigest.IDIn(ids...))
-		query, err := query.CollectFields(ctx, "SubjectDigest")
+		query, err := query.CollectFields(ctx, subjectdigestImplementors...)
 		if err != nil {
 			return nil, err
 		}
@@ -460,7 +445,7 @@ func (c *Client) noders(ctx context.Context, table string, ids []int) ([]Noder, 
 	case timestamp.Table:
 		query := c.Timestamp.Query().
 			Where(timestamp.IDIn(ids...))
-		query, err := query.CollectFields(ctx, "Timestamp")
+		query, err := query.CollectFields(ctx, timestampImplementors...)
 		if err != nil {
 			return nil, err
 		}
@@ -477,56 +462,4 @@ func (c *Client) noders(ctx context.Context, table string, ids []int) ([]Noder, 
 		return nil, fmt.Errorf("cannot resolve noders from table %q: %w", table, errNodeInvalidID)
 	}
 	return noders, nil
-}
-
-type tables struct {
-	once  sync.Once
-	sem   *semaphore.Weighted
-	value atomic.Value
-}
-
-func (t *tables) nodeType(ctx context.Context, drv dialect.Driver, id int) (string, error) {
-	tables, err := t.Load(ctx, drv)
-	if err != nil {
-		return "", err
-	}
-	idx := int(id / (1<<32 - 1))
-	if idx < 0 || idx >= len(tables) {
-		return "", fmt.Errorf("cannot resolve table from id %v: %w", id, errNodeInvalidID)
-	}
-	return tables[idx], nil
-}
-
-func (t *tables) Load(ctx context.Context, drv dialect.Driver) ([]string, error) {
-	if tables := t.value.Load(); tables != nil {
-		return tables.([]string), nil
-	}
-	t.once.Do(func() { t.sem = semaphore.NewWeighted(1) })
-	if err := t.sem.Acquire(ctx, 1); err != nil {
-		return nil, err
-	}
-	defer t.sem.Release(1)
-	if tables := t.value.Load(); tables != nil {
-		return tables.([]string), nil
-	}
-	tables, err := t.load(ctx, drv)
-	if err == nil {
-		t.value.Store(tables)
-	}
-	return tables, err
-}
-
-func (*tables) load(ctx context.Context, drv dialect.Driver) ([]string, error) {
-	rows := &sql.Rows{}
-	query, args := sql.Dialect(drv.Dialect()).
-		Select("type").
-		From(sql.Table(schema.TypeTable)).
-		OrderBy(sql.Asc("id")).
-		Query()
-	if err := drv.Query(ctx, query, args, rows); err != nil {
-		return nil, err
-	}
-	defer rows.Close()
-	var tables []string
-	return tables, sql.ScanSlice(rows, &tables)
 }

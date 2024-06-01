@@ -13,6 +13,7 @@ require (
 	github.com/digitorus/timestamp v0.0.0-20231217203849-220c5c2851b7
 	github.com/edwarnicke/gitoid v0.0.0-20220710194850-1be5bfda1f9d
 	github.com/go-sql-driver/mysql v1.8.1
+	github.com/google/uuid v1.6.0
 	github.com/gorilla/handlers v1.5.2
 	github.com/gorilla/mux v1.8.1
 	github.com/hashicorp/go-multierror v1.1.1
@@ -26,7 +27,6 @@ require (
 	github.com/swaggo/http-swagger/v2 v2.0.2
 	github.com/swaggo/swag v1.16.3
 	github.com/vektah/gqlparser/v2 v2.5.12
-	golang.org/x/sync v0.7.0
 	gopkg.in/yaml.v3 v3.0.1
 )
 
@@ -61,7 +61,6 @@ require (
 	github.com/golang/groupcache v0.0.0-20210331224755-41bb18bfe9da // indirect
 	github.com/google/go-cmp v0.6.0 // indirect
 	github.com/google/gofuzz v1.2.0 // indirect
-	github.com/google/uuid v1.6.0 // indirect
 	github.com/gorilla/websocket v1.5.1 // indirect
 	github.com/hashicorp/errwrap v1.1.0 // indirect
 	github.com/hashicorp/golang-lru/v2 v2.0.7 // indirect
@@ -109,6 +108,7 @@ require (
 	golang.org/x/exp v0.0.0-20240416160154-fe59bbe5cc7f // indirect
 	golang.org/x/mod v0.17.0 // indirect
 	golang.org/x/net v0.25.0 // indirect
+	golang.org/x/sync v0.7.0 // indirect
 	golang.org/x/sys v0.20.0 // indirect
 	golang.org/x/text v0.15.0 // indirect
 	golang.org/x/tools v0.21.0 // indirect

@@ -9,6 +9,7 @@ import (
 
 	"entgo.io/ent/dialect/sql/sqlgraph"
 	"entgo.io/ent/schema/field"
+	"github.com/google/uuid"
 	"github.com/in-toto/archivista/ent/statement"
 	"github.com/in-toto/archivista/ent/subject"
 	"github.com/in-toto/archivista/ent/subjectdigest"
@@ -27,15 +28,29 @@ func (sc *SubjectCreate) SetName(s string) *SubjectCreate {
 	return sc
 }
 
+// SetID sets the "id" field.
+func (sc *SubjectCreate) SetID(u uuid.UUID) *SubjectCreate {
+	sc.mutation.SetID(u)
+	return sc
+}
+
+// SetNillableID sets the "id" field if the given value is not nil.
+func (sc *SubjectCreate) SetNillableID(u *uuid.UUID) *SubjectCreate {
+	if u != nil {
+		sc.SetID(*u)
+	}
+	return sc
+}
+
 // AddSubjectDigestIDs adds the "subject_digests" edge to the SubjectDigest entity by IDs.
-func (sc *SubjectCreate) AddSubjectDigestIDs(ids ...int) *SubjectCreate {
+func (sc *SubjectCreate) AddSubjectDigestIDs(ids ...uuid.UUID) *SubjectCreate {
 	sc.mutation.AddSubjectDigestIDs(ids...)
 	return sc
 }
 
 // AddSubjectDigests adds the "subject_digests" edges to the SubjectDigest entity.
 func (sc *SubjectCreate) AddSubjectDigests(s ...*SubjectDigest) *SubjectCreate {
-	ids := make([]int, len(s))
+	ids := make([]uuid.UUID, len(s))
 	for i := range s {
 		ids[i] = s[i].ID
 	}
@@ -43,13 +58,13 @@ func (sc *SubjectCreate) AddSubjectDigests(s ...*SubjectDigest) *SubjectCreate {
 }
 
 // SetStatementID sets the "statement" edge to the Statement entity by ID.
-func (sc *SubjectCreate) SetStatementID(id int) *SubjectCreate {
+func (sc *SubjectCreate) SetStatementID(id uuid.UUID) *SubjectCreate {
 	sc.mutation.SetStatementID(id)
 	return sc
 }
 
 // SetNillableStatementID sets the "statement" edge to the Statement entity by ID if the given value is not nil.
-func (sc *SubjectCreate) SetNillableStatementID(id *int) *SubjectCreate {
+func (sc *SubjectCreate) SetNillableStatementID(id *uuid.UUID) *SubjectCreate {
 	if id != nil {
 		sc = sc.SetStatementID(*id)
 	}
@@ -68,6 +83,7 @@ func (sc *SubjectCreate) Mutation() *SubjectMutation {
 
 // Save creates the Subject in the database.
 func (sc *SubjectCreate) Save(ctx context.Context) (*Subject, error) {
+	sc.defaults()
 	return withHooks(ctx, sc.sqlSave, sc.mutation, sc.hooks)
 }
 
@@ -90,6 +106,14 @@ func (sc *SubjectCreate) Exec(ctx context.Context) error {
 func (sc *SubjectCreate) ExecX(ctx context.Context) {
 	if err := sc.Exec(ctx); err != nil {
 		panic(err)
+	}
+}
+
+// defaults sets the default values of the builder before save.
+func (sc *SubjectCreate) defaults() {
+	if _, ok := sc.mutation.ID(); !ok {
+		v := subject.DefaultID()
+		sc.mutation.SetID(v)
 	}
 }
 
@@ -117,8 +141,13 @@ func (sc *SubjectCreate) sqlSave(ctx context.Context) (*Subject, error) {
 		}
 		return nil, err
 	}
-	id := _spec.ID.Value.(int64)
-	_node.ID = int(id)
+	if _spec.ID.Value != nil {
+		if id, ok := _spec.ID.Value.(*uuid.UUID); ok {
+			_node.ID = *id
+		} else if err := _node.ID.Scan(_spec.ID.Value); err != nil {
+			return nil, err
+		}
+	}
 	sc.mutation.id = &_node.ID
 	sc.mutation.done = true
 	return _node, nil
@@ -127,8 +156,12 @@ func (sc *SubjectCreate) sqlSave(ctx context.Context) (*Subject, error) {
 func (sc *SubjectCreate) createSpec() (*Subject, *sqlgraph.CreateSpec) {
 	var (
 		_node = &Subject{config: sc.config}
-		_spec = sqlgraph.NewCreateSpec(subject.Table, sqlgraph.NewFieldSpec(subject.FieldID, field.TypeInt))
+		_spec = sqlgraph.NewCreateSpec(subject.Table, sqlgraph.NewFieldSpec(subject.FieldID, field.TypeUUID))
 	)
+	if id, ok := sc.mutation.ID(); ok {
+		_node.ID = id
+		_spec.ID.Value = &id
+	}
 	if value, ok := sc.mutation.Name(); ok {
 		_spec.SetField(subject.FieldName, field.TypeString, value)
 		_node.Name = value
@@ -141,7 +174,7 @@ func (sc *SubjectCreate) createSpec() (*Subject, *sqlgraph.CreateSpec) {
 			Columns: []string{subject.SubjectDigestsColumn},
 			Bidi:    false,
 			Target: &sqlgraph.EdgeTarget{
-				IDSpec: sqlgraph.NewFieldSpec(subjectdigest.FieldID, field.TypeInt),
+				IDSpec: sqlgraph.NewFieldSpec(subjectdigest.FieldID, field.TypeUUID),
 			},
 		}
 		for _, k := range nodes {
@@ -157,7 +190,7 @@ func (sc *SubjectCreate) createSpec() (*Subject, *sqlgraph.CreateSpec) {
 			Columns: []string{subject.StatementColumn},
 			Bidi:    false,
 			Target: &sqlgraph.EdgeTarget{
-				IDSpec: sqlgraph.NewFieldSpec(statement.FieldID, field.TypeInt),
+				IDSpec: sqlgraph.NewFieldSpec(statement.FieldID, field.TypeUUID),
 			},
 		}
 		for _, k := range nodes {
@@ -187,6 +220,7 @@ func (scb *SubjectCreateBulk) Save(ctx context.Context) ([]*Subject, error) {
 	for i := range scb.builders {
 		func(i int, root context.Context) {
 			builder := scb.builders[i]
+			builder.defaults()
 			var mut Mutator = MutateFunc(func(ctx context.Context, m Mutation) (Value, error) {
 				mutation, ok := m.(*SubjectMutation)
 				if !ok {
@@ -213,10 +247,6 @@ func (scb *SubjectCreateBulk) Save(ctx context.Context) ([]*Subject, error) {
 					return nil, err
 				}
 				mutation.id = &nodes[i].ID
-				if specs[i].ID.Value != nil {
-					id := specs[i].ID.Value.(int64)
-					nodes[i].ID = int(id)
-				}
 				mutation.done = true
 				return nodes[i], nil
 			})

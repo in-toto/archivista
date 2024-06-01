@@ -10,6 +10,7 @@ import (
 	"entgo.io/ent/dialect/sql"
 	"entgo.io/ent/dialect/sql/sqlgraph"
 	"entgo.io/ent/schema/field"
+	"github.com/google/uuid"
 	"github.com/in-toto/archivista/ent/attestation"
 	"github.com/in-toto/archivista/ent/attestationcollection"
 	"github.com/in-toto/archivista/ent/predicate"
@@ -43,7 +44,7 @@ func (au *AttestationUpdate) SetNillableType(s *string) *AttestationUpdate {
 }
 
 // SetAttestationCollectionID sets the "attestation_collection" edge to the AttestationCollection entity by ID.
-func (au *AttestationUpdate) SetAttestationCollectionID(id int) *AttestationUpdate {
+func (au *AttestationUpdate) SetAttestationCollectionID(id uuid.UUID) *AttestationUpdate {
 	au.mutation.SetAttestationCollectionID(id)
 	return au
 }
@@ -108,7 +109,7 @@ func (au *AttestationUpdate) sqlSave(ctx context.Context) (n int, err error) {
 	if err := au.check(); err != nil {
 		return n, err
 	}
-	_spec := sqlgraph.NewUpdateSpec(attestation.Table, attestation.Columns, sqlgraph.NewFieldSpec(attestation.FieldID, field.TypeInt))
+	_spec := sqlgraph.NewUpdateSpec(attestation.Table, attestation.Columns, sqlgraph.NewFieldSpec(attestation.FieldID, field.TypeUUID))
 	if ps := au.mutation.predicates; len(ps) > 0 {
 		_spec.Predicate = func(selector *sql.Selector) {
 			for i := range ps {
@@ -127,7 +128,7 @@ func (au *AttestationUpdate) sqlSave(ctx context.Context) (n int, err error) {
 			Columns: []string{attestation.AttestationCollectionColumn},
 			Bidi:    false,
 			Target: &sqlgraph.EdgeTarget{
-				IDSpec: sqlgraph.NewFieldSpec(attestationcollection.FieldID, field.TypeInt),
+				IDSpec: sqlgraph.NewFieldSpec(attestationcollection.FieldID, field.TypeUUID),
 			},
 		}
 		_spec.Edges.Clear = append(_spec.Edges.Clear, edge)
@@ -140,7 +141,7 @@ func (au *AttestationUpdate) sqlSave(ctx context.Context) (n int, err error) {
 			Columns: []string{attestation.AttestationCollectionColumn},
 			Bidi:    false,
 			Target: &sqlgraph.EdgeTarget{
-				IDSpec: sqlgraph.NewFieldSpec(attestationcollection.FieldID, field.TypeInt),
+				IDSpec: sqlgraph.NewFieldSpec(attestationcollection.FieldID, field.TypeUUID),
 			},
 		}
 		for _, k := range nodes {
@@ -183,7 +184,7 @@ func (auo *AttestationUpdateOne) SetNillableType(s *string) *AttestationUpdateOn
 }
 
 // SetAttestationCollectionID sets the "attestation_collection" edge to the AttestationCollection entity by ID.
-func (auo *AttestationUpdateOne) SetAttestationCollectionID(id int) *AttestationUpdateOne {
+func (auo *AttestationUpdateOne) SetAttestationCollectionID(id uuid.UUID) *AttestationUpdateOne {
 	auo.mutation.SetAttestationCollectionID(id)
 	return auo
 }
@@ -261,7 +262,7 @@ func (auo *AttestationUpdateOne) sqlSave(ctx context.Context) (_node *Attestatio
 	if err := auo.check(); err != nil {
 		return _node, err
 	}
-	_spec := sqlgraph.NewUpdateSpec(attestation.Table, attestation.Columns, sqlgraph.NewFieldSpec(attestation.FieldID, field.TypeInt))
+	_spec := sqlgraph.NewUpdateSpec(attestation.Table, attestation.Columns, sqlgraph.NewFieldSpec(attestation.FieldID, field.TypeUUID))
 	id, ok := auo.mutation.ID()
 	if !ok {
 		return nil, &ValidationError{Name: "id", err: errors.New(`ent: missing "Attestation.id" for update`)}
@@ -297,7 +298,7 @@ func (auo *AttestationUpdateOne) sqlSave(ctx context.Context) (_node *Attestatio
 			Columns: []string{attestation.AttestationCollectionColumn},
 			Bidi:    false,
 			Target: &sqlgraph.EdgeTarget{
-				IDSpec: sqlgraph.NewFieldSpec(attestationcollection.FieldID, field.TypeInt),
+				IDSpec: sqlgraph.NewFieldSpec(attestationcollection.FieldID, field.TypeUUID),
 			},
 		}
 		_spec.Edges.Clear = append(_spec.Edges.Clear, edge)
@@ -310,7 +311,7 @@ func (auo *AttestationUpdateOne) sqlSave(ctx context.Context) (_node *Attestatio
 			Columns: []string{attestation.AttestationCollectionColumn},
 			Bidi:    false,
 			Target: &sqlgraph.EdgeTarget{
-				IDSpec: sqlgraph.NewFieldSpec(attestationcollection.FieldID, field.TypeInt),
+				IDSpec: sqlgraph.NewFieldSpec(attestationcollection.FieldID, field.TypeUUID),
 			},
 		}
 		for _, k := range nodes {

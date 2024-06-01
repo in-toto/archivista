@@ -8,6 +8,7 @@ import (
 
 	"entgo.io/ent"
 	"entgo.io/ent/dialect/sql"
+	"github.com/google/uuid"
 	"github.com/in-toto/archivista/ent/attestationpolicy"
 	"github.com/in-toto/archivista/ent/statement"
 )
@@ -16,13 +17,13 @@ import (
 type AttestationPolicy struct {
 	config `json:"-"`
 	// ID of the ent.
-	ID int `json:"id,omitempty"`
+	ID uuid.UUID `json:"id,omitempty"`
 	// Name holds the value of the "name" field.
 	Name string `json:"name,omitempty"`
 	// Edges holds the relations/edges for other nodes in the graph.
 	// The values are being populated by the AttestationPolicyQuery when eager-loading is set.
 	Edges            AttestationPolicyEdges `json:"edges"`
-	statement_policy *int
+	statement_policy *uuid.UUID
 	selectValues     sql.SelectValues
 }
 
@@ -53,12 +54,12 @@ func (*AttestationPolicy) scanValues(columns []string) ([]any, error) {
 	values := make([]any, len(columns))
 	for i := range columns {
 		switch columns[i] {
-		case attestationpolicy.FieldID:
-			values[i] = new(sql.NullInt64)
 		case attestationpolicy.FieldName:
 			values[i] = new(sql.NullString)
+		case attestationpolicy.FieldID:
+			values[i] = new(uuid.UUID)
 		case attestationpolicy.ForeignKeys[0]: // statement_policy
-			values[i] = new(sql.NullInt64)
+			values[i] = &sql.NullScanner{S: new(uuid.UUID)}
 		default:
 			values[i] = new(sql.UnknownType)
 		}
@@ -75,11 +76,11 @@ func (ap *AttestationPolicy) assignValues(columns []string, values []any) error 
 	for i := range columns {
 		switch columns[i] {
 		case attestationpolicy.FieldID:
-			value, ok := values[i].(*sql.NullInt64)
-			if !ok {
-				return fmt.Errorf("unexpected type %T for field id", value)
+			if value, ok := values[i].(*uuid.UUID); !ok {
+				return fmt.Errorf("unexpected type %T for field id", values[i])
+			} else if value != nil {
+				ap.ID = *value
 			}
-			ap.ID = int(value.Int64)
 		case attestationpolicy.FieldName:
 			if value, ok := values[i].(*sql.NullString); !ok {
 				return fmt.Errorf("unexpected type %T for field name", values[i])
@@ -87,11 +88,11 @@ func (ap *AttestationPolicy) assignValues(columns []string, values []any) error 
 				ap.Name = value.String
 			}
 		case attestationpolicy.ForeignKeys[0]:
-			if value, ok := values[i].(*sql.NullInt64); !ok {
-				return fmt.Errorf("unexpected type %T for edge-field statement_policy", value)
+			if value, ok := values[i].(*sql.NullScanner); !ok {
+				return fmt.Errorf("unexpected type %T for field statement_policy", values[i])
 			} else if value.Valid {
-				ap.statement_policy = new(int)
-				*ap.statement_policy = int(value.Int64)
+				ap.statement_policy = new(uuid.UUID)
+				*ap.statement_policy = *value.S.(*uuid.UUID)
 			}
 		default:
 			ap.selectValues.Set(columns[i], values[i])

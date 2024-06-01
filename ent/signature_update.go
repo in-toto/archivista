@@ -10,6 +10,7 @@ import (
 	"entgo.io/ent/dialect/sql"
 	"entgo.io/ent/dialect/sql/sqlgraph"
 	"entgo.io/ent/schema/field"
+	"github.com/google/uuid"
 	"github.com/in-toto/archivista/ent/dsse"
 	"github.com/in-toto/archivista/ent/predicate"
 	"github.com/in-toto/archivista/ent/signature"
@@ -58,13 +59,13 @@ func (su *SignatureUpdate) SetNillableSignature(s *string) *SignatureUpdate {
 }
 
 // SetDsseID sets the "dsse" edge to the Dsse entity by ID.
-func (su *SignatureUpdate) SetDsseID(id int) *SignatureUpdate {
+func (su *SignatureUpdate) SetDsseID(id uuid.UUID) *SignatureUpdate {
 	su.mutation.SetDsseID(id)
 	return su
 }
 
 // SetNillableDsseID sets the "dsse" edge to the Dsse entity by ID if the given value is not nil.
-func (su *SignatureUpdate) SetNillableDsseID(id *int) *SignatureUpdate {
+func (su *SignatureUpdate) SetNillableDsseID(id *uuid.UUID) *SignatureUpdate {
 	if id != nil {
 		su = su.SetDsseID(*id)
 	}
@@ -77,14 +78,14 @@ func (su *SignatureUpdate) SetDsse(d *Dsse) *SignatureUpdate {
 }
 
 // AddTimestampIDs adds the "timestamps" edge to the Timestamp entity by IDs.
-func (su *SignatureUpdate) AddTimestampIDs(ids ...int) *SignatureUpdate {
+func (su *SignatureUpdate) AddTimestampIDs(ids ...uuid.UUID) *SignatureUpdate {
 	su.mutation.AddTimestampIDs(ids...)
 	return su
 }
 
 // AddTimestamps adds the "timestamps" edges to the Timestamp entity.
 func (su *SignatureUpdate) AddTimestamps(t ...*Timestamp) *SignatureUpdate {
-	ids := make([]int, len(t))
+	ids := make([]uuid.UUID, len(t))
 	for i := range t {
 		ids[i] = t[i].ID
 	}
@@ -109,14 +110,14 @@ func (su *SignatureUpdate) ClearTimestamps() *SignatureUpdate {
 }
 
 // RemoveTimestampIDs removes the "timestamps" edge to Timestamp entities by IDs.
-func (su *SignatureUpdate) RemoveTimestampIDs(ids ...int) *SignatureUpdate {
+func (su *SignatureUpdate) RemoveTimestampIDs(ids ...uuid.UUID) *SignatureUpdate {
 	su.mutation.RemoveTimestampIDs(ids...)
 	return su
 }
 
 // RemoveTimestamps removes "timestamps" edges to Timestamp entities.
 func (su *SignatureUpdate) RemoveTimestamps(t ...*Timestamp) *SignatureUpdate {
-	ids := make([]int, len(t))
+	ids := make([]uuid.UUID, len(t))
 	for i := range t {
 		ids[i] = t[i].ID
 	}
@@ -169,7 +170,7 @@ func (su *SignatureUpdate) sqlSave(ctx context.Context) (n int, err error) {
 	if err := su.check(); err != nil {
 		return n, err
 	}
-	_spec := sqlgraph.NewUpdateSpec(signature.Table, signature.Columns, sqlgraph.NewFieldSpec(signature.FieldID, field.TypeInt))
+	_spec := sqlgraph.NewUpdateSpec(signature.Table, signature.Columns, sqlgraph.NewFieldSpec(signature.FieldID, field.TypeUUID))
 	if ps := su.mutation.predicates; len(ps) > 0 {
 		_spec.Predicate = func(selector *sql.Selector) {
 			for i := range ps {
@@ -191,7 +192,7 @@ func (su *SignatureUpdate) sqlSave(ctx context.Context) (n int, err error) {
 			Columns: []string{signature.DsseColumn},
 			Bidi:    false,
 			Target: &sqlgraph.EdgeTarget{
-				IDSpec: sqlgraph.NewFieldSpec(dsse.FieldID, field.TypeInt),
+				IDSpec: sqlgraph.NewFieldSpec(dsse.FieldID, field.TypeUUID),
 			},
 		}
 		_spec.Edges.Clear = append(_spec.Edges.Clear, edge)
@@ -204,7 +205,7 @@ func (su *SignatureUpdate) sqlSave(ctx context.Context) (n int, err error) {
 			Columns: []string{signature.DsseColumn},
 			Bidi:    false,
 			Target: &sqlgraph.EdgeTarget{
-				IDSpec: sqlgraph.NewFieldSpec(dsse.FieldID, field.TypeInt),
+				IDSpec: sqlgraph.NewFieldSpec(dsse.FieldID, field.TypeUUID),
 			},
 		}
 		for _, k := range nodes {
@@ -220,7 +221,7 @@ func (su *SignatureUpdate) sqlSave(ctx context.Context) (n int, err error) {
 			Columns: []string{signature.TimestampsColumn},
 			Bidi:    false,
 			Target: &sqlgraph.EdgeTarget{
-				IDSpec: sqlgraph.NewFieldSpec(timestamp.FieldID, field.TypeInt),
+				IDSpec: sqlgraph.NewFieldSpec(timestamp.FieldID, field.TypeUUID),
 			},
 		}
 		_spec.Edges.Clear = append(_spec.Edges.Clear, edge)
@@ -233,7 +234,7 @@ func (su *SignatureUpdate) sqlSave(ctx context.Context) (n int, err error) {
 			Columns: []string{signature.TimestampsColumn},
 			Bidi:    false,
 			Target: &sqlgraph.EdgeTarget{
-				IDSpec: sqlgraph.NewFieldSpec(timestamp.FieldID, field.TypeInt),
+				IDSpec: sqlgraph.NewFieldSpec(timestamp.FieldID, field.TypeUUID),
 			},
 		}
 		for _, k := range nodes {
@@ -249,7 +250,7 @@ func (su *SignatureUpdate) sqlSave(ctx context.Context) (n int, err error) {
 			Columns: []string{signature.TimestampsColumn},
 			Bidi:    false,
 			Target: &sqlgraph.EdgeTarget{
-				IDSpec: sqlgraph.NewFieldSpec(timestamp.FieldID, field.TypeInt),
+				IDSpec: sqlgraph.NewFieldSpec(timestamp.FieldID, field.TypeUUID),
 			},
 		}
 		for _, k := range nodes {
@@ -306,13 +307,13 @@ func (suo *SignatureUpdateOne) SetNillableSignature(s *string) *SignatureUpdateO
 }
 
 // SetDsseID sets the "dsse" edge to the Dsse entity by ID.
-func (suo *SignatureUpdateOne) SetDsseID(id int) *SignatureUpdateOne {
+func (suo *SignatureUpdateOne) SetDsseID(id uuid.UUID) *SignatureUpdateOne {
 	suo.mutation.SetDsseID(id)
 	return suo
 }
 
 // SetNillableDsseID sets the "dsse" edge to the Dsse entity by ID if the given value is not nil.
-func (suo *SignatureUpdateOne) SetNillableDsseID(id *int) *SignatureUpdateOne {
+func (suo *SignatureUpdateOne) SetNillableDsseID(id *uuid.UUID) *SignatureUpdateOne {
 	if id != nil {
 		suo = suo.SetDsseID(*id)
 	}
@@ -325,14 +326,14 @@ func (suo *SignatureUpdateOne) SetDsse(d *Dsse) *SignatureUpdateOne {
 }
 
 // AddTimestampIDs adds the "timestamps" edge to the Timestamp entity by IDs.
-func (suo *SignatureUpdateOne) AddTimestampIDs(ids ...int) *SignatureUpdateOne {
+func (suo *SignatureUpdateOne) AddTimestampIDs(ids ...uuid.UUID) *SignatureUpdateOne {
 	suo.mutation.AddTimestampIDs(ids...)
 	return suo
 }
 
 // AddTimestamps adds the "timestamps" edges to the Timestamp entity.
 func (suo *SignatureUpdateOne) AddTimestamps(t ...*Timestamp) *SignatureUpdateOne {
-	ids := make([]int, len(t))
+	ids := make([]uuid.UUID, len(t))
 	for i := range t {
 		ids[i] = t[i].ID
 	}
@@ -357,14 +358,14 @@ func (suo *SignatureUpdateOne) ClearTimestamps() *SignatureUpdateOne {
 }
 
 // RemoveTimestampIDs removes the "timestamps" edge to Timestamp entities by IDs.
-func (suo *SignatureUpdateOne) RemoveTimestampIDs(ids ...int) *SignatureUpdateOne {
+func (suo *SignatureUpdateOne) RemoveTimestampIDs(ids ...uuid.UUID) *SignatureUpdateOne {
 	suo.mutation.RemoveTimestampIDs(ids...)
 	return suo
 }
 
 // RemoveTimestamps removes "timestamps" edges to Timestamp entities.
 func (suo *SignatureUpdateOne) RemoveTimestamps(t ...*Timestamp) *SignatureUpdateOne {
-	ids := make([]int, len(t))
+	ids := make([]uuid.UUID, len(t))
 	for i := range t {
 		ids[i] = t[i].ID
 	}
@@ -430,7 +431,7 @@ func (suo *SignatureUpdateOne) sqlSave(ctx context.Context) (_node *Signature, e
 	if err := suo.check(); err != nil {
 		return _node, err
 	}
-	_spec := sqlgraph.NewUpdateSpec(signature.Table, signature.Columns, sqlgraph.NewFieldSpec(signature.FieldID, field.TypeInt))
+	_spec := sqlgraph.NewUpdateSpec(signature.Table, signature.Columns, sqlgraph.NewFieldSpec(signature.FieldID, field.TypeUUID))
 	id, ok := suo.mutation.ID()
 	if !ok {
 		return nil, &ValidationError{Name: "id", err: errors.New(`ent: missing "Signature.id" for update`)}
@@ -469,7 +470,7 @@ func (suo *SignatureUpdateOne) sqlSave(ctx context.Context) (_node *Signature, e
 			Columns: []string{signature.DsseColumn},
 			Bidi:    false,
 			Target: &sqlgraph.EdgeTarget{
-				IDSpec: sqlgraph.NewFieldSpec(dsse.FieldID, field.TypeInt),
+				IDSpec: sqlgraph.NewFieldSpec(dsse.FieldID, field.TypeUUID),
 			},
 		}
 		_spec.Edges.Clear = append(_spec.Edges.Clear, edge)
@@ -482,7 +483,7 @@ func (suo *SignatureUpdateOne) sqlSave(ctx context.Context) (_node *Signature, e
 			Columns: []string{signature.DsseColumn},
 			Bidi:    false,
 			Target: &sqlgraph.EdgeTarget{
-				IDSpec: sqlgraph.NewFieldSpec(dsse.FieldID, field.TypeInt),
+				IDSpec: sqlgraph.NewFieldSpec(dsse.FieldID, field.TypeUUID),
 			},
 		}
 		for _, k := range nodes {
@@ -498,7 +499,7 @@ func (suo *SignatureUpdateOne) sqlSave(ctx context.Context) (_node *Signature, e
 			Columns: []string{signature.TimestampsColumn},
 			Bidi:    false,
 			Target: &sqlgraph.EdgeTarget{
-				IDSpec: sqlgraph.NewFieldSpec(timestamp.FieldID, field.TypeInt),
+				IDSpec: sqlgraph.NewFieldSpec(timestamp.FieldID, field.TypeUUID),
 			},
 		}
 		_spec.Edges.Clear = append(_spec.Edges.Clear, edge)
@@ -511,7 +512,7 @@ func (suo *SignatureUpdateOne) sqlSave(ctx context.Context) (_node *Signature, e
 			Columns: []string{signature.TimestampsColumn},
 			Bidi:    false,
 			Target: &sqlgraph.EdgeTarget{
-				IDSpec: sqlgraph.NewFieldSpec(timestamp.FieldID, field.TypeInt),
+				IDSpec: sqlgraph.NewFieldSpec(timestamp.FieldID, field.TypeUUID),
 			},
 		}
 		for _, k := range nodes {
@@ -527,7 +528,7 @@ func (suo *SignatureUpdateOne) sqlSave(ctx context.Context) (_node *Signature, e
 			Columns: []string{signature.TimestampsColumn},
 			Bidi:    false,
 			Target: &sqlgraph.EdgeTarget{
-				IDSpec: sqlgraph.NewFieldSpec(timestamp.FieldID, field.TypeInt),
+				IDSpec: sqlgraph.NewFieldSpec(timestamp.FieldID, field.TypeUUID),
 			},
 		}
 		for _, k := range nodes {

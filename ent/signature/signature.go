@@ -5,6 +5,7 @@ package signature
 import (
 	"entgo.io/ent/dialect/sql"
 	"entgo.io/ent/dialect/sql/sqlgraph"
+	"github.com/google/uuid"
 )
 
 const (
@@ -71,6 +72,8 @@ var (
 	KeyIDValidator func(string) error
 	// SignatureValidator is a validator for the "signature" field. It is called by the builders before save.
 	SignatureValidator func(string) error
+	// DefaultID holds the default value on creation for the "id" field.
+	DefaultID func() uuid.UUID
 )
 
 // OrderOption defines the ordering options for the Signature queries.

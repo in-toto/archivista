@@ -40,7 +40,7 @@ func (sd *SignatureDelete) ExecX(ctx context.Context) int {
 }
 
 func (sd *SignatureDelete) sqlExec(ctx context.Context) (int, error) {
-	_spec := sqlgraph.NewDeleteSpec(signature.Table, sqlgraph.NewFieldSpec(signature.FieldID, field.TypeInt))
+	_spec := sqlgraph.NewDeleteSpec(signature.Table, sqlgraph.NewFieldSpec(signature.FieldID, field.TypeUUID))
 	if ps := sd.mutation.predicates; len(ps) > 0 {
 		_spec.Predicate = func(selector *sql.Selector) {
 			for i := range ps {
