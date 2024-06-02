@@ -16,43 +16,41 @@
 # See https://docs.github.com/en/code-security/code-scanning/creating-an-advanced-setup-for-code-scanning/codeql-code-scanning-for-compiled-languages#autobuild-for-go
 all: help
 
-# Run the dev server
-run-dev:
+run-dev:  ## Run the dev server
 	@echo "Running dev server. It will refresh automatically when you change code."
 	@docker compose -f compose-dev.yml up --remove-orphans
 
+
 .PHONY: stop
-# Stop the dev server
-stop:
+stop:  ## Stop the dev server
 	@docker-compose -f compose-dev.yml down -v
 
+
 .PHONY: clean
-# Clean up the dev server
-clean:
+clean: ## Clean up the dev server
 	$(MAKE) stop
 	@docker compose -f compose-dev.yml rm --force
 	@docker rmi archivista-archivista --force
 
+
 .PHONY: test
-# Run tests
-test:
+test: ## Run tests
 	@go test ./... -covermode atomic -coverprofile=cover.out -v
 
 .PHONY: coverage
-# Show html coverage
-coverage:
+coverage:  ## Show html coverage
 	@go tool cover -html=cover.out
 
+
 .PHONY: lint
-# Run linter
-lint:
+lint:  ## Run linter
 	@golangci-lint run
 	@go fmt ./...
 	@go vet ./...
 
+
 .PHONY: docs
-# Generate swagger docs
-docs: check_docs
+docs: check_docs # Generate swagger docs
 
 .PHONY: check_docs
 check_docs:
@@ -70,13 +68,13 @@ update_docs:
 	@go install github.com/swaggo/swag/cmd/swag@v1.16.2
 	@swag init -o docs -d internal/server -g server.go -pd
 
+
 .PHONY: db-migrations
-# Run the migrations for the database
-db-migrations:
+db-migrations:  ## Run the migrations for the database
 	@go generate ./...
 	@atlas migrate diff mysql --dir "file://ent/migrate/migrations/mysql" --to "ent://ent/schema" --dev-url "docker://mysql/8/dev"
 	@atlas migrate diff pgsql --dir "file://ent/migrate/migrations/pgsql" --to "ent://ent/schema" --dev-url "docker://postgres/16/dev?search_path=public"
 
-# Show this help
-help:
+
+help:  ## Show this help
 	@grep -h -E '^[a-zA-Z_-]+:.*?## .*$$' $(MAKEFILE_LIST) | awk 'BEGIN {FS = ":.*?## "}; {printf "\033[36m%-30s\033[0m %s\n", $$1, $$2}'
