@@ -54,19 +54,29 @@ docs: check_docs # Generate swagger docs
 
 .PHONY: check_docs
 check_docs:
-	@server_mod_time=$$(stat -c %Y internal/server/server.go); \
-	swagger_mod_time=$$(stat -c %Y docs/swagger.json); \
-	if [ $$server_mod_time -gt $$swagger_mod_time ]; then \
+	@echo "Checking if Swagger documentation needs to be updated..."
+	@temp_dir=$$(mktemp -d); \
+	mkdir -p $$temp_dir/docs; \
+	go install github.com/swaggo/swag/cmd/swag@v1.16.2; \
+	swag init -o $$temp_dir/docs -d internal/server -g server.go -pd > /dev/null 2>&1; \
+	if [ ! -f docs/swagger.json ]; then \
+		echo "Swagger documentation needs to be generated"; \
+		make update_docs; \
+	elif ! diff -q $$temp_dir/docs/swagger.json docs/swagger.json > /dev/null; then \
 		echo "Swagger documentation needs to be updated"; \
 		make update_docs; \
 	else \
 		echo "Swagger documentation is up to date"; \
-	fi
+	fi; \
+	rm -rf $$temp_dir
 
 .PHONY: update_docs
 update_docs:
+	@echo "Updating Swagger documentation..."
 	@go install github.com/swaggo/swag/cmd/swag@v1.16.2
 	@swag init -o docs -d internal/server -g server.go -pd
+	@echo "Swagger documentation updated"
+
 
 
 .PHONY: db-migrations
