@@ -17,11 +17,11 @@ package attestationcollection
 import (
 	"context"
 	"encoding/json"
-
 	"github.com/google/uuid"
 	"github.com/in-toto/archivista/ent"
 	"github.com/in-toto/archivista/pkg/metadatastorage"
 	"github.com/in-toto/go-witness/attestation"
+	"github.com/in-toto/go-witness/log"
 )
 
 const (
@@ -58,11 +58,20 @@ func (parsedCollection ParsedCollection) Store(ctx context.Context, tx *ent.Tx, 
 	}
 
 	for _, a := range parsedCollection.Attestations {
-		if err := tx.Attestation.Create().
+		newAttestation, err := tx.Attestation.Create().
 			SetAttestationCollectionID(collection.ID).
 			SetType(a.Type).
-			Exec(ctx); err != nil {
+			Save(ctx)
+		if err != nil {
 			return err
+		}
+
+		// we parse if a parser is available. otherwise, we ignore it if no parser is available.
+		if parser, exists := registeredParsers[a.Type]; exists {
+			if err := parser(ctx, tx, newAttestation, a.Type, a.Attestation); err != nil {
+				log.Errorf("failed to parse attestation of type %s: %w", a.Type, err)
+				return err
+			}
 		}
 	}
 
