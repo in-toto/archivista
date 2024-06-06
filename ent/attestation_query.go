@@ -4,6 +4,7 @@ package ent
 
 import (
 	"context"
+	"database/sql/driver"
 	"fmt"
 	"math"
 
@@ -13,6 +14,7 @@ import (
 	"github.com/google/uuid"
 	"github.com/in-toto/archivista/ent/attestation"
 	"github.com/in-toto/archivista/ent/attestationcollection"
+	"github.com/in-toto/archivista/ent/gitattestation"
 	"github.com/in-toto/archivista/ent/predicate"
 )
 
@@ -24,6 +26,7 @@ type AttestationQuery struct {
 	inters                    []Interceptor
 	predicates                []predicate.Attestation
 	withAttestationCollection *AttestationCollectionQuery
+	withGitAttestation        *GitAttestationQuery
 	withFKs                   bool
 	modifiers                 []func(*sql.Selector)
 	loadTotal                 []func(context.Context, []*Attestation) error
@@ -78,6 +81,28 @@ func (aq *AttestationQuery) QueryAttestationCollection() *AttestationCollectionQ
 			sqlgraph.From(attestation.Table, attestation.FieldID, selector),
 			sqlgraph.To(attestationcollection.Table, attestationcollection.FieldID),
 			sqlgraph.Edge(sqlgraph.M2O, true, attestation.AttestationCollectionTable, attestation.AttestationCollectionColumn),
+		)
+		fromU = sqlgraph.SetNeighbors(aq.driver.Dialect(), step)
+		return fromU, nil
+	}
+	return query
+}
+
+// QueryGitAttestation chains the current query on the "git_attestation" edge.
+func (aq *AttestationQuery) QueryGitAttestation() *GitAttestationQuery {
+	query := (&GitAttestationClient{config: aq.config}).Query()
+	query.path = func(ctx context.Context) (fromU *sql.Selector, err error) {
+		if err := aq.prepareQuery(ctx); err != nil {
+			return nil, err
+		}
+		selector := aq.sqlQuery(ctx)
+		if err := selector.Err(); err != nil {
+			return nil, err
+		}
+		step := sqlgraph.NewStep(
+			sqlgraph.From(attestation.Table, attestation.FieldID, selector),
+			sqlgraph.To(gitattestation.Table, gitattestation.FieldID),
+			sqlgraph.Edge(sqlgraph.O2O, false, attestation.GitAttestationTable, attestation.GitAttestationColumn),
 		)
 		fromU = sqlgraph.SetNeighbors(aq.driver.Dialect(), step)
 		return fromU, nil
@@ -278,6 +303,7 @@ func (aq *AttestationQuery) Clone() *AttestationQuery {
 		inters:                    append([]Interceptor{}, aq.inters...),
 		predicates:                append([]predicate.Attestation{}, aq.predicates...),
 		withAttestationCollection: aq.withAttestationCollection.Clone(),
+		withGitAttestation:        aq.withGitAttestation.Clone(),
 		// clone intermediate query.
 		sql:  aq.sql.Clone(),
 		path: aq.path,
@@ -292,6 +318,17 @@ func (aq *AttestationQuery) WithAttestationCollection(opts ...func(*AttestationC
 		opt(query)
 	}
 	aq.withAttestationCollection = query
+	return aq
+}
+
+// WithGitAttestation tells the query-builder to eager-load the nodes that are connected to
+// the "git_attestation" edge. The optional arguments are used to configure the query builder of the edge.
+func (aq *AttestationQuery) WithGitAttestation(opts ...func(*GitAttestationQuery)) *AttestationQuery {
+	query := (&GitAttestationClient{config: aq.config}).Query()
+	for _, opt := range opts {
+		opt(query)
+	}
+	aq.withGitAttestation = query
 	return aq
 }
 
@@ -374,8 +411,9 @@ func (aq *AttestationQuery) sqlAll(ctx context.Context, hooks ...queryHook) ([]*
 		nodes       = []*Attestation{}
 		withFKs     = aq.withFKs
 		_spec       = aq.querySpec()
-		loadedTypes = [1]bool{
+		loadedTypes = [2]bool{
 			aq.withAttestationCollection != nil,
+			aq.withGitAttestation != nil,
 		}
 	)
 	if aq.withAttestationCollection != nil {
@@ -408,6 +446,12 @@ func (aq *AttestationQuery) sqlAll(ctx context.Context, hooks ...queryHook) ([]*
 	if query := aq.withAttestationCollection; query != nil {
 		if err := aq.loadAttestationCollection(ctx, query, nodes, nil,
 			func(n *Attestation, e *AttestationCollection) { n.Edges.AttestationCollection = e }); err != nil {
+			return nil, err
+		}
+	}
+	if query := aq.withGitAttestation; query != nil {
+		if err := aq.loadGitAttestation(ctx, query, nodes, nil,
+			func(n *Attestation, e *GitAttestation) { n.Edges.GitAttestation = e }); err != nil {
 			return nil, err
 		}
 	}
@@ -448,6 +492,34 @@ func (aq *AttestationQuery) loadAttestationCollection(ctx context.Context, query
 		for i := range nodes {
 			assign(nodes[i], n)
 		}
+	}
+	return nil
+}
+func (aq *AttestationQuery) loadGitAttestation(ctx context.Context, query *GitAttestationQuery, nodes []*Attestation, init func(*Attestation), assign func(*Attestation, *GitAttestation)) error {
+	fks := make([]driver.Value, 0, len(nodes))
+	nodeids := make(map[uuid.UUID]*Attestation)
+	for i := range nodes {
+		fks = append(fks, nodes[i].ID)
+		nodeids[nodes[i].ID] = nodes[i]
+	}
+	query.withFKs = true
+	query.Where(predicate.GitAttestation(func(s *sql.Selector) {
+		s.Where(sql.InValues(s.C(attestation.GitAttestationColumn), fks...))
+	}))
+	neighbors, err := query.All(ctx)
+	if err != nil {
+		return err
+	}
+	for _, n := range neighbors {
+		fk := n.attestation_git_attestation
+		if fk == nil {
+			return fmt.Errorf(`foreign-key "attestation_git_attestation" is nil for node %v`, n.ID)
+		}
+		node, ok := nodeids[*fk]
+		if !ok {
+			return fmt.Errorf(`unexpected referenced foreign-key "attestation_git_attestation" returned %v for node %v`, *fk, n.ID)
+		}
+		assign(node, n)
 	}
 	return nil
 }

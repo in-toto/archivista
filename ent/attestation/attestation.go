@@ -17,6 +17,8 @@ const (
 	FieldType = "type"
 	// EdgeAttestationCollection holds the string denoting the attestation_collection edge name in mutations.
 	EdgeAttestationCollection = "attestation_collection"
+	// EdgeGitAttestation holds the string denoting the git_attestation edge name in mutations.
+	EdgeGitAttestation = "git_attestation"
 	// Table holds the table name of the attestation in the database.
 	Table = "attestations"
 	// AttestationCollectionTable is the table that holds the attestation_collection relation/edge.
@@ -26,6 +28,13 @@ const (
 	AttestationCollectionInverseTable = "attestation_collections"
 	// AttestationCollectionColumn is the table column denoting the attestation_collection relation/edge.
 	AttestationCollectionColumn = "attestation_collection_attestations"
+	// GitAttestationTable is the table that holds the git_attestation relation/edge.
+	GitAttestationTable = "git_attestations"
+	// GitAttestationInverseTable is the table name for the GitAttestation entity.
+	// It exists in this package in order to avoid circular dependency with the "gitattestation" package.
+	GitAttestationInverseTable = "git_attestations"
+	// GitAttestationColumn is the table column denoting the git_attestation relation/edge.
+	GitAttestationColumn = "attestation_git_attestation"
 )
 
 // Columns holds all SQL columns for attestation fields.
@@ -81,10 +90,24 @@ func ByAttestationCollectionField(field string, opts ...sql.OrderTermOption) Ord
 		sqlgraph.OrderByNeighborTerms(s, newAttestationCollectionStep(), sql.OrderByField(field, opts...))
 	}
 }
+
+// ByGitAttestationField orders the results by git_attestation field.
+func ByGitAttestationField(field string, opts ...sql.OrderTermOption) OrderOption {
+	return func(s *sql.Selector) {
+		sqlgraph.OrderByNeighborTerms(s, newGitAttestationStep(), sql.OrderByField(field, opts...))
+	}
+}
 func newAttestationCollectionStep() *sqlgraph.Step {
 	return sqlgraph.NewStep(
 		sqlgraph.From(Table, FieldID),
 		sqlgraph.To(AttestationCollectionInverseTable, FieldID),
 		sqlgraph.Edge(sqlgraph.M2O, true, AttestationCollectionTable, AttestationCollectionColumn),
+	)
+}
+func newGitAttestationStep() *sqlgraph.Step {
+	return sqlgraph.NewStep(
+		sqlgraph.From(Table, FieldID),
+		sqlgraph.To(GitAttestationInverseTable, FieldID),
+		sqlgraph.Edge(sqlgraph.O2O, false, GitAttestationTable, GitAttestationColumn),
 	)
 }

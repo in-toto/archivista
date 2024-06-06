@@ -37,6 +37,8 @@ func (Attestation) Fields() []ent.Field {
 func (Attestation) Edges() []ent.Edge {
 	return []ent.Edge{
 		edge.From("attestation_collection", AttestationCollection.Type).Ref("attestations").Unique().Required(),
+
+		edge.To("git_attestation", GitAttestation.Type).Unique(),
 	}
 }
 

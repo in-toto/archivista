@@ -16,6 +16,7 @@ import (
 	"github.com/in-toto/archivista/ent/attestationcollection"
 	"github.com/in-toto/archivista/ent/attestationpolicy"
 	"github.com/in-toto/archivista/ent/dsse"
+	"github.com/in-toto/archivista/ent/gitattestation"
 	"github.com/in-toto/archivista/ent/payloaddigest"
 	"github.com/in-toto/archivista/ent/signature"
 	"github.com/in-toto/archivista/ent/statement"
@@ -1098,6 +1099,255 @@ func (d *Dsse) ToEdge(order *DsseOrder) *DsseEdge {
 	return &DsseEdge{
 		Node:   d,
 		Cursor: order.Field.toCursor(d),
+	}
+}
+
+// GitAttestationEdge is the edge representation of GitAttestation.
+type GitAttestationEdge struct {
+	Node   *GitAttestation `json:"node"`
+	Cursor Cursor          `json:"cursor"`
+}
+
+// GitAttestationConnection is the connection containing edges to GitAttestation.
+type GitAttestationConnection struct {
+	Edges      []*GitAttestationEdge `json:"edges"`
+	PageInfo   PageInfo              `json:"pageInfo"`
+	TotalCount int                   `json:"totalCount"`
+}
+
+func (c *GitAttestationConnection) build(nodes []*GitAttestation, pager *gitattestationPager, after *Cursor, first *int, before *Cursor, last *int) {
+	c.PageInfo.HasNextPage = before != nil
+	c.PageInfo.HasPreviousPage = after != nil
+	if first != nil && *first+1 == len(nodes) {
+		c.PageInfo.HasNextPage = true
+		nodes = nodes[:len(nodes)-1]
+	} else if last != nil && *last+1 == len(nodes) {
+		c.PageInfo.HasPreviousPage = true
+		nodes = nodes[:len(nodes)-1]
+	}
+	var nodeAt func(int) *GitAttestation
+	if last != nil {
+		n := len(nodes) - 1
+		nodeAt = func(i int) *GitAttestation {
+			return nodes[n-i]
+		}
+	} else {
+		nodeAt = func(i int) *GitAttestation {
+			return nodes[i]
+		}
+	}
+	c.Edges = make([]*GitAttestationEdge, len(nodes))
+	for i := range nodes {
+		node := nodeAt(i)
+		c.Edges[i] = &GitAttestationEdge{
+			Node:   node,
+			Cursor: pager.toCursor(node),
+		}
+	}
+	if l := len(c.Edges); l > 0 {
+		c.PageInfo.StartCursor = &c.Edges[0].Cursor
+		c.PageInfo.EndCursor = &c.Edges[l-1].Cursor
+	}
+	if c.TotalCount == 0 {
+		c.TotalCount = len(nodes)
+	}
+}
+
+// GitAttestationPaginateOption enables pagination customization.
+type GitAttestationPaginateOption func(*gitattestationPager) error
+
+// WithGitAttestationOrder configures pagination ordering.
+func WithGitAttestationOrder(order *GitAttestationOrder) GitAttestationPaginateOption {
+	if order == nil {
+		order = DefaultGitAttestationOrder
+	}
+	o := *order
+	return func(pager *gitattestationPager) error {
+		if err := o.Direction.Validate(); err != nil {
+			return err
+		}
+		if o.Field == nil {
+			o.Field = DefaultGitAttestationOrder.Field
+		}
+		pager.order = &o
+		return nil
+	}
+}
+
+// WithGitAttestationFilter configures pagination filter.
+func WithGitAttestationFilter(filter func(*GitAttestationQuery) (*GitAttestationQuery, error)) GitAttestationPaginateOption {
+	return func(pager *gitattestationPager) error {
+		if filter == nil {
+			return errors.New("GitAttestationQuery filter cannot be nil")
+		}
+		pager.filter = filter
+		return nil
+	}
+}
+
+type gitattestationPager struct {
+	reverse bool
+	order   *GitAttestationOrder
+	filter  func(*GitAttestationQuery) (*GitAttestationQuery, error)
+}
+
+func newGitAttestationPager(opts []GitAttestationPaginateOption, reverse bool) (*gitattestationPager, error) {
+	pager := &gitattestationPager{reverse: reverse}
+	for _, opt := range opts {
+		if err := opt(pager); err != nil {
+			return nil, err
+		}
+	}
+	if pager.order == nil {
+		pager.order = DefaultGitAttestationOrder
+	}
+	return pager, nil
+}
+
+func (p *gitattestationPager) applyFilter(query *GitAttestationQuery) (*GitAttestationQuery, error) {
+	if p.filter != nil {
+		return p.filter(query)
+	}
+	return query, nil
+}
+
+func (p *gitattestationPager) toCursor(ga *GitAttestation) Cursor {
+	return p.order.Field.toCursor(ga)
+}
+
+func (p *gitattestationPager) applyCursors(query *GitAttestationQuery, after, before *Cursor) (*GitAttestationQuery, error) {
+	direction := p.order.Direction
+	if p.reverse {
+		direction = direction.Reverse()
+	}
+	for _, predicate := range entgql.CursorsPredicate(after, before, DefaultGitAttestationOrder.Field.column, p.order.Field.column, direction) {
+		query = query.Where(predicate)
+	}
+	return query, nil
+}
+
+func (p *gitattestationPager) applyOrder(query *GitAttestationQuery) *GitAttestationQuery {
+	direction := p.order.Direction
+	if p.reverse {
+		direction = direction.Reverse()
+	}
+	query = query.Order(p.order.Field.toTerm(direction.OrderTermOption()))
+	if p.order.Field != DefaultGitAttestationOrder.Field {
+		query = query.Order(DefaultGitAttestationOrder.Field.toTerm(direction.OrderTermOption()))
+	}
+	if len(query.ctx.Fields) > 0 {
+		query.ctx.AppendFieldOnce(p.order.Field.column)
+	}
+	return query
+}
+
+func (p *gitattestationPager) orderExpr(query *GitAttestationQuery) sql.Querier {
+	direction := p.order.Direction
+	if p.reverse {
+		direction = direction.Reverse()
+	}
+	if len(query.ctx.Fields) > 0 {
+		query.ctx.AppendFieldOnce(p.order.Field.column)
+	}
+	return sql.ExprFunc(func(b *sql.Builder) {
+		b.Ident(p.order.Field.column).Pad().WriteString(string(direction))
+		if p.order.Field != DefaultGitAttestationOrder.Field {
+			b.Comma().Ident(DefaultGitAttestationOrder.Field.column).Pad().WriteString(string(direction))
+		}
+	})
+}
+
+// Paginate executes the query and returns a relay based cursor connection to GitAttestation.
+func (ga *GitAttestationQuery) Paginate(
+	ctx context.Context, after *Cursor, first *int,
+	before *Cursor, last *int, opts ...GitAttestationPaginateOption,
+) (*GitAttestationConnection, error) {
+	if err := validateFirstLast(first, last); err != nil {
+		return nil, err
+	}
+	pager, err := newGitAttestationPager(opts, last != nil)
+	if err != nil {
+		return nil, err
+	}
+	if ga, err = pager.applyFilter(ga); err != nil {
+		return nil, err
+	}
+	conn := &GitAttestationConnection{Edges: []*GitAttestationEdge{}}
+	ignoredEdges := !hasCollectedField(ctx, edgesField)
+	if hasCollectedField(ctx, totalCountField) || hasCollectedField(ctx, pageInfoField) {
+		hasPagination := after != nil || first != nil || before != nil || last != nil
+		if hasPagination || ignoredEdges {
+			c := ga.Clone()
+			c.ctx.Fields = nil
+			if conn.TotalCount, err = c.Count(ctx); err != nil {
+				return nil, err
+			}
+			conn.PageInfo.HasNextPage = first != nil && conn.TotalCount > 0
+			conn.PageInfo.HasPreviousPage = last != nil && conn.TotalCount > 0
+		}
+	}
+	if ignoredEdges || (first != nil && *first == 0) || (last != nil && *last == 0) {
+		return conn, nil
+	}
+	if ga, err = pager.applyCursors(ga, after, before); err != nil {
+		return nil, err
+	}
+	limit := paginateLimit(first, last)
+	if limit != 0 {
+		ga.Limit(limit)
+	}
+	if field := collectedField(ctx, edgesField, nodeField); field != nil {
+		if err := ga.collectField(ctx, limit == 1, graphql.GetOperationContext(ctx), *field, []string{edgesField, nodeField}); err != nil {
+			return nil, err
+		}
+	}
+	ga = pager.applyOrder(ga)
+	nodes, err := ga.All(ctx)
+	if err != nil {
+		return nil, err
+	}
+	conn.build(nodes, pager, after, first, before, last)
+	return conn, nil
+}
+
+// GitAttestationOrderField defines the ordering field of GitAttestation.
+type GitAttestationOrderField struct {
+	// Value extracts the ordering value from the given GitAttestation.
+	Value    func(*GitAttestation) (ent.Value, error)
+	column   string // field or computed.
+	toTerm   func(...sql.OrderTermOption) gitattestation.OrderOption
+	toCursor func(*GitAttestation) Cursor
+}
+
+// GitAttestationOrder defines the ordering of GitAttestation.
+type GitAttestationOrder struct {
+	Direction OrderDirection            `json:"direction"`
+	Field     *GitAttestationOrderField `json:"field"`
+}
+
+// DefaultGitAttestationOrder is the default ordering of GitAttestation.
+var DefaultGitAttestationOrder = &GitAttestationOrder{
+	Direction: entgql.OrderDirectionAsc,
+	Field: &GitAttestationOrderField{
+		Value: func(ga *GitAttestation) (ent.Value, error) {
+			return ga.ID, nil
+		},
+		column: gitattestation.FieldID,
+		toTerm: gitattestation.ByID,
+		toCursor: func(ga *GitAttestation) Cursor {
+			return Cursor{ID: ga.ID}
+		},
+	},
+}
+
+// ToEdge converts GitAttestation into GitAttestationEdge.
+func (ga *GitAttestation) ToEdge(order *GitAttestationOrder) *GitAttestationEdge {
+	if order == nil {
+		order = DefaultGitAttestationOrder
+	}
+	return &GitAttestationEdge{
+		Node:   ga,
+		Cursor: order.Field.toCursor(ga),
 	}
 }
 

@@ -110,6 +110,40 @@ var (
 			},
 		},
 	}
+	// GitAttestationsColumns holds the columns for the "git_attestations" table.
+	GitAttestationsColumns = []*schema.Column{
+		{Name: "id", Type: field.TypeUUID, Unique: true},
+		{Name: "commit_hash", Type: field.TypeString},
+		{Name: "author", Type: field.TypeString},
+		{Name: "author_email", Type: field.TypeString},
+		{Name: "committer_name", Type: field.TypeString},
+		{Name: "committer_email", Type: field.TypeString},
+		{Name: "commit_date", Type: field.TypeString},
+		{Name: "commit_message", Type: field.TypeString},
+		{Name: "status", Type: field.TypeJSON},
+		{Name: "commit_type", Type: field.TypeString},
+		{Name: "commit_digest", Type: field.TypeString},
+		{Name: "signature", Type: field.TypeString},
+		{Name: "parent_hashes", Type: field.TypeJSON},
+		{Name: "tree_hash", Type: field.TypeString},
+		{Name: "refs", Type: field.TypeJSON},
+		{Name: "remotes", Type: field.TypeJSON},
+		{Name: "attestation_git_attestation", Type: field.TypeUUID, Unique: true},
+	}
+	// GitAttestationsTable holds the schema information for the "git_attestations" table.
+	GitAttestationsTable = &schema.Table{
+		Name:       "git_attestations",
+		Columns:    GitAttestationsColumns,
+		PrimaryKey: []*schema.Column{GitAttestationsColumns[0]},
+		ForeignKeys: []*schema.ForeignKey{
+			{
+				Symbol:     "git_attestations_attestations_git_attestation",
+				Columns:    []*schema.Column{GitAttestationsColumns[16]},
+				RefColumns: []*schema.Column{AttestationsColumns[0]},
+				OnDelete:   schema.NoAction,
+			},
+		},
+	}
 	// PayloadDigestsColumns holds the columns for the "payload_digests" table.
 	PayloadDigestsColumns = []*schema.Column{
 		{Name: "id", Type: field.TypeUUID, Unique: true},
@@ -266,6 +300,7 @@ var (
 		AttestationCollectionsTable,
 		AttestationPoliciesTable,
 		DssesTable,
+		GitAttestationsTable,
 		PayloadDigestsTable,
 		SignaturesTable,
 		StatementsTable,
@@ -280,6 +315,7 @@ func init() {
 	AttestationCollectionsTable.ForeignKeys[0].RefTable = StatementsTable
 	AttestationPoliciesTable.ForeignKeys[0].RefTable = StatementsTable
 	DssesTable.ForeignKeys[0].RefTable = StatementsTable
+	GitAttestationsTable.ForeignKeys[0].RefTable = AttestationsTable
 	PayloadDigestsTable.ForeignKeys[0].RefTable = DssesTable
 	SignaturesTable.ForeignKeys[0].RefTable = DssesTable
 	SubjectsTable.ForeignKeys[0].RefTable = StatementsTable

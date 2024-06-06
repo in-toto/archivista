@@ -12,6 +12,7 @@ import (
 	"github.com/in-toto/archivista/ent/attestationcollection"
 	"github.com/in-toto/archivista/ent/attestationpolicy"
 	"github.com/in-toto/archivista/ent/dsse"
+	"github.com/in-toto/archivista/ent/gitattestation"
 	"github.com/in-toto/archivista/ent/payloaddigest"
 	"github.com/in-toto/archivista/ent/predicate"
 	"github.com/in-toto/archivista/ent/signature"
@@ -56,6 +57,10 @@ type AttestationWhereInput struct {
 	// "attestation_collection" edge predicates.
 	HasAttestationCollection     *bool                              `json:"hasAttestationCollection,omitempty"`
 	HasAttestationCollectionWith []*AttestationCollectionWhereInput `json:"hasAttestationCollectionWith,omitempty"`
+
+	// "git_attestation" edge predicates.
+	HasGitAttestation     *bool                       `json:"hasGitAttestation,omitempty"`
+	HasGitAttestationWith []*GitAttestationWhereInput `json:"hasGitAttestationWith,omitempty"`
 }
 
 // AddPredicates adds custom predicates to the where input to be used during the filtering phase.
@@ -210,6 +215,24 @@ func (i *AttestationWhereInput) P() (predicate.Attestation, error) {
 			with = append(with, p)
 		}
 		predicates = append(predicates, attestation.HasAttestationCollectionWith(with...))
+	}
+	if i.HasGitAttestation != nil {
+		p := attestation.HasGitAttestation()
+		if !*i.HasGitAttestation {
+			p = attestation.Not(p)
+		}
+		predicates = append(predicates, p)
+	}
+	if len(i.HasGitAttestationWith) > 0 {
+		with := make([]predicate.GitAttestation, 0, len(i.HasGitAttestationWith))
+		for _, w := range i.HasGitAttestationWith {
+			p, err := w.P()
+			if err != nil {
+				return nil, fmt.Errorf("%w: field 'HasGitAttestationWith'", err)
+			}
+			with = append(with, p)
+		}
+		predicates = append(predicates, attestation.HasGitAttestationWith(with...))
 	}
 	switch len(predicates) {
 	case 0:
@@ -938,6 +961,746 @@ func (i *DsseWhereInput) P() (predicate.Dsse, error) {
 		return predicates[0], nil
 	default:
 		return dsse.And(predicates...), nil
+	}
+}
+
+// GitAttestationWhereInput represents a where input for filtering GitAttestation queries.
+type GitAttestationWhereInput struct {
+	Predicates []predicate.GitAttestation  `json:"-"`
+	Not        *GitAttestationWhereInput   `json:"not,omitempty"`
+	Or         []*GitAttestationWhereInput `json:"or,omitempty"`
+	And        []*GitAttestationWhereInput `json:"and,omitempty"`
+
+	// "id" field predicates.
+	ID      *uuid.UUID  `json:"id,omitempty"`
+	IDNEQ   *uuid.UUID  `json:"idNEQ,omitempty"`
+	IDIn    []uuid.UUID `json:"idIn,omitempty"`
+	IDNotIn []uuid.UUID `json:"idNotIn,omitempty"`
+	IDGT    *uuid.UUID  `json:"idGT,omitempty"`
+	IDGTE   *uuid.UUID  `json:"idGTE,omitempty"`
+	IDLT    *uuid.UUID  `json:"idLT,omitempty"`
+	IDLTE   *uuid.UUID  `json:"idLTE,omitempty"`
+
+	// "commit_hash" field predicates.
+	CommitHash             *string  `json:"commitHash,omitempty"`
+	CommitHashNEQ          *string  `json:"commitHashNEQ,omitempty"`
+	CommitHashIn           []string `json:"commitHashIn,omitempty"`
+	CommitHashNotIn        []string `json:"commitHashNotIn,omitempty"`
+	CommitHashGT           *string  `json:"commitHashGT,omitempty"`
+	CommitHashGTE          *string  `json:"commitHashGTE,omitempty"`
+	CommitHashLT           *string  `json:"commitHashLT,omitempty"`
+	CommitHashLTE          *string  `json:"commitHashLTE,omitempty"`
+	CommitHashContains     *string  `json:"commitHashContains,omitempty"`
+	CommitHashHasPrefix    *string  `json:"commitHashHasPrefix,omitempty"`
+	CommitHashHasSuffix    *string  `json:"commitHashHasSuffix,omitempty"`
+	CommitHashEqualFold    *string  `json:"commitHashEqualFold,omitempty"`
+	CommitHashContainsFold *string  `json:"commitHashContainsFold,omitempty"`
+
+	// "author" field predicates.
+	Author             *string  `json:"author,omitempty"`
+	AuthorNEQ          *string  `json:"authorNEQ,omitempty"`
+	AuthorIn           []string `json:"authorIn,omitempty"`
+	AuthorNotIn        []string `json:"authorNotIn,omitempty"`
+	AuthorGT           *string  `json:"authorGT,omitempty"`
+	AuthorGTE          *string  `json:"authorGTE,omitempty"`
+	AuthorLT           *string  `json:"authorLT,omitempty"`
+	AuthorLTE          *string  `json:"authorLTE,omitempty"`
+	AuthorContains     *string  `json:"authorContains,omitempty"`
+	AuthorHasPrefix    *string  `json:"authorHasPrefix,omitempty"`
+	AuthorHasSuffix    *string  `json:"authorHasSuffix,omitempty"`
+	AuthorEqualFold    *string  `json:"authorEqualFold,omitempty"`
+	AuthorContainsFold *string  `json:"authorContainsFold,omitempty"`
+
+	// "author_email" field predicates.
+	AuthorEmail             *string  `json:"authorEmail,omitempty"`
+	AuthorEmailNEQ          *string  `json:"authorEmailNEQ,omitempty"`
+	AuthorEmailIn           []string `json:"authorEmailIn,omitempty"`
+	AuthorEmailNotIn        []string `json:"authorEmailNotIn,omitempty"`
+	AuthorEmailGT           *string  `json:"authorEmailGT,omitempty"`
+	AuthorEmailGTE          *string  `json:"authorEmailGTE,omitempty"`
+	AuthorEmailLT           *string  `json:"authorEmailLT,omitempty"`
+	AuthorEmailLTE          *string  `json:"authorEmailLTE,omitempty"`
+	AuthorEmailContains     *string  `json:"authorEmailContains,omitempty"`
+	AuthorEmailHasPrefix    *string  `json:"authorEmailHasPrefix,omitempty"`
+	AuthorEmailHasSuffix    *string  `json:"authorEmailHasSuffix,omitempty"`
+	AuthorEmailEqualFold    *string  `json:"authorEmailEqualFold,omitempty"`
+	AuthorEmailContainsFold *string  `json:"authorEmailContainsFold,omitempty"`
+
+	// "committer_name" field predicates.
+	CommitterName             *string  `json:"committerName,omitempty"`
+	CommitterNameNEQ          *string  `json:"committerNameNEQ,omitempty"`
+	CommitterNameIn           []string `json:"committerNameIn,omitempty"`
+	CommitterNameNotIn        []string `json:"committerNameNotIn,omitempty"`
+	CommitterNameGT           *string  `json:"committerNameGT,omitempty"`
+	CommitterNameGTE          *string  `json:"committerNameGTE,omitempty"`
+	CommitterNameLT           *string  `json:"committerNameLT,omitempty"`
+	CommitterNameLTE          *string  `json:"committerNameLTE,omitempty"`
+	CommitterNameContains     *string  `json:"committerNameContains,omitempty"`
+	CommitterNameHasPrefix    *string  `json:"committerNameHasPrefix,omitempty"`
+	CommitterNameHasSuffix    *string  `json:"committerNameHasSuffix,omitempty"`
+	CommitterNameEqualFold    *string  `json:"committerNameEqualFold,omitempty"`
+	CommitterNameContainsFold *string  `json:"committerNameContainsFold,omitempty"`
+
+	// "committer_email" field predicates.
+	CommitterEmail             *string  `json:"committerEmail,omitempty"`
+	CommitterEmailNEQ          *string  `json:"committerEmailNEQ,omitempty"`
+	CommitterEmailIn           []string `json:"committerEmailIn,omitempty"`
+	CommitterEmailNotIn        []string `json:"committerEmailNotIn,omitempty"`
+	CommitterEmailGT           *string  `json:"committerEmailGT,omitempty"`
+	CommitterEmailGTE          *string  `json:"committerEmailGTE,omitempty"`
+	CommitterEmailLT           *string  `json:"committerEmailLT,omitempty"`
+	CommitterEmailLTE          *string  `json:"committerEmailLTE,omitempty"`
+	CommitterEmailContains     *string  `json:"committerEmailContains,omitempty"`
+	CommitterEmailHasPrefix    *string  `json:"committerEmailHasPrefix,omitempty"`
+	CommitterEmailHasSuffix    *string  `json:"committerEmailHasSuffix,omitempty"`
+	CommitterEmailEqualFold    *string  `json:"committerEmailEqualFold,omitempty"`
+	CommitterEmailContainsFold *string  `json:"committerEmailContainsFold,omitempty"`
+
+	// "commit_date" field predicates.
+	CommitDate             *string  `json:"commitDate,omitempty"`
+	CommitDateNEQ          *string  `json:"commitDateNEQ,omitempty"`
+	CommitDateIn           []string `json:"commitDateIn,omitempty"`
+	CommitDateNotIn        []string `json:"commitDateNotIn,omitempty"`
+	CommitDateGT           *string  `json:"commitDateGT,omitempty"`
+	CommitDateGTE          *string  `json:"commitDateGTE,omitempty"`
+	CommitDateLT           *string  `json:"commitDateLT,omitempty"`
+	CommitDateLTE          *string  `json:"commitDateLTE,omitempty"`
+	CommitDateContains     *string  `json:"commitDateContains,omitempty"`
+	CommitDateHasPrefix    *string  `json:"commitDateHasPrefix,omitempty"`
+	CommitDateHasSuffix    *string  `json:"commitDateHasSuffix,omitempty"`
+	CommitDateEqualFold    *string  `json:"commitDateEqualFold,omitempty"`
+	CommitDateContainsFold *string  `json:"commitDateContainsFold,omitempty"`
+
+	// "commit_message" field predicates.
+	CommitMessage             *string  `json:"commitMessage,omitempty"`
+	CommitMessageNEQ          *string  `json:"commitMessageNEQ,omitempty"`
+	CommitMessageIn           []string `json:"commitMessageIn,omitempty"`
+	CommitMessageNotIn        []string `json:"commitMessageNotIn,omitempty"`
+	CommitMessageGT           *string  `json:"commitMessageGT,omitempty"`
+	CommitMessageGTE          *string  `json:"commitMessageGTE,omitempty"`
+	CommitMessageLT           *string  `json:"commitMessageLT,omitempty"`
+	CommitMessageLTE          *string  `json:"commitMessageLTE,omitempty"`
+	CommitMessageContains     *string  `json:"commitMessageContains,omitempty"`
+	CommitMessageHasPrefix    *string  `json:"commitMessageHasPrefix,omitempty"`
+	CommitMessageHasSuffix    *string  `json:"commitMessageHasSuffix,omitempty"`
+	CommitMessageEqualFold    *string  `json:"commitMessageEqualFold,omitempty"`
+	CommitMessageContainsFold *string  `json:"commitMessageContainsFold,omitempty"`
+
+	// "commit_type" field predicates.
+	CommitType             *string  `json:"commitType,omitempty"`
+	CommitTypeNEQ          *string  `json:"commitTypeNEQ,omitempty"`
+	CommitTypeIn           []string `json:"commitTypeIn,omitempty"`
+	CommitTypeNotIn        []string `json:"commitTypeNotIn,omitempty"`
+	CommitTypeGT           *string  `json:"commitTypeGT,omitempty"`
+	CommitTypeGTE          *string  `json:"commitTypeGTE,omitempty"`
+	CommitTypeLT           *string  `json:"commitTypeLT,omitempty"`
+	CommitTypeLTE          *string  `json:"commitTypeLTE,omitempty"`
+	CommitTypeContains     *string  `json:"commitTypeContains,omitempty"`
+	CommitTypeHasPrefix    *string  `json:"commitTypeHasPrefix,omitempty"`
+	CommitTypeHasSuffix    *string  `json:"commitTypeHasSuffix,omitempty"`
+	CommitTypeEqualFold    *string  `json:"commitTypeEqualFold,omitempty"`
+	CommitTypeContainsFold *string  `json:"commitTypeContainsFold,omitempty"`
+
+	// "commit_digest" field predicates.
+	CommitDigest             *string  `json:"commitDigest,omitempty"`
+	CommitDigestNEQ          *string  `json:"commitDigestNEQ,omitempty"`
+	CommitDigestIn           []string `json:"commitDigestIn,omitempty"`
+	CommitDigestNotIn        []string `json:"commitDigestNotIn,omitempty"`
+	CommitDigestGT           *string  `json:"commitDigestGT,omitempty"`
+	CommitDigestGTE          *string  `json:"commitDigestGTE,omitempty"`
+	CommitDigestLT           *string  `json:"commitDigestLT,omitempty"`
+	CommitDigestLTE          *string  `json:"commitDigestLTE,omitempty"`
+	CommitDigestContains     *string  `json:"commitDigestContains,omitempty"`
+	CommitDigestHasPrefix    *string  `json:"commitDigestHasPrefix,omitempty"`
+	CommitDigestHasSuffix    *string  `json:"commitDigestHasSuffix,omitempty"`
+	CommitDigestEqualFold    *string  `json:"commitDigestEqualFold,omitempty"`
+	CommitDigestContainsFold *string  `json:"commitDigestContainsFold,omitempty"`
+
+	// "signature" field predicates.
+	Signature             *string  `json:"signature,omitempty"`
+	SignatureNEQ          *string  `json:"signatureNEQ,omitempty"`
+	SignatureIn           []string `json:"signatureIn,omitempty"`
+	SignatureNotIn        []string `json:"signatureNotIn,omitempty"`
+	SignatureGT           *string  `json:"signatureGT,omitempty"`
+	SignatureGTE          *string  `json:"signatureGTE,omitempty"`
+	SignatureLT           *string  `json:"signatureLT,omitempty"`
+	SignatureLTE          *string  `json:"signatureLTE,omitempty"`
+	SignatureContains     *string  `json:"signatureContains,omitempty"`
+	SignatureHasPrefix    *string  `json:"signatureHasPrefix,omitempty"`
+	SignatureHasSuffix    *string  `json:"signatureHasSuffix,omitempty"`
+	SignatureEqualFold    *string  `json:"signatureEqualFold,omitempty"`
+	SignatureContainsFold *string  `json:"signatureContainsFold,omitempty"`
+
+	// "tree_hash" field predicates.
+	TreeHash             *string  `json:"treeHash,omitempty"`
+	TreeHashNEQ          *string  `json:"treeHashNEQ,omitempty"`
+	TreeHashIn           []string `json:"treeHashIn,omitempty"`
+	TreeHashNotIn        []string `json:"treeHashNotIn,omitempty"`
+	TreeHashGT           *string  `json:"treeHashGT,omitempty"`
+	TreeHashGTE          *string  `json:"treeHashGTE,omitempty"`
+	TreeHashLT           *string  `json:"treeHashLT,omitempty"`
+	TreeHashLTE          *string  `json:"treeHashLTE,omitempty"`
+	TreeHashContains     *string  `json:"treeHashContains,omitempty"`
+	TreeHashHasPrefix    *string  `json:"treeHashHasPrefix,omitempty"`
+	TreeHashHasSuffix    *string  `json:"treeHashHasSuffix,omitempty"`
+	TreeHashEqualFold    *string  `json:"treeHashEqualFold,omitempty"`
+	TreeHashContainsFold *string  `json:"treeHashContainsFold,omitempty"`
+
+	// "attestation" edge predicates.
+	HasAttestation     *bool                    `json:"hasAttestation,omitempty"`
+	HasAttestationWith []*AttestationWhereInput `json:"hasAttestationWith,omitempty"`
+}
+
+// AddPredicates adds custom predicates to the where input to be used during the filtering phase.
+func (i *GitAttestationWhereInput) AddPredicates(predicates ...predicate.GitAttestation) {
+	i.Predicates = append(i.Predicates, predicates...)
+}
+
+// Filter applies the GitAttestationWhereInput filter on the GitAttestationQuery builder.
+func (i *GitAttestationWhereInput) Filter(q *GitAttestationQuery) (*GitAttestationQuery, error) {
+	if i == nil {
+		return q, nil
+	}
+	p, err := i.P()
+	if err != nil {
+		if err == ErrEmptyGitAttestationWhereInput {
+			return q, nil
+		}
+		return nil, err
+	}
+	return q.Where(p), nil
+}
+
+// ErrEmptyGitAttestationWhereInput is returned in case the GitAttestationWhereInput is empty.
+var ErrEmptyGitAttestationWhereInput = errors.New("ent: empty predicate GitAttestationWhereInput")
+
+// P returns a predicate for filtering gitattestations.
+// An error is returned if the input is empty or invalid.
+func (i *GitAttestationWhereInput) P() (predicate.GitAttestation, error) {
+	var predicates []predicate.GitAttestation
+	if i.Not != nil {
+		p, err := i.Not.P()
+		if err != nil {
+			return nil, fmt.Errorf("%w: field 'not'", err)
+		}
+		predicates = append(predicates, gitattestation.Not(p))
+	}
+	switch n := len(i.Or); {
+	case n == 1:
+		p, err := i.Or[0].P()
+		if err != nil {
+			return nil, fmt.Errorf("%w: field 'or'", err)
+		}
+		predicates = append(predicates, p)
+	case n > 1:
+		or := make([]predicate.GitAttestation, 0, n)
+		for _, w := range i.Or {
+			p, err := w.P()
+			if err != nil {
+				return nil, fmt.Errorf("%w: field 'or'", err)
+			}
+			or = append(or, p)
+		}
+		predicates = append(predicates, gitattestation.Or(or...))
+	}
+	switch n := len(i.And); {
+	case n == 1:
+		p, err := i.And[0].P()
+		if err != nil {
+			return nil, fmt.Errorf("%w: field 'and'", err)
+		}
+		predicates = append(predicates, p)
+	case n > 1:
+		and := make([]predicate.GitAttestation, 0, n)
+		for _, w := range i.And {
+			p, err := w.P()
+			if err != nil {
+				return nil, fmt.Errorf("%w: field 'and'", err)
+			}
+			and = append(and, p)
+		}
+		predicates = append(predicates, gitattestation.And(and...))
+	}
+	predicates = append(predicates, i.Predicates...)
+	if i.ID != nil {
+		predicates = append(predicates, gitattestation.IDEQ(*i.ID))
+	}
+	if i.IDNEQ != nil {
+		predicates = append(predicates, gitattestation.IDNEQ(*i.IDNEQ))
+	}
+	if len(i.IDIn) > 0 {
+		predicates = append(predicates, gitattestation.IDIn(i.IDIn...))
+	}
+	if len(i.IDNotIn) > 0 {
+		predicates = append(predicates, gitattestation.IDNotIn(i.IDNotIn...))
+	}
+	if i.IDGT != nil {
+		predicates = append(predicates, gitattestation.IDGT(*i.IDGT))
+	}
+	if i.IDGTE != nil {
+		predicates = append(predicates, gitattestation.IDGTE(*i.IDGTE))
+	}
+	if i.IDLT != nil {
+		predicates = append(predicates, gitattestation.IDLT(*i.IDLT))
+	}
+	if i.IDLTE != nil {
+		predicates = append(predicates, gitattestation.IDLTE(*i.IDLTE))
+	}
+	if i.CommitHash != nil {
+		predicates = append(predicates, gitattestation.CommitHashEQ(*i.CommitHash))
+	}
+	if i.CommitHashNEQ != nil {
+		predicates = append(predicates, gitattestation.CommitHashNEQ(*i.CommitHashNEQ))
+	}
+	if len(i.CommitHashIn) > 0 {
+		predicates = append(predicates, gitattestation.CommitHashIn(i.CommitHashIn...))
+	}
+	if len(i.CommitHashNotIn) > 0 {
+		predicates = append(predicates, gitattestation.CommitHashNotIn(i.CommitHashNotIn...))
+	}
+	if i.CommitHashGT != nil {
+		predicates = append(predicates, gitattestation.CommitHashGT(*i.CommitHashGT))
+	}
+	if i.CommitHashGTE != nil {
+		predicates = append(predicates, gitattestation.CommitHashGTE(*i.CommitHashGTE))
+	}
+	if i.CommitHashLT != nil {
+		predicates = append(predicates, gitattestation.CommitHashLT(*i.CommitHashLT))
+	}
+	if i.CommitHashLTE != nil {
+		predicates = append(predicates, gitattestation.CommitHashLTE(*i.CommitHashLTE))
+	}
+	if i.CommitHashContains != nil {
+		predicates = append(predicates, gitattestation.CommitHashContains(*i.CommitHashContains))
+	}
+	if i.CommitHashHasPrefix != nil {
+		predicates = append(predicates, gitattestation.CommitHashHasPrefix(*i.CommitHashHasPrefix))
+	}
+	if i.CommitHashHasSuffix != nil {
+		predicates = append(predicates, gitattestation.CommitHashHasSuffix(*i.CommitHashHasSuffix))
+	}
+	if i.CommitHashEqualFold != nil {
+		predicates = append(predicates, gitattestation.CommitHashEqualFold(*i.CommitHashEqualFold))
+	}
+	if i.CommitHashContainsFold != nil {
+		predicates = append(predicates, gitattestation.CommitHashContainsFold(*i.CommitHashContainsFold))
+	}
+	if i.Author != nil {
+		predicates = append(predicates, gitattestation.AuthorEQ(*i.Author))
+	}
+	if i.AuthorNEQ != nil {
+		predicates = append(predicates, gitattestation.AuthorNEQ(*i.AuthorNEQ))
+	}
+	if len(i.AuthorIn) > 0 {
+		predicates = append(predicates, gitattestation.AuthorIn(i.AuthorIn...))
+	}
+	if len(i.AuthorNotIn) > 0 {
+		predicates = append(predicates, gitattestation.AuthorNotIn(i.AuthorNotIn...))
+	}
+	if i.AuthorGT != nil {
+		predicates = append(predicates, gitattestation.AuthorGT(*i.AuthorGT))
+	}
+	if i.AuthorGTE != nil {
+		predicates = append(predicates, gitattestation.AuthorGTE(*i.AuthorGTE))
+	}
+	if i.AuthorLT != nil {
+		predicates = append(predicates, gitattestation.AuthorLT(*i.AuthorLT))
+	}
+	if i.AuthorLTE != nil {
+		predicates = append(predicates, gitattestation.AuthorLTE(*i.AuthorLTE))
+	}
+	if i.AuthorContains != nil {
+		predicates = append(predicates, gitattestation.AuthorContains(*i.AuthorContains))
+	}
+	if i.AuthorHasPrefix != nil {
+		predicates = append(predicates, gitattestation.AuthorHasPrefix(*i.AuthorHasPrefix))
+	}
+	if i.AuthorHasSuffix != nil {
+		predicates = append(predicates, gitattestation.AuthorHasSuffix(*i.AuthorHasSuffix))
+	}
+	if i.AuthorEqualFold != nil {
+		predicates = append(predicates, gitattestation.AuthorEqualFold(*i.AuthorEqualFold))
+	}
+	if i.AuthorContainsFold != nil {
+		predicates = append(predicates, gitattestation.AuthorContainsFold(*i.AuthorContainsFold))
+	}
+	if i.AuthorEmail != nil {
+		predicates = append(predicates, gitattestation.AuthorEmailEQ(*i.AuthorEmail))
+	}
+	if i.AuthorEmailNEQ != nil {
+		predicates = append(predicates, gitattestation.AuthorEmailNEQ(*i.AuthorEmailNEQ))
+	}
+	if len(i.AuthorEmailIn) > 0 {
+		predicates = append(predicates, gitattestation.AuthorEmailIn(i.AuthorEmailIn...))
+	}
+	if len(i.AuthorEmailNotIn) > 0 {
+		predicates = append(predicates, gitattestation.AuthorEmailNotIn(i.AuthorEmailNotIn...))
+	}
+	if i.AuthorEmailGT != nil {
+		predicates = append(predicates, gitattestation.AuthorEmailGT(*i.AuthorEmailGT))
+	}
+	if i.AuthorEmailGTE != nil {
+		predicates = append(predicates, gitattestation.AuthorEmailGTE(*i.AuthorEmailGTE))
+	}
+	if i.AuthorEmailLT != nil {
+		predicates = append(predicates, gitattestation.AuthorEmailLT(*i.AuthorEmailLT))
+	}
+	if i.AuthorEmailLTE != nil {
+		predicates = append(predicates, gitattestation.AuthorEmailLTE(*i.AuthorEmailLTE))
+	}
+	if i.AuthorEmailContains != nil {
+		predicates = append(predicates, gitattestation.AuthorEmailContains(*i.AuthorEmailContains))
+	}
+	if i.AuthorEmailHasPrefix != nil {
+		predicates = append(predicates, gitattestation.AuthorEmailHasPrefix(*i.AuthorEmailHasPrefix))
+	}
+	if i.AuthorEmailHasSuffix != nil {
+		predicates = append(predicates, gitattestation.AuthorEmailHasSuffix(*i.AuthorEmailHasSuffix))
+	}
+	if i.AuthorEmailEqualFold != nil {
+		predicates = append(predicates, gitattestation.AuthorEmailEqualFold(*i.AuthorEmailEqualFold))
+	}
+	if i.AuthorEmailContainsFold != nil {
+		predicates = append(predicates, gitattestation.AuthorEmailContainsFold(*i.AuthorEmailContainsFold))
+	}
+	if i.CommitterName != nil {
+		predicates = append(predicates, gitattestation.CommitterNameEQ(*i.CommitterName))
+	}
+	if i.CommitterNameNEQ != nil {
+		predicates = append(predicates, gitattestation.CommitterNameNEQ(*i.CommitterNameNEQ))
+	}
+	if len(i.CommitterNameIn) > 0 {
+		predicates = append(predicates, gitattestation.CommitterNameIn(i.CommitterNameIn...))
+	}
+	if len(i.CommitterNameNotIn) > 0 {
+		predicates = append(predicates, gitattestation.CommitterNameNotIn(i.CommitterNameNotIn...))
+	}
+	if i.CommitterNameGT != nil {
+		predicates = append(predicates, gitattestation.CommitterNameGT(*i.CommitterNameGT))
+	}
+	if i.CommitterNameGTE != nil {
+		predicates = append(predicates, gitattestation.CommitterNameGTE(*i.CommitterNameGTE))
+	}
+	if i.CommitterNameLT != nil {
+		predicates = append(predicates, gitattestation.CommitterNameLT(*i.CommitterNameLT))
+	}
+	if i.CommitterNameLTE != nil {
+		predicates = append(predicates, gitattestation.CommitterNameLTE(*i.CommitterNameLTE))
+	}
+	if i.CommitterNameContains != nil {
+		predicates = append(predicates, gitattestation.CommitterNameContains(*i.CommitterNameContains))
+	}
+	if i.CommitterNameHasPrefix != nil {
+		predicates = append(predicates, gitattestation.CommitterNameHasPrefix(*i.CommitterNameHasPrefix))
+	}
+	if i.CommitterNameHasSuffix != nil {
+		predicates = append(predicates, gitattestation.CommitterNameHasSuffix(*i.CommitterNameHasSuffix))
+	}
+	if i.CommitterNameEqualFold != nil {
+		predicates = append(predicates, gitattestation.CommitterNameEqualFold(*i.CommitterNameEqualFold))
+	}
+	if i.CommitterNameContainsFold != nil {
+		predicates = append(predicates, gitattestation.CommitterNameContainsFold(*i.CommitterNameContainsFold))
+	}
+	if i.CommitterEmail != nil {
+		predicates = append(predicates, gitattestation.CommitterEmailEQ(*i.CommitterEmail))
+	}
+	if i.CommitterEmailNEQ != nil {
+		predicates = append(predicates, gitattestation.CommitterEmailNEQ(*i.CommitterEmailNEQ))
+	}
+	if len(i.CommitterEmailIn) > 0 {
+		predicates = append(predicates, gitattestation.CommitterEmailIn(i.CommitterEmailIn...))
+	}
+	if len(i.CommitterEmailNotIn) > 0 {
+		predicates = append(predicates, gitattestation.CommitterEmailNotIn(i.CommitterEmailNotIn...))
+	}
+	if i.CommitterEmailGT != nil {
+		predicates = append(predicates, gitattestation.CommitterEmailGT(*i.CommitterEmailGT))
+	}
+	if i.CommitterEmailGTE != nil {
+		predicates = append(predicates, gitattestation.CommitterEmailGTE(*i.CommitterEmailGTE))
+	}
+	if i.CommitterEmailLT != nil {
+		predicates = append(predicates, gitattestation.CommitterEmailLT(*i.CommitterEmailLT))
+	}
+	if i.CommitterEmailLTE != nil {
+		predicates = append(predicates, gitattestation.CommitterEmailLTE(*i.CommitterEmailLTE))
+	}
+	if i.CommitterEmailContains != nil {
+		predicates = append(predicates, gitattestation.CommitterEmailContains(*i.CommitterEmailContains))
+	}
+	if i.CommitterEmailHasPrefix != nil {
+		predicates = append(predicates, gitattestation.CommitterEmailHasPrefix(*i.CommitterEmailHasPrefix))
+	}
+	if i.CommitterEmailHasSuffix != nil {
+		predicates = append(predicates, gitattestation.CommitterEmailHasSuffix(*i.CommitterEmailHasSuffix))
+	}
+	if i.CommitterEmailEqualFold != nil {
+		predicates = append(predicates, gitattestation.CommitterEmailEqualFold(*i.CommitterEmailEqualFold))
+	}
+	if i.CommitterEmailContainsFold != nil {
+		predicates = append(predicates, gitattestation.CommitterEmailContainsFold(*i.CommitterEmailContainsFold))
+	}
+	if i.CommitDate != nil {
+		predicates = append(predicates, gitattestation.CommitDateEQ(*i.CommitDate))
+	}
+	if i.CommitDateNEQ != nil {
+		predicates = append(predicates, gitattestation.CommitDateNEQ(*i.CommitDateNEQ))
+	}
+	if len(i.CommitDateIn) > 0 {
+		predicates = append(predicates, gitattestation.CommitDateIn(i.CommitDateIn...))
+	}
+	if len(i.CommitDateNotIn) > 0 {
+		predicates = append(predicates, gitattestation.CommitDateNotIn(i.CommitDateNotIn...))
+	}
+	if i.CommitDateGT != nil {
+		predicates = append(predicates, gitattestation.CommitDateGT(*i.CommitDateGT))
+	}
+	if i.CommitDateGTE != nil {
+		predicates = append(predicates, gitattestation.CommitDateGTE(*i.CommitDateGTE))
+	}
+	if i.CommitDateLT != nil {
+		predicates = append(predicates, gitattestation.CommitDateLT(*i.CommitDateLT))
+	}
+	if i.CommitDateLTE != nil {
+		predicates = append(predicates, gitattestation.CommitDateLTE(*i.CommitDateLTE))
+	}
+	if i.CommitDateContains != nil {
+		predicates = append(predicates, gitattestation.CommitDateContains(*i.CommitDateContains))
+	}
+	if i.CommitDateHasPrefix != nil {
+		predicates = append(predicates, gitattestation.CommitDateHasPrefix(*i.CommitDateHasPrefix))
+	}
+	if i.CommitDateHasSuffix != nil {
+		predicates = append(predicates, gitattestation.CommitDateHasSuffix(*i.CommitDateHasSuffix))
+	}
+	if i.CommitDateEqualFold != nil {
+		predicates = append(predicates, gitattestation.CommitDateEqualFold(*i.CommitDateEqualFold))
+	}
+	if i.CommitDateContainsFold != nil {
+		predicates = append(predicates, gitattestation.CommitDateContainsFold(*i.CommitDateContainsFold))
+	}
+	if i.CommitMessage != nil {
+		predicates = append(predicates, gitattestation.CommitMessageEQ(*i.CommitMessage))
+	}
+	if i.CommitMessageNEQ != nil {
+		predicates = append(predicates, gitattestation.CommitMessageNEQ(*i.CommitMessageNEQ))
+	}
+	if len(i.CommitMessageIn) > 0 {
+		predicates = append(predicates, gitattestation.CommitMessageIn(i.CommitMessageIn...))
+	}
+	if len(i.CommitMessageNotIn) > 0 {
+		predicates = append(predicates, gitattestation.CommitMessageNotIn(i.CommitMessageNotIn...))
+	}
+	if i.CommitMessageGT != nil {
+		predicates = append(predicates, gitattestation.CommitMessageGT(*i.CommitMessageGT))
+	}
+	if i.CommitMessageGTE != nil {
+		predicates = append(predicates, gitattestation.CommitMessageGTE(*i.CommitMessageGTE))
+	}
+	if i.CommitMessageLT != nil {
+		predicates = append(predicates, gitattestation.CommitMessageLT(*i.CommitMessageLT))
+	}
+	if i.CommitMessageLTE != nil {
+		predicates = append(predicates, gitattestation.CommitMessageLTE(*i.CommitMessageLTE))
+	}
+	if i.CommitMessageContains != nil {
+		predicates = append(predicates, gitattestation.CommitMessageContains(*i.CommitMessageContains))
+	}
+	if i.CommitMessageHasPrefix != nil {
+		predicates = append(predicates, gitattestation.CommitMessageHasPrefix(*i.CommitMessageHasPrefix))
+	}
+	if i.CommitMessageHasSuffix != nil {
+		predicates = append(predicates, gitattestation.CommitMessageHasSuffix(*i.CommitMessageHasSuffix))
+	}
+	if i.CommitMessageEqualFold != nil {
+		predicates = append(predicates, gitattestation.CommitMessageEqualFold(*i.CommitMessageEqualFold))
+	}
+	if i.CommitMessageContainsFold != nil {
+		predicates = append(predicates, gitattestation.CommitMessageContainsFold(*i.CommitMessageContainsFold))
+	}
+	if i.CommitType != nil {
+		predicates = append(predicates, gitattestation.CommitTypeEQ(*i.CommitType))
+	}
+	if i.CommitTypeNEQ != nil {
+		predicates = append(predicates, gitattestation.CommitTypeNEQ(*i.CommitTypeNEQ))
+	}
+	if len(i.CommitTypeIn) > 0 {
+		predicates = append(predicates, gitattestation.CommitTypeIn(i.CommitTypeIn...))
+	}
+	if len(i.CommitTypeNotIn) > 0 {
+		predicates = append(predicates, gitattestation.CommitTypeNotIn(i.CommitTypeNotIn...))
+	}
+	if i.CommitTypeGT != nil {
+		predicates = append(predicates, gitattestation.CommitTypeGT(*i.CommitTypeGT))
+	}
+	if i.CommitTypeGTE != nil {
+		predicates = append(predicates, gitattestation.CommitTypeGTE(*i.CommitTypeGTE))
+	}
+	if i.CommitTypeLT != nil {
+		predicates = append(predicates, gitattestation.CommitTypeLT(*i.CommitTypeLT))
+	}
+	if i.CommitTypeLTE != nil {
+		predicates = append(predicates, gitattestation.CommitTypeLTE(*i.CommitTypeLTE))
+	}
+	if i.CommitTypeContains != nil {
+		predicates = append(predicates, gitattestation.CommitTypeContains(*i.CommitTypeContains))
+	}
+	if i.CommitTypeHasPrefix != nil {
+		predicates = append(predicates, gitattestation.CommitTypeHasPrefix(*i.CommitTypeHasPrefix))
+	}
+	if i.CommitTypeHasSuffix != nil {
+		predicates = append(predicates, gitattestation.CommitTypeHasSuffix(*i.CommitTypeHasSuffix))
+	}
+	if i.CommitTypeEqualFold != nil {
+		predicates = append(predicates, gitattestation.CommitTypeEqualFold(*i.CommitTypeEqualFold))
+	}
+	if i.CommitTypeContainsFold != nil {
+		predicates = append(predicates, gitattestation.CommitTypeContainsFold(*i.CommitTypeContainsFold))
+	}
+	if i.CommitDigest != nil {
+		predicates = append(predicates, gitattestation.CommitDigestEQ(*i.CommitDigest))
+	}
+	if i.CommitDigestNEQ != nil {
+		predicates = append(predicates, gitattestation.CommitDigestNEQ(*i.CommitDigestNEQ))
+	}
+	if len(i.CommitDigestIn) > 0 {
+		predicates = append(predicates, gitattestation.CommitDigestIn(i.CommitDigestIn...))
+	}
+	if len(i.CommitDigestNotIn) > 0 {
+		predicates = append(predicates, gitattestation.CommitDigestNotIn(i.CommitDigestNotIn...))
+	}
+	if i.CommitDigestGT != nil {
+		predicates = append(predicates, gitattestation.CommitDigestGT(*i.CommitDigestGT))
+	}
+	if i.CommitDigestGTE != nil {
+		predicates = append(predicates, gitattestation.CommitDigestGTE(*i.CommitDigestGTE))
+	}
+	if i.CommitDigestLT != nil {
+		predicates = append(predicates, gitattestation.CommitDigestLT(*i.CommitDigestLT))
+	}
+	if i.CommitDigestLTE != nil {
+		predicates = append(predicates, gitattestation.CommitDigestLTE(*i.CommitDigestLTE))
+	}
+	if i.CommitDigestContains != nil {
+		predicates = append(predicates, gitattestation.CommitDigestContains(*i.CommitDigestContains))
+	}
+	if i.CommitDigestHasPrefix != nil {
+		predicates = append(predicates, gitattestation.CommitDigestHasPrefix(*i.CommitDigestHasPrefix))
+	}
+	if i.CommitDigestHasSuffix != nil {
+		predicates = append(predicates, gitattestation.CommitDigestHasSuffix(*i.CommitDigestHasSuffix))
+	}
+	if i.CommitDigestEqualFold != nil {
+		predicates = append(predicates, gitattestation.CommitDigestEqualFold(*i.CommitDigestEqualFold))
+	}
+	if i.CommitDigestContainsFold != nil {
+		predicates = append(predicates, gitattestation.CommitDigestContainsFold(*i.CommitDigestContainsFold))
+	}
+	if i.Signature != nil {
+		predicates = append(predicates, gitattestation.SignatureEQ(*i.Signature))
+	}
+	if i.SignatureNEQ != nil {
+		predicates = append(predicates, gitattestation.SignatureNEQ(*i.SignatureNEQ))
+	}
+	if len(i.SignatureIn) > 0 {
+		predicates = append(predicates, gitattestation.SignatureIn(i.SignatureIn...))
+	}
+	if len(i.SignatureNotIn) > 0 {
+		predicates = append(predicates, gitattestation.SignatureNotIn(i.SignatureNotIn...))
+	}
+	if i.SignatureGT != nil {
+		predicates = append(predicates, gitattestation.SignatureGT(*i.SignatureGT))
+	}
+	if i.SignatureGTE != nil {
+		predicates = append(predicates, gitattestation.SignatureGTE(*i.SignatureGTE))
+	}
+	if i.SignatureLT != nil {
+		predicates = append(predicates, gitattestation.SignatureLT(*i.SignatureLT))
+	}
+	if i.SignatureLTE != nil {
+		predicates = append(predicates, gitattestation.SignatureLTE(*i.SignatureLTE))
+	}
+	if i.SignatureContains != nil {
+		predicates = append(predicates, gitattestation.SignatureContains(*i.SignatureContains))
+	}
+	if i.SignatureHasPrefix != nil {
+		predicates = append(predicates, gitattestation.SignatureHasPrefix(*i.SignatureHasPrefix))
+	}
+	if i.SignatureHasSuffix != nil {
+		predicates = append(predicates, gitattestation.SignatureHasSuffix(*i.SignatureHasSuffix))
+	}
+	if i.SignatureEqualFold != nil {
+		predicates = append(predicates, gitattestation.SignatureEqualFold(*i.SignatureEqualFold))
+	}
+	if i.SignatureContainsFold != nil {
+		predicates = append(predicates, gitattestation.SignatureContainsFold(*i.SignatureContainsFold))
+	}
+	if i.TreeHash != nil {
+		predicates = append(predicates, gitattestation.TreeHashEQ(*i.TreeHash))
+	}
+	if i.TreeHashNEQ != nil {
+		predicates = append(predicates, gitattestation.TreeHashNEQ(*i.TreeHashNEQ))
+	}
+	if len(i.TreeHashIn) > 0 {
+		predicates = append(predicates, gitattestation.TreeHashIn(i.TreeHashIn...))
+	}
+	if len(i.TreeHashNotIn) > 0 {
+		predicates = append(predicates, gitattestation.TreeHashNotIn(i.TreeHashNotIn...))
+	}
+	if i.TreeHashGT != nil {
+		predicates = append(predicates, gitattestation.TreeHashGT(*i.TreeHashGT))
+	}
+	if i.TreeHashGTE != nil {
+		predicates = append(predicates, gitattestation.TreeHashGTE(*i.TreeHashGTE))
+	}
+	if i.TreeHashLT != nil {
+		predicates = append(predicates, gitattestation.TreeHashLT(*i.TreeHashLT))
+	}
+	if i.TreeHashLTE != nil {
+		predicates = append(predicates, gitattestation.TreeHashLTE(*i.TreeHashLTE))
+	}
+	if i.TreeHashContains != nil {
+		predicates = append(predicates, gitattestation.TreeHashContains(*i.TreeHashContains))
+	}
+	if i.TreeHashHasPrefix != nil {
+		predicates = append(predicates, gitattestation.TreeHashHasPrefix(*i.TreeHashHasPrefix))
+	}
+	if i.TreeHashHasSuffix != nil {
+		predicates = append(predicates, gitattestation.TreeHashHasSuffix(*i.TreeHashHasSuffix))
+	}
+	if i.TreeHashEqualFold != nil {
+		predicates = append(predicates, gitattestation.TreeHashEqualFold(*i.TreeHashEqualFold))
+	}
+	if i.TreeHashContainsFold != nil {
+		predicates = append(predicates, gitattestation.TreeHashContainsFold(*i.TreeHashContainsFold))
+	}
+
+	if i.HasAttestation != nil {
+		p := gitattestation.HasAttestation()
+		if !*i.HasAttestation {
+			p = gitattestation.Not(p)
+		}
+		predicates = append(predicates, p)
+	}
+	if len(i.HasAttestationWith) > 0 {
+		with := make([]predicate.Attestation, 0, len(i.HasAttestationWith))
+		for _, w := range i.HasAttestationWith {
+			p, err := w.P()
+			if err != nil {
+				return nil, fmt.Errorf("%w: field 'HasAttestationWith'", err)
+			}
+			with = append(with, p)
+		}
+		predicates = append(predicates, gitattestation.HasAttestationWith(with...))
+	}
+	switch len(predicates) {
+	case 0:
+		return nil, ErrEmptyGitAttestationWhereInput
+	case 1:
+		return predicates[0], nil
+	default:
+		return gitattestation.And(predicates...), nil
 	}
 }
 

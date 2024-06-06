@@ -8,6 +8,7 @@ import (
 	"github.com/in-toto/archivista/ent/attestationcollection"
 	"github.com/in-toto/archivista/ent/attestationpolicy"
 	"github.com/in-toto/archivista/ent/dsse"
+	"github.com/in-toto/archivista/ent/gitattestation"
 	"github.com/in-toto/archivista/ent/payloaddigest"
 	"github.com/in-toto/archivista/ent/schema"
 	"github.com/in-toto/archivista/ent/signature"
@@ -65,6 +66,12 @@ func init() {
 	dsseDescID := dsseFields[0].Descriptor()
 	// dsse.DefaultID holds the default value on creation for the id field.
 	dsse.DefaultID = dsseDescID.Default.(func() uuid.UUID)
+	gitattestationFields := schema.GitAttestation{}.Fields()
+	_ = gitattestationFields
+	// gitattestationDescID is the schema descriptor for id field.
+	gitattestationDescID := gitattestationFields[0].Descriptor()
+	// gitattestation.DefaultID holds the default value on creation for the id field.
+	gitattestation.DefaultID = gitattestationDescID.Default.(func() uuid.UUID)
 	payloaddigestFields := schema.PayloadDigest{}.Fields()
 	_ = payloaddigestFields
 	// payloaddigestDescAlgorithm is the schema descriptor for algorithm field.

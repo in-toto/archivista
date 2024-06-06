@@ -16,6 +16,7 @@ import (
 	"github.com/in-toto/archivista/ent/attestationcollection"
 	"github.com/in-toto/archivista/ent/attestationpolicy"
 	"github.com/in-toto/archivista/ent/dsse"
+	"github.com/in-toto/archivista/ent/gitattestation"
 	"github.com/in-toto/archivista/ent/payloaddigest"
 	"github.com/in-toto/archivista/ent/predicate"
 	"github.com/in-toto/archivista/ent/signature"
@@ -38,6 +39,7 @@ const (
 	TypeAttestationCollection = "AttestationCollection"
 	TypeAttestationPolicy     = "AttestationPolicy"
 	TypeDsse                  = "Dsse"
+	TypeGitAttestation        = "GitAttestation"
 	TypePayloadDigest         = "PayloadDigest"
 	TypeSignature             = "Signature"
 	TypeStatement             = "Statement"
@@ -56,6 +58,8 @@ type AttestationMutation struct {
 	clearedFields                 map[string]struct{}
 	attestation_collection        *uuid.UUID
 	clearedattestation_collection bool
+	git_attestation               *uuid.UUID
+	clearedgit_attestation        bool
 	done                          bool
 	oldValue                      func(context.Context) (*Attestation, error)
 	predicates                    []predicate.Attestation
@@ -240,6 +244,45 @@ func (m *AttestationMutation) ResetAttestationCollection() {
 	m.clearedattestation_collection = false
 }
 
+// SetGitAttestationID sets the "git_attestation" edge to the GitAttestation entity by id.
+func (m *AttestationMutation) SetGitAttestationID(id uuid.UUID) {
+	m.git_attestation = &id
+}
+
+// ClearGitAttestation clears the "git_attestation" edge to the GitAttestation entity.
+func (m *AttestationMutation) ClearGitAttestation() {
+	m.clearedgit_attestation = true
+}
+
+// GitAttestationCleared reports if the "git_attestation" edge to the GitAttestation entity was cleared.
+func (m *AttestationMutation) GitAttestationCleared() bool {
+	return m.clearedgit_attestation
+}
+
+// GitAttestationID returns the "git_attestation" edge ID in the mutation.
+func (m *AttestationMutation) GitAttestationID() (id uuid.UUID, exists bool) {
+	if m.git_attestation != nil {
+		return *m.git_attestation, true
+	}
+	return
+}
+
+// GitAttestationIDs returns the "git_attestation" edge IDs in the mutation.
+// Note that IDs always returns len(IDs) <= 1 for unique edges, and you should use
+// GitAttestationID instead. It exists only for internal usage by the builders.
+func (m *AttestationMutation) GitAttestationIDs() (ids []uuid.UUID) {
+	if id := m.git_attestation; id != nil {
+		ids = append(ids, *id)
+	}
+	return
+}
+
+// ResetGitAttestation resets all changes to the "git_attestation" edge.
+func (m *AttestationMutation) ResetGitAttestation() {
+	m.git_attestation = nil
+	m.clearedgit_attestation = false
+}
+
 // Where appends a list predicates to the AttestationMutation builder.
 func (m *AttestationMutation) Where(ps ...predicate.Attestation) {
 	m.predicates = append(m.predicates, ps...)
@@ -373,9 +416,12 @@ func (m *AttestationMutation) ResetField(name string) error {
 
 // AddedEdges returns all edge names that were set/added in this mutation.
 func (m *AttestationMutation) AddedEdges() []string {
-	edges := make([]string, 0, 1)
+	edges := make([]string, 0, 2)
 	if m.attestation_collection != nil {
 		edges = append(edges, attestation.EdgeAttestationCollection)
+	}
+	if m.git_attestation != nil {
+		edges = append(edges, attestation.EdgeGitAttestation)
 	}
 	return edges
 }
@@ -388,13 +434,17 @@ func (m *AttestationMutation) AddedIDs(name string) []ent.Value {
 		if id := m.attestation_collection; id != nil {
 			return []ent.Value{*id}
 		}
+	case attestation.EdgeGitAttestation:
+		if id := m.git_attestation; id != nil {
+			return []ent.Value{*id}
+		}
 	}
 	return nil
 }
 
 // RemovedEdges returns all edge names that were removed in this mutation.
 func (m *AttestationMutation) RemovedEdges() []string {
-	edges := make([]string, 0, 1)
+	edges := make([]string, 0, 2)
 	return edges
 }
 
@@ -406,9 +456,12 @@ func (m *AttestationMutation) RemovedIDs(name string) []ent.Value {
 
 // ClearedEdges returns all edge names that were cleared in this mutation.
 func (m *AttestationMutation) ClearedEdges() []string {
-	edges := make([]string, 0, 1)
+	edges := make([]string, 0, 2)
 	if m.clearedattestation_collection {
 		edges = append(edges, attestation.EdgeAttestationCollection)
+	}
+	if m.clearedgit_attestation {
+		edges = append(edges, attestation.EdgeGitAttestation)
 	}
 	return edges
 }
@@ -419,6 +472,8 @@ func (m *AttestationMutation) EdgeCleared(name string) bool {
 	switch name {
 	case attestation.EdgeAttestationCollection:
 		return m.clearedattestation_collection
+	case attestation.EdgeGitAttestation:
+		return m.clearedgit_attestation
 	}
 	return false
 }
@@ -430,6 +485,9 @@ func (m *AttestationMutation) ClearEdge(name string) error {
 	case attestation.EdgeAttestationCollection:
 		m.ClearAttestationCollection()
 		return nil
+	case attestation.EdgeGitAttestation:
+		m.ClearGitAttestation()
+		return nil
 	}
 	return fmt.Errorf("unknown Attestation unique edge %s", name)
 }
@@ -440,6 +498,9 @@ func (m *AttestationMutation) ResetEdge(name string) error {
 	switch name {
 	case attestation.EdgeAttestationCollection:
 		m.ResetAttestationCollection()
+		return nil
+	case attestation.EdgeGitAttestation:
+		m.ResetGitAttestation()
 		return nil
 	}
 	return fmt.Errorf("unknown Attestation edge %s", name)
@@ -1947,6 +2008,1225 @@ func (m *DsseMutation) ResetEdge(name string) error {
 		return nil
 	}
 	return fmt.Errorf("unknown Dsse edge %s", name)
+}
+
+// GitAttestationMutation represents an operation that mutates the GitAttestation nodes in the graph.
+type GitAttestationMutation struct {
+	config
+	op                  Op
+	typ                 string
+	id                  *uuid.UUID
+	commit_hash         *string
+	author              *string
+	author_email        *string
+	committer_name      *string
+	committer_email     *string
+	commit_date         *string
+	commit_message      *string
+	status              *[]string
+	appendstatus        []string
+	commit_type         *string
+	commit_digest       *string
+	signature           *string
+	parent_hashes       *[]string
+	appendparent_hashes []string
+	tree_hash           *string
+	refs                *[]string
+	appendrefs          []string
+	remotes             *[]string
+	appendremotes       []string
+	clearedFields       map[string]struct{}
+	attestation         *uuid.UUID
+	clearedattestation  bool
+	done                bool
+	oldValue            func(context.Context) (*GitAttestation, error)
+	predicates          []predicate.GitAttestation
+}
+
+var _ ent.Mutation = (*GitAttestationMutation)(nil)
+
+// gitattestationOption allows management of the mutation configuration using functional options.
+type gitattestationOption func(*GitAttestationMutation)
+
+// newGitAttestationMutation creates new mutation for the GitAttestation entity.
+func newGitAttestationMutation(c config, op Op, opts ...gitattestationOption) *GitAttestationMutation {
+	m := &GitAttestationMutation{
+		config:        c,
+		op:            op,
+		typ:           TypeGitAttestation,
+		clearedFields: make(map[string]struct{}),
+	}
+	for _, opt := range opts {
+		opt(m)
+	}
+	return m
+}
+
+// withGitAttestationID sets the ID field of the mutation.
+func withGitAttestationID(id uuid.UUID) gitattestationOption {
+	return func(m *GitAttestationMutation) {
+		var (
+			err   error
+			once  sync.Once
+			value *GitAttestation
+		)
+		m.oldValue = func(ctx context.Context) (*GitAttestation, error) {
+			once.Do(func() {
+				if m.done {
+					err = errors.New("querying old values post mutation is not allowed")
+				} else {
+					value, err = m.Client().GitAttestation.Get(ctx, id)
+				}
+			})
+			return value, err
+		}
+		m.id = &id
+	}
+}
+
+// withGitAttestation sets the old GitAttestation of the mutation.
+func withGitAttestation(node *GitAttestation) gitattestationOption {
+	return func(m *GitAttestationMutation) {
+		m.oldValue = func(context.Context) (*GitAttestation, error) {
+			return node, nil
+		}
+		m.id = &node.ID
+	}
+}
+
+// Client returns a new `ent.Client` from the mutation. If the mutation was
+// executed in a transaction (ent.Tx), a transactional client is returned.
+func (m GitAttestationMutation) Client() *Client {
+	client := &Client{config: m.config}
+	client.init()
+	return client
+}
+
+// Tx returns an `ent.Tx` for mutations that were executed in transactions;
+// it returns an error otherwise.
+func (m GitAttestationMutation) Tx() (*Tx, error) {
+	if _, ok := m.driver.(*txDriver); !ok {
+		return nil, errors.New("ent: mutation is not running in a transaction")
+	}
+	tx := &Tx{config: m.config}
+	tx.init()
+	return tx, nil
+}
+
+// SetID sets the value of the id field. Note that this
+// operation is only accepted on creation of GitAttestation entities.
+func (m *GitAttestationMutation) SetID(id uuid.UUID) {
+	m.id = &id
+}
+
+// ID returns the ID value in the mutation. Note that the ID is only available
+// if it was provided to the builder or after it was returned from the database.
+func (m *GitAttestationMutation) ID() (id uuid.UUID, exists bool) {
+	if m.id == nil {
+		return
+	}
+	return *m.id, true
+}
+
+// IDs queries the database and returns the entity ids that match the mutation's predicate.
+// That means, if the mutation is applied within a transaction with an isolation level such
+// as sql.LevelSerializable, the returned ids match the ids of the rows that will be updated
+// or updated by the mutation.
+func (m *GitAttestationMutation) IDs(ctx context.Context) ([]uuid.UUID, error) {
+	switch {
+	case m.op.Is(OpUpdateOne | OpDeleteOne):
+		id, exists := m.ID()
+		if exists {
+			return []uuid.UUID{id}, nil
+		}
+		fallthrough
+	case m.op.Is(OpUpdate | OpDelete):
+		return m.Client().GitAttestation.Query().Where(m.predicates...).IDs(ctx)
+	default:
+		return nil, fmt.Errorf("IDs is not allowed on %s operations", m.op)
+	}
+}
+
+// SetCommitHash sets the "commit_hash" field.
+func (m *GitAttestationMutation) SetCommitHash(s string) {
+	m.commit_hash = &s
+}
+
+// CommitHash returns the value of the "commit_hash" field in the mutation.
+func (m *GitAttestationMutation) CommitHash() (r string, exists bool) {
+	v := m.commit_hash
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// OldCommitHash returns the old "commit_hash" field's value of the GitAttestation entity.
+// If the GitAttestation object wasn't provided to the builder, the object is fetched from the database.
+// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
+func (m *GitAttestationMutation) OldCommitHash(ctx context.Context) (v string, err error) {
+	if !m.op.Is(OpUpdateOne) {
+		return v, errors.New("OldCommitHash is only allowed on UpdateOne operations")
+	}
+	if m.id == nil || m.oldValue == nil {
+		return v, errors.New("OldCommitHash requires an ID field in the mutation")
+	}
+	oldValue, err := m.oldValue(ctx)
+	if err != nil {
+		return v, fmt.Errorf("querying old value for OldCommitHash: %w", err)
+	}
+	return oldValue.CommitHash, nil
+}
+
+// ResetCommitHash resets all changes to the "commit_hash" field.
+func (m *GitAttestationMutation) ResetCommitHash() {
+	m.commit_hash = nil
+}
+
+// SetAuthor sets the "author" field.
+func (m *GitAttestationMutation) SetAuthor(s string) {
+	m.author = &s
+}
+
+// Author returns the value of the "author" field in the mutation.
+func (m *GitAttestationMutation) Author() (r string, exists bool) {
+	v := m.author
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// OldAuthor returns the old "author" field's value of the GitAttestation entity.
+// If the GitAttestation object wasn't provided to the builder, the object is fetched from the database.
+// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
+func (m *GitAttestationMutation) OldAuthor(ctx context.Context) (v string, err error) {
+	if !m.op.Is(OpUpdateOne) {
+		return v, errors.New("OldAuthor is only allowed on UpdateOne operations")
+	}
+	if m.id == nil || m.oldValue == nil {
+		return v, errors.New("OldAuthor requires an ID field in the mutation")
+	}
+	oldValue, err := m.oldValue(ctx)
+	if err != nil {
+		return v, fmt.Errorf("querying old value for OldAuthor: %w", err)
+	}
+	return oldValue.Author, nil
+}
+
+// ResetAuthor resets all changes to the "author" field.
+func (m *GitAttestationMutation) ResetAuthor() {
+	m.author = nil
+}
+
+// SetAuthorEmail sets the "author_email" field.
+func (m *GitAttestationMutation) SetAuthorEmail(s string) {
+	m.author_email = &s
+}
+
+// AuthorEmail returns the value of the "author_email" field in the mutation.
+func (m *GitAttestationMutation) AuthorEmail() (r string, exists bool) {
+	v := m.author_email
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// OldAuthorEmail returns the old "author_email" field's value of the GitAttestation entity.
+// If the GitAttestation object wasn't provided to the builder, the object is fetched from the database.
+// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
+func (m *GitAttestationMutation) OldAuthorEmail(ctx context.Context) (v string, err error) {
+	if !m.op.Is(OpUpdateOne) {
+		return v, errors.New("OldAuthorEmail is only allowed on UpdateOne operations")
+	}
+	if m.id == nil || m.oldValue == nil {
+		return v, errors.New("OldAuthorEmail requires an ID field in the mutation")
+	}
+	oldValue, err := m.oldValue(ctx)
+	if err != nil {
+		return v, fmt.Errorf("querying old value for OldAuthorEmail: %w", err)
+	}
+	return oldValue.AuthorEmail, nil
+}
+
+// ResetAuthorEmail resets all changes to the "author_email" field.
+func (m *GitAttestationMutation) ResetAuthorEmail() {
+	m.author_email = nil
+}
+
+// SetCommitterName sets the "committer_name" field.
+func (m *GitAttestationMutation) SetCommitterName(s string) {
+	m.committer_name = &s
+}
+
+// CommitterName returns the value of the "committer_name" field in the mutation.
+func (m *GitAttestationMutation) CommitterName() (r string, exists bool) {
+	v := m.committer_name
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// OldCommitterName returns the old "committer_name" field's value of the GitAttestation entity.
+// If the GitAttestation object wasn't provided to the builder, the object is fetched from the database.
+// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
+func (m *GitAttestationMutation) OldCommitterName(ctx context.Context) (v string, err error) {
+	if !m.op.Is(OpUpdateOne) {
+		return v, errors.New("OldCommitterName is only allowed on UpdateOne operations")
+	}
+	if m.id == nil || m.oldValue == nil {
+		return v, errors.New("OldCommitterName requires an ID field in the mutation")
+	}
+	oldValue, err := m.oldValue(ctx)
+	if err != nil {
+		return v, fmt.Errorf("querying old value for OldCommitterName: %w", err)
+	}
+	return oldValue.CommitterName, nil
+}
+
+// ResetCommitterName resets all changes to the "committer_name" field.
+func (m *GitAttestationMutation) ResetCommitterName() {
+	m.committer_name = nil
+}
+
+// SetCommitterEmail sets the "committer_email" field.
+func (m *GitAttestationMutation) SetCommitterEmail(s string) {
+	m.committer_email = &s
+}
+
+// CommitterEmail returns the value of the "committer_email" field in the mutation.
+func (m *GitAttestationMutation) CommitterEmail() (r string, exists bool) {
+	v := m.committer_email
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// OldCommitterEmail returns the old "committer_email" field's value of the GitAttestation entity.
+// If the GitAttestation object wasn't provided to the builder, the object is fetched from the database.
+// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
+func (m *GitAttestationMutation) OldCommitterEmail(ctx context.Context) (v string, err error) {
+	if !m.op.Is(OpUpdateOne) {
+		return v, errors.New("OldCommitterEmail is only allowed on UpdateOne operations")
+	}
+	if m.id == nil || m.oldValue == nil {
+		return v, errors.New("OldCommitterEmail requires an ID field in the mutation")
+	}
+	oldValue, err := m.oldValue(ctx)
+	if err != nil {
+		return v, fmt.Errorf("querying old value for OldCommitterEmail: %w", err)
+	}
+	return oldValue.CommitterEmail, nil
+}
+
+// ResetCommitterEmail resets all changes to the "committer_email" field.
+func (m *GitAttestationMutation) ResetCommitterEmail() {
+	m.committer_email = nil
+}
+
+// SetCommitDate sets the "commit_date" field.
+func (m *GitAttestationMutation) SetCommitDate(s string) {
+	m.commit_date = &s
+}
+
+// CommitDate returns the value of the "commit_date" field in the mutation.
+func (m *GitAttestationMutation) CommitDate() (r string, exists bool) {
+	v := m.commit_date
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// OldCommitDate returns the old "commit_date" field's value of the GitAttestation entity.
+// If the GitAttestation object wasn't provided to the builder, the object is fetched from the database.
+// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
+func (m *GitAttestationMutation) OldCommitDate(ctx context.Context) (v string, err error) {
+	if !m.op.Is(OpUpdateOne) {
+		return v, errors.New("OldCommitDate is only allowed on UpdateOne operations")
+	}
+	if m.id == nil || m.oldValue == nil {
+		return v, errors.New("OldCommitDate requires an ID field in the mutation")
+	}
+	oldValue, err := m.oldValue(ctx)
+	if err != nil {
+		return v, fmt.Errorf("querying old value for OldCommitDate: %w", err)
+	}
+	return oldValue.CommitDate, nil
+}
+
+// ResetCommitDate resets all changes to the "commit_date" field.
+func (m *GitAttestationMutation) ResetCommitDate() {
+	m.commit_date = nil
+}
+
+// SetCommitMessage sets the "commit_message" field.
+func (m *GitAttestationMutation) SetCommitMessage(s string) {
+	m.commit_message = &s
+}
+
+// CommitMessage returns the value of the "commit_message" field in the mutation.
+func (m *GitAttestationMutation) CommitMessage() (r string, exists bool) {
+	v := m.commit_message
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// OldCommitMessage returns the old "commit_message" field's value of the GitAttestation entity.
+// If the GitAttestation object wasn't provided to the builder, the object is fetched from the database.
+// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
+func (m *GitAttestationMutation) OldCommitMessage(ctx context.Context) (v string, err error) {
+	if !m.op.Is(OpUpdateOne) {
+		return v, errors.New("OldCommitMessage is only allowed on UpdateOne operations")
+	}
+	if m.id == nil || m.oldValue == nil {
+		return v, errors.New("OldCommitMessage requires an ID field in the mutation")
+	}
+	oldValue, err := m.oldValue(ctx)
+	if err != nil {
+		return v, fmt.Errorf("querying old value for OldCommitMessage: %w", err)
+	}
+	return oldValue.CommitMessage, nil
+}
+
+// ResetCommitMessage resets all changes to the "commit_message" field.
+func (m *GitAttestationMutation) ResetCommitMessage() {
+	m.commit_message = nil
+}
+
+// SetStatus sets the "status" field.
+func (m *GitAttestationMutation) SetStatus(s []string) {
+	m.status = &s
+	m.appendstatus = nil
+}
+
+// Status returns the value of the "status" field in the mutation.
+func (m *GitAttestationMutation) Status() (r []string, exists bool) {
+	v := m.status
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// OldStatus returns the old "status" field's value of the GitAttestation entity.
+// If the GitAttestation object wasn't provided to the builder, the object is fetched from the database.
+// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
+func (m *GitAttestationMutation) OldStatus(ctx context.Context) (v []string, err error) {
+	if !m.op.Is(OpUpdateOne) {
+		return v, errors.New("OldStatus is only allowed on UpdateOne operations")
+	}
+	if m.id == nil || m.oldValue == nil {
+		return v, errors.New("OldStatus requires an ID field in the mutation")
+	}
+	oldValue, err := m.oldValue(ctx)
+	if err != nil {
+		return v, fmt.Errorf("querying old value for OldStatus: %w", err)
+	}
+	return oldValue.Status, nil
+}
+
+// AppendStatus adds s to the "status" field.
+func (m *GitAttestationMutation) AppendStatus(s []string) {
+	m.appendstatus = append(m.appendstatus, s...)
+}
+
+// AppendedStatus returns the list of values that were appended to the "status" field in this mutation.
+func (m *GitAttestationMutation) AppendedStatus() ([]string, bool) {
+	if len(m.appendstatus) == 0 {
+		return nil, false
+	}
+	return m.appendstatus, true
+}
+
+// ResetStatus resets all changes to the "status" field.
+func (m *GitAttestationMutation) ResetStatus() {
+	m.status = nil
+	m.appendstatus = nil
+}
+
+// SetCommitType sets the "commit_type" field.
+func (m *GitAttestationMutation) SetCommitType(s string) {
+	m.commit_type = &s
+}
+
+// CommitType returns the value of the "commit_type" field in the mutation.
+func (m *GitAttestationMutation) CommitType() (r string, exists bool) {
+	v := m.commit_type
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// OldCommitType returns the old "commit_type" field's value of the GitAttestation entity.
+// If the GitAttestation object wasn't provided to the builder, the object is fetched from the database.
+// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
+func (m *GitAttestationMutation) OldCommitType(ctx context.Context) (v string, err error) {
+	if !m.op.Is(OpUpdateOne) {
+		return v, errors.New("OldCommitType is only allowed on UpdateOne operations")
+	}
+	if m.id == nil || m.oldValue == nil {
+		return v, errors.New("OldCommitType requires an ID field in the mutation")
+	}
+	oldValue, err := m.oldValue(ctx)
+	if err != nil {
+		return v, fmt.Errorf("querying old value for OldCommitType: %w", err)
+	}
+	return oldValue.CommitType, nil
+}
+
+// ResetCommitType resets all changes to the "commit_type" field.
+func (m *GitAttestationMutation) ResetCommitType() {
+	m.commit_type = nil
+}
+
+// SetCommitDigest sets the "commit_digest" field.
+func (m *GitAttestationMutation) SetCommitDigest(s string) {
+	m.commit_digest = &s
+}
+
+// CommitDigest returns the value of the "commit_digest" field in the mutation.
+func (m *GitAttestationMutation) CommitDigest() (r string, exists bool) {
+	v := m.commit_digest
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// OldCommitDigest returns the old "commit_digest" field's value of the GitAttestation entity.
+// If the GitAttestation object wasn't provided to the builder, the object is fetched from the database.
+// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
+func (m *GitAttestationMutation) OldCommitDigest(ctx context.Context) (v string, err error) {
+	if !m.op.Is(OpUpdateOne) {
+		return v, errors.New("OldCommitDigest is only allowed on UpdateOne operations")
+	}
+	if m.id == nil || m.oldValue == nil {
+		return v, errors.New("OldCommitDigest requires an ID field in the mutation")
+	}
+	oldValue, err := m.oldValue(ctx)
+	if err != nil {
+		return v, fmt.Errorf("querying old value for OldCommitDigest: %w", err)
+	}
+	return oldValue.CommitDigest, nil
+}
+
+// ResetCommitDigest resets all changes to the "commit_digest" field.
+func (m *GitAttestationMutation) ResetCommitDigest() {
+	m.commit_digest = nil
+}
+
+// SetSignature sets the "signature" field.
+func (m *GitAttestationMutation) SetSignature(s string) {
+	m.signature = &s
+}
+
+// Signature returns the value of the "signature" field in the mutation.
+func (m *GitAttestationMutation) Signature() (r string, exists bool) {
+	v := m.signature
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// OldSignature returns the old "signature" field's value of the GitAttestation entity.
+// If the GitAttestation object wasn't provided to the builder, the object is fetched from the database.
+// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
+func (m *GitAttestationMutation) OldSignature(ctx context.Context) (v string, err error) {
+	if !m.op.Is(OpUpdateOne) {
+		return v, errors.New("OldSignature is only allowed on UpdateOne operations")
+	}
+	if m.id == nil || m.oldValue == nil {
+		return v, errors.New("OldSignature requires an ID field in the mutation")
+	}
+	oldValue, err := m.oldValue(ctx)
+	if err != nil {
+		return v, fmt.Errorf("querying old value for OldSignature: %w", err)
+	}
+	return oldValue.Signature, nil
+}
+
+// ResetSignature resets all changes to the "signature" field.
+func (m *GitAttestationMutation) ResetSignature() {
+	m.signature = nil
+}
+
+// SetParentHashes sets the "parent_hashes" field.
+func (m *GitAttestationMutation) SetParentHashes(s []string) {
+	m.parent_hashes = &s
+	m.appendparent_hashes = nil
+}
+
+// ParentHashes returns the value of the "parent_hashes" field in the mutation.
+func (m *GitAttestationMutation) ParentHashes() (r []string, exists bool) {
+	v := m.parent_hashes
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// OldParentHashes returns the old "parent_hashes" field's value of the GitAttestation entity.
+// If the GitAttestation object wasn't provided to the builder, the object is fetched from the database.
+// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
+func (m *GitAttestationMutation) OldParentHashes(ctx context.Context) (v []string, err error) {
+	if !m.op.Is(OpUpdateOne) {
+		return v, errors.New("OldParentHashes is only allowed on UpdateOne operations")
+	}
+	if m.id == nil || m.oldValue == nil {
+		return v, errors.New("OldParentHashes requires an ID field in the mutation")
+	}
+	oldValue, err := m.oldValue(ctx)
+	if err != nil {
+		return v, fmt.Errorf("querying old value for OldParentHashes: %w", err)
+	}
+	return oldValue.ParentHashes, nil
+}
+
+// AppendParentHashes adds s to the "parent_hashes" field.
+func (m *GitAttestationMutation) AppendParentHashes(s []string) {
+	m.appendparent_hashes = append(m.appendparent_hashes, s...)
+}
+
+// AppendedParentHashes returns the list of values that were appended to the "parent_hashes" field in this mutation.
+func (m *GitAttestationMutation) AppendedParentHashes() ([]string, bool) {
+	if len(m.appendparent_hashes) == 0 {
+		return nil, false
+	}
+	return m.appendparent_hashes, true
+}
+
+// ResetParentHashes resets all changes to the "parent_hashes" field.
+func (m *GitAttestationMutation) ResetParentHashes() {
+	m.parent_hashes = nil
+	m.appendparent_hashes = nil
+}
+
+// SetTreeHash sets the "tree_hash" field.
+func (m *GitAttestationMutation) SetTreeHash(s string) {
+	m.tree_hash = &s
+}
+
+// TreeHash returns the value of the "tree_hash" field in the mutation.
+func (m *GitAttestationMutation) TreeHash() (r string, exists bool) {
+	v := m.tree_hash
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// OldTreeHash returns the old "tree_hash" field's value of the GitAttestation entity.
+// If the GitAttestation object wasn't provided to the builder, the object is fetched from the database.
+// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
+func (m *GitAttestationMutation) OldTreeHash(ctx context.Context) (v string, err error) {
+	if !m.op.Is(OpUpdateOne) {
+		return v, errors.New("OldTreeHash is only allowed on UpdateOne operations")
+	}
+	if m.id == nil || m.oldValue == nil {
+		return v, errors.New("OldTreeHash requires an ID field in the mutation")
+	}
+	oldValue, err := m.oldValue(ctx)
+	if err != nil {
+		return v, fmt.Errorf("querying old value for OldTreeHash: %w", err)
+	}
+	return oldValue.TreeHash, nil
+}
+
+// ResetTreeHash resets all changes to the "tree_hash" field.
+func (m *GitAttestationMutation) ResetTreeHash() {
+	m.tree_hash = nil
+}
+
+// SetRefs sets the "refs" field.
+func (m *GitAttestationMutation) SetRefs(s []string) {
+	m.refs = &s
+	m.appendrefs = nil
+}
+
+// Refs returns the value of the "refs" field in the mutation.
+func (m *GitAttestationMutation) Refs() (r []string, exists bool) {
+	v := m.refs
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// OldRefs returns the old "refs" field's value of the GitAttestation entity.
+// If the GitAttestation object wasn't provided to the builder, the object is fetched from the database.
+// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
+func (m *GitAttestationMutation) OldRefs(ctx context.Context) (v []string, err error) {
+	if !m.op.Is(OpUpdateOne) {
+		return v, errors.New("OldRefs is only allowed on UpdateOne operations")
+	}
+	if m.id == nil || m.oldValue == nil {
+		return v, errors.New("OldRefs requires an ID field in the mutation")
+	}
+	oldValue, err := m.oldValue(ctx)
+	if err != nil {
+		return v, fmt.Errorf("querying old value for OldRefs: %w", err)
+	}
+	return oldValue.Refs, nil
+}
+
+// AppendRefs adds s to the "refs" field.
+func (m *GitAttestationMutation) AppendRefs(s []string) {
+	m.appendrefs = append(m.appendrefs, s...)
+}
+
+// AppendedRefs returns the list of values that were appended to the "refs" field in this mutation.
+func (m *GitAttestationMutation) AppendedRefs() ([]string, bool) {
+	if len(m.appendrefs) == 0 {
+		return nil, false
+	}
+	return m.appendrefs, true
+}
+
+// ResetRefs resets all changes to the "refs" field.
+func (m *GitAttestationMutation) ResetRefs() {
+	m.refs = nil
+	m.appendrefs = nil
+}
+
+// SetRemotes sets the "remotes" field.
+func (m *GitAttestationMutation) SetRemotes(s []string) {
+	m.remotes = &s
+	m.appendremotes = nil
+}
+
+// Remotes returns the value of the "remotes" field in the mutation.
+func (m *GitAttestationMutation) Remotes() (r []string, exists bool) {
+	v := m.remotes
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// OldRemotes returns the old "remotes" field's value of the GitAttestation entity.
+// If the GitAttestation object wasn't provided to the builder, the object is fetched from the database.
+// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
+func (m *GitAttestationMutation) OldRemotes(ctx context.Context) (v []string, err error) {
+	if !m.op.Is(OpUpdateOne) {
+		return v, errors.New("OldRemotes is only allowed on UpdateOne operations")
+	}
+	if m.id == nil || m.oldValue == nil {
+		return v, errors.New("OldRemotes requires an ID field in the mutation")
+	}
+	oldValue, err := m.oldValue(ctx)
+	if err != nil {
+		return v, fmt.Errorf("querying old value for OldRemotes: %w", err)
+	}
+	return oldValue.Remotes, nil
+}
+
+// AppendRemotes adds s to the "remotes" field.
+func (m *GitAttestationMutation) AppendRemotes(s []string) {
+	m.appendremotes = append(m.appendremotes, s...)
+}
+
+// AppendedRemotes returns the list of values that were appended to the "remotes" field in this mutation.
+func (m *GitAttestationMutation) AppendedRemotes() ([]string, bool) {
+	if len(m.appendremotes) == 0 {
+		return nil, false
+	}
+	return m.appendremotes, true
+}
+
+// ResetRemotes resets all changes to the "remotes" field.
+func (m *GitAttestationMutation) ResetRemotes() {
+	m.remotes = nil
+	m.appendremotes = nil
+}
+
+// SetAttestationID sets the "attestation" edge to the Attestation entity by id.
+func (m *GitAttestationMutation) SetAttestationID(id uuid.UUID) {
+	m.attestation = &id
+}
+
+// ClearAttestation clears the "attestation" edge to the Attestation entity.
+func (m *GitAttestationMutation) ClearAttestation() {
+	m.clearedattestation = true
+}
+
+// AttestationCleared reports if the "attestation" edge to the Attestation entity was cleared.
+func (m *GitAttestationMutation) AttestationCleared() bool {
+	return m.clearedattestation
+}
+
+// AttestationID returns the "attestation" edge ID in the mutation.
+func (m *GitAttestationMutation) AttestationID() (id uuid.UUID, exists bool) {
+	if m.attestation != nil {
+		return *m.attestation, true
+	}
+	return
+}
+
+// AttestationIDs returns the "attestation" edge IDs in the mutation.
+// Note that IDs always returns len(IDs) <= 1 for unique edges, and you should use
+// AttestationID instead. It exists only for internal usage by the builders.
+func (m *GitAttestationMutation) AttestationIDs() (ids []uuid.UUID) {
+	if id := m.attestation; id != nil {
+		ids = append(ids, *id)
+	}
+	return
+}
+
+// ResetAttestation resets all changes to the "attestation" edge.
+func (m *GitAttestationMutation) ResetAttestation() {
+	m.attestation = nil
+	m.clearedattestation = false
+}
+
+// Where appends a list predicates to the GitAttestationMutation builder.
+func (m *GitAttestationMutation) Where(ps ...predicate.GitAttestation) {
+	m.predicates = append(m.predicates, ps...)
+}
+
+// WhereP appends storage-level predicates to the GitAttestationMutation builder. Using this method,
+// users can use type-assertion to append predicates that do not depend on any generated package.
+func (m *GitAttestationMutation) WhereP(ps ...func(*sql.Selector)) {
+	p := make([]predicate.GitAttestation, len(ps))
+	for i := range ps {
+		p[i] = ps[i]
+	}
+	m.Where(p...)
+}
+
+// Op returns the operation name.
+func (m *GitAttestationMutation) Op() Op {
+	return m.op
+}
+
+// SetOp allows setting the mutation operation.
+func (m *GitAttestationMutation) SetOp(op Op) {
+	m.op = op
+}
+
+// Type returns the node type of this mutation (GitAttestation).
+func (m *GitAttestationMutation) Type() string {
+	return m.typ
+}
+
+// Fields returns all fields that were changed during this mutation. Note that in
+// order to get all numeric fields that were incremented/decremented, call
+// AddedFields().
+func (m *GitAttestationMutation) Fields() []string {
+	fields := make([]string, 0, 15)
+	if m.commit_hash != nil {
+		fields = append(fields, gitattestation.FieldCommitHash)
+	}
+	if m.author != nil {
+		fields = append(fields, gitattestation.FieldAuthor)
+	}
+	if m.author_email != nil {
+		fields = append(fields, gitattestation.FieldAuthorEmail)
+	}
+	if m.committer_name != nil {
+		fields = append(fields, gitattestation.FieldCommitterName)
+	}
+	if m.committer_email != nil {
+		fields = append(fields, gitattestation.FieldCommitterEmail)
+	}
+	if m.commit_date != nil {
+		fields = append(fields, gitattestation.FieldCommitDate)
+	}
+	if m.commit_message != nil {
+		fields = append(fields, gitattestation.FieldCommitMessage)
+	}
+	if m.status != nil {
+		fields = append(fields, gitattestation.FieldStatus)
+	}
+	if m.commit_type != nil {
+		fields = append(fields, gitattestation.FieldCommitType)
+	}
+	if m.commit_digest != nil {
+		fields = append(fields, gitattestation.FieldCommitDigest)
+	}
+	if m.signature != nil {
+		fields = append(fields, gitattestation.FieldSignature)
+	}
+	if m.parent_hashes != nil {
+		fields = append(fields, gitattestation.FieldParentHashes)
+	}
+	if m.tree_hash != nil {
+		fields = append(fields, gitattestation.FieldTreeHash)
+	}
+	if m.refs != nil {
+		fields = append(fields, gitattestation.FieldRefs)
+	}
+	if m.remotes != nil {
+		fields = append(fields, gitattestation.FieldRemotes)
+	}
+	return fields
+}
+
+// Field returns the value of a field with the given name. The second boolean
+// return value indicates that this field was not set, or was not defined in the
+// schema.
+func (m *GitAttestationMutation) Field(name string) (ent.Value, bool) {
+	switch name {
+	case gitattestation.FieldCommitHash:
+		return m.CommitHash()
+	case gitattestation.FieldAuthor:
+		return m.Author()
+	case gitattestation.FieldAuthorEmail:
+		return m.AuthorEmail()
+	case gitattestation.FieldCommitterName:
+		return m.CommitterName()
+	case gitattestation.FieldCommitterEmail:
+		return m.CommitterEmail()
+	case gitattestation.FieldCommitDate:
+		return m.CommitDate()
+	case gitattestation.FieldCommitMessage:
+		return m.CommitMessage()
+	case gitattestation.FieldStatus:
+		return m.Status()
+	case gitattestation.FieldCommitType:
+		return m.CommitType()
+	case gitattestation.FieldCommitDigest:
+		return m.CommitDigest()
+	case gitattestation.FieldSignature:
+		return m.Signature()
+	case gitattestation.FieldParentHashes:
+		return m.ParentHashes()
+	case gitattestation.FieldTreeHash:
+		return m.TreeHash()
+	case gitattestation.FieldRefs:
+		return m.Refs()
+	case gitattestation.FieldRemotes:
+		return m.Remotes()
+	}
+	return nil, false
+}
+
+// OldField returns the old value of the field from the database. An error is
+// returned if the mutation operation is not UpdateOne, or the query to the
+// database failed.
+func (m *GitAttestationMutation) OldField(ctx context.Context, name string) (ent.Value, error) {
+	switch name {
+	case gitattestation.FieldCommitHash:
+		return m.OldCommitHash(ctx)
+	case gitattestation.FieldAuthor:
+		return m.OldAuthor(ctx)
+	case gitattestation.FieldAuthorEmail:
+		return m.OldAuthorEmail(ctx)
+	case gitattestation.FieldCommitterName:
+		return m.OldCommitterName(ctx)
+	case gitattestation.FieldCommitterEmail:
+		return m.OldCommitterEmail(ctx)
+	case gitattestation.FieldCommitDate:
+		return m.OldCommitDate(ctx)
+	case gitattestation.FieldCommitMessage:
+		return m.OldCommitMessage(ctx)
+	case gitattestation.FieldStatus:
+		return m.OldStatus(ctx)
+	case gitattestation.FieldCommitType:
+		return m.OldCommitType(ctx)
+	case gitattestation.FieldCommitDigest:
+		return m.OldCommitDigest(ctx)
+	case gitattestation.FieldSignature:
+		return m.OldSignature(ctx)
+	case gitattestation.FieldParentHashes:
+		return m.OldParentHashes(ctx)
+	case gitattestation.FieldTreeHash:
+		return m.OldTreeHash(ctx)
+	case gitattestation.FieldRefs:
+		return m.OldRefs(ctx)
+	case gitattestation.FieldRemotes:
+		return m.OldRemotes(ctx)
+	}
+	return nil, fmt.Errorf("unknown GitAttestation field %s", name)
+}
+
+// SetField sets the value of a field with the given name. It returns an error if
+// the field is not defined in the schema, or if the type mismatched the field
+// type.
+func (m *GitAttestationMutation) SetField(name string, value ent.Value) error {
+	switch name {
+	case gitattestation.FieldCommitHash:
+		v, ok := value.(string)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.SetCommitHash(v)
+		return nil
+	case gitattestation.FieldAuthor:
+		v, ok := value.(string)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.SetAuthor(v)
+		return nil
+	case gitattestation.FieldAuthorEmail:
+		v, ok := value.(string)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.SetAuthorEmail(v)
+		return nil
+	case gitattestation.FieldCommitterName:
+		v, ok := value.(string)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.SetCommitterName(v)
+		return nil
+	case gitattestation.FieldCommitterEmail:
+		v, ok := value.(string)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.SetCommitterEmail(v)
+		return nil
+	case gitattestation.FieldCommitDate:
+		v, ok := value.(string)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.SetCommitDate(v)
+		return nil
+	case gitattestation.FieldCommitMessage:
+		v, ok := value.(string)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.SetCommitMessage(v)
+		return nil
+	case gitattestation.FieldStatus:
+		v, ok := value.([]string)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.SetStatus(v)
+		return nil
+	case gitattestation.FieldCommitType:
+		v, ok := value.(string)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.SetCommitType(v)
+		return nil
+	case gitattestation.FieldCommitDigest:
+		v, ok := value.(string)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.SetCommitDigest(v)
+		return nil
+	case gitattestation.FieldSignature:
+		v, ok := value.(string)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.SetSignature(v)
+		return nil
+	case gitattestation.FieldParentHashes:
+		v, ok := value.([]string)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.SetParentHashes(v)
+		return nil
+	case gitattestation.FieldTreeHash:
+		v, ok := value.(string)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.SetTreeHash(v)
+		return nil
+	case gitattestation.FieldRefs:
+		v, ok := value.([]string)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.SetRefs(v)
+		return nil
+	case gitattestation.FieldRemotes:
+		v, ok := value.([]string)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.SetRemotes(v)
+		return nil
+	}
+	return fmt.Errorf("unknown GitAttestation field %s", name)
+}
+
+// AddedFields returns all numeric fields that were incremented/decremented during
+// this mutation.
+func (m *GitAttestationMutation) AddedFields() []string {
+	return nil
+}
+
+// AddedField returns the numeric value that was incremented/decremented on a field
+// with the given name. The second boolean return value indicates that this field
+// was not set, or was not defined in the schema.
+func (m *GitAttestationMutation) AddedField(name string) (ent.Value, bool) {
+	return nil, false
+}
+
+// AddField adds the value to the field with the given name. It returns an error if
+// the field is not defined in the schema, or if the type mismatched the field
+// type.
+func (m *GitAttestationMutation) AddField(name string, value ent.Value) error {
+	switch name {
+	}
+	return fmt.Errorf("unknown GitAttestation numeric field %s", name)
+}
+
+// ClearedFields returns all nullable fields that were cleared during this
+// mutation.
+func (m *GitAttestationMutation) ClearedFields() []string {
+	return nil
+}
+
+// FieldCleared returns a boolean indicating if a field with the given name was
+// cleared in this mutation.
+func (m *GitAttestationMutation) FieldCleared(name string) bool {
+	_, ok := m.clearedFields[name]
+	return ok
+}
+
+// ClearField clears the value of the field with the given name. It returns an
+// error if the field is not defined in the schema.
+func (m *GitAttestationMutation) ClearField(name string) error {
+	return fmt.Errorf("unknown GitAttestation nullable field %s", name)
+}
+
+// ResetField resets all changes in the mutation for the field with the given name.
+// It returns an error if the field is not defined in the schema.
+func (m *GitAttestationMutation) ResetField(name string) error {
+	switch name {
+	case gitattestation.FieldCommitHash:
+		m.ResetCommitHash()
+		return nil
+	case gitattestation.FieldAuthor:
+		m.ResetAuthor()
+		return nil
+	case gitattestation.FieldAuthorEmail:
+		m.ResetAuthorEmail()
+		return nil
+	case gitattestation.FieldCommitterName:
+		m.ResetCommitterName()
+		return nil
+	case gitattestation.FieldCommitterEmail:
+		m.ResetCommitterEmail()
+		return nil
+	case gitattestation.FieldCommitDate:
+		m.ResetCommitDate()
+		return nil
+	case gitattestation.FieldCommitMessage:
+		m.ResetCommitMessage()
+		return nil
+	case gitattestation.FieldStatus:
+		m.ResetStatus()
+		return nil
+	case gitattestation.FieldCommitType:
+		m.ResetCommitType()
+		return nil
+	case gitattestation.FieldCommitDigest:
+		m.ResetCommitDigest()
+		return nil
+	case gitattestation.FieldSignature:
+		m.ResetSignature()
+		return nil
+	case gitattestation.FieldParentHashes:
+		m.ResetParentHashes()
+		return nil
+	case gitattestation.FieldTreeHash:
+		m.ResetTreeHash()
+		return nil
+	case gitattestation.FieldRefs:
+		m.ResetRefs()
+		return nil
+	case gitattestation.FieldRemotes:
+		m.ResetRemotes()
+		return nil
+	}
+	return fmt.Errorf("unknown GitAttestation field %s", name)
+}
+
+// AddedEdges returns all edge names that were set/added in this mutation.
+func (m *GitAttestationMutation) AddedEdges() []string {
+	edges := make([]string, 0, 1)
+	if m.attestation != nil {
+		edges = append(edges, gitattestation.EdgeAttestation)
+	}
+	return edges
+}
+
+// AddedIDs returns all IDs (to other nodes) that were added for the given edge
+// name in this mutation.
+func (m *GitAttestationMutation) AddedIDs(name string) []ent.Value {
+	switch name {
+	case gitattestation.EdgeAttestation:
+		if id := m.attestation; id != nil {
+			return []ent.Value{*id}
+		}
+	}
+	return nil
+}
+
+// RemovedEdges returns all edge names that were removed in this mutation.
+func (m *GitAttestationMutation) RemovedEdges() []string {
+	edges := make([]string, 0, 1)
+	return edges
+}
+
+// RemovedIDs returns all IDs (to other nodes) that were removed for the edge with
+// the given name in this mutation.
+func (m *GitAttestationMutation) RemovedIDs(name string) []ent.Value {
+	return nil
+}
+
+// ClearedEdges returns all edge names that were cleared in this mutation.
+func (m *GitAttestationMutation) ClearedEdges() []string {
+	edges := make([]string, 0, 1)
+	if m.clearedattestation {
+		edges = append(edges, gitattestation.EdgeAttestation)
+	}
+	return edges
+}
+
+// EdgeCleared returns a boolean which indicates if the edge with the given name
+// was cleared in this mutation.
+func (m *GitAttestationMutation) EdgeCleared(name string) bool {
+	switch name {
+	case gitattestation.EdgeAttestation:
+		return m.clearedattestation
+	}
+	return false
+}
+
+// ClearEdge clears the value of the edge with the given name. It returns an error
+// if that edge is not defined in the schema.
+func (m *GitAttestationMutation) ClearEdge(name string) error {
+	switch name {
+	case gitattestation.EdgeAttestation:
+		m.ClearAttestation()
+		return nil
+	}
+	return fmt.Errorf("unknown GitAttestation unique edge %s", name)
+}
+
+// ResetEdge resets all changes to the edge with the given name in this mutation.
+// It returns an error if the edge is not defined in the schema.
+func (m *GitAttestationMutation) ResetEdge(name string) error {
+	switch name {
+	case gitattestation.EdgeAttestation:
+		m.ResetAttestation()
+		return nil
+	}
+	return fmt.Errorf("unknown GitAttestation edge %s", name)
 }
 
 // PayloadDigestMutation represents an operation that mutates the PayloadDigest nodes in the graph.

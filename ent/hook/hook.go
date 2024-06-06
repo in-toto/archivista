@@ -57,6 +57,18 @@ func (f DsseFunc) Mutate(ctx context.Context, m ent.Mutation) (ent.Value, error)
 	return nil, fmt.Errorf("unexpected mutation type %T. expect *ent.DsseMutation", m)
 }
 
+// The GitAttestationFunc type is an adapter to allow the use of ordinary
+// function as GitAttestation mutator.
+type GitAttestationFunc func(context.Context, *ent.GitAttestationMutation) (ent.Value, error)
+
+// Mutate calls f(ctx, m).
+func (f GitAttestationFunc) Mutate(ctx context.Context, m ent.Mutation) (ent.Value, error) {
+	if mv, ok := m.(*ent.GitAttestationMutation); ok {
+		return f(ctx, mv)
+	}
+	return nil, fmt.Errorf("unexpected mutation type %T. expect *ent.GitAttestationMutation", m)
+}
+
 // The PayloadDigestFunc type is an adapter to allow the use of ordinary
 // function as PayloadDigest mutator.
 type PayloadDigestFunc func(context.Context, *ent.PayloadDigestMutation) (ent.Value, error)

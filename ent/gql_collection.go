@@ -15,6 +15,7 @@ import (
 	"github.com/in-toto/archivista/ent/attestationcollection"
 	"github.com/in-toto/archivista/ent/attestationpolicy"
 	"github.com/in-toto/archivista/ent/dsse"
+	"github.com/in-toto/archivista/ent/gitattestation"
 	"github.com/in-toto/archivista/ent/payloaddigest"
 	"github.com/in-toto/archivista/ent/signature"
 	"github.com/in-toto/archivista/ent/statement"
@@ -55,6 +56,17 @@ func (a *AttestationQuery) collectField(ctx context.Context, oneNode bool, opCtx
 				return err
 			}
 			a.withAttestationCollection = query
+
+		case "gitAttestation":
+			var (
+				alias = field.Alias
+				path  = append(path, alias)
+				query = (&GitAttestationClient{config: a.config}).Query()
+			)
+			if err := query.collectField(ctx, oneNode, opCtx, field, path, mayAddCondition(satisfies, gitattestationImplementors)...); err != nil {
+				return err
+			}
+			a.withGitAttestation = query
 		case "type":
 			if _, ok := fieldSeen[attestation.FieldType]; !ok {
 				selectedFields = append(selectedFields, attestation.FieldType)
@@ -375,6 +387,154 @@ func newDssePaginateArgs(rv map[string]any) *dssePaginateArgs {
 	}
 	if v, ok := rv[whereField].(*DsseWhereInput); ok {
 		args.opts = append(args.opts, WithDsseFilter(v.Filter))
+	}
+	return args
+}
+
+// CollectFields tells the query-builder to eagerly load connected nodes by resolver context.
+func (ga *GitAttestationQuery) CollectFields(ctx context.Context, satisfies ...string) (*GitAttestationQuery, error) {
+	fc := graphql.GetFieldContext(ctx)
+	if fc == nil {
+		return ga, nil
+	}
+	if err := ga.collectField(ctx, false, graphql.GetOperationContext(ctx), fc.Field, nil, satisfies...); err != nil {
+		return nil, err
+	}
+	return ga, nil
+}
+
+func (ga *GitAttestationQuery) collectField(ctx context.Context, oneNode bool, opCtx *graphql.OperationContext, collected graphql.CollectedField, path []string, satisfies ...string) error {
+	path = append([]string(nil), path...)
+	var (
+		unknownSeen    bool
+		fieldSeen      = make(map[string]struct{}, len(gitattestation.Columns))
+		selectedFields = []string{gitattestation.FieldID}
+	)
+	for _, field := range graphql.CollectFields(opCtx, collected.Selections, satisfies) {
+		switch field.Name {
+
+		case "attestation":
+			var (
+				alias = field.Alias
+				path  = append(path, alias)
+				query = (&AttestationClient{config: ga.config}).Query()
+			)
+			if err := query.collectField(ctx, oneNode, opCtx, field, path, mayAddCondition(satisfies, attestationImplementors)...); err != nil {
+				return err
+			}
+			ga.withAttestation = query
+		case "commitHash":
+			if _, ok := fieldSeen[gitattestation.FieldCommitHash]; !ok {
+				selectedFields = append(selectedFields, gitattestation.FieldCommitHash)
+				fieldSeen[gitattestation.FieldCommitHash] = struct{}{}
+			}
+		case "author":
+			if _, ok := fieldSeen[gitattestation.FieldAuthor]; !ok {
+				selectedFields = append(selectedFields, gitattestation.FieldAuthor)
+				fieldSeen[gitattestation.FieldAuthor] = struct{}{}
+			}
+		case "authorEmail":
+			if _, ok := fieldSeen[gitattestation.FieldAuthorEmail]; !ok {
+				selectedFields = append(selectedFields, gitattestation.FieldAuthorEmail)
+				fieldSeen[gitattestation.FieldAuthorEmail] = struct{}{}
+			}
+		case "committerName":
+			if _, ok := fieldSeen[gitattestation.FieldCommitterName]; !ok {
+				selectedFields = append(selectedFields, gitattestation.FieldCommitterName)
+				fieldSeen[gitattestation.FieldCommitterName] = struct{}{}
+			}
+		case "committerEmail":
+			if _, ok := fieldSeen[gitattestation.FieldCommitterEmail]; !ok {
+				selectedFields = append(selectedFields, gitattestation.FieldCommitterEmail)
+				fieldSeen[gitattestation.FieldCommitterEmail] = struct{}{}
+			}
+		case "commitDate":
+			if _, ok := fieldSeen[gitattestation.FieldCommitDate]; !ok {
+				selectedFields = append(selectedFields, gitattestation.FieldCommitDate)
+				fieldSeen[gitattestation.FieldCommitDate] = struct{}{}
+			}
+		case "commitMessage":
+			if _, ok := fieldSeen[gitattestation.FieldCommitMessage]; !ok {
+				selectedFields = append(selectedFields, gitattestation.FieldCommitMessage)
+				fieldSeen[gitattestation.FieldCommitMessage] = struct{}{}
+			}
+		case "status":
+			if _, ok := fieldSeen[gitattestation.FieldStatus]; !ok {
+				selectedFields = append(selectedFields, gitattestation.FieldStatus)
+				fieldSeen[gitattestation.FieldStatus] = struct{}{}
+			}
+		case "commitType":
+			if _, ok := fieldSeen[gitattestation.FieldCommitType]; !ok {
+				selectedFields = append(selectedFields, gitattestation.FieldCommitType)
+				fieldSeen[gitattestation.FieldCommitType] = struct{}{}
+			}
+		case "commitDigest":
+			if _, ok := fieldSeen[gitattestation.FieldCommitDigest]; !ok {
+				selectedFields = append(selectedFields, gitattestation.FieldCommitDigest)
+				fieldSeen[gitattestation.FieldCommitDigest] = struct{}{}
+			}
+		case "signature":
+			if _, ok := fieldSeen[gitattestation.FieldSignature]; !ok {
+				selectedFields = append(selectedFields, gitattestation.FieldSignature)
+				fieldSeen[gitattestation.FieldSignature] = struct{}{}
+			}
+		case "parentHashes":
+			if _, ok := fieldSeen[gitattestation.FieldParentHashes]; !ok {
+				selectedFields = append(selectedFields, gitattestation.FieldParentHashes)
+				fieldSeen[gitattestation.FieldParentHashes] = struct{}{}
+			}
+		case "treeHash":
+			if _, ok := fieldSeen[gitattestation.FieldTreeHash]; !ok {
+				selectedFields = append(selectedFields, gitattestation.FieldTreeHash)
+				fieldSeen[gitattestation.FieldTreeHash] = struct{}{}
+			}
+		case "refs":
+			if _, ok := fieldSeen[gitattestation.FieldRefs]; !ok {
+				selectedFields = append(selectedFields, gitattestation.FieldRefs)
+				fieldSeen[gitattestation.FieldRefs] = struct{}{}
+			}
+		case "remotes":
+			if _, ok := fieldSeen[gitattestation.FieldRemotes]; !ok {
+				selectedFields = append(selectedFields, gitattestation.FieldRemotes)
+				fieldSeen[gitattestation.FieldRemotes] = struct{}{}
+			}
+		case "id":
+		case "__typename":
+		default:
+			unknownSeen = true
+		}
+	}
+	if !unknownSeen {
+		ga.Select(selectedFields...)
+	}
+	return nil
+}
+
+type gitattestationPaginateArgs struct {
+	first, last   *int
+	after, before *Cursor
+	opts          []GitAttestationPaginateOption
+}
+
+func newGitAttestationPaginateArgs(rv map[string]any) *gitattestationPaginateArgs {
+	args := &gitattestationPaginateArgs{}
+	if rv == nil {
+		return args
+	}
+	if v := rv[firstField]; v != nil {
+		args.first = v.(*int)
+	}
+	if v := rv[lastField]; v != nil {
+		args.last = v.(*int)
+	}
+	if v := rv[afterField]; v != nil {
+		args.after = v.(*Cursor)
+	}
+	if v := rv[beforeField]; v != nil {
+		args.before = v.(*Cursor)
+	}
+	if v, ok := rv[whereField].(*GitAttestationWhereInput); ok {
+		args.opts = append(args.opts, WithGitAttestationFilter(v.Filter))
 	}
 	return args
 }

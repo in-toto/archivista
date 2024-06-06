@@ -147,6 +147,29 @@ func HasAttestationCollectionWith(preds ...predicate.AttestationCollection) pred
 	})
 }
 
+// HasGitAttestation applies the HasEdge predicate on the "git_attestation" edge.
+func HasGitAttestation() predicate.Attestation {
+	return predicate.Attestation(func(s *sql.Selector) {
+		step := sqlgraph.NewStep(
+			sqlgraph.From(Table, FieldID),
+			sqlgraph.Edge(sqlgraph.O2O, false, GitAttestationTable, GitAttestationColumn),
+		)
+		sqlgraph.HasNeighbors(s, step)
+	})
+}
+
+// HasGitAttestationWith applies the HasEdge predicate on the "git_attestation" edge with a given conditions (other predicates).
+func HasGitAttestationWith(preds ...predicate.GitAttestation) predicate.Attestation {
+	return predicate.Attestation(func(s *sql.Selector) {
+		step := newGitAttestationStep()
+		sqlgraph.HasNeighborsWith(s, step, func(s *sql.Selector) {
+			for _, p := range preds {
+				p(s)
+			}
+		})
+	})
+}
+
 // And groups predicates with the AND operator between them.
 func And(predicates ...predicate.Attestation) predicate.Attestation {
 	return predicate.Attestation(sql.AndPredicates(predicates...))

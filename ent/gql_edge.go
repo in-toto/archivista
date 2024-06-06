@@ -16,6 +16,14 @@ func (a *Attestation) AttestationCollection(ctx context.Context) (*AttestationCo
 	return result, err
 }
 
+func (a *Attestation) GitAttestation(ctx context.Context) (*GitAttestation, error) {
+	result, err := a.Edges.GitAttestationOrErr()
+	if IsNotLoaded(err) {
+		result, err = a.QueryGitAttestation().Only(ctx)
+	}
+	return result, MaskNotFound(err)
+}
+
 func (ac *AttestationCollection) Attestations(ctx context.Context) (result []*Attestation, err error) {
 	if fc := graphql.GetFieldContext(ctx); fc != nil && fc.Field.Alias != "" {
 		result, err = ac.NamedAttestations(graphql.GetFieldContext(ctx).Field.Alias)
@@ -72,6 +80,14 @@ func (d *Dsse) PayloadDigests(ctx context.Context) (result []*PayloadDigest, err
 	}
 	if IsNotLoaded(err) {
 		result, err = d.QueryPayloadDigests().All(ctx)
+	}
+	return result, err
+}
+
+func (ga *GitAttestation) Attestation(ctx context.Context) (*Attestation, error) {
+	result, err := ga.Edges.AttestationOrErr()
+	if IsNotLoaded(err) {
+		result, err = ga.QueryAttestation().Only(ctx)
 	}
 	return result, err
 }
