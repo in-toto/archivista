@@ -16,6 +16,7 @@ import (
 	"github.com/in-toto/archivista/ent/attestationpolicy"
 	"github.com/in-toto/archivista/ent/dsse"
 	"github.com/in-toto/archivista/ent/predicate"
+	"github.com/in-toto/archivista/ent/sarif"
 	"github.com/in-toto/archivista/ent/statement"
 	"github.com/in-toto/archivista/ent/subject"
 )
@@ -30,6 +31,7 @@ type StatementQuery struct {
 	withSubjects               *SubjectQuery
 	withPolicy                 *AttestationPolicyQuery
 	withAttestationCollections *AttestationCollectionQuery
+	withSarif                  *SarifQuery
 	withDsse                   *DsseQuery
 	modifiers                  []func(*sql.Selector)
 	loadTotal                  []func(context.Context, []*Statement) error
@@ -130,6 +132,28 @@ func (sq *StatementQuery) QueryAttestationCollections() *AttestationCollectionQu
 			sqlgraph.From(statement.Table, statement.FieldID, selector),
 			sqlgraph.To(attestationcollection.Table, attestationcollection.FieldID),
 			sqlgraph.Edge(sqlgraph.O2O, false, statement.AttestationCollectionsTable, statement.AttestationCollectionsColumn),
+		)
+		fromU = sqlgraph.SetNeighbors(sq.driver.Dialect(), step)
+		return fromU, nil
+	}
+	return query
+}
+
+// QuerySarif chains the current query on the "sarif" edge.
+func (sq *StatementQuery) QuerySarif() *SarifQuery {
+	query := (&SarifClient{config: sq.config}).Query()
+	query.path = func(ctx context.Context) (fromU *sql.Selector, err error) {
+		if err := sq.prepareQuery(ctx); err != nil {
+			return nil, err
+		}
+		selector := sq.sqlQuery(ctx)
+		if err := selector.Err(); err != nil {
+			return nil, err
+		}
+		step := sqlgraph.NewStep(
+			sqlgraph.From(statement.Table, statement.FieldID, selector),
+			sqlgraph.To(sarif.Table, sarif.FieldID),
+			sqlgraph.Edge(sqlgraph.O2O, false, statement.SarifTable, statement.SarifColumn),
 		)
 		fromU = sqlgraph.SetNeighbors(sq.driver.Dialect(), step)
 		return fromU, nil
@@ -354,6 +378,7 @@ func (sq *StatementQuery) Clone() *StatementQuery {
 		withSubjects:               sq.withSubjects.Clone(),
 		withPolicy:                 sq.withPolicy.Clone(),
 		withAttestationCollections: sq.withAttestationCollections.Clone(),
+		withSarif:                  sq.withSarif.Clone(),
 		withDsse:                   sq.withDsse.Clone(),
 		// clone intermediate query.
 		sql:  sq.sql.Clone(),
@@ -391,6 +416,17 @@ func (sq *StatementQuery) WithAttestationCollections(opts ...func(*AttestationCo
 		opt(query)
 	}
 	sq.withAttestationCollections = query
+	return sq
+}
+
+// WithSarif tells the query-builder to eager-load the nodes that are connected to
+// the "sarif" edge. The optional arguments are used to configure the query builder of the edge.
+func (sq *StatementQuery) WithSarif(opts ...func(*SarifQuery)) *StatementQuery {
+	query := (&SarifClient{config: sq.config}).Query()
+	for _, opt := range opts {
+		opt(query)
+	}
+	sq.withSarif = query
 	return sq
 }
 
@@ -483,10 +519,11 @@ func (sq *StatementQuery) sqlAll(ctx context.Context, hooks ...queryHook) ([]*St
 	var (
 		nodes       = []*Statement{}
 		_spec       = sq.querySpec()
-		loadedTypes = [4]bool{
+		loadedTypes = [5]bool{
 			sq.withSubjects != nil,
 			sq.withPolicy != nil,
 			sq.withAttestationCollections != nil,
+			sq.withSarif != nil,
 			sq.withDsse != nil,
 		}
 	)
@@ -527,6 +564,12 @@ func (sq *StatementQuery) sqlAll(ctx context.Context, hooks ...queryHook) ([]*St
 	if query := sq.withAttestationCollections; query != nil {
 		if err := sq.loadAttestationCollections(ctx, query, nodes, nil,
 			func(n *Statement, e *AttestationCollection) { n.Edges.AttestationCollections = e }); err != nil {
+			return nil, err
+		}
+	}
+	if query := sq.withSarif; query != nil {
+		if err := sq.loadSarif(ctx, query, nodes, nil,
+			func(n *Statement, e *Sarif) { n.Edges.Sarif = e }); err != nil {
 			return nil, err
 		}
 	}
@@ -641,6 +684,34 @@ func (sq *StatementQuery) loadAttestationCollections(ctx context.Context, query 
 		node, ok := nodeids[*fk]
 		if !ok {
 			return fmt.Errorf(`unexpected referenced foreign-key "statement_attestation_collections" returned %v for node %v`, *fk, n.ID)
+		}
+		assign(node, n)
+	}
+	return nil
+}
+func (sq *StatementQuery) loadSarif(ctx context.Context, query *SarifQuery, nodes []*Statement, init func(*Statement), assign func(*Statement, *Sarif)) error {
+	fks := make([]driver.Value, 0, len(nodes))
+	nodeids := make(map[uuid.UUID]*Statement)
+	for i := range nodes {
+		fks = append(fks, nodes[i].ID)
+		nodeids[nodes[i].ID] = nodes[i]
+	}
+	query.withFKs = true
+	query.Where(predicate.Sarif(func(s *sql.Selector) {
+		s.Where(sql.InValues(s.C(statement.SarifColumn), fks...))
+	}))
+	neighbors, err := query.All(ctx)
+	if err != nil {
+		return err
+	}
+	for _, n := range neighbors {
+		fk := n.statement_sarif
+		if fk == nil {
+			return fmt.Errorf(`foreign-key "statement_sarif" is nil for node %v`, n.ID)
+		}
+		node, ok := nodeids[*fk]
+		if !ok {
+			return fmt.Errorf(`unexpected referenced foreign-key "statement_sarif" returned %v for node %v`, *fk, n.ID)
 		}
 		assign(node, n)
 	}

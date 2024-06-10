@@ -11,6 +11,7 @@ import (
 	"github.com/google/uuid"
 	"github.com/in-toto/archivista/ent/attestationcollection"
 	"github.com/in-toto/archivista/ent/attestationpolicy"
+	"github.com/in-toto/archivista/ent/sarif"
 	"github.com/in-toto/archivista/ent/statement"
 )
 
@@ -35,13 +36,15 @@ type StatementEdges struct {
 	Policy *AttestationPolicy `json:"policy,omitempty"`
 	// AttestationCollections holds the value of the attestation_collections edge.
 	AttestationCollections *AttestationCollection `json:"attestation_collections,omitempty"`
+	// Sarif holds the value of the sarif edge.
+	Sarif *Sarif `json:"sarif,omitempty"`
 	// Dsse holds the value of the dsse edge.
 	Dsse []*Dsse `json:"dsse,omitempty"`
 	// loadedTypes holds the information for reporting if a
 	// type was loaded (or requested) in eager-loading or not.
-	loadedTypes [4]bool
+	loadedTypes [5]bool
 	// totalCount holds the count of the edges above.
-	totalCount [4]map[string]int
+	totalCount [5]map[string]int
 
 	namedSubjects map[string][]*Subject
 	namedDsse     map[string][]*Dsse
@@ -78,10 +81,21 @@ func (e StatementEdges) AttestationCollectionsOrErr() (*AttestationCollection, e
 	return nil, &NotLoadedError{edge: "attestation_collections"}
 }
 
+// SarifOrErr returns the Sarif value or an error if the edge
+// was not loaded in eager-loading, or loaded but was not found.
+func (e StatementEdges) SarifOrErr() (*Sarif, error) {
+	if e.Sarif != nil {
+		return e.Sarif, nil
+	} else if e.loadedTypes[3] {
+		return nil, &NotFoundError{label: sarif.Label}
+	}
+	return nil, &NotLoadedError{edge: "sarif"}
+}
+
 // DsseOrErr returns the Dsse value or an error if the edge
 // was not loaded in eager-loading.
 func (e StatementEdges) DsseOrErr() ([]*Dsse, error) {
-	if e.loadedTypes[3] {
+	if e.loadedTypes[4] {
 		return e.Dsse, nil
 	}
 	return nil, &NotLoadedError{edge: "dsse"}
@@ -149,6 +163,11 @@ func (s *Statement) QueryPolicy() *AttestationPolicyQuery {
 // QueryAttestationCollections queries the "attestation_collections" edge of the Statement entity.
 func (s *Statement) QueryAttestationCollections() *AttestationCollectionQuery {
 	return NewStatementClient(s.config).QueryAttestationCollections(s)
+}
+
+// QuerySarif queries the "sarif" edge of the Statement entity.
+func (s *Statement) QuerySarif() *SarifQuery {
+	return NewStatementClient(s.config).QuerySarif(s)
 }
 
 // QueryDsse queries the "dsse" edge of the Statement entity.

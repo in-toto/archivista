@@ -17,6 +17,8 @@ import (
 	"github.com/in-toto/archivista/ent/attestationpolicy"
 	"github.com/in-toto/archivista/ent/dsse"
 	"github.com/in-toto/archivista/ent/payloaddigest"
+	"github.com/in-toto/archivista/ent/sarif"
+	"github.com/in-toto/archivista/ent/sarifrule"
 	"github.com/in-toto/archivista/ent/signature"
 	"github.com/in-toto/archivista/ent/statement"
 	"github.com/in-toto/archivista/ent/subject"
@@ -1347,6 +1349,504 @@ func (pd *PayloadDigest) ToEdge(order *PayloadDigestOrder) *PayloadDigestEdge {
 	return &PayloadDigestEdge{
 		Node:   pd,
 		Cursor: order.Field.toCursor(pd),
+	}
+}
+
+// SarifEdge is the edge representation of Sarif.
+type SarifEdge struct {
+	Node   *Sarif `json:"node"`
+	Cursor Cursor `json:"cursor"`
+}
+
+// SarifConnection is the connection containing edges to Sarif.
+type SarifConnection struct {
+	Edges      []*SarifEdge `json:"edges"`
+	PageInfo   PageInfo     `json:"pageInfo"`
+	TotalCount int          `json:"totalCount"`
+}
+
+func (c *SarifConnection) build(nodes []*Sarif, pager *sarifPager, after *Cursor, first *int, before *Cursor, last *int) {
+	c.PageInfo.HasNextPage = before != nil
+	c.PageInfo.HasPreviousPage = after != nil
+	if first != nil && *first+1 == len(nodes) {
+		c.PageInfo.HasNextPage = true
+		nodes = nodes[:len(nodes)-1]
+	} else if last != nil && *last+1 == len(nodes) {
+		c.PageInfo.HasPreviousPage = true
+		nodes = nodes[:len(nodes)-1]
+	}
+	var nodeAt func(int) *Sarif
+	if last != nil {
+		n := len(nodes) - 1
+		nodeAt = func(i int) *Sarif {
+			return nodes[n-i]
+		}
+	} else {
+		nodeAt = func(i int) *Sarif {
+			return nodes[i]
+		}
+	}
+	c.Edges = make([]*SarifEdge, len(nodes))
+	for i := range nodes {
+		node := nodeAt(i)
+		c.Edges[i] = &SarifEdge{
+			Node:   node,
+			Cursor: pager.toCursor(node),
+		}
+	}
+	if l := len(c.Edges); l > 0 {
+		c.PageInfo.StartCursor = &c.Edges[0].Cursor
+		c.PageInfo.EndCursor = &c.Edges[l-1].Cursor
+	}
+	if c.TotalCount == 0 {
+		c.TotalCount = len(nodes)
+	}
+}
+
+// SarifPaginateOption enables pagination customization.
+type SarifPaginateOption func(*sarifPager) error
+
+// WithSarifOrder configures pagination ordering.
+func WithSarifOrder(order *SarifOrder) SarifPaginateOption {
+	if order == nil {
+		order = DefaultSarifOrder
+	}
+	o := *order
+	return func(pager *sarifPager) error {
+		if err := o.Direction.Validate(); err != nil {
+			return err
+		}
+		if o.Field == nil {
+			o.Field = DefaultSarifOrder.Field
+		}
+		pager.order = &o
+		return nil
+	}
+}
+
+// WithSarifFilter configures pagination filter.
+func WithSarifFilter(filter func(*SarifQuery) (*SarifQuery, error)) SarifPaginateOption {
+	return func(pager *sarifPager) error {
+		if filter == nil {
+			return errors.New("SarifQuery filter cannot be nil")
+		}
+		pager.filter = filter
+		return nil
+	}
+}
+
+type sarifPager struct {
+	reverse bool
+	order   *SarifOrder
+	filter  func(*SarifQuery) (*SarifQuery, error)
+}
+
+func newSarifPager(opts []SarifPaginateOption, reverse bool) (*sarifPager, error) {
+	pager := &sarifPager{reverse: reverse}
+	for _, opt := range opts {
+		if err := opt(pager); err != nil {
+			return nil, err
+		}
+	}
+	if pager.order == nil {
+		pager.order = DefaultSarifOrder
+	}
+	return pager, nil
+}
+
+func (p *sarifPager) applyFilter(query *SarifQuery) (*SarifQuery, error) {
+	if p.filter != nil {
+		return p.filter(query)
+	}
+	return query, nil
+}
+
+func (p *sarifPager) toCursor(s *Sarif) Cursor {
+	return p.order.Field.toCursor(s)
+}
+
+func (p *sarifPager) applyCursors(query *SarifQuery, after, before *Cursor) (*SarifQuery, error) {
+	direction := p.order.Direction
+	if p.reverse {
+		direction = direction.Reverse()
+	}
+	for _, predicate := range entgql.CursorsPredicate(after, before, DefaultSarifOrder.Field.column, p.order.Field.column, direction) {
+		query = query.Where(predicate)
+	}
+	return query, nil
+}
+
+func (p *sarifPager) applyOrder(query *SarifQuery) *SarifQuery {
+	direction := p.order.Direction
+	if p.reverse {
+		direction = direction.Reverse()
+	}
+	query = query.Order(p.order.Field.toTerm(direction.OrderTermOption()))
+	if p.order.Field != DefaultSarifOrder.Field {
+		query = query.Order(DefaultSarifOrder.Field.toTerm(direction.OrderTermOption()))
+	}
+	if len(query.ctx.Fields) > 0 {
+		query.ctx.AppendFieldOnce(p.order.Field.column)
+	}
+	return query
+}
+
+func (p *sarifPager) orderExpr(query *SarifQuery) sql.Querier {
+	direction := p.order.Direction
+	if p.reverse {
+		direction = direction.Reverse()
+	}
+	if len(query.ctx.Fields) > 0 {
+		query.ctx.AppendFieldOnce(p.order.Field.column)
+	}
+	return sql.ExprFunc(func(b *sql.Builder) {
+		b.Ident(p.order.Field.column).Pad().WriteString(string(direction))
+		if p.order.Field != DefaultSarifOrder.Field {
+			b.Comma().Ident(DefaultSarifOrder.Field.column).Pad().WriteString(string(direction))
+		}
+	})
+}
+
+// Paginate executes the query and returns a relay based cursor connection to Sarif.
+func (s *SarifQuery) Paginate(
+	ctx context.Context, after *Cursor, first *int,
+	before *Cursor, last *int, opts ...SarifPaginateOption,
+) (*SarifConnection, error) {
+	if err := validateFirstLast(first, last); err != nil {
+		return nil, err
+	}
+	pager, err := newSarifPager(opts, last != nil)
+	if err != nil {
+		return nil, err
+	}
+	if s, err = pager.applyFilter(s); err != nil {
+		return nil, err
+	}
+	conn := &SarifConnection{Edges: []*SarifEdge{}}
+	ignoredEdges := !hasCollectedField(ctx, edgesField)
+	if hasCollectedField(ctx, totalCountField) || hasCollectedField(ctx, pageInfoField) {
+		hasPagination := after != nil || first != nil || before != nil || last != nil
+		if hasPagination || ignoredEdges {
+			c := s.Clone()
+			c.ctx.Fields = nil
+			if conn.TotalCount, err = c.Count(ctx); err != nil {
+				return nil, err
+			}
+			conn.PageInfo.HasNextPage = first != nil && conn.TotalCount > 0
+			conn.PageInfo.HasPreviousPage = last != nil && conn.TotalCount > 0
+		}
+	}
+	if ignoredEdges || (first != nil && *first == 0) || (last != nil && *last == 0) {
+		return conn, nil
+	}
+	if s, err = pager.applyCursors(s, after, before); err != nil {
+		return nil, err
+	}
+	limit := paginateLimit(first, last)
+	if limit != 0 {
+		s.Limit(limit)
+	}
+	if field := collectedField(ctx, edgesField, nodeField); field != nil {
+		if err := s.collectField(ctx, limit == 1, graphql.GetOperationContext(ctx), *field, []string{edgesField, nodeField}); err != nil {
+			return nil, err
+		}
+	}
+	s = pager.applyOrder(s)
+	nodes, err := s.All(ctx)
+	if err != nil {
+		return nil, err
+	}
+	conn.build(nodes, pager, after, first, before, last)
+	return conn, nil
+}
+
+// SarifOrderField defines the ordering field of Sarif.
+type SarifOrderField struct {
+	// Value extracts the ordering value from the given Sarif.
+	Value    func(*Sarif) (ent.Value, error)
+	column   string // field or computed.
+	toTerm   func(...sql.OrderTermOption) sarif.OrderOption
+	toCursor func(*Sarif) Cursor
+}
+
+// SarifOrder defines the ordering of Sarif.
+type SarifOrder struct {
+	Direction OrderDirection   `json:"direction"`
+	Field     *SarifOrderField `json:"field"`
+}
+
+// DefaultSarifOrder is the default ordering of Sarif.
+var DefaultSarifOrder = &SarifOrder{
+	Direction: entgql.OrderDirectionAsc,
+	Field: &SarifOrderField{
+		Value: func(s *Sarif) (ent.Value, error) {
+			return s.ID, nil
+		},
+		column: sarif.FieldID,
+		toTerm: sarif.ByID,
+		toCursor: func(s *Sarif) Cursor {
+			return Cursor{ID: s.ID}
+		},
+	},
+}
+
+// ToEdge converts Sarif into SarifEdge.
+func (s *Sarif) ToEdge(order *SarifOrder) *SarifEdge {
+	if order == nil {
+		order = DefaultSarifOrder
+	}
+	return &SarifEdge{
+		Node:   s,
+		Cursor: order.Field.toCursor(s),
+	}
+}
+
+// SarifRuleEdge is the edge representation of SarifRule.
+type SarifRuleEdge struct {
+	Node   *SarifRule `json:"node"`
+	Cursor Cursor     `json:"cursor"`
+}
+
+// SarifRuleConnection is the connection containing edges to SarifRule.
+type SarifRuleConnection struct {
+	Edges      []*SarifRuleEdge `json:"edges"`
+	PageInfo   PageInfo         `json:"pageInfo"`
+	TotalCount int              `json:"totalCount"`
+}
+
+func (c *SarifRuleConnection) build(nodes []*SarifRule, pager *sarifrulePager, after *Cursor, first *int, before *Cursor, last *int) {
+	c.PageInfo.HasNextPage = before != nil
+	c.PageInfo.HasPreviousPage = after != nil
+	if first != nil && *first+1 == len(nodes) {
+		c.PageInfo.HasNextPage = true
+		nodes = nodes[:len(nodes)-1]
+	} else if last != nil && *last+1 == len(nodes) {
+		c.PageInfo.HasPreviousPage = true
+		nodes = nodes[:len(nodes)-1]
+	}
+	var nodeAt func(int) *SarifRule
+	if last != nil {
+		n := len(nodes) - 1
+		nodeAt = func(i int) *SarifRule {
+			return nodes[n-i]
+		}
+	} else {
+		nodeAt = func(i int) *SarifRule {
+			return nodes[i]
+		}
+	}
+	c.Edges = make([]*SarifRuleEdge, len(nodes))
+	for i := range nodes {
+		node := nodeAt(i)
+		c.Edges[i] = &SarifRuleEdge{
+			Node:   node,
+			Cursor: pager.toCursor(node),
+		}
+	}
+	if l := len(c.Edges); l > 0 {
+		c.PageInfo.StartCursor = &c.Edges[0].Cursor
+		c.PageInfo.EndCursor = &c.Edges[l-1].Cursor
+	}
+	if c.TotalCount == 0 {
+		c.TotalCount = len(nodes)
+	}
+}
+
+// SarifRulePaginateOption enables pagination customization.
+type SarifRulePaginateOption func(*sarifrulePager) error
+
+// WithSarifRuleOrder configures pagination ordering.
+func WithSarifRuleOrder(order *SarifRuleOrder) SarifRulePaginateOption {
+	if order == nil {
+		order = DefaultSarifRuleOrder
+	}
+	o := *order
+	return func(pager *sarifrulePager) error {
+		if err := o.Direction.Validate(); err != nil {
+			return err
+		}
+		if o.Field == nil {
+			o.Field = DefaultSarifRuleOrder.Field
+		}
+		pager.order = &o
+		return nil
+	}
+}
+
+// WithSarifRuleFilter configures pagination filter.
+func WithSarifRuleFilter(filter func(*SarifRuleQuery) (*SarifRuleQuery, error)) SarifRulePaginateOption {
+	return func(pager *sarifrulePager) error {
+		if filter == nil {
+			return errors.New("SarifRuleQuery filter cannot be nil")
+		}
+		pager.filter = filter
+		return nil
+	}
+}
+
+type sarifrulePager struct {
+	reverse bool
+	order   *SarifRuleOrder
+	filter  func(*SarifRuleQuery) (*SarifRuleQuery, error)
+}
+
+func newSarifRulePager(opts []SarifRulePaginateOption, reverse bool) (*sarifrulePager, error) {
+	pager := &sarifrulePager{reverse: reverse}
+	for _, opt := range opts {
+		if err := opt(pager); err != nil {
+			return nil, err
+		}
+	}
+	if pager.order == nil {
+		pager.order = DefaultSarifRuleOrder
+	}
+	return pager, nil
+}
+
+func (p *sarifrulePager) applyFilter(query *SarifRuleQuery) (*SarifRuleQuery, error) {
+	if p.filter != nil {
+		return p.filter(query)
+	}
+	return query, nil
+}
+
+func (p *sarifrulePager) toCursor(sr *SarifRule) Cursor {
+	return p.order.Field.toCursor(sr)
+}
+
+func (p *sarifrulePager) applyCursors(query *SarifRuleQuery, after, before *Cursor) (*SarifRuleQuery, error) {
+	direction := p.order.Direction
+	if p.reverse {
+		direction = direction.Reverse()
+	}
+	for _, predicate := range entgql.CursorsPredicate(after, before, DefaultSarifRuleOrder.Field.column, p.order.Field.column, direction) {
+		query = query.Where(predicate)
+	}
+	return query, nil
+}
+
+func (p *sarifrulePager) applyOrder(query *SarifRuleQuery) *SarifRuleQuery {
+	direction := p.order.Direction
+	if p.reverse {
+		direction = direction.Reverse()
+	}
+	query = query.Order(p.order.Field.toTerm(direction.OrderTermOption()))
+	if p.order.Field != DefaultSarifRuleOrder.Field {
+		query = query.Order(DefaultSarifRuleOrder.Field.toTerm(direction.OrderTermOption()))
+	}
+	if len(query.ctx.Fields) > 0 {
+		query.ctx.AppendFieldOnce(p.order.Field.column)
+	}
+	return query
+}
+
+func (p *sarifrulePager) orderExpr(query *SarifRuleQuery) sql.Querier {
+	direction := p.order.Direction
+	if p.reverse {
+		direction = direction.Reverse()
+	}
+	if len(query.ctx.Fields) > 0 {
+		query.ctx.AppendFieldOnce(p.order.Field.column)
+	}
+	return sql.ExprFunc(func(b *sql.Builder) {
+		b.Ident(p.order.Field.column).Pad().WriteString(string(direction))
+		if p.order.Field != DefaultSarifRuleOrder.Field {
+			b.Comma().Ident(DefaultSarifRuleOrder.Field.column).Pad().WriteString(string(direction))
+		}
+	})
+}
+
+// Paginate executes the query and returns a relay based cursor connection to SarifRule.
+func (sr *SarifRuleQuery) Paginate(
+	ctx context.Context, after *Cursor, first *int,
+	before *Cursor, last *int, opts ...SarifRulePaginateOption,
+) (*SarifRuleConnection, error) {
+	if err := validateFirstLast(first, last); err != nil {
+		return nil, err
+	}
+	pager, err := newSarifRulePager(opts, last != nil)
+	if err != nil {
+		return nil, err
+	}
+	if sr, err = pager.applyFilter(sr); err != nil {
+		return nil, err
+	}
+	conn := &SarifRuleConnection{Edges: []*SarifRuleEdge{}}
+	ignoredEdges := !hasCollectedField(ctx, edgesField)
+	if hasCollectedField(ctx, totalCountField) || hasCollectedField(ctx, pageInfoField) {
+		hasPagination := after != nil || first != nil || before != nil || last != nil
+		if hasPagination || ignoredEdges {
+			c := sr.Clone()
+			c.ctx.Fields = nil
+			if conn.TotalCount, err = c.Count(ctx); err != nil {
+				return nil, err
+			}
+			conn.PageInfo.HasNextPage = first != nil && conn.TotalCount > 0
+			conn.PageInfo.HasPreviousPage = last != nil && conn.TotalCount > 0
+		}
+	}
+	if ignoredEdges || (first != nil && *first == 0) || (last != nil && *last == 0) {
+		return conn, nil
+	}
+	if sr, err = pager.applyCursors(sr, after, before); err != nil {
+		return nil, err
+	}
+	limit := paginateLimit(first, last)
+	if limit != 0 {
+		sr.Limit(limit)
+	}
+	if field := collectedField(ctx, edgesField, nodeField); field != nil {
+		if err := sr.collectField(ctx, limit == 1, graphql.GetOperationContext(ctx), *field, []string{edgesField, nodeField}); err != nil {
+			return nil, err
+		}
+	}
+	sr = pager.applyOrder(sr)
+	nodes, err := sr.All(ctx)
+	if err != nil {
+		return nil, err
+	}
+	conn.build(nodes, pager, after, first, before, last)
+	return conn, nil
+}
+
+// SarifRuleOrderField defines the ordering field of SarifRule.
+type SarifRuleOrderField struct {
+	// Value extracts the ordering value from the given SarifRule.
+	Value    func(*SarifRule) (ent.Value, error)
+	column   string // field or computed.
+	toTerm   func(...sql.OrderTermOption) sarifrule.OrderOption
+	toCursor func(*SarifRule) Cursor
+}
+
+// SarifRuleOrder defines the ordering of SarifRule.
+type SarifRuleOrder struct {
+	Direction OrderDirection       `json:"direction"`
+	Field     *SarifRuleOrderField `json:"field"`
+}
+
+// DefaultSarifRuleOrder is the default ordering of SarifRule.
+var DefaultSarifRuleOrder = &SarifRuleOrder{
+	Direction: entgql.OrderDirectionAsc,
+	Field: &SarifRuleOrderField{
+		Value: func(sr *SarifRule) (ent.Value, error) {
+			return sr.ID, nil
+		},
+		column: sarifrule.FieldID,
+		toTerm: sarifrule.ByID,
+		toCursor: func(sr *SarifRule) Cursor {
+			return Cursor{ID: sr.ID}
+		},
+	},
+}
+
+// ToEdge converts SarifRule into SarifRuleEdge.
+func (sr *SarifRule) ToEdge(order *SarifRuleOrder) *SarifRuleEdge {
+	if order == nil {
+		order = DefaultSarifRuleOrder
+	}
+	return &SarifRuleEdge{
+		Node:   sr,
+		Cursor: order.Field.toCursor(sr),
 	}
 }
 

@@ -193,6 +193,29 @@ func HasAttestationCollectionsWith(preds ...predicate.AttestationCollection) pre
 	})
 }
 
+// HasSarif applies the HasEdge predicate on the "sarif" edge.
+func HasSarif() predicate.Statement {
+	return predicate.Statement(func(s *sql.Selector) {
+		step := sqlgraph.NewStep(
+			sqlgraph.From(Table, FieldID),
+			sqlgraph.Edge(sqlgraph.O2O, false, SarifTable, SarifColumn),
+		)
+		sqlgraph.HasNeighbors(s, step)
+	})
+}
+
+// HasSarifWith applies the HasEdge predicate on the "sarif" edge with a given conditions (other predicates).
+func HasSarifWith(preds ...predicate.Sarif) predicate.Statement {
+	return predicate.Statement(func(s *sql.Selector) {
+		step := newSarifStep()
+		sqlgraph.HasNeighborsWith(s, step, func(s *sql.Selector) {
+			for _, p := range preds {
+				p(s)
+			}
+		})
+	})
+}
+
 // HasDsse applies the HasEdge predicate on the "dsse" edge.
 func HasDsse() predicate.Statement {
 	return predicate.Statement(func(s *sql.Selector) {

@@ -122,6 +122,21 @@ type ComplexityRoot struct {
 		Subjects            func(childComplexity int, after *entgql.Cursor[uuid.UUID], first *int, before *entgql.Cursor[uuid.UUID], last *int, where *ent.SubjectWhereInput) int
 	}
 
+	Sarif struct {
+		ID             func(childComplexity int) int
+		ReportFileName func(childComplexity int) int
+		SarifRules     func(childComplexity int) int
+		Statement      func(childComplexity int) int
+	}
+
+	SarifRule struct {
+		ID               func(childComplexity int) int
+		RuleID           func(childComplexity int) int
+		RuleName         func(childComplexity int) int
+		Sarif            func(childComplexity int) int
+		ShortDescription func(childComplexity int) int
+	}
+
 	Signature struct {
 		Dsse       func(childComplexity int) int
 		ID         func(childComplexity int) int
@@ -136,6 +151,7 @@ type ComplexityRoot struct {
 		ID                     func(childComplexity int) int
 		Policy                 func(childComplexity int) int
 		Predicate              func(childComplexity int) int
+		Sarif                  func(childComplexity int) int
 		Subjects               func(childComplexity int, after *entgql.Cursor[uuid.UUID], first *int, before *entgql.Cursor[uuid.UUID], last *int, where *ent.SubjectWhereInput) int
 	}
 
@@ -497,6 +513,69 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 
 		return e.complexity.Query.Subjects(childComplexity, args["after"].(*entgql.Cursor[uuid.UUID]), args["first"].(*int), args["before"].(*entgql.Cursor[uuid.UUID]), args["last"].(*int), args["where"].(*ent.SubjectWhereInput)), true
 
+	case "Sarif.id":
+		if e.complexity.Sarif.ID == nil {
+			break
+		}
+
+		return e.complexity.Sarif.ID(childComplexity), true
+
+	case "Sarif.reportFileName":
+		if e.complexity.Sarif.ReportFileName == nil {
+			break
+		}
+
+		return e.complexity.Sarif.ReportFileName(childComplexity), true
+
+	case "Sarif.sarifRules":
+		if e.complexity.Sarif.SarifRules == nil {
+			break
+		}
+
+		return e.complexity.Sarif.SarifRules(childComplexity), true
+
+	case "Sarif.statement":
+		if e.complexity.Sarif.Statement == nil {
+			break
+		}
+
+		return e.complexity.Sarif.Statement(childComplexity), true
+
+	case "SarifRule.id":
+		if e.complexity.SarifRule.ID == nil {
+			break
+		}
+
+		return e.complexity.SarifRule.ID(childComplexity), true
+
+	case "SarifRule.ruleID":
+		if e.complexity.SarifRule.RuleID == nil {
+			break
+		}
+
+		return e.complexity.SarifRule.RuleID(childComplexity), true
+
+	case "SarifRule.ruleName":
+		if e.complexity.SarifRule.RuleName == nil {
+			break
+		}
+
+		return e.complexity.SarifRule.RuleName(childComplexity), true
+
+	case "SarifRule.sarif":
+		if e.complexity.SarifRule.Sarif == nil {
+			break
+		}
+
+		return e.complexity.SarifRule.Sarif(childComplexity), true
+
+	case "SarifRule.shortDescription":
+		if e.complexity.SarifRule.ShortDescription == nil {
+			break
+		}
+
+		return e.complexity.SarifRule.ShortDescription(childComplexity), true
+
 	case "Signature.dsse":
 		if e.complexity.Signature.Dsse == nil {
 			break
@@ -566,6 +645,13 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 		}
 
 		return e.complexity.Statement.Predicate(childComplexity), true
+
+	case "Statement.sarif":
+		if e.complexity.Statement.Sarif == nil {
+			break
+		}
+
+		return e.complexity.Statement.Sarif(childComplexity), true
 
 	case "Statement.subjects":
 		if e.complexity.Statement.Subjects == nil {
@@ -711,6 +797,8 @@ func (e *executableSchema) Exec(ctx context.Context) graphql.ResponseHandler {
 		ec.unmarshalInputAttestationWhereInput,
 		ec.unmarshalInputDsseWhereInput,
 		ec.unmarshalInputPayloadDigestWhereInput,
+		ec.unmarshalInputSarifRuleWhereInput,
+		ec.unmarshalInputSarifWhereInput,
 		ec.unmarshalInputSignatureWhereInput,
 		ec.unmarshalInputStatementWhereInput,
 		ec.unmarshalInputSubjectDigestWhereInput,
@@ -1433,6 +1521,8 @@ func (ec *executionContext) fieldContext_AttestationCollection_statement(_ conte
 				return ec.fieldContext_Statement_policy(ctx, field)
 			case "attestationCollections":
 				return ec.fieldContext_Statement_attestationCollections(ctx, field)
+			case "sarif":
+				return ec.fieldContext_Statement_sarif(ctx, field)
 			case "dsse":
 				return ec.fieldContext_Statement_dsse(ctx, field)
 			}
@@ -1576,6 +1666,8 @@ func (ec *executionContext) fieldContext_AttestationPolicy_statement(_ context.C
 				return ec.fieldContext_Statement_policy(ctx, field)
 			case "attestationCollections":
 				return ec.fieldContext_Statement_attestationCollections(ctx, field)
+			case "sarif":
+				return ec.fieldContext_Statement_sarif(ctx, field)
 			case "dsse":
 				return ec.fieldContext_Statement_dsse(ctx, field)
 			}
@@ -2001,6 +2093,8 @@ func (ec *executionContext) fieldContext_Dsse_statement(_ context.Context, field
 				return ec.fieldContext_Statement_policy(ctx, field)
 			case "attestationCollections":
 				return ec.fieldContext_Statement_attestationCollections(ctx, field)
+			case "sarif":
+				return ec.fieldContext_Statement_sarif(ctx, field)
 			case "dsse":
 				return ec.fieldContext_Statement_dsse(ctx, field)
 			}
@@ -3140,6 +3234,434 @@ func (ec *executionContext) fieldContext_Query___schema(_ context.Context, field
 	return fc, nil
 }
 
+func (ec *executionContext) _Sarif_id(ctx context.Context, field graphql.CollectedField, obj *ent.Sarif) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_Sarif_id(ctx, field)
+	if err != nil {
+		return graphql.Null
+	}
+	ctx = graphql.WithFieldContext(ctx, fc)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.ID, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.(uuid.UUID)
+	fc.Result = res
+	return ec.marshalNID2githubᚗcomᚋgoogleᚋuuidᚐUUID(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) fieldContext_Sarif_id(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "Sarif",
+		Field:      field,
+		IsMethod:   false,
+		IsResolver: false,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return nil, errors.New("field of type ID does not have child fields")
+		},
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _Sarif_reportFileName(ctx context.Context, field graphql.CollectedField, obj *ent.Sarif) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_Sarif_reportFileName(ctx, field)
+	if err != nil {
+		return graphql.Null
+	}
+	ctx = graphql.WithFieldContext(ctx, fc)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.ReportFileName, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.(string)
+	fc.Result = res
+	return ec.marshalNString2string(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) fieldContext_Sarif_reportFileName(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "Sarif",
+		Field:      field,
+		IsMethod:   false,
+		IsResolver: false,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return nil, errors.New("field of type String does not have child fields")
+		},
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _Sarif_sarifRules(ctx context.Context, field graphql.CollectedField, obj *ent.Sarif) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_Sarif_sarifRules(ctx, field)
+	if err != nil {
+		return graphql.Null
+	}
+	ctx = graphql.WithFieldContext(ctx, fc)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.SarifRules(ctx)
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		return graphql.Null
+	}
+	res := resTmp.(*ent.SarifRule)
+	fc.Result = res
+	return ec.marshalOSarifRule2ᚖgithubᚗcomᚋinᚑtotoᚋarchivistaᚋentᚐSarifRule(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) fieldContext_Sarif_sarifRules(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "Sarif",
+		Field:      field,
+		IsMethod:   true,
+		IsResolver: false,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			switch field.Name {
+			case "id":
+				return ec.fieldContext_SarifRule_id(ctx, field)
+			case "ruleID":
+				return ec.fieldContext_SarifRule_ruleID(ctx, field)
+			case "ruleName":
+				return ec.fieldContext_SarifRule_ruleName(ctx, field)
+			case "shortDescription":
+				return ec.fieldContext_SarifRule_shortDescription(ctx, field)
+			case "sarif":
+				return ec.fieldContext_SarifRule_sarif(ctx, field)
+			}
+			return nil, fmt.Errorf("no field named %q was found under type SarifRule", field.Name)
+		},
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _Sarif_statement(ctx context.Context, field graphql.CollectedField, obj *ent.Sarif) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_Sarif_statement(ctx, field)
+	if err != nil {
+		return graphql.Null
+	}
+	ctx = graphql.WithFieldContext(ctx, fc)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.Statement(ctx)
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.(*ent.Statement)
+	fc.Result = res
+	return ec.marshalNStatement2ᚖgithubᚗcomᚋinᚑtotoᚋarchivistaᚋentᚐStatement(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) fieldContext_Sarif_statement(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "Sarif",
+		Field:      field,
+		IsMethod:   true,
+		IsResolver: false,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			switch field.Name {
+			case "id":
+				return ec.fieldContext_Statement_id(ctx, field)
+			case "predicate":
+				return ec.fieldContext_Statement_predicate(ctx, field)
+			case "subjects":
+				return ec.fieldContext_Statement_subjects(ctx, field)
+			case "policy":
+				return ec.fieldContext_Statement_policy(ctx, field)
+			case "attestationCollections":
+				return ec.fieldContext_Statement_attestationCollections(ctx, field)
+			case "sarif":
+				return ec.fieldContext_Statement_sarif(ctx, field)
+			case "dsse":
+				return ec.fieldContext_Statement_dsse(ctx, field)
+			}
+			return nil, fmt.Errorf("no field named %q was found under type Statement", field.Name)
+		},
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _SarifRule_id(ctx context.Context, field graphql.CollectedField, obj *ent.SarifRule) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_SarifRule_id(ctx, field)
+	if err != nil {
+		return graphql.Null
+	}
+	ctx = graphql.WithFieldContext(ctx, fc)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.ID, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.(uuid.UUID)
+	fc.Result = res
+	return ec.marshalNID2githubᚗcomᚋgoogleᚋuuidᚐUUID(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) fieldContext_SarifRule_id(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "SarifRule",
+		Field:      field,
+		IsMethod:   false,
+		IsResolver: false,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return nil, errors.New("field of type ID does not have child fields")
+		},
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _SarifRule_ruleID(ctx context.Context, field graphql.CollectedField, obj *ent.SarifRule) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_SarifRule_ruleID(ctx, field)
+	if err != nil {
+		return graphql.Null
+	}
+	ctx = graphql.WithFieldContext(ctx, fc)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.RuleID, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.(string)
+	fc.Result = res
+	return ec.marshalNString2string(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) fieldContext_SarifRule_ruleID(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "SarifRule",
+		Field:      field,
+		IsMethod:   false,
+		IsResolver: false,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return nil, errors.New("field of type String does not have child fields")
+		},
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _SarifRule_ruleName(ctx context.Context, field graphql.CollectedField, obj *ent.SarifRule) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_SarifRule_ruleName(ctx, field)
+	if err != nil {
+		return graphql.Null
+	}
+	ctx = graphql.WithFieldContext(ctx, fc)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.RuleName, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.(string)
+	fc.Result = res
+	return ec.marshalNString2string(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) fieldContext_SarifRule_ruleName(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "SarifRule",
+		Field:      field,
+		IsMethod:   false,
+		IsResolver: false,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return nil, errors.New("field of type String does not have child fields")
+		},
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _SarifRule_shortDescription(ctx context.Context, field graphql.CollectedField, obj *ent.SarifRule) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_SarifRule_shortDescription(ctx, field)
+	if err != nil {
+		return graphql.Null
+	}
+	ctx = graphql.WithFieldContext(ctx, fc)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.ShortDescription, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.(string)
+	fc.Result = res
+	return ec.marshalNString2string(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) fieldContext_SarifRule_shortDescription(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "SarifRule",
+		Field:      field,
+		IsMethod:   false,
+		IsResolver: false,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return nil, errors.New("field of type String does not have child fields")
+		},
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _SarifRule_sarif(ctx context.Context, field graphql.CollectedField, obj *ent.SarifRule) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_SarifRule_sarif(ctx, field)
+	if err != nil {
+		return graphql.Null
+	}
+	ctx = graphql.WithFieldContext(ctx, fc)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.Sarif(ctx)
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		return graphql.Null
+	}
+	res := resTmp.(*ent.Sarif)
+	fc.Result = res
+	return ec.marshalOSarif2ᚖgithubᚗcomᚋinᚑtotoᚋarchivistaᚋentᚐSarif(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) fieldContext_SarifRule_sarif(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "SarifRule",
+		Field:      field,
+		IsMethod:   true,
+		IsResolver: false,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			switch field.Name {
+			case "id":
+				return ec.fieldContext_Sarif_id(ctx, field)
+			case "reportFileName":
+				return ec.fieldContext_Sarif_reportFileName(ctx, field)
+			case "sarifRules":
+				return ec.fieldContext_Sarif_sarifRules(ctx, field)
+			case "statement":
+				return ec.fieldContext_Sarif_statement(ctx, field)
+			}
+			return nil, fmt.Errorf("no field named %q was found under type Sarif", field.Name)
+		},
+	}
+	return fc, nil
+}
+
 func (ec *executionContext) _Signature_id(ctx context.Context, field graphql.CollectedField, obj *ent.Signature) (ret graphql.Marshaler) {
 	fc, err := ec.fieldContext_Signature_id(ctx, field)
 	if err != nil {
@@ -3629,6 +4151,57 @@ func (ec *executionContext) fieldContext_Statement_attestationCollections(_ cont
 	return fc, nil
 }
 
+func (ec *executionContext) _Statement_sarif(ctx context.Context, field graphql.CollectedField, obj *ent.Statement) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_Statement_sarif(ctx, field)
+	if err != nil {
+		return graphql.Null
+	}
+	ctx = graphql.WithFieldContext(ctx, fc)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.Sarif(ctx)
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		return graphql.Null
+	}
+	res := resTmp.(*ent.Sarif)
+	fc.Result = res
+	return ec.marshalOSarif2ᚖgithubᚗcomᚋinᚑtotoᚋarchivistaᚋentᚐSarif(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) fieldContext_Statement_sarif(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "Statement",
+		Field:      field,
+		IsMethod:   true,
+		IsResolver: false,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			switch field.Name {
+			case "id":
+				return ec.fieldContext_Sarif_id(ctx, field)
+			case "reportFileName":
+				return ec.fieldContext_Sarif_reportFileName(ctx, field)
+			case "sarifRules":
+				return ec.fieldContext_Sarif_sarifRules(ctx, field)
+			case "statement":
+				return ec.fieldContext_Sarif_statement(ctx, field)
+			}
+			return nil, fmt.Errorf("no field named %q was found under type Sarif", field.Name)
+		},
+	}
+	return fc, nil
+}
+
 func (ec *executionContext) _Statement_dsse(ctx context.Context, field graphql.CollectedField, obj *ent.Statement) (ret graphql.Marshaler) {
 	fc, err := ec.fieldContext_Statement_dsse(ctx, field)
 	if err != nil {
@@ -3869,6 +4442,8 @@ func (ec *executionContext) fieldContext_Subject_statement(_ context.Context, fi
 				return ec.fieldContext_Statement_policy(ctx, field)
 			case "attestationCollections":
 				return ec.fieldContext_Statement_attestationCollections(ctx, field)
+			case "sarif":
+				return ec.fieldContext_Statement_sarif(ctx, field)
 			case "dsse":
 				return ec.fieldContext_Statement_dsse(ctx, field)
 			}
@@ -7493,6 +8068,606 @@ func (ec *executionContext) unmarshalInputPayloadDigestWhereInput(ctx context.Co
 	return it, nil
 }
 
+func (ec *executionContext) unmarshalInputSarifRuleWhereInput(ctx context.Context, obj interface{}) (ent.SarifRuleWhereInput, error) {
+	var it ent.SarifRuleWhereInput
+	asMap := map[string]interface{}{}
+	for k, v := range obj.(map[string]interface{}) {
+		asMap[k] = v
+	}
+
+	fieldsInOrder := [...]string{"not", "and", "or", "id", "idNEQ", "idIn", "idNotIn", "idGT", "idGTE", "idLT", "idLTE", "ruleID", "ruleIDNEQ", "ruleIDIn", "ruleIDNotIn", "ruleIDGT", "ruleIDGTE", "ruleIDLT", "ruleIDLTE", "ruleIDContains", "ruleIDHasPrefix", "ruleIDHasSuffix", "ruleIDEqualFold", "ruleIDContainsFold", "ruleName", "ruleNameNEQ", "ruleNameIn", "ruleNameNotIn", "ruleNameGT", "ruleNameGTE", "ruleNameLT", "ruleNameLTE", "ruleNameContains", "ruleNameHasPrefix", "ruleNameHasSuffix", "ruleNameEqualFold", "ruleNameContainsFold", "shortDescription", "shortDescriptionNEQ", "shortDescriptionIn", "shortDescriptionNotIn", "shortDescriptionGT", "shortDescriptionGTE", "shortDescriptionLT", "shortDescriptionLTE", "shortDescriptionContains", "shortDescriptionHasPrefix", "shortDescriptionHasSuffix", "shortDescriptionEqualFold", "shortDescriptionContainsFold", "hasSarif", "hasSarifWith"}
+	for _, k := range fieldsInOrder {
+		v, ok := asMap[k]
+		if !ok {
+			continue
+		}
+		switch k {
+		case "not":
+			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("not"))
+			data, err := ec.unmarshalOSarifRuleWhereInput2ᚖgithubᚗcomᚋinᚑtotoᚋarchivistaᚋentᚐSarifRuleWhereInput(ctx, v)
+			if err != nil {
+				return it, err
+			}
+			it.Not = data
+		case "and":
+			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("and"))
+			data, err := ec.unmarshalOSarifRuleWhereInput2ᚕᚖgithubᚗcomᚋinᚑtotoᚋarchivistaᚋentᚐSarifRuleWhereInputᚄ(ctx, v)
+			if err != nil {
+				return it, err
+			}
+			it.And = data
+		case "or":
+			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("or"))
+			data, err := ec.unmarshalOSarifRuleWhereInput2ᚕᚖgithubᚗcomᚋinᚑtotoᚋarchivistaᚋentᚐSarifRuleWhereInputᚄ(ctx, v)
+			if err != nil {
+				return it, err
+			}
+			it.Or = data
+		case "id":
+			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("id"))
+			data, err := ec.unmarshalOID2ᚖgithubᚗcomᚋgoogleᚋuuidᚐUUID(ctx, v)
+			if err != nil {
+				return it, err
+			}
+			it.ID = data
+		case "idNEQ":
+			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("idNEQ"))
+			data, err := ec.unmarshalOID2ᚖgithubᚗcomᚋgoogleᚋuuidᚐUUID(ctx, v)
+			if err != nil {
+				return it, err
+			}
+			it.IDNEQ = data
+		case "idIn":
+			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("idIn"))
+			data, err := ec.unmarshalOID2ᚕgithubᚗcomᚋgoogleᚋuuidᚐUUIDᚄ(ctx, v)
+			if err != nil {
+				return it, err
+			}
+			it.IDIn = data
+		case "idNotIn":
+			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("idNotIn"))
+			data, err := ec.unmarshalOID2ᚕgithubᚗcomᚋgoogleᚋuuidᚐUUIDᚄ(ctx, v)
+			if err != nil {
+				return it, err
+			}
+			it.IDNotIn = data
+		case "idGT":
+			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("idGT"))
+			data, err := ec.unmarshalOID2ᚖgithubᚗcomᚋgoogleᚋuuidᚐUUID(ctx, v)
+			if err != nil {
+				return it, err
+			}
+			it.IDGT = data
+		case "idGTE":
+			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("idGTE"))
+			data, err := ec.unmarshalOID2ᚖgithubᚗcomᚋgoogleᚋuuidᚐUUID(ctx, v)
+			if err != nil {
+				return it, err
+			}
+			it.IDGTE = data
+		case "idLT":
+			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("idLT"))
+			data, err := ec.unmarshalOID2ᚖgithubᚗcomᚋgoogleᚋuuidᚐUUID(ctx, v)
+			if err != nil {
+				return it, err
+			}
+			it.IDLT = data
+		case "idLTE":
+			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("idLTE"))
+			data, err := ec.unmarshalOID2ᚖgithubᚗcomᚋgoogleᚋuuidᚐUUID(ctx, v)
+			if err != nil {
+				return it, err
+			}
+			it.IDLTE = data
+		case "ruleID":
+			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("ruleID"))
+			data, err := ec.unmarshalOString2ᚖstring(ctx, v)
+			if err != nil {
+				return it, err
+			}
+			it.RuleID = data
+		case "ruleIDNEQ":
+			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("ruleIDNEQ"))
+			data, err := ec.unmarshalOString2ᚖstring(ctx, v)
+			if err != nil {
+				return it, err
+			}
+			it.RuleIDNEQ = data
+		case "ruleIDIn":
+			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("ruleIDIn"))
+			data, err := ec.unmarshalOString2ᚕstringᚄ(ctx, v)
+			if err != nil {
+				return it, err
+			}
+			it.RuleIDIn = data
+		case "ruleIDNotIn":
+			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("ruleIDNotIn"))
+			data, err := ec.unmarshalOString2ᚕstringᚄ(ctx, v)
+			if err != nil {
+				return it, err
+			}
+			it.RuleIDNotIn = data
+		case "ruleIDGT":
+			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("ruleIDGT"))
+			data, err := ec.unmarshalOString2ᚖstring(ctx, v)
+			if err != nil {
+				return it, err
+			}
+			it.RuleIDGT = data
+		case "ruleIDGTE":
+			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("ruleIDGTE"))
+			data, err := ec.unmarshalOString2ᚖstring(ctx, v)
+			if err != nil {
+				return it, err
+			}
+			it.RuleIDGTE = data
+		case "ruleIDLT":
+			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("ruleIDLT"))
+			data, err := ec.unmarshalOString2ᚖstring(ctx, v)
+			if err != nil {
+				return it, err
+			}
+			it.RuleIDLT = data
+		case "ruleIDLTE":
+			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("ruleIDLTE"))
+			data, err := ec.unmarshalOString2ᚖstring(ctx, v)
+			if err != nil {
+				return it, err
+			}
+			it.RuleIDLTE = data
+		case "ruleIDContains":
+			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("ruleIDContains"))
+			data, err := ec.unmarshalOString2ᚖstring(ctx, v)
+			if err != nil {
+				return it, err
+			}
+			it.RuleIDContains = data
+		case "ruleIDHasPrefix":
+			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("ruleIDHasPrefix"))
+			data, err := ec.unmarshalOString2ᚖstring(ctx, v)
+			if err != nil {
+				return it, err
+			}
+			it.RuleIDHasPrefix = data
+		case "ruleIDHasSuffix":
+			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("ruleIDHasSuffix"))
+			data, err := ec.unmarshalOString2ᚖstring(ctx, v)
+			if err != nil {
+				return it, err
+			}
+			it.RuleIDHasSuffix = data
+		case "ruleIDEqualFold":
+			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("ruleIDEqualFold"))
+			data, err := ec.unmarshalOString2ᚖstring(ctx, v)
+			if err != nil {
+				return it, err
+			}
+			it.RuleIDEqualFold = data
+		case "ruleIDContainsFold":
+			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("ruleIDContainsFold"))
+			data, err := ec.unmarshalOString2ᚖstring(ctx, v)
+			if err != nil {
+				return it, err
+			}
+			it.RuleIDContainsFold = data
+		case "ruleName":
+			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("ruleName"))
+			data, err := ec.unmarshalOString2ᚖstring(ctx, v)
+			if err != nil {
+				return it, err
+			}
+			it.RuleName = data
+		case "ruleNameNEQ":
+			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("ruleNameNEQ"))
+			data, err := ec.unmarshalOString2ᚖstring(ctx, v)
+			if err != nil {
+				return it, err
+			}
+			it.RuleNameNEQ = data
+		case "ruleNameIn":
+			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("ruleNameIn"))
+			data, err := ec.unmarshalOString2ᚕstringᚄ(ctx, v)
+			if err != nil {
+				return it, err
+			}
+			it.RuleNameIn = data
+		case "ruleNameNotIn":
+			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("ruleNameNotIn"))
+			data, err := ec.unmarshalOString2ᚕstringᚄ(ctx, v)
+			if err != nil {
+				return it, err
+			}
+			it.RuleNameNotIn = data
+		case "ruleNameGT":
+			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("ruleNameGT"))
+			data, err := ec.unmarshalOString2ᚖstring(ctx, v)
+			if err != nil {
+				return it, err
+			}
+			it.RuleNameGT = data
+		case "ruleNameGTE":
+			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("ruleNameGTE"))
+			data, err := ec.unmarshalOString2ᚖstring(ctx, v)
+			if err != nil {
+				return it, err
+			}
+			it.RuleNameGTE = data
+		case "ruleNameLT":
+			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("ruleNameLT"))
+			data, err := ec.unmarshalOString2ᚖstring(ctx, v)
+			if err != nil {
+				return it, err
+			}
+			it.RuleNameLT = data
+		case "ruleNameLTE":
+			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("ruleNameLTE"))
+			data, err := ec.unmarshalOString2ᚖstring(ctx, v)
+			if err != nil {
+				return it, err
+			}
+			it.RuleNameLTE = data
+		case "ruleNameContains":
+			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("ruleNameContains"))
+			data, err := ec.unmarshalOString2ᚖstring(ctx, v)
+			if err != nil {
+				return it, err
+			}
+			it.RuleNameContains = data
+		case "ruleNameHasPrefix":
+			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("ruleNameHasPrefix"))
+			data, err := ec.unmarshalOString2ᚖstring(ctx, v)
+			if err != nil {
+				return it, err
+			}
+			it.RuleNameHasPrefix = data
+		case "ruleNameHasSuffix":
+			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("ruleNameHasSuffix"))
+			data, err := ec.unmarshalOString2ᚖstring(ctx, v)
+			if err != nil {
+				return it, err
+			}
+			it.RuleNameHasSuffix = data
+		case "ruleNameEqualFold":
+			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("ruleNameEqualFold"))
+			data, err := ec.unmarshalOString2ᚖstring(ctx, v)
+			if err != nil {
+				return it, err
+			}
+			it.RuleNameEqualFold = data
+		case "ruleNameContainsFold":
+			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("ruleNameContainsFold"))
+			data, err := ec.unmarshalOString2ᚖstring(ctx, v)
+			if err != nil {
+				return it, err
+			}
+			it.RuleNameContainsFold = data
+		case "shortDescription":
+			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("shortDescription"))
+			data, err := ec.unmarshalOString2ᚖstring(ctx, v)
+			if err != nil {
+				return it, err
+			}
+			it.ShortDescription = data
+		case "shortDescriptionNEQ":
+			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("shortDescriptionNEQ"))
+			data, err := ec.unmarshalOString2ᚖstring(ctx, v)
+			if err != nil {
+				return it, err
+			}
+			it.ShortDescriptionNEQ = data
+		case "shortDescriptionIn":
+			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("shortDescriptionIn"))
+			data, err := ec.unmarshalOString2ᚕstringᚄ(ctx, v)
+			if err != nil {
+				return it, err
+			}
+			it.ShortDescriptionIn = data
+		case "shortDescriptionNotIn":
+			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("shortDescriptionNotIn"))
+			data, err := ec.unmarshalOString2ᚕstringᚄ(ctx, v)
+			if err != nil {
+				return it, err
+			}
+			it.ShortDescriptionNotIn = data
+		case "shortDescriptionGT":
+			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("shortDescriptionGT"))
+			data, err := ec.unmarshalOString2ᚖstring(ctx, v)
+			if err != nil {
+				return it, err
+			}
+			it.ShortDescriptionGT = data
+		case "shortDescriptionGTE":
+			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("shortDescriptionGTE"))
+			data, err := ec.unmarshalOString2ᚖstring(ctx, v)
+			if err != nil {
+				return it, err
+			}
+			it.ShortDescriptionGTE = data
+		case "shortDescriptionLT":
+			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("shortDescriptionLT"))
+			data, err := ec.unmarshalOString2ᚖstring(ctx, v)
+			if err != nil {
+				return it, err
+			}
+			it.ShortDescriptionLT = data
+		case "shortDescriptionLTE":
+			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("shortDescriptionLTE"))
+			data, err := ec.unmarshalOString2ᚖstring(ctx, v)
+			if err != nil {
+				return it, err
+			}
+			it.ShortDescriptionLTE = data
+		case "shortDescriptionContains":
+			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("shortDescriptionContains"))
+			data, err := ec.unmarshalOString2ᚖstring(ctx, v)
+			if err != nil {
+				return it, err
+			}
+			it.ShortDescriptionContains = data
+		case "shortDescriptionHasPrefix":
+			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("shortDescriptionHasPrefix"))
+			data, err := ec.unmarshalOString2ᚖstring(ctx, v)
+			if err != nil {
+				return it, err
+			}
+			it.ShortDescriptionHasPrefix = data
+		case "shortDescriptionHasSuffix":
+			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("shortDescriptionHasSuffix"))
+			data, err := ec.unmarshalOString2ᚖstring(ctx, v)
+			if err != nil {
+				return it, err
+			}
+			it.ShortDescriptionHasSuffix = data
+		case "shortDescriptionEqualFold":
+			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("shortDescriptionEqualFold"))
+			data, err := ec.unmarshalOString2ᚖstring(ctx, v)
+			if err != nil {
+				return it, err
+			}
+			it.ShortDescriptionEqualFold = data
+		case "shortDescriptionContainsFold":
+			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("shortDescriptionContainsFold"))
+			data, err := ec.unmarshalOString2ᚖstring(ctx, v)
+			if err != nil {
+				return it, err
+			}
+			it.ShortDescriptionContainsFold = data
+		case "hasSarif":
+			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("hasSarif"))
+			data, err := ec.unmarshalOBoolean2ᚖbool(ctx, v)
+			if err != nil {
+				return it, err
+			}
+			it.HasSarif = data
+		case "hasSarifWith":
+			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("hasSarifWith"))
+			data, err := ec.unmarshalOSarifWhereInput2ᚕᚖgithubᚗcomᚋinᚑtotoᚋarchivistaᚋentᚐSarifWhereInputᚄ(ctx, v)
+			if err != nil {
+				return it, err
+			}
+			it.HasSarifWith = data
+		}
+	}
+
+	return it, nil
+}
+
+func (ec *executionContext) unmarshalInputSarifWhereInput(ctx context.Context, obj interface{}) (ent.SarifWhereInput, error) {
+	var it ent.SarifWhereInput
+	asMap := map[string]interface{}{}
+	for k, v := range obj.(map[string]interface{}) {
+		asMap[k] = v
+	}
+
+	fieldsInOrder := [...]string{"not", "and", "or", "id", "idNEQ", "idIn", "idNotIn", "idGT", "idGTE", "idLT", "idLTE", "reportFileName", "reportFileNameNEQ", "reportFileNameIn", "reportFileNameNotIn", "reportFileNameGT", "reportFileNameGTE", "reportFileNameLT", "reportFileNameLTE", "reportFileNameContains", "reportFileNameHasPrefix", "reportFileNameHasSuffix", "reportFileNameEqualFold", "reportFileNameContainsFold", "hasSarifRules", "hasSarifRulesWith", "hasStatement", "hasStatementWith"}
+	for _, k := range fieldsInOrder {
+		v, ok := asMap[k]
+		if !ok {
+			continue
+		}
+		switch k {
+		case "not":
+			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("not"))
+			data, err := ec.unmarshalOSarifWhereInput2ᚖgithubᚗcomᚋinᚑtotoᚋarchivistaᚋentᚐSarifWhereInput(ctx, v)
+			if err != nil {
+				return it, err
+			}
+			it.Not = data
+		case "and":
+			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("and"))
+			data, err := ec.unmarshalOSarifWhereInput2ᚕᚖgithubᚗcomᚋinᚑtotoᚋarchivistaᚋentᚐSarifWhereInputᚄ(ctx, v)
+			if err != nil {
+				return it, err
+			}
+			it.And = data
+		case "or":
+			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("or"))
+			data, err := ec.unmarshalOSarifWhereInput2ᚕᚖgithubᚗcomᚋinᚑtotoᚋarchivistaᚋentᚐSarifWhereInputᚄ(ctx, v)
+			if err != nil {
+				return it, err
+			}
+			it.Or = data
+		case "id":
+			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("id"))
+			data, err := ec.unmarshalOID2ᚖgithubᚗcomᚋgoogleᚋuuidᚐUUID(ctx, v)
+			if err != nil {
+				return it, err
+			}
+			it.ID = data
+		case "idNEQ":
+			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("idNEQ"))
+			data, err := ec.unmarshalOID2ᚖgithubᚗcomᚋgoogleᚋuuidᚐUUID(ctx, v)
+			if err != nil {
+				return it, err
+			}
+			it.IDNEQ = data
+		case "idIn":
+			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("idIn"))
+			data, err := ec.unmarshalOID2ᚕgithubᚗcomᚋgoogleᚋuuidᚐUUIDᚄ(ctx, v)
+			if err != nil {
+				return it, err
+			}
+			it.IDIn = data
+		case "idNotIn":
+			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("idNotIn"))
+			data, err := ec.unmarshalOID2ᚕgithubᚗcomᚋgoogleᚋuuidᚐUUIDᚄ(ctx, v)
+			if err != nil {
+				return it, err
+			}
+			it.IDNotIn = data
+		case "idGT":
+			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("idGT"))
+			data, err := ec.unmarshalOID2ᚖgithubᚗcomᚋgoogleᚋuuidᚐUUID(ctx, v)
+			if err != nil {
+				return it, err
+			}
+			it.IDGT = data
+		case "idGTE":
+			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("idGTE"))
+			data, err := ec.unmarshalOID2ᚖgithubᚗcomᚋgoogleᚋuuidᚐUUID(ctx, v)
+			if err != nil {
+				return it, err
+			}
+			it.IDGTE = data
+		case "idLT":
+			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("idLT"))
+			data, err := ec.unmarshalOID2ᚖgithubᚗcomᚋgoogleᚋuuidᚐUUID(ctx, v)
+			if err != nil {
+				return it, err
+			}
+			it.IDLT = data
+		case "idLTE":
+			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("idLTE"))
+			data, err := ec.unmarshalOID2ᚖgithubᚗcomᚋgoogleᚋuuidᚐUUID(ctx, v)
+			if err != nil {
+				return it, err
+			}
+			it.IDLTE = data
+		case "reportFileName":
+			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("reportFileName"))
+			data, err := ec.unmarshalOString2ᚖstring(ctx, v)
+			if err != nil {
+				return it, err
+			}
+			it.ReportFileName = data
+		case "reportFileNameNEQ":
+			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("reportFileNameNEQ"))
+			data, err := ec.unmarshalOString2ᚖstring(ctx, v)
+			if err != nil {
+				return it, err
+			}
+			it.ReportFileNameNEQ = data
+		case "reportFileNameIn":
+			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("reportFileNameIn"))
+			data, err := ec.unmarshalOString2ᚕstringᚄ(ctx, v)
+			if err != nil {
+				return it, err
+			}
+			it.ReportFileNameIn = data
+		case "reportFileNameNotIn":
+			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("reportFileNameNotIn"))
+			data, err := ec.unmarshalOString2ᚕstringᚄ(ctx, v)
+			if err != nil {
+				return it, err
+			}
+			it.ReportFileNameNotIn = data
+		case "reportFileNameGT":
+			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("reportFileNameGT"))
+			data, err := ec.unmarshalOString2ᚖstring(ctx, v)
+			if err != nil {
+				return it, err
+			}
+			it.ReportFileNameGT = data
+		case "reportFileNameGTE":
+			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("reportFileNameGTE"))
+			data, err := ec.unmarshalOString2ᚖstring(ctx, v)
+			if err != nil {
+				return it, err
+			}
+			it.ReportFileNameGTE = data
+		case "reportFileNameLT":
+			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("reportFileNameLT"))
+			data, err := ec.unmarshalOString2ᚖstring(ctx, v)
+			if err != nil {
+				return it, err
+			}
+			it.ReportFileNameLT = data
+		case "reportFileNameLTE":
+			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("reportFileNameLTE"))
+			data, err := ec.unmarshalOString2ᚖstring(ctx, v)
+			if err != nil {
+				return it, err
+			}
+			it.ReportFileNameLTE = data
+		case "reportFileNameContains":
+			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("reportFileNameContains"))
+			data, err := ec.unmarshalOString2ᚖstring(ctx, v)
+			if err != nil {
+				return it, err
+			}
+			it.ReportFileNameContains = data
+		case "reportFileNameHasPrefix":
+			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("reportFileNameHasPrefix"))
+			data, err := ec.unmarshalOString2ᚖstring(ctx, v)
+			if err != nil {
+				return it, err
+			}
+			it.ReportFileNameHasPrefix = data
+		case "reportFileNameHasSuffix":
+			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("reportFileNameHasSuffix"))
+			data, err := ec.unmarshalOString2ᚖstring(ctx, v)
+			if err != nil {
+				return it, err
+			}
+			it.ReportFileNameHasSuffix = data
+		case "reportFileNameEqualFold":
+			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("reportFileNameEqualFold"))
+			data, err := ec.unmarshalOString2ᚖstring(ctx, v)
+			if err != nil {
+				return it, err
+			}
+			it.ReportFileNameEqualFold = data
+		case "reportFileNameContainsFold":
+			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("reportFileNameContainsFold"))
+			data, err := ec.unmarshalOString2ᚖstring(ctx, v)
+			if err != nil {
+				return it, err
+			}
+			it.ReportFileNameContainsFold = data
+		case "hasSarifRules":
+			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("hasSarifRules"))
+			data, err := ec.unmarshalOBoolean2ᚖbool(ctx, v)
+			if err != nil {
+				return it, err
+			}
+			it.HasSarifRules = data
+		case "hasSarifRulesWith":
+			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("hasSarifRulesWith"))
+			data, err := ec.unmarshalOSarifRuleWhereInput2ᚕᚖgithubᚗcomᚋinᚑtotoᚋarchivistaᚋentᚐSarifRuleWhereInputᚄ(ctx, v)
+			if err != nil {
+				return it, err
+			}
+			it.HasSarifRulesWith = data
+		case "hasStatement":
+			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("hasStatement"))
+			data, err := ec.unmarshalOBoolean2ᚖbool(ctx, v)
+			if err != nil {
+				return it, err
+			}
+			it.HasStatement = data
+		case "hasStatementWith":
+			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("hasStatementWith"))
+			data, err := ec.unmarshalOStatementWhereInput2ᚕᚖgithubᚗcomᚋinᚑtotoᚋarchivistaᚋentᚐStatementWhereInputᚄ(ctx, v)
+			if err != nil {
+				return it, err
+			}
+			it.HasStatementWith = data
+		}
+	}
+
+	return it, nil
+}
+
 func (ec *executionContext) unmarshalInputSignatureWhereInput(ctx context.Context, obj interface{}) (ent.SignatureWhereInput, error) {
 	var it ent.SignatureWhereInput
 	asMap := map[string]interface{}{}
@@ -7807,7 +8982,7 @@ func (ec *executionContext) unmarshalInputStatementWhereInput(ctx context.Contex
 		asMap[k] = v
 	}
 
-	fieldsInOrder := [...]string{"not", "and", "or", "id", "idNEQ", "idIn", "idNotIn", "idGT", "idGTE", "idLT", "idLTE", "predicate", "predicateNEQ", "predicateIn", "predicateNotIn", "predicateGT", "predicateGTE", "predicateLT", "predicateLTE", "predicateContains", "predicateHasPrefix", "predicateHasSuffix", "predicateEqualFold", "predicateContainsFold", "hasSubjects", "hasSubjectsWith", "hasPolicy", "hasPolicyWith", "hasAttestationCollections", "hasAttestationCollectionsWith", "hasDsse", "hasDsseWith"}
+	fieldsInOrder := [...]string{"not", "and", "or", "id", "idNEQ", "idIn", "idNotIn", "idGT", "idGTE", "idLT", "idLTE", "predicate", "predicateNEQ", "predicateIn", "predicateNotIn", "predicateGT", "predicateGTE", "predicateLT", "predicateLTE", "predicateContains", "predicateHasPrefix", "predicateHasSuffix", "predicateEqualFold", "predicateContainsFold", "hasSubjects", "hasSubjectsWith", "hasPolicy", "hasPolicyWith", "hasAttestationCollections", "hasAttestationCollectionsWith", "hasSarif", "hasSarifWith", "hasDsse", "hasDsseWith"}
 	for _, k := range fieldsInOrder {
 		v, ok := asMap[k]
 		if !ok {
@@ -8024,6 +9199,20 @@ func (ec *executionContext) unmarshalInputStatementWhereInput(ctx context.Contex
 				return it, err
 			}
 			it.HasAttestationCollectionsWith = data
+		case "hasSarif":
+			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("hasSarif"))
+			data, err := ec.unmarshalOBoolean2ᚖbool(ctx, v)
+			if err != nil {
+				return it, err
+			}
+			it.HasSarif = data
+		case "hasSarifWith":
+			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("hasSarifWith"))
+			data, err := ec.unmarshalOSarifWhereInput2ᚕᚖgithubᚗcomᚋinᚑtotoᚋarchivistaᚋentᚐSarifWhereInputᚄ(ctx, v)
+			if err != nil {
+				return it, err
+			}
+			it.HasSarifWith = data
 		case "hasDsse":
 			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("hasDsse"))
 			data, err := ec.unmarshalOBoolean2ᚖbool(ctx, v)
@@ -8844,6 +10033,16 @@ func (ec *executionContext) _Node(ctx context.Context, sel ast.SelectionSet, obj
 			return graphql.Null
 		}
 		return ec._PayloadDigest(ctx, sel, obj)
+	case *ent.Sarif:
+		if obj == nil {
+			return graphql.Null
+		}
+		return ec._Sarif(ctx, sel, obj)
+	case *ent.SarifRule:
+		if obj == nil {
+			return graphql.Null
+		}
+		return ec._SarifRule(ctx, sel, obj)
 	case *ent.Signature:
 		if obj == nil {
 			return graphql.Null
@@ -9757,6 +10956,206 @@ func (ec *executionContext) _Query(ctx context.Context, sel ast.SelectionSet) gr
 	return out
 }
 
+var sarifImplementors = []string{"Sarif", "Node"}
+
+func (ec *executionContext) _Sarif(ctx context.Context, sel ast.SelectionSet, obj *ent.Sarif) graphql.Marshaler {
+	fields := graphql.CollectFields(ec.OperationContext, sel, sarifImplementors)
+
+	out := graphql.NewFieldSet(fields)
+	deferred := make(map[string]*graphql.FieldSet)
+	for i, field := range fields {
+		switch field.Name {
+		case "__typename":
+			out.Values[i] = graphql.MarshalString("Sarif")
+		case "id":
+			out.Values[i] = ec._Sarif_id(ctx, field, obj)
+			if out.Values[i] == graphql.Null {
+				atomic.AddUint32(&out.Invalids, 1)
+			}
+		case "reportFileName":
+			out.Values[i] = ec._Sarif_reportFileName(ctx, field, obj)
+			if out.Values[i] == graphql.Null {
+				atomic.AddUint32(&out.Invalids, 1)
+			}
+		case "sarifRules":
+			field := field
+
+			innerFunc := func(ctx context.Context, _ *graphql.FieldSet) (res graphql.Marshaler) {
+				defer func() {
+					if r := recover(); r != nil {
+						ec.Error(ctx, ec.Recover(ctx, r))
+					}
+				}()
+				res = ec._Sarif_sarifRules(ctx, field, obj)
+				return res
+			}
+
+			if field.Deferrable != nil {
+				dfs, ok := deferred[field.Deferrable.Label]
+				di := 0
+				if ok {
+					dfs.AddField(field)
+					di = len(dfs.Values) - 1
+				} else {
+					dfs = graphql.NewFieldSet([]graphql.CollectedField{field})
+					deferred[field.Deferrable.Label] = dfs
+				}
+				dfs.Concurrently(di, func(ctx context.Context) graphql.Marshaler {
+					return innerFunc(ctx, dfs)
+				})
+
+				// don't run the out.Concurrently() call below
+				out.Values[i] = graphql.Null
+				continue
+			}
+
+			out.Concurrently(i, func(ctx context.Context) graphql.Marshaler { return innerFunc(ctx, out) })
+		case "statement":
+			field := field
+
+			innerFunc := func(ctx context.Context, fs *graphql.FieldSet) (res graphql.Marshaler) {
+				defer func() {
+					if r := recover(); r != nil {
+						ec.Error(ctx, ec.Recover(ctx, r))
+					}
+				}()
+				res = ec._Sarif_statement(ctx, field, obj)
+				if res == graphql.Null {
+					atomic.AddUint32(&fs.Invalids, 1)
+				}
+				return res
+			}
+
+			if field.Deferrable != nil {
+				dfs, ok := deferred[field.Deferrable.Label]
+				di := 0
+				if ok {
+					dfs.AddField(field)
+					di = len(dfs.Values) - 1
+				} else {
+					dfs = graphql.NewFieldSet([]graphql.CollectedField{field})
+					deferred[field.Deferrable.Label] = dfs
+				}
+				dfs.Concurrently(di, func(ctx context.Context) graphql.Marshaler {
+					return innerFunc(ctx, dfs)
+				})
+
+				// don't run the out.Concurrently() call below
+				out.Values[i] = graphql.Null
+				continue
+			}
+
+			out.Concurrently(i, func(ctx context.Context) graphql.Marshaler { return innerFunc(ctx, out) })
+		default:
+			panic("unknown field " + strconv.Quote(field.Name))
+		}
+	}
+	out.Dispatch(ctx)
+	if out.Invalids > 0 {
+		return graphql.Null
+	}
+
+	atomic.AddInt32(&ec.deferred, int32(len(deferred)))
+
+	for label, dfs := range deferred {
+		ec.processDeferredGroup(graphql.DeferredGroup{
+			Label:    label,
+			Path:     graphql.GetPath(ctx),
+			FieldSet: dfs,
+			Context:  ctx,
+		})
+	}
+
+	return out
+}
+
+var sarifRuleImplementors = []string{"SarifRule", "Node"}
+
+func (ec *executionContext) _SarifRule(ctx context.Context, sel ast.SelectionSet, obj *ent.SarifRule) graphql.Marshaler {
+	fields := graphql.CollectFields(ec.OperationContext, sel, sarifRuleImplementors)
+
+	out := graphql.NewFieldSet(fields)
+	deferred := make(map[string]*graphql.FieldSet)
+	for i, field := range fields {
+		switch field.Name {
+		case "__typename":
+			out.Values[i] = graphql.MarshalString("SarifRule")
+		case "id":
+			out.Values[i] = ec._SarifRule_id(ctx, field, obj)
+			if out.Values[i] == graphql.Null {
+				atomic.AddUint32(&out.Invalids, 1)
+			}
+		case "ruleID":
+			out.Values[i] = ec._SarifRule_ruleID(ctx, field, obj)
+			if out.Values[i] == graphql.Null {
+				atomic.AddUint32(&out.Invalids, 1)
+			}
+		case "ruleName":
+			out.Values[i] = ec._SarifRule_ruleName(ctx, field, obj)
+			if out.Values[i] == graphql.Null {
+				atomic.AddUint32(&out.Invalids, 1)
+			}
+		case "shortDescription":
+			out.Values[i] = ec._SarifRule_shortDescription(ctx, field, obj)
+			if out.Values[i] == graphql.Null {
+				atomic.AddUint32(&out.Invalids, 1)
+			}
+		case "sarif":
+			field := field
+
+			innerFunc := func(ctx context.Context, _ *graphql.FieldSet) (res graphql.Marshaler) {
+				defer func() {
+					if r := recover(); r != nil {
+						ec.Error(ctx, ec.Recover(ctx, r))
+					}
+				}()
+				res = ec._SarifRule_sarif(ctx, field, obj)
+				return res
+			}
+
+			if field.Deferrable != nil {
+				dfs, ok := deferred[field.Deferrable.Label]
+				di := 0
+				if ok {
+					dfs.AddField(field)
+					di = len(dfs.Values) - 1
+				} else {
+					dfs = graphql.NewFieldSet([]graphql.CollectedField{field})
+					deferred[field.Deferrable.Label] = dfs
+				}
+				dfs.Concurrently(di, func(ctx context.Context) graphql.Marshaler {
+					return innerFunc(ctx, dfs)
+				})
+
+				// don't run the out.Concurrently() call below
+				out.Values[i] = graphql.Null
+				continue
+			}
+
+			out.Concurrently(i, func(ctx context.Context) graphql.Marshaler { return innerFunc(ctx, out) })
+		default:
+			panic("unknown field " + strconv.Quote(field.Name))
+		}
+	}
+	out.Dispatch(ctx)
+	if out.Invalids > 0 {
+		return graphql.Null
+	}
+
+	atomic.AddInt32(&ec.deferred, int32(len(deferred)))
+
+	for label, dfs := range deferred {
+		ec.processDeferredGroup(graphql.DeferredGroup{
+			Label:    label,
+			Path:     graphql.GetPath(ctx),
+			FieldSet: dfs,
+			Context:  ctx,
+		})
+	}
+
+	return out
+}
+
 var signatureImplementors = []string{"Signature", "Node"}
 
 func (ec *executionContext) _Signature(ctx context.Context, sel ast.SelectionSet, obj *ent.Signature) graphql.Marshaler {
@@ -9972,6 +11371,39 @@ func (ec *executionContext) _Statement(ctx context.Context, sel ast.SelectionSet
 					}
 				}()
 				res = ec._Statement_attestationCollections(ctx, field, obj)
+				return res
+			}
+
+			if field.Deferrable != nil {
+				dfs, ok := deferred[field.Deferrable.Label]
+				di := 0
+				if ok {
+					dfs.AddField(field)
+					di = len(dfs.Values) - 1
+				} else {
+					dfs = graphql.NewFieldSet([]graphql.CollectedField{field})
+					deferred[field.Deferrable.Label] = dfs
+				}
+				dfs.Concurrently(di, func(ctx context.Context) graphql.Marshaler {
+					return innerFunc(ctx, dfs)
+				})
+
+				// don't run the out.Concurrently() call below
+				out.Values[i] = graphql.Null
+				continue
+			}
+
+			out.Concurrently(i, func(ctx context.Context) graphql.Marshaler { return innerFunc(ctx, out) })
+		case "sarif":
+			field := field
+
+			innerFunc := func(ctx context.Context, _ *graphql.FieldSet) (res graphql.Marshaler) {
+				defer func() {
+					if r := recover(); r != nil {
+						ec.Error(ctx, ec.Recover(ctx, r))
+					}
+				}()
+				res = ec._Statement_sarif(ctx, field, obj)
 				return res
 			}
 
@@ -10960,6 +12392,16 @@ func (ec *executionContext) unmarshalNPayloadDigestWhereInput2ᚖgithubᚗcomᚋ
 	return &res, graphql.ErrorOnPath(ctx, err)
 }
 
+func (ec *executionContext) unmarshalNSarifRuleWhereInput2ᚖgithubᚗcomᚋinᚑtotoᚋarchivistaᚋentᚐSarifRuleWhereInput(ctx context.Context, v interface{}) (*ent.SarifRuleWhereInput, error) {
+	res, err := ec.unmarshalInputSarifRuleWhereInput(ctx, v)
+	return &res, graphql.ErrorOnPath(ctx, err)
+}
+
+func (ec *executionContext) unmarshalNSarifWhereInput2ᚖgithubᚗcomᚋinᚑtotoᚋarchivistaᚋentᚐSarifWhereInput(ctx context.Context, v interface{}) (*ent.SarifWhereInput, error) {
+	res, err := ec.unmarshalInputSarifWhereInput(ctx, v)
+	return &res, graphql.ErrorOnPath(ctx, err)
+}
+
 func (ec *executionContext) marshalNSignature2ᚖgithubᚗcomᚋinᚑtotoᚋarchivistaᚋentᚐSignature(ctx context.Context, sel ast.SelectionSet, v *ent.Signature) graphql.Marshaler {
 	if v == nil {
 		if !graphql.HasFieldError(ctx, graphql.GetFieldContext(ctx)) {
@@ -11836,6 +13278,76 @@ func (ec *executionContext) unmarshalOPayloadDigestWhereInput2ᚖgithubᚗcomᚋ
 		return nil, nil
 	}
 	res, err := ec.unmarshalInputPayloadDigestWhereInput(ctx, v)
+	return &res, graphql.ErrorOnPath(ctx, err)
+}
+
+func (ec *executionContext) marshalOSarif2ᚖgithubᚗcomᚋinᚑtotoᚋarchivistaᚋentᚐSarif(ctx context.Context, sel ast.SelectionSet, v *ent.Sarif) graphql.Marshaler {
+	if v == nil {
+		return graphql.Null
+	}
+	return ec._Sarif(ctx, sel, v)
+}
+
+func (ec *executionContext) marshalOSarifRule2ᚖgithubᚗcomᚋinᚑtotoᚋarchivistaᚋentᚐSarifRule(ctx context.Context, sel ast.SelectionSet, v *ent.SarifRule) graphql.Marshaler {
+	if v == nil {
+		return graphql.Null
+	}
+	return ec._SarifRule(ctx, sel, v)
+}
+
+func (ec *executionContext) unmarshalOSarifRuleWhereInput2ᚕᚖgithubᚗcomᚋinᚑtotoᚋarchivistaᚋentᚐSarifRuleWhereInputᚄ(ctx context.Context, v interface{}) ([]*ent.SarifRuleWhereInput, error) {
+	if v == nil {
+		return nil, nil
+	}
+	var vSlice []interface{}
+	if v != nil {
+		vSlice = graphql.CoerceList(v)
+	}
+	var err error
+	res := make([]*ent.SarifRuleWhereInput, len(vSlice))
+	for i := range vSlice {
+		ctx := graphql.WithPathContext(ctx, graphql.NewPathWithIndex(i))
+		res[i], err = ec.unmarshalNSarifRuleWhereInput2ᚖgithubᚗcomᚋinᚑtotoᚋarchivistaᚋentᚐSarifRuleWhereInput(ctx, vSlice[i])
+		if err != nil {
+			return nil, err
+		}
+	}
+	return res, nil
+}
+
+func (ec *executionContext) unmarshalOSarifRuleWhereInput2ᚖgithubᚗcomᚋinᚑtotoᚋarchivistaᚋentᚐSarifRuleWhereInput(ctx context.Context, v interface{}) (*ent.SarifRuleWhereInput, error) {
+	if v == nil {
+		return nil, nil
+	}
+	res, err := ec.unmarshalInputSarifRuleWhereInput(ctx, v)
+	return &res, graphql.ErrorOnPath(ctx, err)
+}
+
+func (ec *executionContext) unmarshalOSarifWhereInput2ᚕᚖgithubᚗcomᚋinᚑtotoᚋarchivistaᚋentᚐSarifWhereInputᚄ(ctx context.Context, v interface{}) ([]*ent.SarifWhereInput, error) {
+	if v == nil {
+		return nil, nil
+	}
+	var vSlice []interface{}
+	if v != nil {
+		vSlice = graphql.CoerceList(v)
+	}
+	var err error
+	res := make([]*ent.SarifWhereInput, len(vSlice))
+	for i := range vSlice {
+		ctx := graphql.WithPathContext(ctx, graphql.NewPathWithIndex(i))
+		res[i], err = ec.unmarshalNSarifWhereInput2ᚖgithubᚗcomᚋinᚑtotoᚋarchivistaᚋentᚐSarifWhereInput(ctx, vSlice[i])
+		if err != nil {
+			return nil, err
+		}
+	}
+	return res, nil
+}
+
+func (ec *executionContext) unmarshalOSarifWhereInput2ᚖgithubᚗcomᚋinᚑtotoᚋarchivistaᚋentᚐSarifWhereInput(ctx context.Context, v interface{}) (*ent.SarifWhereInput, error) {
+	if v == nil {
+		return nil, nil
+	}
+	res, err := ec.unmarshalInputSarifWhereInput(ctx, v)
 	return &res, graphql.ErrorOnPath(ctx, err)
 }
 

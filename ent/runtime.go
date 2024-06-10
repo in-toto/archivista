@@ -9,6 +9,8 @@ import (
 	"github.com/in-toto/archivista/ent/attestationpolicy"
 	"github.com/in-toto/archivista/ent/dsse"
 	"github.com/in-toto/archivista/ent/payloaddigest"
+	"github.com/in-toto/archivista/ent/sarif"
+	"github.com/in-toto/archivista/ent/sarifrule"
 	"github.com/in-toto/archivista/ent/schema"
 	"github.com/in-toto/archivista/ent/signature"
 	"github.com/in-toto/archivista/ent/statement"
@@ -79,6 +81,34 @@ func init() {
 	payloaddigestDescID := payloaddigestFields[0].Descriptor()
 	// payloaddigest.DefaultID holds the default value on creation for the id field.
 	payloaddigest.DefaultID = payloaddigestDescID.Default.(func() uuid.UUID)
+	sarifFields := schema.Sarif{}.Fields()
+	_ = sarifFields
+	// sarifDescReportFileName is the schema descriptor for report_file_name field.
+	sarifDescReportFileName := sarifFields[1].Descriptor()
+	// sarif.ReportFileNameValidator is a validator for the "report_file_name" field. It is called by the builders before save.
+	sarif.ReportFileNameValidator = sarifDescReportFileName.Validators[0].(func(string) error)
+	// sarifDescID is the schema descriptor for id field.
+	sarifDescID := sarifFields[0].Descriptor()
+	// sarif.DefaultID holds the default value on creation for the id field.
+	sarif.DefaultID = sarifDescID.Default.(func() uuid.UUID)
+	sarifruleFields := schema.SarifRule{}.Fields()
+	_ = sarifruleFields
+	// sarifruleDescRuleID is the schema descriptor for rule_id field.
+	sarifruleDescRuleID := sarifruleFields[1].Descriptor()
+	// sarifrule.RuleIDValidator is a validator for the "rule_id" field. It is called by the builders before save.
+	sarifrule.RuleIDValidator = sarifruleDescRuleID.Validators[0].(func(string) error)
+	// sarifruleDescRuleName is the schema descriptor for rule_name field.
+	sarifruleDescRuleName := sarifruleFields[2].Descriptor()
+	// sarifrule.RuleNameValidator is a validator for the "rule_name" field. It is called by the builders before save.
+	sarifrule.RuleNameValidator = sarifruleDescRuleName.Validators[0].(func(string) error)
+	// sarifruleDescShortDescription is the schema descriptor for short_description field.
+	sarifruleDescShortDescription := sarifruleFields[3].Descriptor()
+	// sarifrule.ShortDescriptionValidator is a validator for the "short_description" field. It is called by the builders before save.
+	sarifrule.ShortDescriptionValidator = sarifruleDescShortDescription.Validators[0].(func(string) error)
+	// sarifruleDescID is the schema descriptor for id field.
+	sarifruleDescID := sarifruleFields[0].Descriptor()
+	// sarifrule.DefaultID holds the default value on creation for the id field.
+	sarifrule.DefaultID = sarifruleDescID.Default.(func() uuid.UUID)
 	signatureFields := schema.Signature{}.Fields()
 	_ = signatureFields
 	// signatureDescKeyID is the schema descriptor for key_id field.

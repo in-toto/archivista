@@ -84,6 +84,30 @@ func (pd *PayloadDigest) Dsse(ctx context.Context) (*Dsse, error) {
 	return result, MaskNotFound(err)
 }
 
+func (s *Sarif) SarifRules(ctx context.Context) (*SarifRule, error) {
+	result, err := s.Edges.SarifRulesOrErr()
+	if IsNotLoaded(err) {
+		result, err = s.QuerySarifRules().Only(ctx)
+	}
+	return result, MaskNotFound(err)
+}
+
+func (s *Sarif) Statement(ctx context.Context) (*Statement, error) {
+	result, err := s.Edges.StatementOrErr()
+	if IsNotLoaded(err) {
+		result, err = s.QueryStatement().Only(ctx)
+	}
+	return result, err
+}
+
+func (sr *SarifRule) Sarif(ctx context.Context) (*Sarif, error) {
+	result, err := sr.Edges.SarifOrErr()
+	if IsNotLoaded(err) {
+		result, err = sr.QuerySarif().Only(ctx)
+	}
+	return result, MaskNotFound(err)
+}
+
 func (s *Signature) Dsse(ctx context.Context) (*Dsse, error) {
 	result, err := s.Edges.DsseOrErr()
 	if IsNotLoaded(err) {
@@ -136,6 +160,14 @@ func (s *Statement) AttestationCollections(ctx context.Context) (*AttestationCol
 	result, err := s.Edges.AttestationCollectionsOrErr()
 	if IsNotLoaded(err) {
 		result, err = s.QueryAttestationCollections().Only(ctx)
+	}
+	return result, MaskNotFound(err)
+}
+
+func (s *Statement) Sarif(ctx context.Context) (*Sarif, error) {
+	result, err := s.Edges.SarifOrErr()
+	if IsNotLoaded(err) {
+		result, err = s.QuerySarif().Only(ctx)
 	}
 	return result, MaskNotFound(err)
 }

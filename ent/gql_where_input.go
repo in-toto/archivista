@@ -14,6 +14,8 @@ import (
 	"github.com/in-toto/archivista/ent/dsse"
 	"github.com/in-toto/archivista/ent/payloaddigest"
 	"github.com/in-toto/archivista/ent/predicate"
+	"github.com/in-toto/archivista/ent/sarif"
+	"github.com/in-toto/archivista/ent/sarifrule"
 	"github.com/in-toto/archivista/ent/signature"
 	"github.com/in-toto/archivista/ent/statement"
 	"github.com/in-toto/archivista/ent/subject"
@@ -1195,6 +1197,536 @@ func (i *PayloadDigestWhereInput) P() (predicate.PayloadDigest, error) {
 	}
 }
 
+// SarifWhereInput represents a where input for filtering Sarif queries.
+type SarifWhereInput struct {
+	Predicates []predicate.Sarif  `json:"-"`
+	Not        *SarifWhereInput   `json:"not,omitempty"`
+	Or         []*SarifWhereInput `json:"or,omitempty"`
+	And        []*SarifWhereInput `json:"and,omitempty"`
+
+	// "id" field predicates.
+	ID      *uuid.UUID  `json:"id,omitempty"`
+	IDNEQ   *uuid.UUID  `json:"idNEQ,omitempty"`
+	IDIn    []uuid.UUID `json:"idIn,omitempty"`
+	IDNotIn []uuid.UUID `json:"idNotIn,omitempty"`
+	IDGT    *uuid.UUID  `json:"idGT,omitempty"`
+	IDGTE   *uuid.UUID  `json:"idGTE,omitempty"`
+	IDLT    *uuid.UUID  `json:"idLT,omitempty"`
+	IDLTE   *uuid.UUID  `json:"idLTE,omitempty"`
+
+	// "report_file_name" field predicates.
+	ReportFileName             *string  `json:"reportFileName,omitempty"`
+	ReportFileNameNEQ          *string  `json:"reportFileNameNEQ,omitempty"`
+	ReportFileNameIn           []string `json:"reportFileNameIn,omitempty"`
+	ReportFileNameNotIn        []string `json:"reportFileNameNotIn,omitempty"`
+	ReportFileNameGT           *string  `json:"reportFileNameGT,omitempty"`
+	ReportFileNameGTE          *string  `json:"reportFileNameGTE,omitempty"`
+	ReportFileNameLT           *string  `json:"reportFileNameLT,omitempty"`
+	ReportFileNameLTE          *string  `json:"reportFileNameLTE,omitempty"`
+	ReportFileNameContains     *string  `json:"reportFileNameContains,omitempty"`
+	ReportFileNameHasPrefix    *string  `json:"reportFileNameHasPrefix,omitempty"`
+	ReportFileNameHasSuffix    *string  `json:"reportFileNameHasSuffix,omitempty"`
+	ReportFileNameEqualFold    *string  `json:"reportFileNameEqualFold,omitempty"`
+	ReportFileNameContainsFold *string  `json:"reportFileNameContainsFold,omitempty"`
+
+	// "sarif_rules" edge predicates.
+	HasSarifRules     *bool                  `json:"hasSarifRules,omitempty"`
+	HasSarifRulesWith []*SarifRuleWhereInput `json:"hasSarifRulesWith,omitempty"`
+
+	// "statement" edge predicates.
+	HasStatement     *bool                  `json:"hasStatement,omitempty"`
+	HasStatementWith []*StatementWhereInput `json:"hasStatementWith,omitempty"`
+}
+
+// AddPredicates adds custom predicates to the where input to be used during the filtering phase.
+func (i *SarifWhereInput) AddPredicates(predicates ...predicate.Sarif) {
+	i.Predicates = append(i.Predicates, predicates...)
+}
+
+// Filter applies the SarifWhereInput filter on the SarifQuery builder.
+func (i *SarifWhereInput) Filter(q *SarifQuery) (*SarifQuery, error) {
+	if i == nil {
+		return q, nil
+	}
+	p, err := i.P()
+	if err != nil {
+		if err == ErrEmptySarifWhereInput {
+			return q, nil
+		}
+		return nil, err
+	}
+	return q.Where(p), nil
+}
+
+// ErrEmptySarifWhereInput is returned in case the SarifWhereInput is empty.
+var ErrEmptySarifWhereInput = errors.New("ent: empty predicate SarifWhereInput")
+
+// P returns a predicate for filtering sarifs.
+// An error is returned if the input is empty or invalid.
+func (i *SarifWhereInput) P() (predicate.Sarif, error) {
+	var predicates []predicate.Sarif
+	if i.Not != nil {
+		p, err := i.Not.P()
+		if err != nil {
+			return nil, fmt.Errorf("%w: field 'not'", err)
+		}
+		predicates = append(predicates, sarif.Not(p))
+	}
+	switch n := len(i.Or); {
+	case n == 1:
+		p, err := i.Or[0].P()
+		if err != nil {
+			return nil, fmt.Errorf("%w: field 'or'", err)
+		}
+		predicates = append(predicates, p)
+	case n > 1:
+		or := make([]predicate.Sarif, 0, n)
+		for _, w := range i.Or {
+			p, err := w.P()
+			if err != nil {
+				return nil, fmt.Errorf("%w: field 'or'", err)
+			}
+			or = append(or, p)
+		}
+		predicates = append(predicates, sarif.Or(or...))
+	}
+	switch n := len(i.And); {
+	case n == 1:
+		p, err := i.And[0].P()
+		if err != nil {
+			return nil, fmt.Errorf("%w: field 'and'", err)
+		}
+		predicates = append(predicates, p)
+	case n > 1:
+		and := make([]predicate.Sarif, 0, n)
+		for _, w := range i.And {
+			p, err := w.P()
+			if err != nil {
+				return nil, fmt.Errorf("%w: field 'and'", err)
+			}
+			and = append(and, p)
+		}
+		predicates = append(predicates, sarif.And(and...))
+	}
+	predicates = append(predicates, i.Predicates...)
+	if i.ID != nil {
+		predicates = append(predicates, sarif.IDEQ(*i.ID))
+	}
+	if i.IDNEQ != nil {
+		predicates = append(predicates, sarif.IDNEQ(*i.IDNEQ))
+	}
+	if len(i.IDIn) > 0 {
+		predicates = append(predicates, sarif.IDIn(i.IDIn...))
+	}
+	if len(i.IDNotIn) > 0 {
+		predicates = append(predicates, sarif.IDNotIn(i.IDNotIn...))
+	}
+	if i.IDGT != nil {
+		predicates = append(predicates, sarif.IDGT(*i.IDGT))
+	}
+	if i.IDGTE != nil {
+		predicates = append(predicates, sarif.IDGTE(*i.IDGTE))
+	}
+	if i.IDLT != nil {
+		predicates = append(predicates, sarif.IDLT(*i.IDLT))
+	}
+	if i.IDLTE != nil {
+		predicates = append(predicates, sarif.IDLTE(*i.IDLTE))
+	}
+	if i.ReportFileName != nil {
+		predicates = append(predicates, sarif.ReportFileNameEQ(*i.ReportFileName))
+	}
+	if i.ReportFileNameNEQ != nil {
+		predicates = append(predicates, sarif.ReportFileNameNEQ(*i.ReportFileNameNEQ))
+	}
+	if len(i.ReportFileNameIn) > 0 {
+		predicates = append(predicates, sarif.ReportFileNameIn(i.ReportFileNameIn...))
+	}
+	if len(i.ReportFileNameNotIn) > 0 {
+		predicates = append(predicates, sarif.ReportFileNameNotIn(i.ReportFileNameNotIn...))
+	}
+	if i.ReportFileNameGT != nil {
+		predicates = append(predicates, sarif.ReportFileNameGT(*i.ReportFileNameGT))
+	}
+	if i.ReportFileNameGTE != nil {
+		predicates = append(predicates, sarif.ReportFileNameGTE(*i.ReportFileNameGTE))
+	}
+	if i.ReportFileNameLT != nil {
+		predicates = append(predicates, sarif.ReportFileNameLT(*i.ReportFileNameLT))
+	}
+	if i.ReportFileNameLTE != nil {
+		predicates = append(predicates, sarif.ReportFileNameLTE(*i.ReportFileNameLTE))
+	}
+	if i.ReportFileNameContains != nil {
+		predicates = append(predicates, sarif.ReportFileNameContains(*i.ReportFileNameContains))
+	}
+	if i.ReportFileNameHasPrefix != nil {
+		predicates = append(predicates, sarif.ReportFileNameHasPrefix(*i.ReportFileNameHasPrefix))
+	}
+	if i.ReportFileNameHasSuffix != nil {
+		predicates = append(predicates, sarif.ReportFileNameHasSuffix(*i.ReportFileNameHasSuffix))
+	}
+	if i.ReportFileNameEqualFold != nil {
+		predicates = append(predicates, sarif.ReportFileNameEqualFold(*i.ReportFileNameEqualFold))
+	}
+	if i.ReportFileNameContainsFold != nil {
+		predicates = append(predicates, sarif.ReportFileNameContainsFold(*i.ReportFileNameContainsFold))
+	}
+
+	if i.HasSarifRules != nil {
+		p := sarif.HasSarifRules()
+		if !*i.HasSarifRules {
+			p = sarif.Not(p)
+		}
+		predicates = append(predicates, p)
+	}
+	if len(i.HasSarifRulesWith) > 0 {
+		with := make([]predicate.SarifRule, 0, len(i.HasSarifRulesWith))
+		for _, w := range i.HasSarifRulesWith {
+			p, err := w.P()
+			if err != nil {
+				return nil, fmt.Errorf("%w: field 'HasSarifRulesWith'", err)
+			}
+			with = append(with, p)
+		}
+		predicates = append(predicates, sarif.HasSarifRulesWith(with...))
+	}
+	if i.HasStatement != nil {
+		p := sarif.HasStatement()
+		if !*i.HasStatement {
+			p = sarif.Not(p)
+		}
+		predicates = append(predicates, p)
+	}
+	if len(i.HasStatementWith) > 0 {
+		with := make([]predicate.Statement, 0, len(i.HasStatementWith))
+		for _, w := range i.HasStatementWith {
+			p, err := w.P()
+			if err != nil {
+				return nil, fmt.Errorf("%w: field 'HasStatementWith'", err)
+			}
+			with = append(with, p)
+		}
+		predicates = append(predicates, sarif.HasStatementWith(with...))
+	}
+	switch len(predicates) {
+	case 0:
+		return nil, ErrEmptySarifWhereInput
+	case 1:
+		return predicates[0], nil
+	default:
+		return sarif.And(predicates...), nil
+	}
+}
+
+// SarifRuleWhereInput represents a where input for filtering SarifRule queries.
+type SarifRuleWhereInput struct {
+	Predicates []predicate.SarifRule  `json:"-"`
+	Not        *SarifRuleWhereInput   `json:"not,omitempty"`
+	Or         []*SarifRuleWhereInput `json:"or,omitempty"`
+	And        []*SarifRuleWhereInput `json:"and,omitempty"`
+
+	// "id" field predicates.
+	ID      *uuid.UUID  `json:"id,omitempty"`
+	IDNEQ   *uuid.UUID  `json:"idNEQ,omitempty"`
+	IDIn    []uuid.UUID `json:"idIn,omitempty"`
+	IDNotIn []uuid.UUID `json:"idNotIn,omitempty"`
+	IDGT    *uuid.UUID  `json:"idGT,omitempty"`
+	IDGTE   *uuid.UUID  `json:"idGTE,omitempty"`
+	IDLT    *uuid.UUID  `json:"idLT,omitempty"`
+	IDLTE   *uuid.UUID  `json:"idLTE,omitempty"`
+
+	// "rule_id" field predicates.
+	RuleID             *string  `json:"ruleID,omitempty"`
+	RuleIDNEQ          *string  `json:"ruleIDNEQ,omitempty"`
+	RuleIDIn           []string `json:"ruleIDIn,omitempty"`
+	RuleIDNotIn        []string `json:"ruleIDNotIn,omitempty"`
+	RuleIDGT           *string  `json:"ruleIDGT,omitempty"`
+	RuleIDGTE          *string  `json:"ruleIDGTE,omitempty"`
+	RuleIDLT           *string  `json:"ruleIDLT,omitempty"`
+	RuleIDLTE          *string  `json:"ruleIDLTE,omitempty"`
+	RuleIDContains     *string  `json:"ruleIDContains,omitempty"`
+	RuleIDHasPrefix    *string  `json:"ruleIDHasPrefix,omitempty"`
+	RuleIDHasSuffix    *string  `json:"ruleIDHasSuffix,omitempty"`
+	RuleIDEqualFold    *string  `json:"ruleIDEqualFold,omitempty"`
+	RuleIDContainsFold *string  `json:"ruleIDContainsFold,omitempty"`
+
+	// "rule_name" field predicates.
+	RuleName             *string  `json:"ruleName,omitempty"`
+	RuleNameNEQ          *string  `json:"ruleNameNEQ,omitempty"`
+	RuleNameIn           []string `json:"ruleNameIn,omitempty"`
+	RuleNameNotIn        []string `json:"ruleNameNotIn,omitempty"`
+	RuleNameGT           *string  `json:"ruleNameGT,omitempty"`
+	RuleNameGTE          *string  `json:"ruleNameGTE,omitempty"`
+	RuleNameLT           *string  `json:"ruleNameLT,omitempty"`
+	RuleNameLTE          *string  `json:"ruleNameLTE,omitempty"`
+	RuleNameContains     *string  `json:"ruleNameContains,omitempty"`
+	RuleNameHasPrefix    *string  `json:"ruleNameHasPrefix,omitempty"`
+	RuleNameHasSuffix    *string  `json:"ruleNameHasSuffix,omitempty"`
+	RuleNameEqualFold    *string  `json:"ruleNameEqualFold,omitempty"`
+	RuleNameContainsFold *string  `json:"ruleNameContainsFold,omitempty"`
+
+	// "short_description" field predicates.
+	ShortDescription             *string  `json:"shortDescription,omitempty"`
+	ShortDescriptionNEQ          *string  `json:"shortDescriptionNEQ,omitempty"`
+	ShortDescriptionIn           []string `json:"shortDescriptionIn,omitempty"`
+	ShortDescriptionNotIn        []string `json:"shortDescriptionNotIn,omitempty"`
+	ShortDescriptionGT           *string  `json:"shortDescriptionGT,omitempty"`
+	ShortDescriptionGTE          *string  `json:"shortDescriptionGTE,omitempty"`
+	ShortDescriptionLT           *string  `json:"shortDescriptionLT,omitempty"`
+	ShortDescriptionLTE          *string  `json:"shortDescriptionLTE,omitempty"`
+	ShortDescriptionContains     *string  `json:"shortDescriptionContains,omitempty"`
+	ShortDescriptionHasPrefix    *string  `json:"shortDescriptionHasPrefix,omitempty"`
+	ShortDescriptionHasSuffix    *string  `json:"shortDescriptionHasSuffix,omitempty"`
+	ShortDescriptionEqualFold    *string  `json:"shortDescriptionEqualFold,omitempty"`
+	ShortDescriptionContainsFold *string  `json:"shortDescriptionContainsFold,omitempty"`
+
+	// "sarif" edge predicates.
+	HasSarif     *bool              `json:"hasSarif,omitempty"`
+	HasSarifWith []*SarifWhereInput `json:"hasSarifWith,omitempty"`
+}
+
+// AddPredicates adds custom predicates to the where input to be used during the filtering phase.
+func (i *SarifRuleWhereInput) AddPredicates(predicates ...predicate.SarifRule) {
+	i.Predicates = append(i.Predicates, predicates...)
+}
+
+// Filter applies the SarifRuleWhereInput filter on the SarifRuleQuery builder.
+func (i *SarifRuleWhereInput) Filter(q *SarifRuleQuery) (*SarifRuleQuery, error) {
+	if i == nil {
+		return q, nil
+	}
+	p, err := i.P()
+	if err != nil {
+		if err == ErrEmptySarifRuleWhereInput {
+			return q, nil
+		}
+		return nil, err
+	}
+	return q.Where(p), nil
+}
+
+// ErrEmptySarifRuleWhereInput is returned in case the SarifRuleWhereInput is empty.
+var ErrEmptySarifRuleWhereInput = errors.New("ent: empty predicate SarifRuleWhereInput")
+
+// P returns a predicate for filtering sarifrules.
+// An error is returned if the input is empty or invalid.
+func (i *SarifRuleWhereInput) P() (predicate.SarifRule, error) {
+	var predicates []predicate.SarifRule
+	if i.Not != nil {
+		p, err := i.Not.P()
+		if err != nil {
+			return nil, fmt.Errorf("%w: field 'not'", err)
+		}
+		predicates = append(predicates, sarifrule.Not(p))
+	}
+	switch n := len(i.Or); {
+	case n == 1:
+		p, err := i.Or[0].P()
+		if err != nil {
+			return nil, fmt.Errorf("%w: field 'or'", err)
+		}
+		predicates = append(predicates, p)
+	case n > 1:
+		or := make([]predicate.SarifRule, 0, n)
+		for _, w := range i.Or {
+			p, err := w.P()
+			if err != nil {
+				return nil, fmt.Errorf("%w: field 'or'", err)
+			}
+			or = append(or, p)
+		}
+		predicates = append(predicates, sarifrule.Or(or...))
+	}
+	switch n := len(i.And); {
+	case n == 1:
+		p, err := i.And[0].P()
+		if err != nil {
+			return nil, fmt.Errorf("%w: field 'and'", err)
+		}
+		predicates = append(predicates, p)
+	case n > 1:
+		and := make([]predicate.SarifRule, 0, n)
+		for _, w := range i.And {
+			p, err := w.P()
+			if err != nil {
+				return nil, fmt.Errorf("%w: field 'and'", err)
+			}
+			and = append(and, p)
+		}
+		predicates = append(predicates, sarifrule.And(and...))
+	}
+	predicates = append(predicates, i.Predicates...)
+	if i.ID != nil {
+		predicates = append(predicates, sarifrule.IDEQ(*i.ID))
+	}
+	if i.IDNEQ != nil {
+		predicates = append(predicates, sarifrule.IDNEQ(*i.IDNEQ))
+	}
+	if len(i.IDIn) > 0 {
+		predicates = append(predicates, sarifrule.IDIn(i.IDIn...))
+	}
+	if len(i.IDNotIn) > 0 {
+		predicates = append(predicates, sarifrule.IDNotIn(i.IDNotIn...))
+	}
+	if i.IDGT != nil {
+		predicates = append(predicates, sarifrule.IDGT(*i.IDGT))
+	}
+	if i.IDGTE != nil {
+		predicates = append(predicates, sarifrule.IDGTE(*i.IDGTE))
+	}
+	if i.IDLT != nil {
+		predicates = append(predicates, sarifrule.IDLT(*i.IDLT))
+	}
+	if i.IDLTE != nil {
+		predicates = append(predicates, sarifrule.IDLTE(*i.IDLTE))
+	}
+	if i.RuleID != nil {
+		predicates = append(predicates, sarifrule.RuleIDEQ(*i.RuleID))
+	}
+	if i.RuleIDNEQ != nil {
+		predicates = append(predicates, sarifrule.RuleIDNEQ(*i.RuleIDNEQ))
+	}
+	if len(i.RuleIDIn) > 0 {
+		predicates = append(predicates, sarifrule.RuleIDIn(i.RuleIDIn...))
+	}
+	if len(i.RuleIDNotIn) > 0 {
+		predicates = append(predicates, sarifrule.RuleIDNotIn(i.RuleIDNotIn...))
+	}
+	if i.RuleIDGT != nil {
+		predicates = append(predicates, sarifrule.RuleIDGT(*i.RuleIDGT))
+	}
+	if i.RuleIDGTE != nil {
+		predicates = append(predicates, sarifrule.RuleIDGTE(*i.RuleIDGTE))
+	}
+	if i.RuleIDLT != nil {
+		predicates = append(predicates, sarifrule.RuleIDLT(*i.RuleIDLT))
+	}
+	if i.RuleIDLTE != nil {
+		predicates = append(predicates, sarifrule.RuleIDLTE(*i.RuleIDLTE))
+	}
+	if i.RuleIDContains != nil {
+		predicates = append(predicates, sarifrule.RuleIDContains(*i.RuleIDContains))
+	}
+	if i.RuleIDHasPrefix != nil {
+		predicates = append(predicates, sarifrule.RuleIDHasPrefix(*i.RuleIDHasPrefix))
+	}
+	if i.RuleIDHasSuffix != nil {
+		predicates = append(predicates, sarifrule.RuleIDHasSuffix(*i.RuleIDHasSuffix))
+	}
+	if i.RuleIDEqualFold != nil {
+		predicates = append(predicates, sarifrule.RuleIDEqualFold(*i.RuleIDEqualFold))
+	}
+	if i.RuleIDContainsFold != nil {
+		predicates = append(predicates, sarifrule.RuleIDContainsFold(*i.RuleIDContainsFold))
+	}
+	if i.RuleName != nil {
+		predicates = append(predicates, sarifrule.RuleNameEQ(*i.RuleName))
+	}
+	if i.RuleNameNEQ != nil {
+		predicates = append(predicates, sarifrule.RuleNameNEQ(*i.RuleNameNEQ))
+	}
+	if len(i.RuleNameIn) > 0 {
+		predicates = append(predicates, sarifrule.RuleNameIn(i.RuleNameIn...))
+	}
+	if len(i.RuleNameNotIn) > 0 {
+		predicates = append(predicates, sarifrule.RuleNameNotIn(i.RuleNameNotIn...))
+	}
+	if i.RuleNameGT != nil {
+		predicates = append(predicates, sarifrule.RuleNameGT(*i.RuleNameGT))
+	}
+	if i.RuleNameGTE != nil {
+		predicates = append(predicates, sarifrule.RuleNameGTE(*i.RuleNameGTE))
+	}
+	if i.RuleNameLT != nil {
+		predicates = append(predicates, sarifrule.RuleNameLT(*i.RuleNameLT))
+	}
+	if i.RuleNameLTE != nil {
+		predicates = append(predicates, sarifrule.RuleNameLTE(*i.RuleNameLTE))
+	}
+	if i.RuleNameContains != nil {
+		predicates = append(predicates, sarifrule.RuleNameContains(*i.RuleNameContains))
+	}
+	if i.RuleNameHasPrefix != nil {
+		predicates = append(predicates, sarifrule.RuleNameHasPrefix(*i.RuleNameHasPrefix))
+	}
+	if i.RuleNameHasSuffix != nil {
+		predicates = append(predicates, sarifrule.RuleNameHasSuffix(*i.RuleNameHasSuffix))
+	}
+	if i.RuleNameEqualFold != nil {
+		predicates = append(predicates, sarifrule.RuleNameEqualFold(*i.RuleNameEqualFold))
+	}
+	if i.RuleNameContainsFold != nil {
+		predicates = append(predicates, sarifrule.RuleNameContainsFold(*i.RuleNameContainsFold))
+	}
+	if i.ShortDescription != nil {
+		predicates = append(predicates, sarifrule.ShortDescriptionEQ(*i.ShortDescription))
+	}
+	if i.ShortDescriptionNEQ != nil {
+		predicates = append(predicates, sarifrule.ShortDescriptionNEQ(*i.ShortDescriptionNEQ))
+	}
+	if len(i.ShortDescriptionIn) > 0 {
+		predicates = append(predicates, sarifrule.ShortDescriptionIn(i.ShortDescriptionIn...))
+	}
+	if len(i.ShortDescriptionNotIn) > 0 {
+		predicates = append(predicates, sarifrule.ShortDescriptionNotIn(i.ShortDescriptionNotIn...))
+	}
+	if i.ShortDescriptionGT != nil {
+		predicates = append(predicates, sarifrule.ShortDescriptionGT(*i.ShortDescriptionGT))
+	}
+	if i.ShortDescriptionGTE != nil {
+		predicates = append(predicates, sarifrule.ShortDescriptionGTE(*i.ShortDescriptionGTE))
+	}
+	if i.ShortDescriptionLT != nil {
+		predicates = append(predicates, sarifrule.ShortDescriptionLT(*i.ShortDescriptionLT))
+	}
+	if i.ShortDescriptionLTE != nil {
+		predicates = append(predicates, sarifrule.ShortDescriptionLTE(*i.ShortDescriptionLTE))
+	}
+	if i.ShortDescriptionContains != nil {
+		predicates = append(predicates, sarifrule.ShortDescriptionContains(*i.ShortDescriptionContains))
+	}
+	if i.ShortDescriptionHasPrefix != nil {
+		predicates = append(predicates, sarifrule.ShortDescriptionHasPrefix(*i.ShortDescriptionHasPrefix))
+	}
+	if i.ShortDescriptionHasSuffix != nil {
+		predicates = append(predicates, sarifrule.ShortDescriptionHasSuffix(*i.ShortDescriptionHasSuffix))
+	}
+	if i.ShortDescriptionEqualFold != nil {
+		predicates = append(predicates, sarifrule.ShortDescriptionEqualFold(*i.ShortDescriptionEqualFold))
+	}
+	if i.ShortDescriptionContainsFold != nil {
+		predicates = append(predicates, sarifrule.ShortDescriptionContainsFold(*i.ShortDescriptionContainsFold))
+	}
+
+	if i.HasSarif != nil {
+		p := sarifrule.HasSarif()
+		if !*i.HasSarif {
+			p = sarifrule.Not(p)
+		}
+		predicates = append(predicates, p)
+	}
+	if len(i.HasSarifWith) > 0 {
+		with := make([]predicate.Sarif, 0, len(i.HasSarifWith))
+		for _, w := range i.HasSarifWith {
+			p, err := w.P()
+			if err != nil {
+				return nil, fmt.Errorf("%w: field 'HasSarifWith'", err)
+			}
+			with = append(with, p)
+		}
+		predicates = append(predicates, sarifrule.HasSarifWith(with...))
+	}
+	switch len(predicates) {
+	case 0:
+		return nil, ErrEmptySarifRuleWhereInput
+	case 1:
+		return predicates[0], nil
+	default:
+		return sarifrule.And(predicates...), nil
+	}
+}
+
 // SignatureWhereInput represents a where input for filtering Signature queries.
 type SignatureWhereInput struct {
 	Predicates []predicate.Signature  `json:"-"`
@@ -1515,6 +2047,10 @@ type StatementWhereInput struct {
 	HasAttestationCollections     *bool                              `json:"hasAttestationCollections,omitempty"`
 	HasAttestationCollectionsWith []*AttestationCollectionWhereInput `json:"hasAttestationCollectionsWith,omitempty"`
 
+	// "sarif" edge predicates.
+	HasSarif     *bool              `json:"hasSarif,omitempty"`
+	HasSarifWith []*SarifWhereInput `json:"hasSarifWith,omitempty"`
+
 	// "dsse" edge predicates.
 	HasDsse     *bool             `json:"hasDsse,omitempty"`
 	HasDsseWith []*DsseWhereInput `json:"hasDsseWith,omitempty"`
@@ -1708,6 +2244,24 @@ func (i *StatementWhereInput) P() (predicate.Statement, error) {
 			with = append(with, p)
 		}
 		predicates = append(predicates, statement.HasAttestationCollectionsWith(with...))
+	}
+	if i.HasSarif != nil {
+		p := statement.HasSarif()
+		if !*i.HasSarif {
+			p = statement.Not(p)
+		}
+		predicates = append(predicates, p)
+	}
+	if len(i.HasSarifWith) > 0 {
+		with := make([]predicate.Sarif, 0, len(i.HasSarifWith))
+		for _, w := range i.HasSarifWith {
+			p, err := w.P()
+			if err != nil {
+				return nil, fmt.Errorf("%w: field 'HasSarifWith'", err)
+			}
+			with = append(with, p)
+		}
+		predicates = append(predicates, statement.HasSarifWith(with...))
 	}
 	if i.HasDsse != nil {
 		p := statement.HasDsse()

@@ -138,6 +138,72 @@ var (
 			},
 		},
 	}
+	// SarifsColumns holds the columns for the "sarifs" table.
+	SarifsColumns = []*schema.Column{
+		{Name: "id", Type: field.TypeUUID, Unique: true},
+		{Name: "report_file_name", Type: field.TypeString},
+		{Name: "statement_sarif", Type: field.TypeUUID, Unique: true},
+	}
+	// SarifsTable holds the schema information for the "sarifs" table.
+	SarifsTable = &schema.Table{
+		Name:       "sarifs",
+		Columns:    SarifsColumns,
+		PrimaryKey: []*schema.Column{SarifsColumns[0]},
+		ForeignKeys: []*schema.ForeignKey{
+			{
+				Symbol:     "sarifs_statements_sarif",
+				Columns:    []*schema.Column{SarifsColumns[2]},
+				RefColumns: []*schema.Column{StatementsColumns[0]},
+				OnDelete:   schema.NoAction,
+			},
+		},
+		Indexes: []*schema.Index{
+			{
+				Name:    "sarif_report_file_name",
+				Unique:  false,
+				Columns: []*schema.Column{SarifsColumns[1]},
+			},
+		},
+	}
+	// SarifRulesColumns holds the columns for the "sarif_rules" table.
+	SarifRulesColumns = []*schema.Column{
+		{Name: "id", Type: field.TypeUUID, Unique: true},
+		{Name: "rule_id", Type: field.TypeString},
+		{Name: "rule_name", Type: field.TypeString},
+		{Name: "short_description", Type: field.TypeString},
+		{Name: "sarif_sarif_rules", Type: field.TypeUUID, Unique: true, Nullable: true},
+	}
+	// SarifRulesTable holds the schema information for the "sarif_rules" table.
+	SarifRulesTable = &schema.Table{
+		Name:       "sarif_rules",
+		Columns:    SarifRulesColumns,
+		PrimaryKey: []*schema.Column{SarifRulesColumns[0]},
+		ForeignKeys: []*schema.ForeignKey{
+			{
+				Symbol:     "sarif_rules_sarifs_sarif_rules",
+				Columns:    []*schema.Column{SarifRulesColumns[4]},
+				RefColumns: []*schema.Column{SarifsColumns[0]},
+				OnDelete:   schema.SetNull,
+			},
+		},
+		Indexes: []*schema.Index{
+			{
+				Name:    "sarifrule_rule_id",
+				Unique:  false,
+				Columns: []*schema.Column{SarifRulesColumns[1]},
+			},
+			{
+				Name:    "sarifrule_rule_name",
+				Unique:  false,
+				Columns: []*schema.Column{SarifRulesColumns[2]},
+			},
+			{
+				Name:    "sarifrule_short_description",
+				Unique:  false,
+				Columns: []*schema.Column{SarifRulesColumns[3]},
+			},
+		},
+	}
 	// SignaturesColumns holds the columns for the "signatures" table.
 	SignaturesColumns = []*schema.Column{
 		{Name: "id", Type: field.TypeUUID, Unique: true},
@@ -267,6 +333,8 @@ var (
 		AttestationPoliciesTable,
 		DssesTable,
 		PayloadDigestsTable,
+		SarifsTable,
+		SarifRulesTable,
 		SignaturesTable,
 		StatementsTable,
 		SubjectsTable,
@@ -281,6 +349,8 @@ func init() {
 	AttestationPoliciesTable.ForeignKeys[0].RefTable = StatementsTable
 	DssesTable.ForeignKeys[0].RefTable = StatementsTable
 	PayloadDigestsTable.ForeignKeys[0].RefTable = DssesTable
+	SarifsTable.ForeignKeys[0].RefTable = StatementsTable
+	SarifRulesTable.ForeignKeys[0].RefTable = SarifsTable
 	SignaturesTable.ForeignKeys[0].RefTable = DssesTable
 	SubjectsTable.ForeignKeys[0].RefTable = StatementsTable
 	SubjectDigestsTable.ForeignKeys[0].RefTable = SubjectsTable
