@@ -21,6 +21,8 @@ import (
 	"github.com/in-toto/archivista/ent/attestationpolicy"
 	"github.com/in-toto/archivista/ent/dsse"
 	"github.com/in-toto/archivista/ent/payloaddigest"
+	"github.com/in-toto/archivista/ent/sarif"
+	"github.com/in-toto/archivista/ent/sarifrule"
 	"github.com/in-toto/archivista/ent/signature"
 	"github.com/in-toto/archivista/ent/statement"
 	"github.com/in-toto/archivista/ent/subject"
@@ -43,6 +45,10 @@ type Client struct {
 	Dsse *DsseClient
 	// PayloadDigest is the client for interacting with the PayloadDigest builders.
 	PayloadDigest *PayloadDigestClient
+	// Sarif is the client for interacting with the Sarif builders.
+	Sarif *SarifClient
+	// SarifRule is the client for interacting with the SarifRule builders.
+	SarifRule *SarifRuleClient
 	// Signature is the client for interacting with the Signature builders.
 	Signature *SignatureClient
 	// Statement is the client for interacting with the Statement builders.
@@ -69,6 +75,8 @@ func (c *Client) init() {
 	c.AttestationPolicy = NewAttestationPolicyClient(c.config)
 	c.Dsse = NewDsseClient(c.config)
 	c.PayloadDigest = NewPayloadDigestClient(c.config)
+	c.Sarif = NewSarifClient(c.config)
+	c.SarifRule = NewSarifRuleClient(c.config)
 	c.Signature = NewSignatureClient(c.config)
 	c.Statement = NewStatementClient(c.config)
 	c.Subject = NewSubjectClient(c.config)
@@ -171,6 +179,8 @@ func (c *Client) Tx(ctx context.Context) (*Tx, error) {
 		AttestationPolicy:     NewAttestationPolicyClient(cfg),
 		Dsse:                  NewDsseClient(cfg),
 		PayloadDigest:         NewPayloadDigestClient(cfg),
+		Sarif:                 NewSarifClient(cfg),
+		SarifRule:             NewSarifRuleClient(cfg),
 		Signature:             NewSignatureClient(cfg),
 		Statement:             NewStatementClient(cfg),
 		Subject:               NewSubjectClient(cfg),
@@ -200,6 +210,8 @@ func (c *Client) BeginTx(ctx context.Context, opts *sql.TxOptions) (*Tx, error) 
 		AttestationPolicy:     NewAttestationPolicyClient(cfg),
 		Dsse:                  NewDsseClient(cfg),
 		PayloadDigest:         NewPayloadDigestClient(cfg),
+		Sarif:                 NewSarifClient(cfg),
+		SarifRule:             NewSarifRuleClient(cfg),
 		Signature:             NewSignatureClient(cfg),
 		Statement:             NewStatementClient(cfg),
 		Subject:               NewSubjectClient(cfg),
@@ -235,8 +247,8 @@ func (c *Client) Close() error {
 func (c *Client) Use(hooks ...Hook) {
 	for _, n := range []interface{ Use(...Hook) }{
 		c.Attestation, c.AttestationCollection, c.AttestationPolicy, c.Dsse,
-		c.PayloadDigest, c.Signature, c.Statement, c.Subject, c.SubjectDigest,
-		c.Timestamp,
+		c.PayloadDigest, c.Sarif, c.SarifRule, c.Signature, c.Statement, c.Subject,
+		c.SubjectDigest, c.Timestamp,
 	} {
 		n.Use(hooks...)
 	}
@@ -247,8 +259,8 @@ func (c *Client) Use(hooks ...Hook) {
 func (c *Client) Intercept(interceptors ...Interceptor) {
 	for _, n := range []interface{ Intercept(...Interceptor) }{
 		c.Attestation, c.AttestationCollection, c.AttestationPolicy, c.Dsse,
-		c.PayloadDigest, c.Signature, c.Statement, c.Subject, c.SubjectDigest,
-		c.Timestamp,
+		c.PayloadDigest, c.Sarif, c.SarifRule, c.Signature, c.Statement, c.Subject,
+		c.SubjectDigest, c.Timestamp,
 	} {
 		n.Intercept(interceptors...)
 	}
@@ -267,6 +279,10 @@ func (c *Client) Mutate(ctx context.Context, m Mutation) (Value, error) {
 		return c.Dsse.mutate(ctx, m)
 	case *PayloadDigestMutation:
 		return c.PayloadDigest.mutate(ctx, m)
+	case *SarifMutation:
+		return c.Sarif.mutate(ctx, m)
+	case *SarifRuleMutation:
+		return c.SarifRule.mutate(ctx, m)
 	case *SignatureMutation:
 		return c.Signature.mutate(ctx, m)
 	case *StatementMutation:
@@ -1075,6 +1091,320 @@ func (c *PayloadDigestClient) mutate(ctx context.Context, m *PayloadDigestMutati
 	}
 }
 
+// SarifClient is a client for the Sarif schema.
+type SarifClient struct {
+	config
+}
+
+// NewSarifClient returns a client for the Sarif from the given config.
+func NewSarifClient(c config) *SarifClient {
+	return &SarifClient{config: c}
+}
+
+// Use adds a list of mutation hooks to the hooks stack.
+// A call to `Use(f, g, h)` equals to `sarif.Hooks(f(g(h())))`.
+func (c *SarifClient) Use(hooks ...Hook) {
+	c.hooks.Sarif = append(c.hooks.Sarif, hooks...)
+}
+
+// Intercept adds a list of query interceptors to the interceptors stack.
+// A call to `Intercept(f, g, h)` equals to `sarif.Intercept(f(g(h())))`.
+func (c *SarifClient) Intercept(interceptors ...Interceptor) {
+	c.inters.Sarif = append(c.inters.Sarif, interceptors...)
+}
+
+// Create returns a builder for creating a Sarif entity.
+func (c *SarifClient) Create() *SarifCreate {
+	mutation := newSarifMutation(c.config, OpCreate)
+	return &SarifCreate{config: c.config, hooks: c.Hooks(), mutation: mutation}
+}
+
+// CreateBulk returns a builder for creating a bulk of Sarif entities.
+func (c *SarifClient) CreateBulk(builders ...*SarifCreate) *SarifCreateBulk {
+	return &SarifCreateBulk{config: c.config, builders: builders}
+}
+
+// MapCreateBulk creates a bulk creation builder from the given slice. For each item in the slice, the function creates
+// a builder and applies setFunc on it.
+func (c *SarifClient) MapCreateBulk(slice any, setFunc func(*SarifCreate, int)) *SarifCreateBulk {
+	rv := reflect.ValueOf(slice)
+	if rv.Kind() != reflect.Slice {
+		return &SarifCreateBulk{err: fmt.Errorf("calling to SarifClient.MapCreateBulk with wrong type %T, need slice", slice)}
+	}
+	builders := make([]*SarifCreate, rv.Len())
+	for i := 0; i < rv.Len(); i++ {
+		builders[i] = c.Create()
+		setFunc(builders[i], i)
+	}
+	return &SarifCreateBulk{config: c.config, builders: builders}
+}
+
+// Update returns an update builder for Sarif.
+func (c *SarifClient) Update() *SarifUpdate {
+	mutation := newSarifMutation(c.config, OpUpdate)
+	return &SarifUpdate{config: c.config, hooks: c.Hooks(), mutation: mutation}
+}
+
+// UpdateOne returns an update builder for the given entity.
+func (c *SarifClient) UpdateOne(s *Sarif) *SarifUpdateOne {
+	mutation := newSarifMutation(c.config, OpUpdateOne, withSarif(s))
+	return &SarifUpdateOne{config: c.config, hooks: c.Hooks(), mutation: mutation}
+}
+
+// UpdateOneID returns an update builder for the given id.
+func (c *SarifClient) UpdateOneID(id uuid.UUID) *SarifUpdateOne {
+	mutation := newSarifMutation(c.config, OpUpdateOne, withSarifID(id))
+	return &SarifUpdateOne{config: c.config, hooks: c.Hooks(), mutation: mutation}
+}
+
+// Delete returns a delete builder for Sarif.
+func (c *SarifClient) Delete() *SarifDelete {
+	mutation := newSarifMutation(c.config, OpDelete)
+	return &SarifDelete{config: c.config, hooks: c.Hooks(), mutation: mutation}
+}
+
+// DeleteOne returns a builder for deleting the given entity.
+func (c *SarifClient) DeleteOne(s *Sarif) *SarifDeleteOne {
+	return c.DeleteOneID(s.ID)
+}
+
+// DeleteOneID returns a builder for deleting the given entity by its id.
+func (c *SarifClient) DeleteOneID(id uuid.UUID) *SarifDeleteOne {
+	builder := c.Delete().Where(sarif.ID(id))
+	builder.mutation.id = &id
+	builder.mutation.op = OpDeleteOne
+	return &SarifDeleteOne{builder}
+}
+
+// Query returns a query builder for Sarif.
+func (c *SarifClient) Query() *SarifQuery {
+	return &SarifQuery{
+		config: c.config,
+		ctx:    &QueryContext{Type: TypeSarif},
+		inters: c.Interceptors(),
+	}
+}
+
+// Get returns a Sarif entity by its id.
+func (c *SarifClient) Get(ctx context.Context, id uuid.UUID) (*Sarif, error) {
+	return c.Query().Where(sarif.ID(id)).Only(ctx)
+}
+
+// GetX is like Get, but panics if an error occurs.
+func (c *SarifClient) GetX(ctx context.Context, id uuid.UUID) *Sarif {
+	obj, err := c.Get(ctx, id)
+	if err != nil {
+		panic(err)
+	}
+	return obj
+}
+
+// QuerySarifRules queries the sarif_rules edge of a Sarif.
+func (c *SarifClient) QuerySarifRules(s *Sarif) *SarifRuleQuery {
+	query := (&SarifRuleClient{config: c.config}).Query()
+	query.path = func(context.Context) (fromV *sql.Selector, _ error) {
+		id := s.ID
+		step := sqlgraph.NewStep(
+			sqlgraph.From(sarif.Table, sarif.FieldID, id),
+			sqlgraph.To(sarifrule.Table, sarifrule.FieldID),
+			sqlgraph.Edge(sqlgraph.O2O, false, sarif.SarifRulesTable, sarif.SarifRulesColumn),
+		)
+		fromV = sqlgraph.Neighbors(s.driver.Dialect(), step)
+		return fromV, nil
+	}
+	return query
+}
+
+// QueryStatement queries the statement edge of a Sarif.
+func (c *SarifClient) QueryStatement(s *Sarif) *StatementQuery {
+	query := (&StatementClient{config: c.config}).Query()
+	query.path = func(context.Context) (fromV *sql.Selector, _ error) {
+		id := s.ID
+		step := sqlgraph.NewStep(
+			sqlgraph.From(sarif.Table, sarif.FieldID, id),
+			sqlgraph.To(statement.Table, statement.FieldID),
+			sqlgraph.Edge(sqlgraph.O2O, true, sarif.StatementTable, sarif.StatementColumn),
+		)
+		fromV = sqlgraph.Neighbors(s.driver.Dialect(), step)
+		return fromV, nil
+	}
+	return query
+}
+
+// Hooks returns the client hooks.
+func (c *SarifClient) Hooks() []Hook {
+	return c.hooks.Sarif
+}
+
+// Interceptors returns the client interceptors.
+func (c *SarifClient) Interceptors() []Interceptor {
+	return c.inters.Sarif
+}
+
+func (c *SarifClient) mutate(ctx context.Context, m *SarifMutation) (Value, error) {
+	switch m.Op() {
+	case OpCreate:
+		return (&SarifCreate{config: c.config, hooks: c.Hooks(), mutation: m}).Save(ctx)
+	case OpUpdate:
+		return (&SarifUpdate{config: c.config, hooks: c.Hooks(), mutation: m}).Save(ctx)
+	case OpUpdateOne:
+		return (&SarifUpdateOne{config: c.config, hooks: c.Hooks(), mutation: m}).Save(ctx)
+	case OpDelete, OpDeleteOne:
+		return (&SarifDelete{config: c.config, hooks: c.Hooks(), mutation: m}).Exec(ctx)
+	default:
+		return nil, fmt.Errorf("ent: unknown Sarif mutation op: %q", m.Op())
+	}
+}
+
+// SarifRuleClient is a client for the SarifRule schema.
+type SarifRuleClient struct {
+	config
+}
+
+// NewSarifRuleClient returns a client for the SarifRule from the given config.
+func NewSarifRuleClient(c config) *SarifRuleClient {
+	return &SarifRuleClient{config: c}
+}
+
+// Use adds a list of mutation hooks to the hooks stack.
+// A call to `Use(f, g, h)` equals to `sarifrule.Hooks(f(g(h())))`.
+func (c *SarifRuleClient) Use(hooks ...Hook) {
+	c.hooks.SarifRule = append(c.hooks.SarifRule, hooks...)
+}
+
+// Intercept adds a list of query interceptors to the interceptors stack.
+// A call to `Intercept(f, g, h)` equals to `sarifrule.Intercept(f(g(h())))`.
+func (c *SarifRuleClient) Intercept(interceptors ...Interceptor) {
+	c.inters.SarifRule = append(c.inters.SarifRule, interceptors...)
+}
+
+// Create returns a builder for creating a SarifRule entity.
+func (c *SarifRuleClient) Create() *SarifRuleCreate {
+	mutation := newSarifRuleMutation(c.config, OpCreate)
+	return &SarifRuleCreate{config: c.config, hooks: c.Hooks(), mutation: mutation}
+}
+
+// CreateBulk returns a builder for creating a bulk of SarifRule entities.
+func (c *SarifRuleClient) CreateBulk(builders ...*SarifRuleCreate) *SarifRuleCreateBulk {
+	return &SarifRuleCreateBulk{config: c.config, builders: builders}
+}
+
+// MapCreateBulk creates a bulk creation builder from the given slice. For each item in the slice, the function creates
+// a builder and applies setFunc on it.
+func (c *SarifRuleClient) MapCreateBulk(slice any, setFunc func(*SarifRuleCreate, int)) *SarifRuleCreateBulk {
+	rv := reflect.ValueOf(slice)
+	if rv.Kind() != reflect.Slice {
+		return &SarifRuleCreateBulk{err: fmt.Errorf("calling to SarifRuleClient.MapCreateBulk with wrong type %T, need slice", slice)}
+	}
+	builders := make([]*SarifRuleCreate, rv.Len())
+	for i := 0; i < rv.Len(); i++ {
+		builders[i] = c.Create()
+		setFunc(builders[i], i)
+	}
+	return &SarifRuleCreateBulk{config: c.config, builders: builders}
+}
+
+// Update returns an update builder for SarifRule.
+func (c *SarifRuleClient) Update() *SarifRuleUpdate {
+	mutation := newSarifRuleMutation(c.config, OpUpdate)
+	return &SarifRuleUpdate{config: c.config, hooks: c.Hooks(), mutation: mutation}
+}
+
+// UpdateOne returns an update builder for the given entity.
+func (c *SarifRuleClient) UpdateOne(sr *SarifRule) *SarifRuleUpdateOne {
+	mutation := newSarifRuleMutation(c.config, OpUpdateOne, withSarifRule(sr))
+	return &SarifRuleUpdateOne{config: c.config, hooks: c.Hooks(), mutation: mutation}
+}
+
+// UpdateOneID returns an update builder for the given id.
+func (c *SarifRuleClient) UpdateOneID(id uuid.UUID) *SarifRuleUpdateOne {
+	mutation := newSarifRuleMutation(c.config, OpUpdateOne, withSarifRuleID(id))
+	return &SarifRuleUpdateOne{config: c.config, hooks: c.Hooks(), mutation: mutation}
+}
+
+// Delete returns a delete builder for SarifRule.
+func (c *SarifRuleClient) Delete() *SarifRuleDelete {
+	mutation := newSarifRuleMutation(c.config, OpDelete)
+	return &SarifRuleDelete{config: c.config, hooks: c.Hooks(), mutation: mutation}
+}
+
+// DeleteOne returns a builder for deleting the given entity.
+func (c *SarifRuleClient) DeleteOne(sr *SarifRule) *SarifRuleDeleteOne {
+	return c.DeleteOneID(sr.ID)
+}
+
+// DeleteOneID returns a builder for deleting the given entity by its id.
+func (c *SarifRuleClient) DeleteOneID(id uuid.UUID) *SarifRuleDeleteOne {
+	builder := c.Delete().Where(sarifrule.ID(id))
+	builder.mutation.id = &id
+	builder.mutation.op = OpDeleteOne
+	return &SarifRuleDeleteOne{builder}
+}
+
+// Query returns a query builder for SarifRule.
+func (c *SarifRuleClient) Query() *SarifRuleQuery {
+	return &SarifRuleQuery{
+		config: c.config,
+		ctx:    &QueryContext{Type: TypeSarifRule},
+		inters: c.Interceptors(),
+	}
+}
+
+// Get returns a SarifRule entity by its id.
+func (c *SarifRuleClient) Get(ctx context.Context, id uuid.UUID) (*SarifRule, error) {
+	return c.Query().Where(sarifrule.ID(id)).Only(ctx)
+}
+
+// GetX is like Get, but panics if an error occurs.
+func (c *SarifRuleClient) GetX(ctx context.Context, id uuid.UUID) *SarifRule {
+	obj, err := c.Get(ctx, id)
+	if err != nil {
+		panic(err)
+	}
+	return obj
+}
+
+// QuerySarif queries the sarif edge of a SarifRule.
+func (c *SarifRuleClient) QuerySarif(sr *SarifRule) *SarifQuery {
+	query := (&SarifClient{config: c.config}).Query()
+	query.path = func(context.Context) (fromV *sql.Selector, _ error) {
+		id := sr.ID
+		step := sqlgraph.NewStep(
+			sqlgraph.From(sarifrule.Table, sarifrule.FieldID, id),
+			sqlgraph.To(sarif.Table, sarif.FieldID),
+			sqlgraph.Edge(sqlgraph.O2O, true, sarifrule.SarifTable, sarifrule.SarifColumn),
+		)
+		fromV = sqlgraph.Neighbors(sr.driver.Dialect(), step)
+		return fromV, nil
+	}
+	return query
+}
+
+// Hooks returns the client hooks.
+func (c *SarifRuleClient) Hooks() []Hook {
+	return c.hooks.SarifRule
+}
+
+// Interceptors returns the client interceptors.
+func (c *SarifRuleClient) Interceptors() []Interceptor {
+	return c.inters.SarifRule
+}
+
+func (c *SarifRuleClient) mutate(ctx context.Context, m *SarifRuleMutation) (Value, error) {
+	switch m.Op() {
+	case OpCreate:
+		return (&SarifRuleCreate{config: c.config, hooks: c.Hooks(), mutation: m}).Save(ctx)
+	case OpUpdate:
+		return (&SarifRuleUpdate{config: c.config, hooks: c.Hooks(), mutation: m}).Save(ctx)
+	case OpUpdateOne:
+		return (&SarifRuleUpdateOne{config: c.config, hooks: c.Hooks(), mutation: m}).Save(ctx)
+	case OpDelete, OpDeleteOne:
+		return (&SarifRuleDelete{config: c.config, hooks: c.Hooks(), mutation: m}).Exec(ctx)
+	default:
+		return nil, fmt.Errorf("ent: unknown SarifRule mutation op: %q", m.Op())
+	}
+}
+
 // SignatureClient is a client for the Signature schema.
 type SignatureClient struct {
 	config
@@ -1389,6 +1719,22 @@ func (c *StatementClient) QueryAttestationCollections(s *Statement) *Attestation
 			sqlgraph.From(statement.Table, statement.FieldID, id),
 			sqlgraph.To(attestationcollection.Table, attestationcollection.FieldID),
 			sqlgraph.Edge(sqlgraph.O2O, false, statement.AttestationCollectionsTable, statement.AttestationCollectionsColumn),
+		)
+		fromV = sqlgraph.Neighbors(s.driver.Dialect(), step)
+		return fromV, nil
+	}
+	return query
+}
+
+// QuerySarif queries the sarif edge of a Statement.
+func (c *StatementClient) QuerySarif(s *Statement) *SarifQuery {
+	query := (&SarifClient{config: c.config}).Query()
+	query.path = func(context.Context) (fromV *sql.Selector, _ error) {
+		id := s.ID
+		step := sqlgraph.NewStep(
+			sqlgraph.From(statement.Table, statement.FieldID, id),
+			sqlgraph.To(sarif.Table, sarif.FieldID),
+			sqlgraph.Edge(sqlgraph.O2O, false, statement.SarifTable, statement.SarifColumn),
 		)
 		fromV = sqlgraph.Neighbors(s.driver.Dialect(), step)
 		return fromV, nil
@@ -1904,10 +2250,12 @@ func (c *TimestampClient) mutate(ctx context.Context, m *TimestampMutation) (Val
 type (
 	hooks struct {
 		Attestation, AttestationCollection, AttestationPolicy, Dsse, PayloadDigest,
-		Signature, Statement, Subject, SubjectDigest, Timestamp []ent.Hook
+		Sarif, SarifRule, Signature, Statement, Subject, SubjectDigest,
+		Timestamp []ent.Hook
 	}
 	inters struct {
 		Attestation, AttestationCollection, AttestationPolicy, Dsse, PayloadDigest,
-		Signature, Statement, Subject, SubjectDigest, Timestamp []ent.Interceptor
+		Sarif, SarifRule, Signature, Statement, Subject, SubjectDigest,
+		Timestamp []ent.Interceptor
 	}
 )

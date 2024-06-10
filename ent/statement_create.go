@@ -13,6 +13,7 @@ import (
 	"github.com/in-toto/archivista/ent/attestationcollection"
 	"github.com/in-toto/archivista/ent/attestationpolicy"
 	"github.com/in-toto/archivista/ent/dsse"
+	"github.com/in-toto/archivista/ent/sarif"
 	"github.com/in-toto/archivista/ent/statement"
 	"github.com/in-toto/archivista/ent/subject"
 )
@@ -95,6 +96,25 @@ func (sc *StatementCreate) SetNillableAttestationCollectionsID(id *uuid.UUID) *S
 // SetAttestationCollections sets the "attestation_collections" edge to the AttestationCollection entity.
 func (sc *StatementCreate) SetAttestationCollections(a *AttestationCollection) *StatementCreate {
 	return sc.SetAttestationCollectionsID(a.ID)
+}
+
+// SetSarifID sets the "sarif" edge to the Sarif entity by ID.
+func (sc *StatementCreate) SetSarifID(id uuid.UUID) *StatementCreate {
+	sc.mutation.SetSarifID(id)
+	return sc
+}
+
+// SetNillableSarifID sets the "sarif" edge to the Sarif entity by ID if the given value is not nil.
+func (sc *StatementCreate) SetNillableSarifID(id *uuid.UUID) *StatementCreate {
+	if id != nil {
+		sc = sc.SetSarifID(*id)
+	}
+	return sc
+}
+
+// SetSarif sets the "sarif" edge to the Sarif entity.
+func (sc *StatementCreate) SetSarif(s *Sarif) *StatementCreate {
+	return sc.SetSarifID(s.ID)
 }
 
 // AddDsseIDs adds the "dsse" edge to the Dsse entity by IDs.
@@ -243,6 +263,22 @@ func (sc *StatementCreate) createSpec() (*Statement, *sqlgraph.CreateSpec) {
 			Bidi:    false,
 			Target: &sqlgraph.EdgeTarget{
 				IDSpec: sqlgraph.NewFieldSpec(attestationcollection.FieldID, field.TypeUUID),
+			},
+		}
+		for _, k := range nodes {
+			edge.Target.Nodes = append(edge.Target.Nodes, k)
+		}
+		_spec.Edges = append(_spec.Edges, edge)
+	}
+	if nodes := sc.mutation.SarifIDs(); len(nodes) > 0 {
+		edge := &sqlgraph.EdgeSpec{
+			Rel:     sqlgraph.O2O,
+			Inverse: false,
+			Table:   statement.SarifTable,
+			Columns: []string{statement.SarifColumn},
+			Bidi:    false,
+			Target: &sqlgraph.EdgeTarget{
+				IDSpec: sqlgraph.NewFieldSpec(sarif.FieldID, field.TypeUUID),
 			},
 		}
 		for _, k := range nodes {

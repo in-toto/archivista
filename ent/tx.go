@@ -22,6 +22,10 @@ type Tx struct {
 	Dsse *DsseClient
 	// PayloadDigest is the client for interacting with the PayloadDigest builders.
 	PayloadDigest *PayloadDigestClient
+	// Sarif is the client for interacting with the Sarif builders.
+	Sarif *SarifClient
+	// SarifRule is the client for interacting with the SarifRule builders.
+	SarifRule *SarifRuleClient
 	// Signature is the client for interacting with the Signature builders.
 	Signature *SignatureClient
 	// Statement is the client for interacting with the Statement builders.
@@ -168,6 +172,8 @@ func (tx *Tx) init() {
 	tx.AttestationPolicy = NewAttestationPolicyClient(tx.config)
 	tx.Dsse = NewDsseClient(tx.config)
 	tx.PayloadDigest = NewPayloadDigestClient(tx.config)
+	tx.Sarif = NewSarifClient(tx.config)
+	tx.SarifRule = NewSarifRuleClient(tx.config)
 	tx.Signature = NewSignatureClient(tx.config)
 	tx.Statement = NewStatementClient(tx.config)
 	tx.Subject = NewSubjectClient(tx.config)

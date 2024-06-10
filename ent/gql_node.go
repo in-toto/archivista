@@ -15,6 +15,8 @@ import (
 	"github.com/in-toto/archivista/ent/attestationpolicy"
 	"github.com/in-toto/archivista/ent/dsse"
 	"github.com/in-toto/archivista/ent/payloaddigest"
+	"github.com/in-toto/archivista/ent/sarif"
+	"github.com/in-toto/archivista/ent/sarifrule"
 	"github.com/in-toto/archivista/ent/signature"
 	"github.com/in-toto/archivista/ent/statement"
 	"github.com/in-toto/archivista/ent/subject"
@@ -51,6 +53,16 @@ var payloaddigestImplementors = []string{"PayloadDigest", "Node"}
 
 // IsNode implements the Node interface check for GQLGen.
 func (*PayloadDigest) IsNode() {}
+
+var sarifImplementors = []string{"Sarif", "Node"}
+
+// IsNode implements the Node interface check for GQLGen.
+func (*Sarif) IsNode() {}
+
+var sarifruleImplementors = []string{"SarifRule", "Node"}
+
+// IsNode implements the Node interface check for GQLGen.
+func (*SarifRule) IsNode() {}
 
 var signatureImplementors = []string{"Signature", "Node"}
 
@@ -176,6 +188,24 @@ func (c *Client) noder(ctx context.Context, table string, id uuid.UUID) (Noder, 
 			Where(payloaddigest.ID(id))
 		if fc := graphql.GetFieldContext(ctx); fc != nil {
 			if err := query.collectField(ctx, true, graphql.GetOperationContext(ctx), fc.Field, nil, payloaddigestImplementors...); err != nil {
+				return nil, err
+			}
+		}
+		return query.Only(ctx)
+	case sarif.Table:
+		query := c.Sarif.Query().
+			Where(sarif.ID(id))
+		if fc := graphql.GetFieldContext(ctx); fc != nil {
+			if err := query.collectField(ctx, true, graphql.GetOperationContext(ctx), fc.Field, nil, sarifImplementors...); err != nil {
+				return nil, err
+			}
+		}
+		return query.Only(ctx)
+	case sarifrule.Table:
+		query := c.SarifRule.Query().
+			Where(sarifrule.ID(id))
+		if fc := graphql.GetFieldContext(ctx); fc != nil {
+			if err := query.collectField(ctx, true, graphql.GetOperationContext(ctx), fc.Field, nil, sarifruleImplementors...); err != nil {
 				return nil, err
 			}
 		}
@@ -366,6 +396,38 @@ func (c *Client) noders(ctx context.Context, table string, ids []uuid.UUID) ([]N
 		query := c.PayloadDigest.Query().
 			Where(payloaddigest.IDIn(ids...))
 		query, err := query.CollectFields(ctx, payloaddigestImplementors...)
+		if err != nil {
+			return nil, err
+		}
+		nodes, err := query.All(ctx)
+		if err != nil {
+			return nil, err
+		}
+		for _, node := range nodes {
+			for _, noder := range idmap[node.ID] {
+				*noder = node
+			}
+		}
+	case sarif.Table:
+		query := c.Sarif.Query().
+			Where(sarif.IDIn(ids...))
+		query, err := query.CollectFields(ctx, sarifImplementors...)
+		if err != nil {
+			return nil, err
+		}
+		nodes, err := query.All(ctx)
+		if err != nil {
+			return nil, err
+		}
+		for _, node := range nodes {
+			for _, noder := range idmap[node.ID] {
+				*noder = node
+			}
+		}
+	case sarifrule.Table:
+		query := c.SarifRule.Query().
+			Where(sarifrule.IDIn(ids...))
+		query, err := query.CollectFields(ctx, sarifruleImplementors...)
 		if err != nil {
 			return nil, err
 		}

@@ -16,6 +16,8 @@ import (
 	"github.com/in-toto/archivista/ent/attestationpolicy"
 	"github.com/in-toto/archivista/ent/dsse"
 	"github.com/in-toto/archivista/ent/payloaddigest"
+	"github.com/in-toto/archivista/ent/sarif"
+	"github.com/in-toto/archivista/ent/sarifrule"
 	"github.com/in-toto/archivista/ent/signature"
 	"github.com/in-toto/archivista/ent/statement"
 	"github.com/in-toto/archivista/ent/subject"
@@ -463,6 +465,183 @@ func newPayloadDigestPaginateArgs(rv map[string]any) *payloaddigestPaginateArgs 
 }
 
 // CollectFields tells the query-builder to eagerly load connected nodes by resolver context.
+func (s *SarifQuery) CollectFields(ctx context.Context, satisfies ...string) (*SarifQuery, error) {
+	fc := graphql.GetFieldContext(ctx)
+	if fc == nil {
+		return s, nil
+	}
+	if err := s.collectField(ctx, false, graphql.GetOperationContext(ctx), fc.Field, nil, satisfies...); err != nil {
+		return nil, err
+	}
+	return s, nil
+}
+
+func (s *SarifQuery) collectField(ctx context.Context, oneNode bool, opCtx *graphql.OperationContext, collected graphql.CollectedField, path []string, satisfies ...string) error {
+	path = append([]string(nil), path...)
+	var (
+		unknownSeen    bool
+		fieldSeen      = make(map[string]struct{}, len(sarif.Columns))
+		selectedFields = []string{sarif.FieldID}
+	)
+	for _, field := range graphql.CollectFields(opCtx, collected.Selections, satisfies) {
+		switch field.Name {
+
+		case "sarifRules":
+			var (
+				alias = field.Alias
+				path  = append(path, alias)
+				query = (&SarifRuleClient{config: s.config}).Query()
+			)
+			if err := query.collectField(ctx, oneNode, opCtx, field, path, mayAddCondition(satisfies, sarifruleImplementors)...); err != nil {
+				return err
+			}
+			s.withSarifRules = query
+
+		case "statement":
+			var (
+				alias = field.Alias
+				path  = append(path, alias)
+				query = (&StatementClient{config: s.config}).Query()
+			)
+			if err := query.collectField(ctx, oneNode, opCtx, field, path, mayAddCondition(satisfies, statementImplementors)...); err != nil {
+				return err
+			}
+			s.withStatement = query
+		case "reportFileName":
+			if _, ok := fieldSeen[sarif.FieldReportFileName]; !ok {
+				selectedFields = append(selectedFields, sarif.FieldReportFileName)
+				fieldSeen[sarif.FieldReportFileName] = struct{}{}
+			}
+		case "id":
+		case "__typename":
+		default:
+			unknownSeen = true
+		}
+	}
+	if !unknownSeen {
+		s.Select(selectedFields...)
+	}
+	return nil
+}
+
+type sarifPaginateArgs struct {
+	first, last   *int
+	after, before *Cursor
+	opts          []SarifPaginateOption
+}
+
+func newSarifPaginateArgs(rv map[string]any) *sarifPaginateArgs {
+	args := &sarifPaginateArgs{}
+	if rv == nil {
+		return args
+	}
+	if v := rv[firstField]; v != nil {
+		args.first = v.(*int)
+	}
+	if v := rv[lastField]; v != nil {
+		args.last = v.(*int)
+	}
+	if v := rv[afterField]; v != nil {
+		args.after = v.(*Cursor)
+	}
+	if v := rv[beforeField]; v != nil {
+		args.before = v.(*Cursor)
+	}
+	if v, ok := rv[whereField].(*SarifWhereInput); ok {
+		args.opts = append(args.opts, WithSarifFilter(v.Filter))
+	}
+	return args
+}
+
+// CollectFields tells the query-builder to eagerly load connected nodes by resolver context.
+func (sr *SarifRuleQuery) CollectFields(ctx context.Context, satisfies ...string) (*SarifRuleQuery, error) {
+	fc := graphql.GetFieldContext(ctx)
+	if fc == nil {
+		return sr, nil
+	}
+	if err := sr.collectField(ctx, false, graphql.GetOperationContext(ctx), fc.Field, nil, satisfies...); err != nil {
+		return nil, err
+	}
+	return sr, nil
+}
+
+func (sr *SarifRuleQuery) collectField(ctx context.Context, oneNode bool, opCtx *graphql.OperationContext, collected graphql.CollectedField, path []string, satisfies ...string) error {
+	path = append([]string(nil), path...)
+	var (
+		unknownSeen    bool
+		fieldSeen      = make(map[string]struct{}, len(sarifrule.Columns))
+		selectedFields = []string{sarifrule.FieldID}
+	)
+	for _, field := range graphql.CollectFields(opCtx, collected.Selections, satisfies) {
+		switch field.Name {
+
+		case "sarif":
+			var (
+				alias = field.Alias
+				path  = append(path, alias)
+				query = (&SarifClient{config: sr.config}).Query()
+			)
+			if err := query.collectField(ctx, oneNode, opCtx, field, path, mayAddCondition(satisfies, sarifImplementors)...); err != nil {
+				return err
+			}
+			sr.withSarif = query
+		case "ruleID":
+			if _, ok := fieldSeen[sarifrule.FieldRuleID]; !ok {
+				selectedFields = append(selectedFields, sarifrule.FieldRuleID)
+				fieldSeen[sarifrule.FieldRuleID] = struct{}{}
+			}
+		case "ruleName":
+			if _, ok := fieldSeen[sarifrule.FieldRuleName]; !ok {
+				selectedFields = append(selectedFields, sarifrule.FieldRuleName)
+				fieldSeen[sarifrule.FieldRuleName] = struct{}{}
+			}
+		case "shortDescription":
+			if _, ok := fieldSeen[sarifrule.FieldShortDescription]; !ok {
+				selectedFields = append(selectedFields, sarifrule.FieldShortDescription)
+				fieldSeen[sarifrule.FieldShortDescription] = struct{}{}
+			}
+		case "id":
+		case "__typename":
+		default:
+			unknownSeen = true
+		}
+	}
+	if !unknownSeen {
+		sr.Select(selectedFields...)
+	}
+	return nil
+}
+
+type sarifrulePaginateArgs struct {
+	first, last   *int
+	after, before *Cursor
+	opts          []SarifRulePaginateOption
+}
+
+func newSarifRulePaginateArgs(rv map[string]any) *sarifrulePaginateArgs {
+	args := &sarifrulePaginateArgs{}
+	if rv == nil {
+		return args
+	}
+	if v := rv[firstField]; v != nil {
+		args.first = v.(*int)
+	}
+	if v := rv[lastField]; v != nil {
+		args.last = v.(*int)
+	}
+	if v := rv[afterField]; v != nil {
+		args.after = v.(*Cursor)
+	}
+	if v := rv[beforeField]; v != nil {
+		args.before = v.(*Cursor)
+	}
+	if v, ok := rv[whereField].(*SarifRuleWhereInput); ok {
+		args.opts = append(args.opts, WithSarifRuleFilter(v.Filter))
+	}
+	return args
+}
+
+// CollectFields tells the query-builder to eagerly load connected nodes by resolver context.
 func (s *SignatureQuery) CollectFields(ctx context.Context, satisfies ...string) (*SignatureQuery, error) {
 	fc := graphql.GetFieldContext(ctx)
 	if fc == nil {
@@ -690,6 +869,17 @@ func (s *StatementQuery) collectField(ctx context.Context, oneNode bool, opCtx *
 				return err
 			}
 			s.withAttestationCollections = query
+
+		case "sarif":
+			var (
+				alias = field.Alias
+				path  = append(path, alias)
+				query = (&SarifClient{config: s.config}).Query()
+			)
+			if err := query.collectField(ctx, oneNode, opCtx, field, path, mayAddCondition(satisfies, sarifImplementors)...); err != nil {
+				return err
+			}
+			s.withSarif = query
 
 		case "dsse":
 			var (

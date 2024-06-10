@@ -18,6 +18,8 @@ import (
 	"github.com/in-toto/archivista/ent/dsse"
 	"github.com/in-toto/archivista/ent/payloaddigest"
 	"github.com/in-toto/archivista/ent/predicate"
+	"github.com/in-toto/archivista/ent/sarif"
+	"github.com/in-toto/archivista/ent/sarifrule"
 	"github.com/in-toto/archivista/ent/signature"
 	"github.com/in-toto/archivista/ent/statement"
 	"github.com/in-toto/archivista/ent/subject"
@@ -39,6 +41,8 @@ const (
 	TypeAttestationPolicy     = "AttestationPolicy"
 	TypeDsse                  = "Dsse"
 	TypePayloadDigest         = "PayloadDigest"
+	TypeSarif                 = "Sarif"
+	TypeSarifRule             = "SarifRule"
 	TypeSignature             = "Signature"
 	TypeStatement             = "Statement"
 	TypeSubject               = "Subject"
@@ -2402,6 +2406,971 @@ func (m *PayloadDigestMutation) ResetEdge(name string) error {
 	return fmt.Errorf("unknown PayloadDigest edge %s", name)
 }
 
+// SarifMutation represents an operation that mutates the Sarif nodes in the graph.
+type SarifMutation struct {
+	config
+	op                 Op
+	typ                string
+	id                 *uuid.UUID
+	report_file_name   *string
+	clearedFields      map[string]struct{}
+	sarif_rules        *uuid.UUID
+	clearedsarif_rules bool
+	statement          *uuid.UUID
+	clearedstatement   bool
+	done               bool
+	oldValue           func(context.Context) (*Sarif, error)
+	predicates         []predicate.Sarif
+}
+
+var _ ent.Mutation = (*SarifMutation)(nil)
+
+// sarifOption allows management of the mutation configuration using functional options.
+type sarifOption func(*SarifMutation)
+
+// newSarifMutation creates new mutation for the Sarif entity.
+func newSarifMutation(c config, op Op, opts ...sarifOption) *SarifMutation {
+	m := &SarifMutation{
+		config:        c,
+		op:            op,
+		typ:           TypeSarif,
+		clearedFields: make(map[string]struct{}),
+	}
+	for _, opt := range opts {
+		opt(m)
+	}
+	return m
+}
+
+// withSarifID sets the ID field of the mutation.
+func withSarifID(id uuid.UUID) sarifOption {
+	return func(m *SarifMutation) {
+		var (
+			err   error
+			once  sync.Once
+			value *Sarif
+		)
+		m.oldValue = func(ctx context.Context) (*Sarif, error) {
+			once.Do(func() {
+				if m.done {
+					err = errors.New("querying old values post mutation is not allowed")
+				} else {
+					value, err = m.Client().Sarif.Get(ctx, id)
+				}
+			})
+			return value, err
+		}
+		m.id = &id
+	}
+}
+
+// withSarif sets the old Sarif of the mutation.
+func withSarif(node *Sarif) sarifOption {
+	return func(m *SarifMutation) {
+		m.oldValue = func(context.Context) (*Sarif, error) {
+			return node, nil
+		}
+		m.id = &node.ID
+	}
+}
+
+// Client returns a new `ent.Client` from the mutation. If the mutation was
+// executed in a transaction (ent.Tx), a transactional client is returned.
+func (m SarifMutation) Client() *Client {
+	client := &Client{config: m.config}
+	client.init()
+	return client
+}
+
+// Tx returns an `ent.Tx` for mutations that were executed in transactions;
+// it returns an error otherwise.
+func (m SarifMutation) Tx() (*Tx, error) {
+	if _, ok := m.driver.(*txDriver); !ok {
+		return nil, errors.New("ent: mutation is not running in a transaction")
+	}
+	tx := &Tx{config: m.config}
+	tx.init()
+	return tx, nil
+}
+
+// SetID sets the value of the id field. Note that this
+// operation is only accepted on creation of Sarif entities.
+func (m *SarifMutation) SetID(id uuid.UUID) {
+	m.id = &id
+}
+
+// ID returns the ID value in the mutation. Note that the ID is only available
+// if it was provided to the builder or after it was returned from the database.
+func (m *SarifMutation) ID() (id uuid.UUID, exists bool) {
+	if m.id == nil {
+		return
+	}
+	return *m.id, true
+}
+
+// IDs queries the database and returns the entity ids that match the mutation's predicate.
+// That means, if the mutation is applied within a transaction with an isolation level such
+// as sql.LevelSerializable, the returned ids match the ids of the rows that will be updated
+// or updated by the mutation.
+func (m *SarifMutation) IDs(ctx context.Context) ([]uuid.UUID, error) {
+	switch {
+	case m.op.Is(OpUpdateOne | OpDeleteOne):
+		id, exists := m.ID()
+		if exists {
+			return []uuid.UUID{id}, nil
+		}
+		fallthrough
+	case m.op.Is(OpUpdate | OpDelete):
+		return m.Client().Sarif.Query().Where(m.predicates...).IDs(ctx)
+	default:
+		return nil, fmt.Errorf("IDs is not allowed on %s operations", m.op)
+	}
+}
+
+// SetReportFileName sets the "report_file_name" field.
+func (m *SarifMutation) SetReportFileName(s string) {
+	m.report_file_name = &s
+}
+
+// ReportFileName returns the value of the "report_file_name" field in the mutation.
+func (m *SarifMutation) ReportFileName() (r string, exists bool) {
+	v := m.report_file_name
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// OldReportFileName returns the old "report_file_name" field's value of the Sarif entity.
+// If the Sarif object wasn't provided to the builder, the object is fetched from the database.
+// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
+func (m *SarifMutation) OldReportFileName(ctx context.Context) (v string, err error) {
+	if !m.op.Is(OpUpdateOne) {
+		return v, errors.New("OldReportFileName is only allowed on UpdateOne operations")
+	}
+	if m.id == nil || m.oldValue == nil {
+		return v, errors.New("OldReportFileName requires an ID field in the mutation")
+	}
+	oldValue, err := m.oldValue(ctx)
+	if err != nil {
+		return v, fmt.Errorf("querying old value for OldReportFileName: %w", err)
+	}
+	return oldValue.ReportFileName, nil
+}
+
+// ResetReportFileName resets all changes to the "report_file_name" field.
+func (m *SarifMutation) ResetReportFileName() {
+	m.report_file_name = nil
+}
+
+// SetSarifRulesID sets the "sarif_rules" edge to the SarifRule entity by id.
+func (m *SarifMutation) SetSarifRulesID(id uuid.UUID) {
+	m.sarif_rules = &id
+}
+
+// ClearSarifRules clears the "sarif_rules" edge to the SarifRule entity.
+func (m *SarifMutation) ClearSarifRules() {
+	m.clearedsarif_rules = true
+}
+
+// SarifRulesCleared reports if the "sarif_rules" edge to the SarifRule entity was cleared.
+func (m *SarifMutation) SarifRulesCleared() bool {
+	return m.clearedsarif_rules
+}
+
+// SarifRulesID returns the "sarif_rules" edge ID in the mutation.
+func (m *SarifMutation) SarifRulesID() (id uuid.UUID, exists bool) {
+	if m.sarif_rules != nil {
+		return *m.sarif_rules, true
+	}
+	return
+}
+
+// SarifRulesIDs returns the "sarif_rules" edge IDs in the mutation.
+// Note that IDs always returns len(IDs) <= 1 for unique edges, and you should use
+// SarifRulesID instead. It exists only for internal usage by the builders.
+func (m *SarifMutation) SarifRulesIDs() (ids []uuid.UUID) {
+	if id := m.sarif_rules; id != nil {
+		ids = append(ids, *id)
+	}
+	return
+}
+
+// ResetSarifRules resets all changes to the "sarif_rules" edge.
+func (m *SarifMutation) ResetSarifRules() {
+	m.sarif_rules = nil
+	m.clearedsarif_rules = false
+}
+
+// SetStatementID sets the "statement" edge to the Statement entity by id.
+func (m *SarifMutation) SetStatementID(id uuid.UUID) {
+	m.statement = &id
+}
+
+// ClearStatement clears the "statement" edge to the Statement entity.
+func (m *SarifMutation) ClearStatement() {
+	m.clearedstatement = true
+}
+
+// StatementCleared reports if the "statement" edge to the Statement entity was cleared.
+func (m *SarifMutation) StatementCleared() bool {
+	return m.clearedstatement
+}
+
+// StatementID returns the "statement" edge ID in the mutation.
+func (m *SarifMutation) StatementID() (id uuid.UUID, exists bool) {
+	if m.statement != nil {
+		return *m.statement, true
+	}
+	return
+}
+
+// StatementIDs returns the "statement" edge IDs in the mutation.
+// Note that IDs always returns len(IDs) <= 1 for unique edges, and you should use
+// StatementID instead. It exists only for internal usage by the builders.
+func (m *SarifMutation) StatementIDs() (ids []uuid.UUID) {
+	if id := m.statement; id != nil {
+		ids = append(ids, *id)
+	}
+	return
+}
+
+// ResetStatement resets all changes to the "statement" edge.
+func (m *SarifMutation) ResetStatement() {
+	m.statement = nil
+	m.clearedstatement = false
+}
+
+// Where appends a list predicates to the SarifMutation builder.
+func (m *SarifMutation) Where(ps ...predicate.Sarif) {
+	m.predicates = append(m.predicates, ps...)
+}
+
+// WhereP appends storage-level predicates to the SarifMutation builder. Using this method,
+// users can use type-assertion to append predicates that do not depend on any generated package.
+func (m *SarifMutation) WhereP(ps ...func(*sql.Selector)) {
+	p := make([]predicate.Sarif, len(ps))
+	for i := range ps {
+		p[i] = ps[i]
+	}
+	m.Where(p...)
+}
+
+// Op returns the operation name.
+func (m *SarifMutation) Op() Op {
+	return m.op
+}
+
+// SetOp allows setting the mutation operation.
+func (m *SarifMutation) SetOp(op Op) {
+	m.op = op
+}
+
+// Type returns the node type of this mutation (Sarif).
+func (m *SarifMutation) Type() string {
+	return m.typ
+}
+
+// Fields returns all fields that were changed during this mutation. Note that in
+// order to get all numeric fields that were incremented/decremented, call
+// AddedFields().
+func (m *SarifMutation) Fields() []string {
+	fields := make([]string, 0, 1)
+	if m.report_file_name != nil {
+		fields = append(fields, sarif.FieldReportFileName)
+	}
+	return fields
+}
+
+// Field returns the value of a field with the given name. The second boolean
+// return value indicates that this field was not set, or was not defined in the
+// schema.
+func (m *SarifMutation) Field(name string) (ent.Value, bool) {
+	switch name {
+	case sarif.FieldReportFileName:
+		return m.ReportFileName()
+	}
+	return nil, false
+}
+
+// OldField returns the old value of the field from the database. An error is
+// returned if the mutation operation is not UpdateOne, or the query to the
+// database failed.
+func (m *SarifMutation) OldField(ctx context.Context, name string) (ent.Value, error) {
+	switch name {
+	case sarif.FieldReportFileName:
+		return m.OldReportFileName(ctx)
+	}
+	return nil, fmt.Errorf("unknown Sarif field %s", name)
+}
+
+// SetField sets the value of a field with the given name. It returns an error if
+// the field is not defined in the schema, or if the type mismatched the field
+// type.
+func (m *SarifMutation) SetField(name string, value ent.Value) error {
+	switch name {
+	case sarif.FieldReportFileName:
+		v, ok := value.(string)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.SetReportFileName(v)
+		return nil
+	}
+	return fmt.Errorf("unknown Sarif field %s", name)
+}
+
+// AddedFields returns all numeric fields that were incremented/decremented during
+// this mutation.
+func (m *SarifMutation) AddedFields() []string {
+	return nil
+}
+
+// AddedField returns the numeric value that was incremented/decremented on a field
+// with the given name. The second boolean return value indicates that this field
+// was not set, or was not defined in the schema.
+func (m *SarifMutation) AddedField(name string) (ent.Value, bool) {
+	return nil, false
+}
+
+// AddField adds the value to the field with the given name. It returns an error if
+// the field is not defined in the schema, or if the type mismatched the field
+// type.
+func (m *SarifMutation) AddField(name string, value ent.Value) error {
+	switch name {
+	}
+	return fmt.Errorf("unknown Sarif numeric field %s", name)
+}
+
+// ClearedFields returns all nullable fields that were cleared during this
+// mutation.
+func (m *SarifMutation) ClearedFields() []string {
+	return nil
+}
+
+// FieldCleared returns a boolean indicating if a field with the given name was
+// cleared in this mutation.
+func (m *SarifMutation) FieldCleared(name string) bool {
+	_, ok := m.clearedFields[name]
+	return ok
+}
+
+// ClearField clears the value of the field with the given name. It returns an
+// error if the field is not defined in the schema.
+func (m *SarifMutation) ClearField(name string) error {
+	return fmt.Errorf("unknown Sarif nullable field %s", name)
+}
+
+// ResetField resets all changes in the mutation for the field with the given name.
+// It returns an error if the field is not defined in the schema.
+func (m *SarifMutation) ResetField(name string) error {
+	switch name {
+	case sarif.FieldReportFileName:
+		m.ResetReportFileName()
+		return nil
+	}
+	return fmt.Errorf("unknown Sarif field %s", name)
+}
+
+// AddedEdges returns all edge names that were set/added in this mutation.
+func (m *SarifMutation) AddedEdges() []string {
+	edges := make([]string, 0, 2)
+	if m.sarif_rules != nil {
+		edges = append(edges, sarif.EdgeSarifRules)
+	}
+	if m.statement != nil {
+		edges = append(edges, sarif.EdgeStatement)
+	}
+	return edges
+}
+
+// AddedIDs returns all IDs (to other nodes) that were added for the given edge
+// name in this mutation.
+func (m *SarifMutation) AddedIDs(name string) []ent.Value {
+	switch name {
+	case sarif.EdgeSarifRules:
+		if id := m.sarif_rules; id != nil {
+			return []ent.Value{*id}
+		}
+	case sarif.EdgeStatement:
+		if id := m.statement; id != nil {
+			return []ent.Value{*id}
+		}
+	}
+	return nil
+}
+
+// RemovedEdges returns all edge names that were removed in this mutation.
+func (m *SarifMutation) RemovedEdges() []string {
+	edges := make([]string, 0, 2)
+	return edges
+}
+
+// RemovedIDs returns all IDs (to other nodes) that were removed for the edge with
+// the given name in this mutation.
+func (m *SarifMutation) RemovedIDs(name string) []ent.Value {
+	return nil
+}
+
+// ClearedEdges returns all edge names that were cleared in this mutation.
+func (m *SarifMutation) ClearedEdges() []string {
+	edges := make([]string, 0, 2)
+	if m.clearedsarif_rules {
+		edges = append(edges, sarif.EdgeSarifRules)
+	}
+	if m.clearedstatement {
+		edges = append(edges, sarif.EdgeStatement)
+	}
+	return edges
+}
+
+// EdgeCleared returns a boolean which indicates if the edge with the given name
+// was cleared in this mutation.
+func (m *SarifMutation) EdgeCleared(name string) bool {
+	switch name {
+	case sarif.EdgeSarifRules:
+		return m.clearedsarif_rules
+	case sarif.EdgeStatement:
+		return m.clearedstatement
+	}
+	return false
+}
+
+// ClearEdge clears the value of the edge with the given name. It returns an error
+// if that edge is not defined in the schema.
+func (m *SarifMutation) ClearEdge(name string) error {
+	switch name {
+	case sarif.EdgeSarifRules:
+		m.ClearSarifRules()
+		return nil
+	case sarif.EdgeStatement:
+		m.ClearStatement()
+		return nil
+	}
+	return fmt.Errorf("unknown Sarif unique edge %s", name)
+}
+
+// ResetEdge resets all changes to the edge with the given name in this mutation.
+// It returns an error if the edge is not defined in the schema.
+func (m *SarifMutation) ResetEdge(name string) error {
+	switch name {
+	case sarif.EdgeSarifRules:
+		m.ResetSarifRules()
+		return nil
+	case sarif.EdgeStatement:
+		m.ResetStatement()
+		return nil
+	}
+	return fmt.Errorf("unknown Sarif edge %s", name)
+}
+
+// SarifRuleMutation represents an operation that mutates the SarifRule nodes in the graph.
+type SarifRuleMutation struct {
+	config
+	op                Op
+	typ               string
+	id                *uuid.UUID
+	rule_id           *string
+	rule_name         *string
+	short_description *string
+	clearedFields     map[string]struct{}
+	sarif             *uuid.UUID
+	clearedsarif      bool
+	done              bool
+	oldValue          func(context.Context) (*SarifRule, error)
+	predicates        []predicate.SarifRule
+}
+
+var _ ent.Mutation = (*SarifRuleMutation)(nil)
+
+// sarifruleOption allows management of the mutation configuration using functional options.
+type sarifruleOption func(*SarifRuleMutation)
+
+// newSarifRuleMutation creates new mutation for the SarifRule entity.
+func newSarifRuleMutation(c config, op Op, opts ...sarifruleOption) *SarifRuleMutation {
+	m := &SarifRuleMutation{
+		config:        c,
+		op:            op,
+		typ:           TypeSarifRule,
+		clearedFields: make(map[string]struct{}),
+	}
+	for _, opt := range opts {
+		opt(m)
+	}
+	return m
+}
+
+// withSarifRuleID sets the ID field of the mutation.
+func withSarifRuleID(id uuid.UUID) sarifruleOption {
+	return func(m *SarifRuleMutation) {
+		var (
+			err   error
+			once  sync.Once
+			value *SarifRule
+		)
+		m.oldValue = func(ctx context.Context) (*SarifRule, error) {
+			once.Do(func() {
+				if m.done {
+					err = errors.New("querying old values post mutation is not allowed")
+				} else {
+					value, err = m.Client().SarifRule.Get(ctx, id)
+				}
+			})
+			return value, err
+		}
+		m.id = &id
+	}
+}
+
+// withSarifRule sets the old SarifRule of the mutation.
+func withSarifRule(node *SarifRule) sarifruleOption {
+	return func(m *SarifRuleMutation) {
+		m.oldValue = func(context.Context) (*SarifRule, error) {
+			return node, nil
+		}
+		m.id = &node.ID
+	}
+}
+
+// Client returns a new `ent.Client` from the mutation. If the mutation was
+// executed in a transaction (ent.Tx), a transactional client is returned.
+func (m SarifRuleMutation) Client() *Client {
+	client := &Client{config: m.config}
+	client.init()
+	return client
+}
+
+// Tx returns an `ent.Tx` for mutations that were executed in transactions;
+// it returns an error otherwise.
+func (m SarifRuleMutation) Tx() (*Tx, error) {
+	if _, ok := m.driver.(*txDriver); !ok {
+		return nil, errors.New("ent: mutation is not running in a transaction")
+	}
+	tx := &Tx{config: m.config}
+	tx.init()
+	return tx, nil
+}
+
+// SetID sets the value of the id field. Note that this
+// operation is only accepted on creation of SarifRule entities.
+func (m *SarifRuleMutation) SetID(id uuid.UUID) {
+	m.id = &id
+}
+
+// ID returns the ID value in the mutation. Note that the ID is only available
+// if it was provided to the builder or after it was returned from the database.
+func (m *SarifRuleMutation) ID() (id uuid.UUID, exists bool) {
+	if m.id == nil {
+		return
+	}
+	return *m.id, true
+}
+
+// IDs queries the database and returns the entity ids that match the mutation's predicate.
+// That means, if the mutation is applied within a transaction with an isolation level such
+// as sql.LevelSerializable, the returned ids match the ids of the rows that will be updated
+// or updated by the mutation.
+func (m *SarifRuleMutation) IDs(ctx context.Context) ([]uuid.UUID, error) {
+	switch {
+	case m.op.Is(OpUpdateOne | OpDeleteOne):
+		id, exists := m.ID()
+		if exists {
+			return []uuid.UUID{id}, nil
+		}
+		fallthrough
+	case m.op.Is(OpUpdate | OpDelete):
+		return m.Client().SarifRule.Query().Where(m.predicates...).IDs(ctx)
+	default:
+		return nil, fmt.Errorf("IDs is not allowed on %s operations", m.op)
+	}
+}
+
+// SetRuleID sets the "rule_id" field.
+func (m *SarifRuleMutation) SetRuleID(s string) {
+	m.rule_id = &s
+}
+
+// RuleID returns the value of the "rule_id" field in the mutation.
+func (m *SarifRuleMutation) RuleID() (r string, exists bool) {
+	v := m.rule_id
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// OldRuleID returns the old "rule_id" field's value of the SarifRule entity.
+// If the SarifRule object wasn't provided to the builder, the object is fetched from the database.
+// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
+func (m *SarifRuleMutation) OldRuleID(ctx context.Context) (v string, err error) {
+	if !m.op.Is(OpUpdateOne) {
+		return v, errors.New("OldRuleID is only allowed on UpdateOne operations")
+	}
+	if m.id == nil || m.oldValue == nil {
+		return v, errors.New("OldRuleID requires an ID field in the mutation")
+	}
+	oldValue, err := m.oldValue(ctx)
+	if err != nil {
+		return v, fmt.Errorf("querying old value for OldRuleID: %w", err)
+	}
+	return oldValue.RuleID, nil
+}
+
+// ResetRuleID resets all changes to the "rule_id" field.
+func (m *SarifRuleMutation) ResetRuleID() {
+	m.rule_id = nil
+}
+
+// SetRuleName sets the "rule_name" field.
+func (m *SarifRuleMutation) SetRuleName(s string) {
+	m.rule_name = &s
+}
+
+// RuleName returns the value of the "rule_name" field in the mutation.
+func (m *SarifRuleMutation) RuleName() (r string, exists bool) {
+	v := m.rule_name
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// OldRuleName returns the old "rule_name" field's value of the SarifRule entity.
+// If the SarifRule object wasn't provided to the builder, the object is fetched from the database.
+// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
+func (m *SarifRuleMutation) OldRuleName(ctx context.Context) (v string, err error) {
+	if !m.op.Is(OpUpdateOne) {
+		return v, errors.New("OldRuleName is only allowed on UpdateOne operations")
+	}
+	if m.id == nil || m.oldValue == nil {
+		return v, errors.New("OldRuleName requires an ID field in the mutation")
+	}
+	oldValue, err := m.oldValue(ctx)
+	if err != nil {
+		return v, fmt.Errorf("querying old value for OldRuleName: %w", err)
+	}
+	return oldValue.RuleName, nil
+}
+
+// ResetRuleName resets all changes to the "rule_name" field.
+func (m *SarifRuleMutation) ResetRuleName() {
+	m.rule_name = nil
+}
+
+// SetShortDescription sets the "short_description" field.
+func (m *SarifRuleMutation) SetShortDescription(s string) {
+	m.short_description = &s
+}
+
+// ShortDescription returns the value of the "short_description" field in the mutation.
+func (m *SarifRuleMutation) ShortDescription() (r string, exists bool) {
+	v := m.short_description
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// OldShortDescription returns the old "short_description" field's value of the SarifRule entity.
+// If the SarifRule object wasn't provided to the builder, the object is fetched from the database.
+// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
+func (m *SarifRuleMutation) OldShortDescription(ctx context.Context) (v string, err error) {
+	if !m.op.Is(OpUpdateOne) {
+		return v, errors.New("OldShortDescription is only allowed on UpdateOne operations")
+	}
+	if m.id == nil || m.oldValue == nil {
+		return v, errors.New("OldShortDescription requires an ID field in the mutation")
+	}
+	oldValue, err := m.oldValue(ctx)
+	if err != nil {
+		return v, fmt.Errorf("querying old value for OldShortDescription: %w", err)
+	}
+	return oldValue.ShortDescription, nil
+}
+
+// ResetShortDescription resets all changes to the "short_description" field.
+func (m *SarifRuleMutation) ResetShortDescription() {
+	m.short_description = nil
+}
+
+// SetSarifID sets the "sarif" edge to the Sarif entity by id.
+func (m *SarifRuleMutation) SetSarifID(id uuid.UUID) {
+	m.sarif = &id
+}
+
+// ClearSarif clears the "sarif" edge to the Sarif entity.
+func (m *SarifRuleMutation) ClearSarif() {
+	m.clearedsarif = true
+}
+
+// SarifCleared reports if the "sarif" edge to the Sarif entity was cleared.
+func (m *SarifRuleMutation) SarifCleared() bool {
+	return m.clearedsarif
+}
+
+// SarifID returns the "sarif" edge ID in the mutation.
+func (m *SarifRuleMutation) SarifID() (id uuid.UUID, exists bool) {
+	if m.sarif != nil {
+		return *m.sarif, true
+	}
+	return
+}
+
+// SarifIDs returns the "sarif" edge IDs in the mutation.
+// Note that IDs always returns len(IDs) <= 1 for unique edges, and you should use
+// SarifID instead. It exists only for internal usage by the builders.
+func (m *SarifRuleMutation) SarifIDs() (ids []uuid.UUID) {
+	if id := m.sarif; id != nil {
+		ids = append(ids, *id)
+	}
+	return
+}
+
+// ResetSarif resets all changes to the "sarif" edge.
+func (m *SarifRuleMutation) ResetSarif() {
+	m.sarif = nil
+	m.clearedsarif = false
+}
+
+// Where appends a list predicates to the SarifRuleMutation builder.
+func (m *SarifRuleMutation) Where(ps ...predicate.SarifRule) {
+	m.predicates = append(m.predicates, ps...)
+}
+
+// WhereP appends storage-level predicates to the SarifRuleMutation builder. Using this method,
+// users can use type-assertion to append predicates that do not depend on any generated package.
+func (m *SarifRuleMutation) WhereP(ps ...func(*sql.Selector)) {
+	p := make([]predicate.SarifRule, len(ps))
+	for i := range ps {
+		p[i] = ps[i]
+	}
+	m.Where(p...)
+}
+
+// Op returns the operation name.
+func (m *SarifRuleMutation) Op() Op {
+	return m.op
+}
+
+// SetOp allows setting the mutation operation.
+func (m *SarifRuleMutation) SetOp(op Op) {
+	m.op = op
+}
+
+// Type returns the node type of this mutation (SarifRule).
+func (m *SarifRuleMutation) Type() string {
+	return m.typ
+}
+
+// Fields returns all fields that were changed during this mutation. Note that in
+// order to get all numeric fields that were incremented/decremented, call
+// AddedFields().
+func (m *SarifRuleMutation) Fields() []string {
+	fields := make([]string, 0, 3)
+	if m.rule_id != nil {
+		fields = append(fields, sarifrule.FieldRuleID)
+	}
+	if m.rule_name != nil {
+		fields = append(fields, sarifrule.FieldRuleName)
+	}
+	if m.short_description != nil {
+		fields = append(fields, sarifrule.FieldShortDescription)
+	}
+	return fields
+}
+
+// Field returns the value of a field with the given name. The second boolean
+// return value indicates that this field was not set, or was not defined in the
+// schema.
+func (m *SarifRuleMutation) Field(name string) (ent.Value, bool) {
+	switch name {
+	case sarifrule.FieldRuleID:
+		return m.RuleID()
+	case sarifrule.FieldRuleName:
+		return m.RuleName()
+	case sarifrule.FieldShortDescription:
+		return m.ShortDescription()
+	}
+	return nil, false
+}
+
+// OldField returns the old value of the field from the database. An error is
+// returned if the mutation operation is not UpdateOne, or the query to the
+// database failed.
+func (m *SarifRuleMutation) OldField(ctx context.Context, name string) (ent.Value, error) {
+	switch name {
+	case sarifrule.FieldRuleID:
+		return m.OldRuleID(ctx)
+	case sarifrule.FieldRuleName:
+		return m.OldRuleName(ctx)
+	case sarifrule.FieldShortDescription:
+		return m.OldShortDescription(ctx)
+	}
+	return nil, fmt.Errorf("unknown SarifRule field %s", name)
+}
+
+// SetField sets the value of a field with the given name. It returns an error if
+// the field is not defined in the schema, or if the type mismatched the field
+// type.
+func (m *SarifRuleMutation) SetField(name string, value ent.Value) error {
+	switch name {
+	case sarifrule.FieldRuleID:
+		v, ok := value.(string)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.SetRuleID(v)
+		return nil
+	case sarifrule.FieldRuleName:
+		v, ok := value.(string)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.SetRuleName(v)
+		return nil
+	case sarifrule.FieldShortDescription:
+		v, ok := value.(string)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.SetShortDescription(v)
+		return nil
+	}
+	return fmt.Errorf("unknown SarifRule field %s", name)
+}
+
+// AddedFields returns all numeric fields that were incremented/decremented during
+// this mutation.
+func (m *SarifRuleMutation) AddedFields() []string {
+	return nil
+}
+
+// AddedField returns the numeric value that was incremented/decremented on a field
+// with the given name. The second boolean return value indicates that this field
+// was not set, or was not defined in the schema.
+func (m *SarifRuleMutation) AddedField(name string) (ent.Value, bool) {
+	return nil, false
+}
+
+// AddField adds the value to the field with the given name. It returns an error if
+// the field is not defined in the schema, or if the type mismatched the field
+// type.
+func (m *SarifRuleMutation) AddField(name string, value ent.Value) error {
+	switch name {
+	}
+	return fmt.Errorf("unknown SarifRule numeric field %s", name)
+}
+
+// ClearedFields returns all nullable fields that were cleared during this
+// mutation.
+func (m *SarifRuleMutation) ClearedFields() []string {
+	return nil
+}
+
+// FieldCleared returns a boolean indicating if a field with the given name was
+// cleared in this mutation.
+func (m *SarifRuleMutation) FieldCleared(name string) bool {
+	_, ok := m.clearedFields[name]
+	return ok
+}
+
+// ClearField clears the value of the field with the given name. It returns an
+// error if the field is not defined in the schema.
+func (m *SarifRuleMutation) ClearField(name string) error {
+	return fmt.Errorf("unknown SarifRule nullable field %s", name)
+}
+
+// ResetField resets all changes in the mutation for the field with the given name.
+// It returns an error if the field is not defined in the schema.
+func (m *SarifRuleMutation) ResetField(name string) error {
+	switch name {
+	case sarifrule.FieldRuleID:
+		m.ResetRuleID()
+		return nil
+	case sarifrule.FieldRuleName:
+		m.ResetRuleName()
+		return nil
+	case sarifrule.FieldShortDescription:
+		m.ResetShortDescription()
+		return nil
+	}
+	return fmt.Errorf("unknown SarifRule field %s", name)
+}
+
+// AddedEdges returns all edge names that were set/added in this mutation.
+func (m *SarifRuleMutation) AddedEdges() []string {
+	edges := make([]string, 0, 1)
+	if m.sarif != nil {
+		edges = append(edges, sarifrule.EdgeSarif)
+	}
+	return edges
+}
+
+// AddedIDs returns all IDs (to other nodes) that were added for the given edge
+// name in this mutation.
+func (m *SarifRuleMutation) AddedIDs(name string) []ent.Value {
+	switch name {
+	case sarifrule.EdgeSarif:
+		if id := m.sarif; id != nil {
+			return []ent.Value{*id}
+		}
+	}
+	return nil
+}
+
+// RemovedEdges returns all edge names that were removed in this mutation.
+func (m *SarifRuleMutation) RemovedEdges() []string {
+	edges := make([]string, 0, 1)
+	return edges
+}
+
+// RemovedIDs returns all IDs (to other nodes) that were removed for the edge with
+// the given name in this mutation.
+func (m *SarifRuleMutation) RemovedIDs(name string) []ent.Value {
+	return nil
+}
+
+// ClearedEdges returns all edge names that were cleared in this mutation.
+func (m *SarifRuleMutation) ClearedEdges() []string {
+	edges := make([]string, 0, 1)
+	if m.clearedsarif {
+		edges = append(edges, sarifrule.EdgeSarif)
+	}
+	return edges
+}
+
+// EdgeCleared returns a boolean which indicates if the edge with the given name
+// was cleared in this mutation.
+func (m *SarifRuleMutation) EdgeCleared(name string) bool {
+	switch name {
+	case sarifrule.EdgeSarif:
+		return m.clearedsarif
+	}
+	return false
+}
+
+// ClearEdge clears the value of the edge with the given name. It returns an error
+// if that edge is not defined in the schema.
+func (m *SarifRuleMutation) ClearEdge(name string) error {
+	switch name {
+	case sarifrule.EdgeSarif:
+		m.ClearSarif()
+		return nil
+	}
+	return fmt.Errorf("unknown SarifRule unique edge %s", name)
+}
+
+// ResetEdge resets all changes to the edge with the given name in this mutation.
+// It returns an error if the edge is not defined in the schema.
+func (m *SarifRuleMutation) ResetEdge(name string) error {
+	switch name {
+	case sarifrule.EdgeSarif:
+		m.ResetSarif()
+		return nil
+	}
+	return fmt.Errorf("unknown SarifRule edge %s", name)
+}
+
 // SignatureMutation represents an operation that mutates the Signature nodes in the graph.
 type SignatureMutation struct {
 	config
@@ -2955,6 +3924,8 @@ type StatementMutation struct {
 	clearedpolicy                  bool
 	attestation_collections        *uuid.UUID
 	clearedattestation_collections bool
+	sarif                          *uuid.UUID
+	clearedsarif                   bool
 	dsse                           map[uuid.UUID]struct{}
 	removeddsse                    map[uuid.UUID]struct{}
 	cleareddsse                    bool
@@ -3235,6 +4206,45 @@ func (m *StatementMutation) ResetAttestationCollections() {
 	m.clearedattestation_collections = false
 }
 
+// SetSarifID sets the "sarif" edge to the Sarif entity by id.
+func (m *StatementMutation) SetSarifID(id uuid.UUID) {
+	m.sarif = &id
+}
+
+// ClearSarif clears the "sarif" edge to the Sarif entity.
+func (m *StatementMutation) ClearSarif() {
+	m.clearedsarif = true
+}
+
+// SarifCleared reports if the "sarif" edge to the Sarif entity was cleared.
+func (m *StatementMutation) SarifCleared() bool {
+	return m.clearedsarif
+}
+
+// SarifID returns the "sarif" edge ID in the mutation.
+func (m *StatementMutation) SarifID() (id uuid.UUID, exists bool) {
+	if m.sarif != nil {
+		return *m.sarif, true
+	}
+	return
+}
+
+// SarifIDs returns the "sarif" edge IDs in the mutation.
+// Note that IDs always returns len(IDs) <= 1 for unique edges, and you should use
+// SarifID instead. It exists only for internal usage by the builders.
+func (m *StatementMutation) SarifIDs() (ids []uuid.UUID) {
+	if id := m.sarif; id != nil {
+		ids = append(ids, *id)
+	}
+	return
+}
+
+// ResetSarif resets all changes to the "sarif" edge.
+func (m *StatementMutation) ResetSarif() {
+	m.sarif = nil
+	m.clearedsarif = false
+}
+
 // AddDsseIDs adds the "dsse" edge to the Dsse entity by ids.
 func (m *StatementMutation) AddDsseIDs(ids ...uuid.UUID) {
 	if m.dsse == nil {
@@ -3422,7 +4432,7 @@ func (m *StatementMutation) ResetField(name string) error {
 
 // AddedEdges returns all edge names that were set/added in this mutation.
 func (m *StatementMutation) AddedEdges() []string {
-	edges := make([]string, 0, 4)
+	edges := make([]string, 0, 5)
 	if m.subjects != nil {
 		edges = append(edges, statement.EdgeSubjects)
 	}
@@ -3431,6 +4441,9 @@ func (m *StatementMutation) AddedEdges() []string {
 	}
 	if m.attestation_collections != nil {
 		edges = append(edges, statement.EdgeAttestationCollections)
+	}
+	if m.sarif != nil {
+		edges = append(edges, statement.EdgeSarif)
 	}
 	if m.dsse != nil {
 		edges = append(edges, statement.EdgeDsse)
@@ -3456,6 +4469,10 @@ func (m *StatementMutation) AddedIDs(name string) []ent.Value {
 		if id := m.attestation_collections; id != nil {
 			return []ent.Value{*id}
 		}
+	case statement.EdgeSarif:
+		if id := m.sarif; id != nil {
+			return []ent.Value{*id}
+		}
 	case statement.EdgeDsse:
 		ids := make([]ent.Value, 0, len(m.dsse))
 		for id := range m.dsse {
@@ -3468,7 +4485,7 @@ func (m *StatementMutation) AddedIDs(name string) []ent.Value {
 
 // RemovedEdges returns all edge names that were removed in this mutation.
 func (m *StatementMutation) RemovedEdges() []string {
-	edges := make([]string, 0, 4)
+	edges := make([]string, 0, 5)
 	if m.removedsubjects != nil {
 		edges = append(edges, statement.EdgeSubjects)
 	}
@@ -3500,7 +4517,7 @@ func (m *StatementMutation) RemovedIDs(name string) []ent.Value {
 
 // ClearedEdges returns all edge names that were cleared in this mutation.
 func (m *StatementMutation) ClearedEdges() []string {
-	edges := make([]string, 0, 4)
+	edges := make([]string, 0, 5)
 	if m.clearedsubjects {
 		edges = append(edges, statement.EdgeSubjects)
 	}
@@ -3509,6 +4526,9 @@ func (m *StatementMutation) ClearedEdges() []string {
 	}
 	if m.clearedattestation_collections {
 		edges = append(edges, statement.EdgeAttestationCollections)
+	}
+	if m.clearedsarif {
+		edges = append(edges, statement.EdgeSarif)
 	}
 	if m.cleareddsse {
 		edges = append(edges, statement.EdgeDsse)
@@ -3526,6 +4546,8 @@ func (m *StatementMutation) EdgeCleared(name string) bool {
 		return m.clearedpolicy
 	case statement.EdgeAttestationCollections:
 		return m.clearedattestation_collections
+	case statement.EdgeSarif:
+		return m.clearedsarif
 	case statement.EdgeDsse:
 		return m.cleareddsse
 	}
@@ -3541,6 +4563,9 @@ func (m *StatementMutation) ClearEdge(name string) error {
 		return nil
 	case statement.EdgeAttestationCollections:
 		m.ClearAttestationCollections()
+		return nil
+	case statement.EdgeSarif:
+		m.ClearSarif()
 		return nil
 	}
 	return fmt.Errorf("unknown Statement unique edge %s", name)
@@ -3558,6 +4583,9 @@ func (m *StatementMutation) ResetEdge(name string) error {
 		return nil
 	case statement.EdgeAttestationCollections:
 		m.ResetAttestationCollections()
+		return nil
+	case statement.EdgeSarif:
+		m.ResetSarif()
 		return nil
 	case statement.EdgeDsse:
 		m.ResetDsse()

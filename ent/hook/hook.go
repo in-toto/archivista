@@ -69,6 +69,30 @@ func (f PayloadDigestFunc) Mutate(ctx context.Context, m ent.Mutation) (ent.Valu
 	return nil, fmt.Errorf("unexpected mutation type %T. expect *ent.PayloadDigestMutation", m)
 }
 
+// The SarifFunc type is an adapter to allow the use of ordinary
+// function as Sarif mutator.
+type SarifFunc func(context.Context, *ent.SarifMutation) (ent.Value, error)
+
+// Mutate calls f(ctx, m).
+func (f SarifFunc) Mutate(ctx context.Context, m ent.Mutation) (ent.Value, error) {
+	if mv, ok := m.(*ent.SarifMutation); ok {
+		return f(ctx, mv)
+	}
+	return nil, fmt.Errorf("unexpected mutation type %T. expect *ent.SarifMutation", m)
+}
+
+// The SarifRuleFunc type is an adapter to allow the use of ordinary
+// function as SarifRule mutator.
+type SarifRuleFunc func(context.Context, *ent.SarifRuleMutation) (ent.Value, error)
+
+// Mutate calls f(ctx, m).
+func (f SarifRuleFunc) Mutate(ctx context.Context, m ent.Mutation) (ent.Value, error) {
+	if mv, ok := m.(*ent.SarifRuleMutation); ok {
+		return f(ctx, mv)
+	}
+	return nil, fmt.Errorf("unexpected mutation type %T. expect *ent.SarifRuleMutation", m)
+}
+
 // The SignatureFunc type is an adapter to allow the use of ordinary
 // function as Signature mutator.
 type SignatureFunc func(context.Context, *ent.SignatureMutation) (ent.Value, error)

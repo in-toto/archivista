@@ -15,6 +15,7 @@ import (
 	"github.com/in-toto/archivista/ent/attestationpolicy"
 	"github.com/in-toto/archivista/ent/dsse"
 	"github.com/in-toto/archivista/ent/predicate"
+	"github.com/in-toto/archivista/ent/sarif"
 	"github.com/in-toto/archivista/ent/statement"
 	"github.com/in-toto/archivista/ent/subject"
 )
@@ -99,6 +100,25 @@ func (su *StatementUpdate) SetAttestationCollections(a *AttestationCollection) *
 	return su.SetAttestationCollectionsID(a.ID)
 }
 
+// SetSarifID sets the "sarif" edge to the Sarif entity by ID.
+func (su *StatementUpdate) SetSarifID(id uuid.UUID) *StatementUpdate {
+	su.mutation.SetSarifID(id)
+	return su
+}
+
+// SetNillableSarifID sets the "sarif" edge to the Sarif entity by ID if the given value is not nil.
+func (su *StatementUpdate) SetNillableSarifID(id *uuid.UUID) *StatementUpdate {
+	if id != nil {
+		su = su.SetSarifID(*id)
+	}
+	return su
+}
+
+// SetSarif sets the "sarif" edge to the Sarif entity.
+func (su *StatementUpdate) SetSarif(s *Sarif) *StatementUpdate {
+	return su.SetSarifID(s.ID)
+}
+
 // AddDsseIDs adds the "dsse" edge to the Dsse entity by IDs.
 func (su *StatementUpdate) AddDsseIDs(ids ...uuid.UUID) *StatementUpdate {
 	su.mutation.AddDsseIDs(ids...)
@@ -149,6 +169,12 @@ func (su *StatementUpdate) ClearPolicy() *StatementUpdate {
 // ClearAttestationCollections clears the "attestation_collections" edge to the AttestationCollection entity.
 func (su *StatementUpdate) ClearAttestationCollections() *StatementUpdate {
 	su.mutation.ClearAttestationCollections()
+	return su
+}
+
+// ClearSarif clears the "sarif" edge to the Sarif entity.
+func (su *StatementUpdate) ClearSarif() *StatementUpdate {
+	su.mutation.ClearSarif()
 	return su
 }
 
@@ -328,6 +354,35 @@ func (su *StatementUpdate) sqlSave(ctx context.Context) (n int, err error) {
 		}
 		_spec.Edges.Add = append(_spec.Edges.Add, edge)
 	}
+	if su.mutation.SarifCleared() {
+		edge := &sqlgraph.EdgeSpec{
+			Rel:     sqlgraph.O2O,
+			Inverse: false,
+			Table:   statement.SarifTable,
+			Columns: []string{statement.SarifColumn},
+			Bidi:    false,
+			Target: &sqlgraph.EdgeTarget{
+				IDSpec: sqlgraph.NewFieldSpec(sarif.FieldID, field.TypeUUID),
+			},
+		}
+		_spec.Edges.Clear = append(_spec.Edges.Clear, edge)
+	}
+	if nodes := su.mutation.SarifIDs(); len(nodes) > 0 {
+		edge := &sqlgraph.EdgeSpec{
+			Rel:     sqlgraph.O2O,
+			Inverse: false,
+			Table:   statement.SarifTable,
+			Columns: []string{statement.SarifColumn},
+			Bidi:    false,
+			Target: &sqlgraph.EdgeTarget{
+				IDSpec: sqlgraph.NewFieldSpec(sarif.FieldID, field.TypeUUID),
+			},
+		}
+		for _, k := range nodes {
+			edge.Target.Nodes = append(edge.Target.Nodes, k)
+		}
+		_spec.Edges.Add = append(_spec.Edges.Add, edge)
+	}
 	if su.mutation.DsseCleared() {
 		edge := &sqlgraph.EdgeSpec{
 			Rel:     sqlgraph.O2M,
@@ -460,6 +515,25 @@ func (suo *StatementUpdateOne) SetAttestationCollections(a *AttestationCollectio
 	return suo.SetAttestationCollectionsID(a.ID)
 }
 
+// SetSarifID sets the "sarif" edge to the Sarif entity by ID.
+func (suo *StatementUpdateOne) SetSarifID(id uuid.UUID) *StatementUpdateOne {
+	suo.mutation.SetSarifID(id)
+	return suo
+}
+
+// SetNillableSarifID sets the "sarif" edge to the Sarif entity by ID if the given value is not nil.
+func (suo *StatementUpdateOne) SetNillableSarifID(id *uuid.UUID) *StatementUpdateOne {
+	if id != nil {
+		suo = suo.SetSarifID(*id)
+	}
+	return suo
+}
+
+// SetSarif sets the "sarif" edge to the Sarif entity.
+func (suo *StatementUpdateOne) SetSarif(s *Sarif) *StatementUpdateOne {
+	return suo.SetSarifID(s.ID)
+}
+
 // AddDsseIDs adds the "dsse" edge to the Dsse entity by IDs.
 func (suo *StatementUpdateOne) AddDsseIDs(ids ...uuid.UUID) *StatementUpdateOne {
 	suo.mutation.AddDsseIDs(ids...)
@@ -510,6 +584,12 @@ func (suo *StatementUpdateOne) ClearPolicy() *StatementUpdateOne {
 // ClearAttestationCollections clears the "attestation_collections" edge to the AttestationCollection entity.
 func (suo *StatementUpdateOne) ClearAttestationCollections() *StatementUpdateOne {
 	suo.mutation.ClearAttestationCollections()
+	return suo
+}
+
+// ClearSarif clears the "sarif" edge to the Sarif entity.
+func (suo *StatementUpdateOne) ClearSarif() *StatementUpdateOne {
+	suo.mutation.ClearSarif()
 	return suo
 }
 
@@ -712,6 +792,35 @@ func (suo *StatementUpdateOne) sqlSave(ctx context.Context) (_node *Statement, e
 			Bidi:    false,
 			Target: &sqlgraph.EdgeTarget{
 				IDSpec: sqlgraph.NewFieldSpec(attestationcollection.FieldID, field.TypeUUID),
+			},
+		}
+		for _, k := range nodes {
+			edge.Target.Nodes = append(edge.Target.Nodes, k)
+		}
+		_spec.Edges.Add = append(_spec.Edges.Add, edge)
+	}
+	if suo.mutation.SarifCleared() {
+		edge := &sqlgraph.EdgeSpec{
+			Rel:     sqlgraph.O2O,
+			Inverse: false,
+			Table:   statement.SarifTable,
+			Columns: []string{statement.SarifColumn},
+			Bidi:    false,
+			Target: &sqlgraph.EdgeTarget{
+				IDSpec: sqlgraph.NewFieldSpec(sarif.FieldID, field.TypeUUID),
+			},
+		}
+		_spec.Edges.Clear = append(_spec.Edges.Clear, edge)
+	}
+	if nodes := suo.mutation.SarifIDs(); len(nodes) > 0 {
+		edge := &sqlgraph.EdgeSpec{
+			Rel:     sqlgraph.O2O,
+			Inverse: false,
+			Table:   statement.SarifTable,
+			Columns: []string{statement.SarifColumn},
+			Bidi:    false,
+			Target: &sqlgraph.EdgeTarget{
+				IDSpec: sqlgraph.NewFieldSpec(sarif.FieldID, field.TypeUUID),
 			},
 		}
 		for _, k := range nodes {

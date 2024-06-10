@@ -1,4 +1,4 @@
-// Copyright 2022 The Archivista Contributors
+// Copyright 2024 The Archivista Contributors
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -15,7 +15,6 @@
 package schema
 
 import (
-	"entgo.io/contrib/entgql"
 	"entgo.io/ent"
 	"entgo.io/ent/schema/edge"
 	"entgo.io/ent/schema/field"
@@ -23,33 +22,27 @@ import (
 	"github.com/google/uuid"
 )
 
-// Statement represents an in-toto statement from an archived dsse envelope
-type Statement struct {
+// Sarif represents a Sarif attestor.
+type Sarif struct {
 	ent.Schema
 }
 
-// Fields of the Statement.
-func (Statement) Fields() []ent.Field {
+func (Sarif) Fields() []ent.Field {
 	return []ent.Field{
 		field.UUID("id", uuid.UUID{}).Default(uuid.New).Immutable().Unique(),
-		field.String("predicate").NotEmpty(),
+		field.String("report_file_name").NotEmpty(),
 	}
 }
 
-// Edges of the Statement.
-func (Statement) Edges() []ent.Edge {
+func (Sarif) Edges() []ent.Edge {
 	return []ent.Edge{
-		edge.To("subjects", Subject.Type).Annotations(entgql.RelayConnection()),
-		edge.To("policy", AttestationPolicy.Type).Unique(),
-		edge.To("attestation_collections", AttestationCollection.Type).Unique(),
-		edge.To("sarif", Sarif.Type).Unique(),
-
-		edge.From("dsse", Dsse.Type).Ref("statement"),
+		edge.To("sarif_rules", SarifRule.Type).Unique(),
+		edge.From("statement", Statement.Type).Ref("sarif").Unique().Required(),
 	}
 }
 
-func (Statement) Indexes() []ent.Index {
+func (Sarif) Indexes() []ent.Index {
 	return []ent.Index{
-		index.Fields("predicate"),
+		index.Fields("report_file_name"),
 	}
 }

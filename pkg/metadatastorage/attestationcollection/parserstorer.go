@@ -17,6 +17,7 @@ package attestationcollection
 import (
 	"context"
 	"encoding/json"
+
 	"github.com/google/uuid"
 	"github.com/in-toto/archivista/ent"
 	"github.com/in-toto/archivista/pkg/metadatastorage"

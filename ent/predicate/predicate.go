@@ -21,6 +21,12 @@ type Dsse func(*sql.Selector)
 // PayloadDigest is the predicate function for payloaddigest builders.
 type PayloadDigest func(*sql.Selector)
 
+// Sarif is the predicate function for sarif builders.
+type Sarif func(*sql.Selector)
+
+// SarifRule is the predicate function for sarifrule builders.
+type SarifRule func(*sql.Selector)
+
 // Signature is the predicate function for signature builders.
 type Signature func(*sql.Selector)
 

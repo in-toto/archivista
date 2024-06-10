@@ -21,6 +21,8 @@ const (
 	EdgePolicy = "policy"
 	// EdgeAttestationCollections holds the string denoting the attestation_collections edge name in mutations.
 	EdgeAttestationCollections = "attestation_collections"
+	// EdgeSarif holds the string denoting the sarif edge name in mutations.
+	EdgeSarif = "sarif"
 	// EdgeDsse holds the string denoting the dsse edge name in mutations.
 	EdgeDsse = "dsse"
 	// Table holds the table name of the statement in the database.
@@ -46,6 +48,13 @@ const (
 	AttestationCollectionsInverseTable = "attestation_collections"
 	// AttestationCollectionsColumn is the table column denoting the attestation_collections relation/edge.
 	AttestationCollectionsColumn = "statement_attestation_collections"
+	// SarifTable is the table that holds the sarif relation/edge.
+	SarifTable = "sarifs"
+	// SarifInverseTable is the table name for the Sarif entity.
+	// It exists in this package in order to avoid circular dependency with the "sarif" package.
+	SarifInverseTable = "sarifs"
+	// SarifColumn is the table column denoting the sarif relation/edge.
+	SarifColumn = "statement_sarif"
 	// DsseTable is the table that holds the dsse relation/edge.
 	DsseTable = "dsses"
 	// DsseInverseTable is the table name for the Dsse entity.
@@ -119,6 +128,13 @@ func ByAttestationCollectionsField(field string, opts ...sql.OrderTermOption) Or
 	}
 }
 
+// BySarifField orders the results by sarif field.
+func BySarifField(field string, opts ...sql.OrderTermOption) OrderOption {
+	return func(s *sql.Selector) {
+		sqlgraph.OrderByNeighborTerms(s, newSarifStep(), sql.OrderByField(field, opts...))
+	}
+}
+
 // ByDsseCount orders the results by dsse count.
 func ByDsseCount(opts ...sql.OrderTermOption) OrderOption {
 	return func(s *sql.Selector) {
@@ -151,6 +167,13 @@ func newAttestationCollectionsStep() *sqlgraph.Step {
 		sqlgraph.From(Table, FieldID),
 		sqlgraph.To(AttestationCollectionsInverseTable, FieldID),
 		sqlgraph.Edge(sqlgraph.O2O, false, AttestationCollectionsTable, AttestationCollectionsColumn),
+	)
+}
+func newSarifStep() *sqlgraph.Step {
+	return sqlgraph.NewStep(
+		sqlgraph.From(Table, FieldID),
+		sqlgraph.To(SarifInverseTable, FieldID),
+		sqlgraph.Edge(sqlgraph.O2O, false, SarifTable, SarifColumn),
 	)
 }
 func newDsseStep() *sqlgraph.Step {
