@@ -18,32 +18,46 @@ import (
 	"entgo.io/ent"
 	"entgo.io/ent/schema/edge"
 	"entgo.io/ent/schema/field"
-	"entgo.io/ent/schema/index"
 	"github.com/google/uuid"
 )
 
 // Attestation represents an attestation from a witness attestation collection
-type Attestation struct {
+type Posix struct {
 	ent.Schema
 }
 
-func (Attestation) Fields() []ent.Field {
+func (Posix) Fields() []ent.Field {
 	return []ent.Field{
 		field.UUID("id", uuid.UUID{}).Default(uuid.New).Immutable().Unique(),
-		field.String("type").NotEmpty(),
+		field.String("atime"),
+		field.String("ctime"),
+		field.String("creation_time"),
+		field.String("extended_attributes"),
+		field.String("file_device_id"),
+		field.String("file_flags"),
+		field.String("file_inode"),
+		field.String("file_system_id"),
+		field.String("file_type"),
+		field.String("hard_link_count"),
+		field.String("mtime"),
+		field.String("metadata_ctime"),
+		field.String("owner_gid"),
+		field.String("owner_uid"),
+		field.String("permissions"),
+		field.String("size"),
 	}
 }
 
-func (Attestation) Edges() []ent.Edge {
+func (Posix) Edges() []ent.Edge {
 	return []ent.Edge{
-		edge.To("omnitrail", Omnitrail.Type).Unique(),
+		// edge.To("mappings", Mapping.Type),
 
-		edge.From("attestation_collection", AttestationCollection.Type).Ref("attestations").Unique().Required(),
+		edge.From("mapping", Mapping.Type).Ref("posix").Unique().Required(),
 	}
 }
 
-func (Attestation) Indexes() []ent.Index {
+func (Posix) Indexes() []ent.Index {
 	return []ent.Index{
-		index.Fields("type"),
+		// index.Fields("type"),
 	}
 }

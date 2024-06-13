@@ -18,8 +18,17 @@ type AttestationPolicy func(*sql.Selector)
 // Dsse is the predicate function for dsse builders.
 type Dsse func(*sql.Selector)
 
+// Mapping is the predicate function for mapping builders.
+type Mapping func(*sql.Selector)
+
+// Omnitrail is the predicate function for omnitrail builders.
+type Omnitrail func(*sql.Selector)
+
 // PayloadDigest is the predicate function for payloaddigest builders.
 type PayloadDigest func(*sql.Selector)
+
+// Posix is the predicate function for posix builders.
+type Posix func(*sql.Selector)
 
 // Signature is the predicate function for signature builders.
 type Signature func(*sql.Selector)

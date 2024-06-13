@@ -18,32 +18,34 @@ import (
 	"entgo.io/ent"
 	"entgo.io/ent/schema/edge"
 	"entgo.io/ent/schema/field"
-	"entgo.io/ent/schema/index"
 	"github.com/google/uuid"
 )
 
 // Attestation represents an attestation from a witness attestation collection
-type Attestation struct {
+type Mapping struct {
 	ent.Schema
 }
 
-func (Attestation) Fields() []ent.Field {
+func (Mapping) Fields() []ent.Field {
 	return []ent.Field{
 		field.UUID("id", uuid.UUID{}).Default(uuid.New).Immutable().Unique(),
+		field.String("path").NotEmpty(),
 		field.String("type").NotEmpty(),
+		field.String("sha1"),
+		field.String("sha256"),
+		field.String("gitoidSha1").NotEmpty(),
+		field.String("gitoidSha256").NotEmpty(),
 	}
 }
 
-func (Attestation) Edges() []ent.Edge {
+func (Mapping) Edges() []ent.Edge {
 	return []ent.Edge{
-		edge.To("omnitrail", Omnitrail.Type).Unique(),
+		edge.To("posix", Posix.Type),
 
-		edge.From("attestation_collection", AttestationCollection.Type).Ref("attestations").Unique().Required(),
+		edge.From("omnitrail", Omnitrail.Type).Ref("mappings").Unique().Required(),
 	}
 }
 
-func (Attestation) Indexes() []ent.Index {
-	return []ent.Index{
-		index.Fields("type"),
-	}
+func (Mapping) Indexes() []ent.Index {
+	return []ent.Index{}
 }

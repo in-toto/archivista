@@ -1,4 +1,4 @@
-// Copyright 2022 The Archivista Contributors
+// Copyright 2024 The Archivista Contributors
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -12,7 +12,12 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-package archivista
+// A note: this follows a pattern followed by network service mesh.
+// The pattern was copied from the Network Service Mesh Project
+// and modified for use here. The original code was published under the
+// Apache License V2.
+package main
 
-//go:generate go run ./ent/entc.go
-//go:generate go run github.com/99designs/gqlgen
+import (
+	_ "github.com/in-toto/archivista/pkg/metadatastorage/attestationcollection/omnibor_parser"
+)

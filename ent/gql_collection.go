@@ -15,7 +15,9 @@ import (
 	"github.com/in-toto/archivista/ent/attestationcollection"
 	"github.com/in-toto/archivista/ent/attestationpolicy"
 	"github.com/in-toto/archivista/ent/dsse"
+	"github.com/in-toto/archivista/ent/mapping"
 	"github.com/in-toto/archivista/ent/payloaddigest"
+	"github.com/in-toto/archivista/ent/posix"
 	"github.com/in-toto/archivista/ent/signature"
 	"github.com/in-toto/archivista/ent/statement"
 	"github.com/in-toto/archivista/ent/subject"
@@ -44,6 +46,17 @@ func (a *AttestationQuery) collectField(ctx context.Context, oneNode bool, opCtx
 	)
 	for _, field := range graphql.CollectFields(opCtx, collected.Selections, satisfies) {
 		switch field.Name {
+
+		case "omnitrail":
+			var (
+				alias = field.Alias
+				path  = append(path, alias)
+				query = (&OmnitrailClient{config: a.config}).Query()
+			)
+			if err := query.collectField(ctx, oneNode, opCtx, field, path, mayAddCondition(satisfies, omnitrailImplementors)...); err != nil {
+				return err
+			}
+			a.withOmnitrail = query
 
 		case "attestationCollection":
 			var (
@@ -380,6 +393,196 @@ func newDssePaginateArgs(rv map[string]any) *dssePaginateArgs {
 }
 
 // CollectFields tells the query-builder to eagerly load connected nodes by resolver context.
+func (m *MappingQuery) CollectFields(ctx context.Context, satisfies ...string) (*MappingQuery, error) {
+	fc := graphql.GetFieldContext(ctx)
+	if fc == nil {
+		return m, nil
+	}
+	if err := m.collectField(ctx, false, graphql.GetOperationContext(ctx), fc.Field, nil, satisfies...); err != nil {
+		return nil, err
+	}
+	return m, nil
+}
+
+func (m *MappingQuery) collectField(ctx context.Context, oneNode bool, opCtx *graphql.OperationContext, collected graphql.CollectedField, path []string, satisfies ...string) error {
+	path = append([]string(nil), path...)
+	var (
+		unknownSeen    bool
+		fieldSeen      = make(map[string]struct{}, len(mapping.Columns))
+		selectedFields = []string{mapping.FieldID}
+	)
+	for _, field := range graphql.CollectFields(opCtx, collected.Selections, satisfies) {
+		switch field.Name {
+
+		case "posix":
+			var (
+				alias = field.Alias
+				path  = append(path, alias)
+				query = (&PosixClient{config: m.config}).Query()
+			)
+			if err := query.collectField(ctx, false, opCtx, field, path, mayAddCondition(satisfies, posixImplementors)...); err != nil {
+				return err
+			}
+			m.WithNamedPosix(alias, func(wq *PosixQuery) {
+				*wq = *query
+			})
+
+		case "omnitrail":
+			var (
+				alias = field.Alias
+				path  = append(path, alias)
+				query = (&OmnitrailClient{config: m.config}).Query()
+			)
+			if err := query.collectField(ctx, oneNode, opCtx, field, path, mayAddCondition(satisfies, omnitrailImplementors)...); err != nil {
+				return err
+			}
+			m.withOmnitrail = query
+		case "path":
+			if _, ok := fieldSeen[mapping.FieldPath]; !ok {
+				selectedFields = append(selectedFields, mapping.FieldPath)
+				fieldSeen[mapping.FieldPath] = struct{}{}
+			}
+		case "type":
+			if _, ok := fieldSeen[mapping.FieldType]; !ok {
+				selectedFields = append(selectedFields, mapping.FieldType)
+				fieldSeen[mapping.FieldType] = struct{}{}
+			}
+		case "sha1":
+			if _, ok := fieldSeen[mapping.FieldSha1]; !ok {
+				selectedFields = append(selectedFields, mapping.FieldSha1)
+				fieldSeen[mapping.FieldSha1] = struct{}{}
+			}
+		case "sha256":
+			if _, ok := fieldSeen[mapping.FieldSha256]; !ok {
+				selectedFields = append(selectedFields, mapping.FieldSha256)
+				fieldSeen[mapping.FieldSha256] = struct{}{}
+			}
+		case "gitoidsha1":
+			if _, ok := fieldSeen[mapping.FieldGitoidSha1]; !ok {
+				selectedFields = append(selectedFields, mapping.FieldGitoidSha1)
+				fieldSeen[mapping.FieldGitoidSha1] = struct{}{}
+			}
+		case "gitoidsha256":
+			if _, ok := fieldSeen[mapping.FieldGitoidSha256]; !ok {
+				selectedFields = append(selectedFields, mapping.FieldGitoidSha256)
+				fieldSeen[mapping.FieldGitoidSha256] = struct{}{}
+			}
+		case "id":
+		case "__typename":
+		default:
+			unknownSeen = true
+		}
+	}
+	if !unknownSeen {
+		m.Select(selectedFields...)
+	}
+	return nil
+}
+
+type mappingPaginateArgs struct {
+	first, last   *int
+	after, before *Cursor
+	opts          []MappingPaginateOption
+}
+
+func newMappingPaginateArgs(rv map[string]any) *mappingPaginateArgs {
+	args := &mappingPaginateArgs{}
+	if rv == nil {
+		return args
+	}
+	if v := rv[firstField]; v != nil {
+		args.first = v.(*int)
+	}
+	if v := rv[lastField]; v != nil {
+		args.last = v.(*int)
+	}
+	if v := rv[afterField]; v != nil {
+		args.after = v.(*Cursor)
+	}
+	if v := rv[beforeField]; v != nil {
+		args.before = v.(*Cursor)
+	}
+	if v, ok := rv[whereField].(*MappingWhereInput); ok {
+		args.opts = append(args.opts, WithMappingFilter(v.Filter))
+	}
+	return args
+}
+
+// CollectFields tells the query-builder to eagerly load connected nodes by resolver context.
+func (o *OmnitrailQuery) CollectFields(ctx context.Context, satisfies ...string) (*OmnitrailQuery, error) {
+	fc := graphql.GetFieldContext(ctx)
+	if fc == nil {
+		return o, nil
+	}
+	if err := o.collectField(ctx, false, graphql.GetOperationContext(ctx), fc.Field, nil, satisfies...); err != nil {
+		return nil, err
+	}
+	return o, nil
+}
+
+func (o *OmnitrailQuery) collectField(ctx context.Context, oneNode bool, opCtx *graphql.OperationContext, collected graphql.CollectedField, path []string, satisfies ...string) error {
+	path = append([]string(nil), path...)
+	for _, field := range graphql.CollectFields(opCtx, collected.Selections, satisfies) {
+		switch field.Name {
+
+		case "mappings":
+			var (
+				alias = field.Alias
+				path  = append(path, alias)
+				query = (&MappingClient{config: o.config}).Query()
+			)
+			if err := query.collectField(ctx, false, opCtx, field, path, mayAddCondition(satisfies, mappingImplementors)...); err != nil {
+				return err
+			}
+			o.WithNamedMappings(alias, func(wq *MappingQuery) {
+				*wq = *query
+			})
+
+		case "attestation":
+			var (
+				alias = field.Alias
+				path  = append(path, alias)
+				query = (&AttestationClient{config: o.config}).Query()
+			)
+			if err := query.collectField(ctx, oneNode, opCtx, field, path, mayAddCondition(satisfies, attestationImplementors)...); err != nil {
+				return err
+			}
+			o.withAttestation = query
+		}
+	}
+	return nil
+}
+
+type omnitrailPaginateArgs struct {
+	first, last   *int
+	after, before *Cursor
+	opts          []OmnitrailPaginateOption
+}
+
+func newOmnitrailPaginateArgs(rv map[string]any) *omnitrailPaginateArgs {
+	args := &omnitrailPaginateArgs{}
+	if rv == nil {
+		return args
+	}
+	if v := rv[firstField]; v != nil {
+		args.first = v.(*int)
+	}
+	if v := rv[lastField]; v != nil {
+		args.last = v.(*int)
+	}
+	if v := rv[afterField]; v != nil {
+		args.after = v.(*Cursor)
+	}
+	if v := rv[beforeField]; v != nil {
+		args.before = v.(*Cursor)
+	}
+	if v, ok := rv[whereField].(*OmnitrailWhereInput); ok {
+		args.opts = append(args.opts, WithOmnitrailFilter(v.Filter))
+	}
+	return args
+}
+
+// CollectFields tells the query-builder to eagerly load connected nodes by resolver context.
 func (pd *PayloadDigestQuery) CollectFields(ctx context.Context, satisfies ...string) (*PayloadDigestQuery, error) {
 	fc := graphql.GetFieldContext(ctx)
 	if fc == nil {
@@ -458,6 +661,159 @@ func newPayloadDigestPaginateArgs(rv map[string]any) *payloaddigestPaginateArgs 
 	}
 	if v, ok := rv[whereField].(*PayloadDigestWhereInput); ok {
 		args.opts = append(args.opts, WithPayloadDigestFilter(v.Filter))
+	}
+	return args
+}
+
+// CollectFields tells the query-builder to eagerly load connected nodes by resolver context.
+func (po *PosixQuery) CollectFields(ctx context.Context, satisfies ...string) (*PosixQuery, error) {
+	fc := graphql.GetFieldContext(ctx)
+	if fc == nil {
+		return po, nil
+	}
+	if err := po.collectField(ctx, false, graphql.GetOperationContext(ctx), fc.Field, nil, satisfies...); err != nil {
+		return nil, err
+	}
+	return po, nil
+}
+
+func (po *PosixQuery) collectField(ctx context.Context, oneNode bool, opCtx *graphql.OperationContext, collected graphql.CollectedField, path []string, satisfies ...string) error {
+	path = append([]string(nil), path...)
+	var (
+		unknownSeen    bool
+		fieldSeen      = make(map[string]struct{}, len(posix.Columns))
+		selectedFields = []string{posix.FieldID}
+	)
+	for _, field := range graphql.CollectFields(opCtx, collected.Selections, satisfies) {
+		switch field.Name {
+
+		case "mapping":
+			var (
+				alias = field.Alias
+				path  = append(path, alias)
+				query = (&MappingClient{config: po.config}).Query()
+			)
+			if err := query.collectField(ctx, oneNode, opCtx, field, path, mayAddCondition(satisfies, mappingImplementors)...); err != nil {
+				return err
+			}
+			po.withMapping = query
+		case "atime":
+			if _, ok := fieldSeen[posix.FieldAtime]; !ok {
+				selectedFields = append(selectedFields, posix.FieldAtime)
+				fieldSeen[posix.FieldAtime] = struct{}{}
+			}
+		case "ctime":
+			if _, ok := fieldSeen[posix.FieldCtime]; !ok {
+				selectedFields = append(selectedFields, posix.FieldCtime)
+				fieldSeen[posix.FieldCtime] = struct{}{}
+			}
+		case "creationTime":
+			if _, ok := fieldSeen[posix.FieldCreationTime]; !ok {
+				selectedFields = append(selectedFields, posix.FieldCreationTime)
+				fieldSeen[posix.FieldCreationTime] = struct{}{}
+			}
+		case "extendedAttributes":
+			if _, ok := fieldSeen[posix.FieldExtendedAttributes]; !ok {
+				selectedFields = append(selectedFields, posix.FieldExtendedAttributes)
+				fieldSeen[posix.FieldExtendedAttributes] = struct{}{}
+			}
+		case "fileDeviceID":
+			if _, ok := fieldSeen[posix.FieldFileDeviceID]; !ok {
+				selectedFields = append(selectedFields, posix.FieldFileDeviceID)
+				fieldSeen[posix.FieldFileDeviceID] = struct{}{}
+			}
+		case "fileFlags":
+			if _, ok := fieldSeen[posix.FieldFileFlags]; !ok {
+				selectedFields = append(selectedFields, posix.FieldFileFlags)
+				fieldSeen[posix.FieldFileFlags] = struct{}{}
+			}
+		case "fileInode":
+			if _, ok := fieldSeen[posix.FieldFileInode]; !ok {
+				selectedFields = append(selectedFields, posix.FieldFileInode)
+				fieldSeen[posix.FieldFileInode] = struct{}{}
+			}
+		case "fileSystemID":
+			if _, ok := fieldSeen[posix.FieldFileSystemID]; !ok {
+				selectedFields = append(selectedFields, posix.FieldFileSystemID)
+				fieldSeen[posix.FieldFileSystemID] = struct{}{}
+			}
+		case "fileType":
+			if _, ok := fieldSeen[posix.FieldFileType]; !ok {
+				selectedFields = append(selectedFields, posix.FieldFileType)
+				fieldSeen[posix.FieldFileType] = struct{}{}
+			}
+		case "hardLinkCount":
+			if _, ok := fieldSeen[posix.FieldHardLinkCount]; !ok {
+				selectedFields = append(selectedFields, posix.FieldHardLinkCount)
+				fieldSeen[posix.FieldHardLinkCount] = struct{}{}
+			}
+		case "mtime":
+			if _, ok := fieldSeen[posix.FieldMtime]; !ok {
+				selectedFields = append(selectedFields, posix.FieldMtime)
+				fieldSeen[posix.FieldMtime] = struct{}{}
+			}
+		case "metadataCtime":
+			if _, ok := fieldSeen[posix.FieldMetadataCtime]; !ok {
+				selectedFields = append(selectedFields, posix.FieldMetadataCtime)
+				fieldSeen[posix.FieldMetadataCtime] = struct{}{}
+			}
+		case "ownerGid":
+			if _, ok := fieldSeen[posix.FieldOwnerGid]; !ok {
+				selectedFields = append(selectedFields, posix.FieldOwnerGid)
+				fieldSeen[posix.FieldOwnerGid] = struct{}{}
+			}
+		case "ownerUID":
+			if _, ok := fieldSeen[posix.FieldOwnerUID]; !ok {
+				selectedFields = append(selectedFields, posix.FieldOwnerUID)
+				fieldSeen[posix.FieldOwnerUID] = struct{}{}
+			}
+		case "permissions":
+			if _, ok := fieldSeen[posix.FieldPermissions]; !ok {
+				selectedFields = append(selectedFields, posix.FieldPermissions)
+				fieldSeen[posix.FieldPermissions] = struct{}{}
+			}
+		case "size":
+			if _, ok := fieldSeen[posix.FieldSize]; !ok {
+				selectedFields = append(selectedFields, posix.FieldSize)
+				fieldSeen[posix.FieldSize] = struct{}{}
+			}
+		case "id":
+		case "__typename":
+		default:
+			unknownSeen = true
+		}
+	}
+	if !unknownSeen {
+		po.Select(selectedFields...)
+	}
+	return nil
+}
+
+type posixPaginateArgs struct {
+	first, last   *int
+	after, before *Cursor
+	opts          []PosixPaginateOption
+}
+
+func newPosixPaginateArgs(rv map[string]any) *posixPaginateArgs {
+	args := &posixPaginateArgs{}
+	if rv == nil {
+		return args
+	}
+	if v := rv[firstField]; v != nil {
+		args.first = v.(*int)
+	}
+	if v := rv[lastField]; v != nil {
+		args.last = v.(*int)
+	}
+	if v := rv[afterField]; v != nil {
+		args.after = v.(*Cursor)
+	}
+	if v := rv[beforeField]; v != nil {
+		args.before = v.(*Cursor)
+	}
+	if v, ok := rv[whereField].(*PosixWhereInput); ok {
+		args.opts = append(args.opts, WithPosixFilter(v.Filter))
 	}
 	return args
 }

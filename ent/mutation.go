@@ -16,7 +16,10 @@ import (
 	"github.com/in-toto/archivista/ent/attestationcollection"
 	"github.com/in-toto/archivista/ent/attestationpolicy"
 	"github.com/in-toto/archivista/ent/dsse"
+	"github.com/in-toto/archivista/ent/mapping"
+	"github.com/in-toto/archivista/ent/omnitrail"
 	"github.com/in-toto/archivista/ent/payloaddigest"
+	"github.com/in-toto/archivista/ent/posix"
 	"github.com/in-toto/archivista/ent/predicate"
 	"github.com/in-toto/archivista/ent/signature"
 	"github.com/in-toto/archivista/ent/statement"
@@ -38,7 +41,10 @@ const (
 	TypeAttestationCollection = "AttestationCollection"
 	TypeAttestationPolicy     = "AttestationPolicy"
 	TypeDsse                  = "Dsse"
+	TypeMapping               = "Mapping"
+	TypeOmnitrail             = "Omnitrail"
 	TypePayloadDigest         = "PayloadDigest"
+	TypePosix                 = "Posix"
 	TypeSignature             = "Signature"
 	TypeStatement             = "Statement"
 	TypeSubject               = "Subject"
@@ -54,6 +60,8 @@ type AttestationMutation struct {
 	id                            *uuid.UUID
 	_type                         *string
 	clearedFields                 map[string]struct{}
+	omnitrail                     *uuid.UUID
+	clearedomnitrail              bool
 	attestation_collection        *uuid.UUID
 	clearedattestation_collection bool
 	done                          bool
@@ -199,6 +207,45 @@ func (m *AttestationMutation) OldType(ctx context.Context) (v string, err error)
 // ResetType resets all changes to the "type" field.
 func (m *AttestationMutation) ResetType() {
 	m._type = nil
+}
+
+// SetOmnitrailID sets the "omnitrail" edge to the Omnitrail entity by id.
+func (m *AttestationMutation) SetOmnitrailID(id uuid.UUID) {
+	m.omnitrail = &id
+}
+
+// ClearOmnitrail clears the "omnitrail" edge to the Omnitrail entity.
+func (m *AttestationMutation) ClearOmnitrail() {
+	m.clearedomnitrail = true
+}
+
+// OmnitrailCleared reports if the "omnitrail" edge to the Omnitrail entity was cleared.
+func (m *AttestationMutation) OmnitrailCleared() bool {
+	return m.clearedomnitrail
+}
+
+// OmnitrailID returns the "omnitrail" edge ID in the mutation.
+func (m *AttestationMutation) OmnitrailID() (id uuid.UUID, exists bool) {
+	if m.omnitrail != nil {
+		return *m.omnitrail, true
+	}
+	return
+}
+
+// OmnitrailIDs returns the "omnitrail" edge IDs in the mutation.
+// Note that IDs always returns len(IDs) <= 1 for unique edges, and you should use
+// OmnitrailID instead. It exists only for internal usage by the builders.
+func (m *AttestationMutation) OmnitrailIDs() (ids []uuid.UUID) {
+	if id := m.omnitrail; id != nil {
+		ids = append(ids, *id)
+	}
+	return
+}
+
+// ResetOmnitrail resets all changes to the "omnitrail" edge.
+func (m *AttestationMutation) ResetOmnitrail() {
+	m.omnitrail = nil
+	m.clearedomnitrail = false
 }
 
 // SetAttestationCollectionID sets the "attestation_collection" edge to the AttestationCollection entity by id.
@@ -373,7 +420,10 @@ func (m *AttestationMutation) ResetField(name string) error {
 
 // AddedEdges returns all edge names that were set/added in this mutation.
 func (m *AttestationMutation) AddedEdges() []string {
-	edges := make([]string, 0, 1)
+	edges := make([]string, 0, 2)
+	if m.omnitrail != nil {
+		edges = append(edges, attestation.EdgeOmnitrail)
+	}
 	if m.attestation_collection != nil {
 		edges = append(edges, attestation.EdgeAttestationCollection)
 	}
@@ -384,6 +434,10 @@ func (m *AttestationMutation) AddedEdges() []string {
 // name in this mutation.
 func (m *AttestationMutation) AddedIDs(name string) []ent.Value {
 	switch name {
+	case attestation.EdgeOmnitrail:
+		if id := m.omnitrail; id != nil {
+			return []ent.Value{*id}
+		}
 	case attestation.EdgeAttestationCollection:
 		if id := m.attestation_collection; id != nil {
 			return []ent.Value{*id}
@@ -394,7 +448,7 @@ func (m *AttestationMutation) AddedIDs(name string) []ent.Value {
 
 // RemovedEdges returns all edge names that were removed in this mutation.
 func (m *AttestationMutation) RemovedEdges() []string {
-	edges := make([]string, 0, 1)
+	edges := make([]string, 0, 2)
 	return edges
 }
 
@@ -406,7 +460,10 @@ func (m *AttestationMutation) RemovedIDs(name string) []ent.Value {
 
 // ClearedEdges returns all edge names that were cleared in this mutation.
 func (m *AttestationMutation) ClearedEdges() []string {
-	edges := make([]string, 0, 1)
+	edges := make([]string, 0, 2)
+	if m.clearedomnitrail {
+		edges = append(edges, attestation.EdgeOmnitrail)
+	}
 	if m.clearedattestation_collection {
 		edges = append(edges, attestation.EdgeAttestationCollection)
 	}
@@ -417,6 +474,8 @@ func (m *AttestationMutation) ClearedEdges() []string {
 // was cleared in this mutation.
 func (m *AttestationMutation) EdgeCleared(name string) bool {
 	switch name {
+	case attestation.EdgeOmnitrail:
+		return m.clearedomnitrail
 	case attestation.EdgeAttestationCollection:
 		return m.clearedattestation_collection
 	}
@@ -427,6 +486,9 @@ func (m *AttestationMutation) EdgeCleared(name string) bool {
 // if that edge is not defined in the schema.
 func (m *AttestationMutation) ClearEdge(name string) error {
 	switch name {
+	case attestation.EdgeOmnitrail:
+		m.ClearOmnitrail()
+		return nil
 	case attestation.EdgeAttestationCollection:
 		m.ClearAttestationCollection()
 		return nil
@@ -438,6 +500,9 @@ func (m *AttestationMutation) ClearEdge(name string) error {
 // It returns an error if the edge is not defined in the schema.
 func (m *AttestationMutation) ResetEdge(name string) error {
 	switch name {
+	case attestation.EdgeOmnitrail:
+		m.ResetOmnitrail()
+		return nil
 	case attestation.EdgeAttestationCollection:
 		m.ResetAttestationCollection()
 		return nil
@@ -1949,6 +2014,1182 @@ func (m *DsseMutation) ResetEdge(name string) error {
 	return fmt.Errorf("unknown Dsse edge %s", name)
 }
 
+// MappingMutation represents an operation that mutates the Mapping nodes in the graph.
+type MappingMutation struct {
+	config
+	op               Op
+	typ              string
+	id               *uuid.UUID
+	_path            *string
+	_type            *string
+	sha1             *string
+	sha256           *string
+	gitoidSha1       *string
+	gitoidSha256     *string
+	clearedFields    map[string]struct{}
+	posix            map[uuid.UUID]struct{}
+	removedposix     map[uuid.UUID]struct{}
+	clearedposix     bool
+	omnitrail        *uuid.UUID
+	clearedomnitrail bool
+	done             bool
+	oldValue         func(context.Context) (*Mapping, error)
+	predicates       []predicate.Mapping
+}
+
+var _ ent.Mutation = (*MappingMutation)(nil)
+
+// mappingOption allows management of the mutation configuration using functional options.
+type mappingOption func(*MappingMutation)
+
+// newMappingMutation creates new mutation for the Mapping entity.
+func newMappingMutation(c config, op Op, opts ...mappingOption) *MappingMutation {
+	m := &MappingMutation{
+		config:        c,
+		op:            op,
+		typ:           TypeMapping,
+		clearedFields: make(map[string]struct{}),
+	}
+	for _, opt := range opts {
+		opt(m)
+	}
+	return m
+}
+
+// withMappingID sets the ID field of the mutation.
+func withMappingID(id uuid.UUID) mappingOption {
+	return func(m *MappingMutation) {
+		var (
+			err   error
+			once  sync.Once
+			value *Mapping
+		)
+		m.oldValue = func(ctx context.Context) (*Mapping, error) {
+			once.Do(func() {
+				if m.done {
+					err = errors.New("querying old values post mutation is not allowed")
+				} else {
+					value, err = m.Client().Mapping.Get(ctx, id)
+				}
+			})
+			return value, err
+		}
+		m.id = &id
+	}
+}
+
+// withMapping sets the old Mapping of the mutation.
+func withMapping(node *Mapping) mappingOption {
+	return func(m *MappingMutation) {
+		m.oldValue = func(context.Context) (*Mapping, error) {
+			return node, nil
+		}
+		m.id = &node.ID
+	}
+}
+
+// Client returns a new `ent.Client` from the mutation. If the mutation was
+// executed in a transaction (ent.Tx), a transactional client is returned.
+func (m MappingMutation) Client() *Client {
+	client := &Client{config: m.config}
+	client.init()
+	return client
+}
+
+// Tx returns an `ent.Tx` for mutations that were executed in transactions;
+// it returns an error otherwise.
+func (m MappingMutation) Tx() (*Tx, error) {
+	if _, ok := m.driver.(*txDriver); !ok {
+		return nil, errors.New("ent: mutation is not running in a transaction")
+	}
+	tx := &Tx{config: m.config}
+	tx.init()
+	return tx, nil
+}
+
+// SetID sets the value of the id field. Note that this
+// operation is only accepted on creation of Mapping entities.
+func (m *MappingMutation) SetID(id uuid.UUID) {
+	m.id = &id
+}
+
+// ID returns the ID value in the mutation. Note that the ID is only available
+// if it was provided to the builder or after it was returned from the database.
+func (m *MappingMutation) ID() (id uuid.UUID, exists bool) {
+	if m.id == nil {
+		return
+	}
+	return *m.id, true
+}
+
+// IDs queries the database and returns the entity ids that match the mutation's predicate.
+// That means, if the mutation is applied within a transaction with an isolation level such
+// as sql.LevelSerializable, the returned ids match the ids of the rows that will be updated
+// or updated by the mutation.
+func (m *MappingMutation) IDs(ctx context.Context) ([]uuid.UUID, error) {
+	switch {
+	case m.op.Is(OpUpdateOne | OpDeleteOne):
+		id, exists := m.ID()
+		if exists {
+			return []uuid.UUID{id}, nil
+		}
+		fallthrough
+	case m.op.Is(OpUpdate | OpDelete):
+		return m.Client().Mapping.Query().Where(m.predicates...).IDs(ctx)
+	default:
+		return nil, fmt.Errorf("IDs is not allowed on %s operations", m.op)
+	}
+}
+
+// SetPath sets the "path" field.
+func (m *MappingMutation) SetPath(s string) {
+	m._path = &s
+}
+
+// Path returns the value of the "path" field in the mutation.
+func (m *MappingMutation) Path() (r string, exists bool) {
+	v := m._path
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// OldPath returns the old "path" field's value of the Mapping entity.
+// If the Mapping object wasn't provided to the builder, the object is fetched from the database.
+// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
+func (m *MappingMutation) OldPath(ctx context.Context) (v string, err error) {
+	if !m.op.Is(OpUpdateOne) {
+		return v, errors.New("OldPath is only allowed on UpdateOne operations")
+	}
+	if m.id == nil || m.oldValue == nil {
+		return v, errors.New("OldPath requires an ID field in the mutation")
+	}
+	oldValue, err := m.oldValue(ctx)
+	if err != nil {
+		return v, fmt.Errorf("querying old value for OldPath: %w", err)
+	}
+	return oldValue.Path, nil
+}
+
+// ResetPath resets all changes to the "path" field.
+func (m *MappingMutation) ResetPath() {
+	m._path = nil
+}
+
+// SetType sets the "type" field.
+func (m *MappingMutation) SetType(s string) {
+	m._type = &s
+}
+
+// GetType returns the value of the "type" field in the mutation.
+func (m *MappingMutation) GetType() (r string, exists bool) {
+	v := m._type
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// OldType returns the old "type" field's value of the Mapping entity.
+// If the Mapping object wasn't provided to the builder, the object is fetched from the database.
+// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
+func (m *MappingMutation) OldType(ctx context.Context) (v string, err error) {
+	if !m.op.Is(OpUpdateOne) {
+		return v, errors.New("OldType is only allowed on UpdateOne operations")
+	}
+	if m.id == nil || m.oldValue == nil {
+		return v, errors.New("OldType requires an ID field in the mutation")
+	}
+	oldValue, err := m.oldValue(ctx)
+	if err != nil {
+		return v, fmt.Errorf("querying old value for OldType: %w", err)
+	}
+	return oldValue.Type, nil
+}
+
+// ResetType resets all changes to the "type" field.
+func (m *MappingMutation) ResetType() {
+	m._type = nil
+}
+
+// SetSha1 sets the "sha1" field.
+func (m *MappingMutation) SetSha1(s string) {
+	m.sha1 = &s
+}
+
+// Sha1 returns the value of the "sha1" field in the mutation.
+func (m *MappingMutation) Sha1() (r string, exists bool) {
+	v := m.sha1
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// OldSha1 returns the old "sha1" field's value of the Mapping entity.
+// If the Mapping object wasn't provided to the builder, the object is fetched from the database.
+// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
+func (m *MappingMutation) OldSha1(ctx context.Context) (v string, err error) {
+	if !m.op.Is(OpUpdateOne) {
+		return v, errors.New("OldSha1 is only allowed on UpdateOne operations")
+	}
+	if m.id == nil || m.oldValue == nil {
+		return v, errors.New("OldSha1 requires an ID field in the mutation")
+	}
+	oldValue, err := m.oldValue(ctx)
+	if err != nil {
+		return v, fmt.Errorf("querying old value for OldSha1: %w", err)
+	}
+	return oldValue.Sha1, nil
+}
+
+// ResetSha1 resets all changes to the "sha1" field.
+func (m *MappingMutation) ResetSha1() {
+	m.sha1 = nil
+}
+
+// SetSha256 sets the "sha256" field.
+func (m *MappingMutation) SetSha256(s string) {
+	m.sha256 = &s
+}
+
+// Sha256 returns the value of the "sha256" field in the mutation.
+func (m *MappingMutation) Sha256() (r string, exists bool) {
+	v := m.sha256
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// OldSha256 returns the old "sha256" field's value of the Mapping entity.
+// If the Mapping object wasn't provided to the builder, the object is fetched from the database.
+// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
+func (m *MappingMutation) OldSha256(ctx context.Context) (v string, err error) {
+	if !m.op.Is(OpUpdateOne) {
+		return v, errors.New("OldSha256 is only allowed on UpdateOne operations")
+	}
+	if m.id == nil || m.oldValue == nil {
+		return v, errors.New("OldSha256 requires an ID field in the mutation")
+	}
+	oldValue, err := m.oldValue(ctx)
+	if err != nil {
+		return v, fmt.Errorf("querying old value for OldSha256: %w", err)
+	}
+	return oldValue.Sha256, nil
+}
+
+// ResetSha256 resets all changes to the "sha256" field.
+func (m *MappingMutation) ResetSha256() {
+	m.sha256 = nil
+}
+
+// SetGitoidSha1 sets the "gitoidSha1" field.
+func (m *MappingMutation) SetGitoidSha1(s string) {
+	m.gitoidSha1 = &s
+}
+
+// GitoidSha1 returns the value of the "gitoidSha1" field in the mutation.
+func (m *MappingMutation) GitoidSha1() (r string, exists bool) {
+	v := m.gitoidSha1
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// OldGitoidSha1 returns the old "gitoidSha1" field's value of the Mapping entity.
+// If the Mapping object wasn't provided to the builder, the object is fetched from the database.
+// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
+func (m *MappingMutation) OldGitoidSha1(ctx context.Context) (v string, err error) {
+	if !m.op.Is(OpUpdateOne) {
+		return v, errors.New("OldGitoidSha1 is only allowed on UpdateOne operations")
+	}
+	if m.id == nil || m.oldValue == nil {
+		return v, errors.New("OldGitoidSha1 requires an ID field in the mutation")
+	}
+	oldValue, err := m.oldValue(ctx)
+	if err != nil {
+		return v, fmt.Errorf("querying old value for OldGitoidSha1: %w", err)
+	}
+	return oldValue.GitoidSha1, nil
+}
+
+// ResetGitoidSha1 resets all changes to the "gitoidSha1" field.
+func (m *MappingMutation) ResetGitoidSha1() {
+	m.gitoidSha1 = nil
+}
+
+// SetGitoidSha256 sets the "gitoidSha256" field.
+func (m *MappingMutation) SetGitoidSha256(s string) {
+	m.gitoidSha256 = &s
+}
+
+// GitoidSha256 returns the value of the "gitoidSha256" field in the mutation.
+func (m *MappingMutation) GitoidSha256() (r string, exists bool) {
+	v := m.gitoidSha256
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// OldGitoidSha256 returns the old "gitoidSha256" field's value of the Mapping entity.
+// If the Mapping object wasn't provided to the builder, the object is fetched from the database.
+// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
+func (m *MappingMutation) OldGitoidSha256(ctx context.Context) (v string, err error) {
+	if !m.op.Is(OpUpdateOne) {
+		return v, errors.New("OldGitoidSha256 is only allowed on UpdateOne operations")
+	}
+	if m.id == nil || m.oldValue == nil {
+		return v, errors.New("OldGitoidSha256 requires an ID field in the mutation")
+	}
+	oldValue, err := m.oldValue(ctx)
+	if err != nil {
+		return v, fmt.Errorf("querying old value for OldGitoidSha256: %w", err)
+	}
+	return oldValue.GitoidSha256, nil
+}
+
+// ResetGitoidSha256 resets all changes to the "gitoidSha256" field.
+func (m *MappingMutation) ResetGitoidSha256() {
+	m.gitoidSha256 = nil
+}
+
+// AddPosixIDs adds the "posix" edge to the Posix entity by ids.
+func (m *MappingMutation) AddPosixIDs(ids ...uuid.UUID) {
+	if m.posix == nil {
+		m.posix = make(map[uuid.UUID]struct{})
+	}
+	for i := range ids {
+		m.posix[ids[i]] = struct{}{}
+	}
+}
+
+// ClearPosix clears the "posix" edge to the Posix entity.
+func (m *MappingMutation) ClearPosix() {
+	m.clearedposix = true
+}
+
+// PosixCleared reports if the "posix" edge to the Posix entity was cleared.
+func (m *MappingMutation) PosixCleared() bool {
+	return m.clearedposix
+}
+
+// RemovePosixIDs removes the "posix" edge to the Posix entity by IDs.
+func (m *MappingMutation) RemovePosixIDs(ids ...uuid.UUID) {
+	if m.removedposix == nil {
+		m.removedposix = make(map[uuid.UUID]struct{})
+	}
+	for i := range ids {
+		delete(m.posix, ids[i])
+		m.removedposix[ids[i]] = struct{}{}
+	}
+}
+
+// RemovedPosix returns the removed IDs of the "posix" edge to the Posix entity.
+func (m *MappingMutation) RemovedPosixIDs() (ids []uuid.UUID) {
+	for id := range m.removedposix {
+		ids = append(ids, id)
+	}
+	return
+}
+
+// PosixIDs returns the "posix" edge IDs in the mutation.
+func (m *MappingMutation) PosixIDs() (ids []uuid.UUID) {
+	for id := range m.posix {
+		ids = append(ids, id)
+	}
+	return
+}
+
+// ResetPosix resets all changes to the "posix" edge.
+func (m *MappingMutation) ResetPosix() {
+	m.posix = nil
+	m.clearedposix = false
+	m.removedposix = nil
+}
+
+// SetOmnitrailID sets the "omnitrail" edge to the Omnitrail entity by id.
+func (m *MappingMutation) SetOmnitrailID(id uuid.UUID) {
+	m.omnitrail = &id
+}
+
+// ClearOmnitrail clears the "omnitrail" edge to the Omnitrail entity.
+func (m *MappingMutation) ClearOmnitrail() {
+	m.clearedomnitrail = true
+}
+
+// OmnitrailCleared reports if the "omnitrail" edge to the Omnitrail entity was cleared.
+func (m *MappingMutation) OmnitrailCleared() bool {
+	return m.clearedomnitrail
+}
+
+// OmnitrailID returns the "omnitrail" edge ID in the mutation.
+func (m *MappingMutation) OmnitrailID() (id uuid.UUID, exists bool) {
+	if m.omnitrail != nil {
+		return *m.omnitrail, true
+	}
+	return
+}
+
+// OmnitrailIDs returns the "omnitrail" edge IDs in the mutation.
+// Note that IDs always returns len(IDs) <= 1 for unique edges, and you should use
+// OmnitrailID instead. It exists only for internal usage by the builders.
+func (m *MappingMutation) OmnitrailIDs() (ids []uuid.UUID) {
+	if id := m.omnitrail; id != nil {
+		ids = append(ids, *id)
+	}
+	return
+}
+
+// ResetOmnitrail resets all changes to the "omnitrail" edge.
+func (m *MappingMutation) ResetOmnitrail() {
+	m.omnitrail = nil
+	m.clearedomnitrail = false
+}
+
+// Where appends a list predicates to the MappingMutation builder.
+func (m *MappingMutation) Where(ps ...predicate.Mapping) {
+	m.predicates = append(m.predicates, ps...)
+}
+
+// WhereP appends storage-level predicates to the MappingMutation builder. Using this method,
+// users can use type-assertion to append predicates that do not depend on any generated package.
+func (m *MappingMutation) WhereP(ps ...func(*sql.Selector)) {
+	p := make([]predicate.Mapping, len(ps))
+	for i := range ps {
+		p[i] = ps[i]
+	}
+	m.Where(p...)
+}
+
+// Op returns the operation name.
+func (m *MappingMutation) Op() Op {
+	return m.op
+}
+
+// SetOp allows setting the mutation operation.
+func (m *MappingMutation) SetOp(op Op) {
+	m.op = op
+}
+
+// Type returns the node type of this mutation (Mapping).
+func (m *MappingMutation) Type() string {
+	return m.typ
+}
+
+// Fields returns all fields that were changed during this mutation. Note that in
+// order to get all numeric fields that were incremented/decremented, call
+// AddedFields().
+func (m *MappingMutation) Fields() []string {
+	fields := make([]string, 0, 6)
+	if m._path != nil {
+		fields = append(fields, mapping.FieldPath)
+	}
+	if m._type != nil {
+		fields = append(fields, mapping.FieldType)
+	}
+	if m.sha1 != nil {
+		fields = append(fields, mapping.FieldSha1)
+	}
+	if m.sha256 != nil {
+		fields = append(fields, mapping.FieldSha256)
+	}
+	if m.gitoidSha1 != nil {
+		fields = append(fields, mapping.FieldGitoidSha1)
+	}
+	if m.gitoidSha256 != nil {
+		fields = append(fields, mapping.FieldGitoidSha256)
+	}
+	return fields
+}
+
+// Field returns the value of a field with the given name. The second boolean
+// return value indicates that this field was not set, or was not defined in the
+// schema.
+func (m *MappingMutation) Field(name string) (ent.Value, bool) {
+	switch name {
+	case mapping.FieldPath:
+		return m.Path()
+	case mapping.FieldType:
+		return m.GetType()
+	case mapping.FieldSha1:
+		return m.Sha1()
+	case mapping.FieldSha256:
+		return m.Sha256()
+	case mapping.FieldGitoidSha1:
+		return m.GitoidSha1()
+	case mapping.FieldGitoidSha256:
+		return m.GitoidSha256()
+	}
+	return nil, false
+}
+
+// OldField returns the old value of the field from the database. An error is
+// returned if the mutation operation is not UpdateOne, or the query to the
+// database failed.
+func (m *MappingMutation) OldField(ctx context.Context, name string) (ent.Value, error) {
+	switch name {
+	case mapping.FieldPath:
+		return m.OldPath(ctx)
+	case mapping.FieldType:
+		return m.OldType(ctx)
+	case mapping.FieldSha1:
+		return m.OldSha1(ctx)
+	case mapping.FieldSha256:
+		return m.OldSha256(ctx)
+	case mapping.FieldGitoidSha1:
+		return m.OldGitoidSha1(ctx)
+	case mapping.FieldGitoidSha256:
+		return m.OldGitoidSha256(ctx)
+	}
+	return nil, fmt.Errorf("unknown Mapping field %s", name)
+}
+
+// SetField sets the value of a field with the given name. It returns an error if
+// the field is not defined in the schema, or if the type mismatched the field
+// type.
+func (m *MappingMutation) SetField(name string, value ent.Value) error {
+	switch name {
+	case mapping.FieldPath:
+		v, ok := value.(string)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.SetPath(v)
+		return nil
+	case mapping.FieldType:
+		v, ok := value.(string)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.SetType(v)
+		return nil
+	case mapping.FieldSha1:
+		v, ok := value.(string)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.SetSha1(v)
+		return nil
+	case mapping.FieldSha256:
+		v, ok := value.(string)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.SetSha256(v)
+		return nil
+	case mapping.FieldGitoidSha1:
+		v, ok := value.(string)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.SetGitoidSha1(v)
+		return nil
+	case mapping.FieldGitoidSha256:
+		v, ok := value.(string)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.SetGitoidSha256(v)
+		return nil
+	}
+	return fmt.Errorf("unknown Mapping field %s", name)
+}
+
+// AddedFields returns all numeric fields that were incremented/decremented during
+// this mutation.
+func (m *MappingMutation) AddedFields() []string {
+	return nil
+}
+
+// AddedField returns the numeric value that was incremented/decremented on a field
+// with the given name. The second boolean return value indicates that this field
+// was not set, or was not defined in the schema.
+func (m *MappingMutation) AddedField(name string) (ent.Value, bool) {
+	return nil, false
+}
+
+// AddField adds the value to the field with the given name. It returns an error if
+// the field is not defined in the schema, or if the type mismatched the field
+// type.
+func (m *MappingMutation) AddField(name string, value ent.Value) error {
+	switch name {
+	}
+	return fmt.Errorf("unknown Mapping numeric field %s", name)
+}
+
+// ClearedFields returns all nullable fields that were cleared during this
+// mutation.
+func (m *MappingMutation) ClearedFields() []string {
+	return nil
+}
+
+// FieldCleared returns a boolean indicating if a field with the given name was
+// cleared in this mutation.
+func (m *MappingMutation) FieldCleared(name string) bool {
+	_, ok := m.clearedFields[name]
+	return ok
+}
+
+// ClearField clears the value of the field with the given name. It returns an
+// error if the field is not defined in the schema.
+func (m *MappingMutation) ClearField(name string) error {
+	return fmt.Errorf("unknown Mapping nullable field %s", name)
+}
+
+// ResetField resets all changes in the mutation for the field with the given name.
+// It returns an error if the field is not defined in the schema.
+func (m *MappingMutation) ResetField(name string) error {
+	switch name {
+	case mapping.FieldPath:
+		m.ResetPath()
+		return nil
+	case mapping.FieldType:
+		m.ResetType()
+		return nil
+	case mapping.FieldSha1:
+		m.ResetSha1()
+		return nil
+	case mapping.FieldSha256:
+		m.ResetSha256()
+		return nil
+	case mapping.FieldGitoidSha1:
+		m.ResetGitoidSha1()
+		return nil
+	case mapping.FieldGitoidSha256:
+		m.ResetGitoidSha256()
+		return nil
+	}
+	return fmt.Errorf("unknown Mapping field %s", name)
+}
+
+// AddedEdges returns all edge names that were set/added in this mutation.
+func (m *MappingMutation) AddedEdges() []string {
+	edges := make([]string, 0, 2)
+	if m.posix != nil {
+		edges = append(edges, mapping.EdgePosix)
+	}
+	if m.omnitrail != nil {
+		edges = append(edges, mapping.EdgeOmnitrail)
+	}
+	return edges
+}
+
+// AddedIDs returns all IDs (to other nodes) that were added for the given edge
+// name in this mutation.
+func (m *MappingMutation) AddedIDs(name string) []ent.Value {
+	switch name {
+	case mapping.EdgePosix:
+		ids := make([]ent.Value, 0, len(m.posix))
+		for id := range m.posix {
+			ids = append(ids, id)
+		}
+		return ids
+	case mapping.EdgeOmnitrail:
+		if id := m.omnitrail; id != nil {
+			return []ent.Value{*id}
+		}
+	}
+	return nil
+}
+
+// RemovedEdges returns all edge names that were removed in this mutation.
+func (m *MappingMutation) RemovedEdges() []string {
+	edges := make([]string, 0, 2)
+	if m.removedposix != nil {
+		edges = append(edges, mapping.EdgePosix)
+	}
+	return edges
+}
+
+// RemovedIDs returns all IDs (to other nodes) that were removed for the edge with
+// the given name in this mutation.
+func (m *MappingMutation) RemovedIDs(name string) []ent.Value {
+	switch name {
+	case mapping.EdgePosix:
+		ids := make([]ent.Value, 0, len(m.removedposix))
+		for id := range m.removedposix {
+			ids = append(ids, id)
+		}
+		return ids
+	}
+	return nil
+}
+
+// ClearedEdges returns all edge names that were cleared in this mutation.
+func (m *MappingMutation) ClearedEdges() []string {
+	edges := make([]string, 0, 2)
+	if m.clearedposix {
+		edges = append(edges, mapping.EdgePosix)
+	}
+	if m.clearedomnitrail {
+		edges = append(edges, mapping.EdgeOmnitrail)
+	}
+	return edges
+}
+
+// EdgeCleared returns a boolean which indicates if the edge with the given name
+// was cleared in this mutation.
+func (m *MappingMutation) EdgeCleared(name string) bool {
+	switch name {
+	case mapping.EdgePosix:
+		return m.clearedposix
+	case mapping.EdgeOmnitrail:
+		return m.clearedomnitrail
+	}
+	return false
+}
+
+// ClearEdge clears the value of the edge with the given name. It returns an error
+// if that edge is not defined in the schema.
+func (m *MappingMutation) ClearEdge(name string) error {
+	switch name {
+	case mapping.EdgeOmnitrail:
+		m.ClearOmnitrail()
+		return nil
+	}
+	return fmt.Errorf("unknown Mapping unique edge %s", name)
+}
+
+// ResetEdge resets all changes to the edge with the given name in this mutation.
+// It returns an error if the edge is not defined in the schema.
+func (m *MappingMutation) ResetEdge(name string) error {
+	switch name {
+	case mapping.EdgePosix:
+		m.ResetPosix()
+		return nil
+	case mapping.EdgeOmnitrail:
+		m.ResetOmnitrail()
+		return nil
+	}
+	return fmt.Errorf("unknown Mapping edge %s", name)
+}
+
+// OmnitrailMutation represents an operation that mutates the Omnitrail nodes in the graph.
+type OmnitrailMutation struct {
+	config
+	op                 Op
+	typ                string
+	id                 *uuid.UUID
+	clearedFields      map[string]struct{}
+	mappings           map[uuid.UUID]struct{}
+	removedmappings    map[uuid.UUID]struct{}
+	clearedmappings    bool
+	attestation        *uuid.UUID
+	clearedattestation bool
+	done               bool
+	oldValue           func(context.Context) (*Omnitrail, error)
+	predicates         []predicate.Omnitrail
+}
+
+var _ ent.Mutation = (*OmnitrailMutation)(nil)
+
+// omnitrailOption allows management of the mutation configuration using functional options.
+type omnitrailOption func(*OmnitrailMutation)
+
+// newOmnitrailMutation creates new mutation for the Omnitrail entity.
+func newOmnitrailMutation(c config, op Op, opts ...omnitrailOption) *OmnitrailMutation {
+	m := &OmnitrailMutation{
+		config:        c,
+		op:            op,
+		typ:           TypeOmnitrail,
+		clearedFields: make(map[string]struct{}),
+	}
+	for _, opt := range opts {
+		opt(m)
+	}
+	return m
+}
+
+// withOmnitrailID sets the ID field of the mutation.
+func withOmnitrailID(id uuid.UUID) omnitrailOption {
+	return func(m *OmnitrailMutation) {
+		var (
+			err   error
+			once  sync.Once
+			value *Omnitrail
+		)
+		m.oldValue = func(ctx context.Context) (*Omnitrail, error) {
+			once.Do(func() {
+				if m.done {
+					err = errors.New("querying old values post mutation is not allowed")
+				} else {
+					value, err = m.Client().Omnitrail.Get(ctx, id)
+				}
+			})
+			return value, err
+		}
+		m.id = &id
+	}
+}
+
+// withOmnitrail sets the old Omnitrail of the mutation.
+func withOmnitrail(node *Omnitrail) omnitrailOption {
+	return func(m *OmnitrailMutation) {
+		m.oldValue = func(context.Context) (*Omnitrail, error) {
+			return node, nil
+		}
+		m.id = &node.ID
+	}
+}
+
+// Client returns a new `ent.Client` from the mutation. If the mutation was
+// executed in a transaction (ent.Tx), a transactional client is returned.
+func (m OmnitrailMutation) Client() *Client {
+	client := &Client{config: m.config}
+	client.init()
+	return client
+}
+
+// Tx returns an `ent.Tx` for mutations that were executed in transactions;
+// it returns an error otherwise.
+func (m OmnitrailMutation) Tx() (*Tx, error) {
+	if _, ok := m.driver.(*txDriver); !ok {
+		return nil, errors.New("ent: mutation is not running in a transaction")
+	}
+	tx := &Tx{config: m.config}
+	tx.init()
+	return tx, nil
+}
+
+// SetID sets the value of the id field. Note that this
+// operation is only accepted on creation of Omnitrail entities.
+func (m *OmnitrailMutation) SetID(id uuid.UUID) {
+	m.id = &id
+}
+
+// ID returns the ID value in the mutation. Note that the ID is only available
+// if it was provided to the builder or after it was returned from the database.
+func (m *OmnitrailMutation) ID() (id uuid.UUID, exists bool) {
+	if m.id == nil {
+		return
+	}
+	return *m.id, true
+}
+
+// IDs queries the database and returns the entity ids that match the mutation's predicate.
+// That means, if the mutation is applied within a transaction with an isolation level such
+// as sql.LevelSerializable, the returned ids match the ids of the rows that will be updated
+// or updated by the mutation.
+func (m *OmnitrailMutation) IDs(ctx context.Context) ([]uuid.UUID, error) {
+	switch {
+	case m.op.Is(OpUpdateOne | OpDeleteOne):
+		id, exists := m.ID()
+		if exists {
+			return []uuid.UUID{id}, nil
+		}
+		fallthrough
+	case m.op.Is(OpUpdate | OpDelete):
+		return m.Client().Omnitrail.Query().Where(m.predicates...).IDs(ctx)
+	default:
+		return nil, fmt.Errorf("IDs is not allowed on %s operations", m.op)
+	}
+}
+
+// AddMappingIDs adds the "mappings" edge to the Mapping entity by ids.
+func (m *OmnitrailMutation) AddMappingIDs(ids ...uuid.UUID) {
+	if m.mappings == nil {
+		m.mappings = make(map[uuid.UUID]struct{})
+	}
+	for i := range ids {
+		m.mappings[ids[i]] = struct{}{}
+	}
+}
+
+// ClearMappings clears the "mappings" edge to the Mapping entity.
+func (m *OmnitrailMutation) ClearMappings() {
+	m.clearedmappings = true
+}
+
+// MappingsCleared reports if the "mappings" edge to the Mapping entity was cleared.
+func (m *OmnitrailMutation) MappingsCleared() bool {
+	return m.clearedmappings
+}
+
+// RemoveMappingIDs removes the "mappings" edge to the Mapping entity by IDs.
+func (m *OmnitrailMutation) RemoveMappingIDs(ids ...uuid.UUID) {
+	if m.removedmappings == nil {
+		m.removedmappings = make(map[uuid.UUID]struct{})
+	}
+	for i := range ids {
+		delete(m.mappings, ids[i])
+		m.removedmappings[ids[i]] = struct{}{}
+	}
+}
+
+// RemovedMappings returns the removed IDs of the "mappings" edge to the Mapping entity.
+func (m *OmnitrailMutation) RemovedMappingsIDs() (ids []uuid.UUID) {
+	for id := range m.removedmappings {
+		ids = append(ids, id)
+	}
+	return
+}
+
+// MappingsIDs returns the "mappings" edge IDs in the mutation.
+func (m *OmnitrailMutation) MappingsIDs() (ids []uuid.UUID) {
+	for id := range m.mappings {
+		ids = append(ids, id)
+	}
+	return
+}
+
+// ResetMappings resets all changes to the "mappings" edge.
+func (m *OmnitrailMutation) ResetMappings() {
+	m.mappings = nil
+	m.clearedmappings = false
+	m.removedmappings = nil
+}
+
+// SetAttestationID sets the "attestation" edge to the Attestation entity by id.
+func (m *OmnitrailMutation) SetAttestationID(id uuid.UUID) {
+	m.attestation = &id
+}
+
+// ClearAttestation clears the "attestation" edge to the Attestation entity.
+func (m *OmnitrailMutation) ClearAttestation() {
+	m.clearedattestation = true
+}
+
+// AttestationCleared reports if the "attestation" edge to the Attestation entity was cleared.
+func (m *OmnitrailMutation) AttestationCleared() bool {
+	return m.clearedattestation
+}
+
+// AttestationID returns the "attestation" edge ID in the mutation.
+func (m *OmnitrailMutation) AttestationID() (id uuid.UUID, exists bool) {
+	if m.attestation != nil {
+		return *m.attestation, true
+	}
+	return
+}
+
+// AttestationIDs returns the "attestation" edge IDs in the mutation.
+// Note that IDs always returns len(IDs) <= 1 for unique edges, and you should use
+// AttestationID instead. It exists only for internal usage by the builders.
+func (m *OmnitrailMutation) AttestationIDs() (ids []uuid.UUID) {
+	if id := m.attestation; id != nil {
+		ids = append(ids, *id)
+	}
+	return
+}
+
+// ResetAttestation resets all changes to the "attestation" edge.
+func (m *OmnitrailMutation) ResetAttestation() {
+	m.attestation = nil
+	m.clearedattestation = false
+}
+
+// Where appends a list predicates to the OmnitrailMutation builder.
+func (m *OmnitrailMutation) Where(ps ...predicate.Omnitrail) {
+	m.predicates = append(m.predicates, ps...)
+}
+
+// WhereP appends storage-level predicates to the OmnitrailMutation builder. Using this method,
+// users can use type-assertion to append predicates that do not depend on any generated package.
+func (m *OmnitrailMutation) WhereP(ps ...func(*sql.Selector)) {
+	p := make([]predicate.Omnitrail, len(ps))
+	for i := range ps {
+		p[i] = ps[i]
+	}
+	m.Where(p...)
+}
+
+// Op returns the operation name.
+func (m *OmnitrailMutation) Op() Op {
+	return m.op
+}
+
+// SetOp allows setting the mutation operation.
+func (m *OmnitrailMutation) SetOp(op Op) {
+	m.op = op
+}
+
+// Type returns the node type of this mutation (Omnitrail).
+func (m *OmnitrailMutation) Type() string {
+	return m.typ
+}
+
+// Fields returns all fields that were changed during this mutation. Note that in
+// order to get all numeric fields that were incremented/decremented, call
+// AddedFields().
+func (m *OmnitrailMutation) Fields() []string {
+	fields := make([]string, 0, 0)
+	return fields
+}
+
+// Field returns the value of a field with the given name. The second boolean
+// return value indicates that this field was not set, or was not defined in the
+// schema.
+func (m *OmnitrailMutation) Field(name string) (ent.Value, bool) {
+	return nil, false
+}
+
+// OldField returns the old value of the field from the database. An error is
+// returned if the mutation operation is not UpdateOne, or the query to the
+// database failed.
+func (m *OmnitrailMutation) OldField(ctx context.Context, name string) (ent.Value, error) {
+	return nil, fmt.Errorf("unknown Omnitrail field %s", name)
+}
+
+// SetField sets the value of a field with the given name. It returns an error if
+// the field is not defined in the schema, or if the type mismatched the field
+// type.
+func (m *OmnitrailMutation) SetField(name string, value ent.Value) error {
+	switch name {
+	}
+	return fmt.Errorf("unknown Omnitrail field %s", name)
+}
+
+// AddedFields returns all numeric fields that were incremented/decremented during
+// this mutation.
+func (m *OmnitrailMutation) AddedFields() []string {
+	return nil
+}
+
+// AddedField returns the numeric value that was incremented/decremented on a field
+// with the given name. The second boolean return value indicates that this field
+// was not set, or was not defined in the schema.
+func (m *OmnitrailMutation) AddedField(name string) (ent.Value, bool) {
+	return nil, false
+}
+
+// AddField adds the value to the field with the given name. It returns an error if
+// the field is not defined in the schema, or if the type mismatched the field
+// type.
+func (m *OmnitrailMutation) AddField(name string, value ent.Value) error {
+	return fmt.Errorf("unknown Omnitrail numeric field %s", name)
+}
+
+// ClearedFields returns all nullable fields that were cleared during this
+// mutation.
+func (m *OmnitrailMutation) ClearedFields() []string {
+	return nil
+}
+
+// FieldCleared returns a boolean indicating if a field with the given name was
+// cleared in this mutation.
+func (m *OmnitrailMutation) FieldCleared(name string) bool {
+	_, ok := m.clearedFields[name]
+	return ok
+}
+
+// ClearField clears the value of the field with the given name. It returns an
+// error if the field is not defined in the schema.
+func (m *OmnitrailMutation) ClearField(name string) error {
+	return fmt.Errorf("unknown Omnitrail nullable field %s", name)
+}
+
+// ResetField resets all changes in the mutation for the field with the given name.
+// It returns an error if the field is not defined in the schema.
+func (m *OmnitrailMutation) ResetField(name string) error {
+	return fmt.Errorf("unknown Omnitrail field %s", name)
+}
+
+// AddedEdges returns all edge names that were set/added in this mutation.
+func (m *OmnitrailMutation) AddedEdges() []string {
+	edges := make([]string, 0, 2)
+	if m.mappings != nil {
+		edges = append(edges, omnitrail.EdgeMappings)
+	}
+	if m.attestation != nil {
+		edges = append(edges, omnitrail.EdgeAttestation)
+	}
+	return edges
+}
+
+// AddedIDs returns all IDs (to other nodes) that were added for the given edge
+// name in this mutation.
+func (m *OmnitrailMutation) AddedIDs(name string) []ent.Value {
+	switch name {
+	case omnitrail.EdgeMappings:
+		ids := make([]ent.Value, 0, len(m.mappings))
+		for id := range m.mappings {
+			ids = append(ids, id)
+		}
+		return ids
+	case omnitrail.EdgeAttestation:
+		if id := m.attestation; id != nil {
+			return []ent.Value{*id}
+		}
+	}
+	return nil
+}
+
+// RemovedEdges returns all edge names that were removed in this mutation.
+func (m *OmnitrailMutation) RemovedEdges() []string {
+	edges := make([]string, 0, 2)
+	if m.removedmappings != nil {
+		edges = append(edges, omnitrail.EdgeMappings)
+	}
+	return edges
+}
+
+// RemovedIDs returns all IDs (to other nodes) that were removed for the edge with
+// the given name in this mutation.
+func (m *OmnitrailMutation) RemovedIDs(name string) []ent.Value {
+	switch name {
+	case omnitrail.EdgeMappings:
+		ids := make([]ent.Value, 0, len(m.removedmappings))
+		for id := range m.removedmappings {
+			ids = append(ids, id)
+		}
+		return ids
+	}
+	return nil
+}
+
+// ClearedEdges returns all edge names that were cleared in this mutation.
+func (m *OmnitrailMutation) ClearedEdges() []string {
+	edges := make([]string, 0, 2)
+	if m.clearedmappings {
+		edges = append(edges, omnitrail.EdgeMappings)
+	}
+	if m.clearedattestation {
+		edges = append(edges, omnitrail.EdgeAttestation)
+	}
+	return edges
+}
+
+// EdgeCleared returns a boolean which indicates if the edge with the given name
+// was cleared in this mutation.
+func (m *OmnitrailMutation) EdgeCleared(name string) bool {
+	switch name {
+	case omnitrail.EdgeMappings:
+		return m.clearedmappings
+	case omnitrail.EdgeAttestation:
+		return m.clearedattestation
+	}
+	return false
+}
+
+// ClearEdge clears the value of the edge with the given name. It returns an error
+// if that edge is not defined in the schema.
+func (m *OmnitrailMutation) ClearEdge(name string) error {
+	switch name {
+	case omnitrail.EdgeAttestation:
+		m.ClearAttestation()
+		return nil
+	}
+	return fmt.Errorf("unknown Omnitrail unique edge %s", name)
+}
+
+// ResetEdge resets all changes to the edge with the given name in this mutation.
+// It returns an error if the edge is not defined in the schema.
+func (m *OmnitrailMutation) ResetEdge(name string) error {
+	switch name {
+	case omnitrail.EdgeMappings:
+		m.ResetMappings()
+		return nil
+	case omnitrail.EdgeAttestation:
+		m.ResetAttestation()
+		return nil
+	}
+	return fmt.Errorf("unknown Omnitrail edge %s", name)
+}
+
 // PayloadDigestMutation represents an operation that mutates the PayloadDigest nodes in the graph.
 type PayloadDigestMutation struct {
 	config
@@ -2400,6 +3641,1215 @@ func (m *PayloadDigestMutation) ResetEdge(name string) error {
 		return nil
 	}
 	return fmt.Errorf("unknown PayloadDigest edge %s", name)
+}
+
+// PosixMutation represents an operation that mutates the Posix nodes in the graph.
+type PosixMutation struct {
+	config
+	op                  Op
+	typ                 string
+	id                  *uuid.UUID
+	atime               *string
+	ctime               *string
+	creation_time       *string
+	extended_attributes *string
+	file_device_id      *string
+	file_flags          *string
+	file_inode          *string
+	file_system_id      *string
+	file_type           *string
+	hard_link_count     *string
+	mtime               *string
+	metadata_ctime      *string
+	owner_gid           *string
+	owner_uid           *string
+	permissions         *string
+	size                *string
+	clearedFields       map[string]struct{}
+	mapping             *uuid.UUID
+	clearedmapping      bool
+	done                bool
+	oldValue            func(context.Context) (*Posix, error)
+	predicates          []predicate.Posix
+}
+
+var _ ent.Mutation = (*PosixMutation)(nil)
+
+// posixOption allows management of the mutation configuration using functional options.
+type posixOption func(*PosixMutation)
+
+// newPosixMutation creates new mutation for the Posix entity.
+func newPosixMutation(c config, op Op, opts ...posixOption) *PosixMutation {
+	m := &PosixMutation{
+		config:        c,
+		op:            op,
+		typ:           TypePosix,
+		clearedFields: make(map[string]struct{}),
+	}
+	for _, opt := range opts {
+		opt(m)
+	}
+	return m
+}
+
+// withPosixID sets the ID field of the mutation.
+func withPosixID(id uuid.UUID) posixOption {
+	return func(m *PosixMutation) {
+		var (
+			err   error
+			once  sync.Once
+			value *Posix
+		)
+		m.oldValue = func(ctx context.Context) (*Posix, error) {
+			once.Do(func() {
+				if m.done {
+					err = errors.New("querying old values post mutation is not allowed")
+				} else {
+					value, err = m.Client().Posix.Get(ctx, id)
+				}
+			})
+			return value, err
+		}
+		m.id = &id
+	}
+}
+
+// withPosix sets the old Posix of the mutation.
+func withPosix(node *Posix) posixOption {
+	return func(m *PosixMutation) {
+		m.oldValue = func(context.Context) (*Posix, error) {
+			return node, nil
+		}
+		m.id = &node.ID
+	}
+}
+
+// Client returns a new `ent.Client` from the mutation. If the mutation was
+// executed in a transaction (ent.Tx), a transactional client is returned.
+func (m PosixMutation) Client() *Client {
+	client := &Client{config: m.config}
+	client.init()
+	return client
+}
+
+// Tx returns an `ent.Tx` for mutations that were executed in transactions;
+// it returns an error otherwise.
+func (m PosixMutation) Tx() (*Tx, error) {
+	if _, ok := m.driver.(*txDriver); !ok {
+		return nil, errors.New("ent: mutation is not running in a transaction")
+	}
+	tx := &Tx{config: m.config}
+	tx.init()
+	return tx, nil
+}
+
+// SetID sets the value of the id field. Note that this
+// operation is only accepted on creation of Posix entities.
+func (m *PosixMutation) SetID(id uuid.UUID) {
+	m.id = &id
+}
+
+// ID returns the ID value in the mutation. Note that the ID is only available
+// if it was provided to the builder or after it was returned from the database.
+func (m *PosixMutation) ID() (id uuid.UUID, exists bool) {
+	if m.id == nil {
+		return
+	}
+	return *m.id, true
+}
+
+// IDs queries the database and returns the entity ids that match the mutation's predicate.
+// That means, if the mutation is applied within a transaction with an isolation level such
+// as sql.LevelSerializable, the returned ids match the ids of the rows that will be updated
+// or updated by the mutation.
+func (m *PosixMutation) IDs(ctx context.Context) ([]uuid.UUID, error) {
+	switch {
+	case m.op.Is(OpUpdateOne | OpDeleteOne):
+		id, exists := m.ID()
+		if exists {
+			return []uuid.UUID{id}, nil
+		}
+		fallthrough
+	case m.op.Is(OpUpdate | OpDelete):
+		return m.Client().Posix.Query().Where(m.predicates...).IDs(ctx)
+	default:
+		return nil, fmt.Errorf("IDs is not allowed on %s operations", m.op)
+	}
+}
+
+// SetAtime sets the "atime" field.
+func (m *PosixMutation) SetAtime(s string) {
+	m.atime = &s
+}
+
+// Atime returns the value of the "atime" field in the mutation.
+func (m *PosixMutation) Atime() (r string, exists bool) {
+	v := m.atime
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// OldAtime returns the old "atime" field's value of the Posix entity.
+// If the Posix object wasn't provided to the builder, the object is fetched from the database.
+// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
+func (m *PosixMutation) OldAtime(ctx context.Context) (v string, err error) {
+	if !m.op.Is(OpUpdateOne) {
+		return v, errors.New("OldAtime is only allowed on UpdateOne operations")
+	}
+	if m.id == nil || m.oldValue == nil {
+		return v, errors.New("OldAtime requires an ID field in the mutation")
+	}
+	oldValue, err := m.oldValue(ctx)
+	if err != nil {
+		return v, fmt.Errorf("querying old value for OldAtime: %w", err)
+	}
+	return oldValue.Atime, nil
+}
+
+// ResetAtime resets all changes to the "atime" field.
+func (m *PosixMutation) ResetAtime() {
+	m.atime = nil
+}
+
+// SetCtime sets the "ctime" field.
+func (m *PosixMutation) SetCtime(s string) {
+	m.ctime = &s
+}
+
+// Ctime returns the value of the "ctime" field in the mutation.
+func (m *PosixMutation) Ctime() (r string, exists bool) {
+	v := m.ctime
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// OldCtime returns the old "ctime" field's value of the Posix entity.
+// If the Posix object wasn't provided to the builder, the object is fetched from the database.
+// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
+func (m *PosixMutation) OldCtime(ctx context.Context) (v string, err error) {
+	if !m.op.Is(OpUpdateOne) {
+		return v, errors.New("OldCtime is only allowed on UpdateOne operations")
+	}
+	if m.id == nil || m.oldValue == nil {
+		return v, errors.New("OldCtime requires an ID field in the mutation")
+	}
+	oldValue, err := m.oldValue(ctx)
+	if err != nil {
+		return v, fmt.Errorf("querying old value for OldCtime: %w", err)
+	}
+	return oldValue.Ctime, nil
+}
+
+// ResetCtime resets all changes to the "ctime" field.
+func (m *PosixMutation) ResetCtime() {
+	m.ctime = nil
+}
+
+// SetCreationTime sets the "creation_time" field.
+func (m *PosixMutation) SetCreationTime(s string) {
+	m.creation_time = &s
+}
+
+// CreationTime returns the value of the "creation_time" field in the mutation.
+func (m *PosixMutation) CreationTime() (r string, exists bool) {
+	v := m.creation_time
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// OldCreationTime returns the old "creation_time" field's value of the Posix entity.
+// If the Posix object wasn't provided to the builder, the object is fetched from the database.
+// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
+func (m *PosixMutation) OldCreationTime(ctx context.Context) (v string, err error) {
+	if !m.op.Is(OpUpdateOne) {
+		return v, errors.New("OldCreationTime is only allowed on UpdateOne operations")
+	}
+	if m.id == nil || m.oldValue == nil {
+		return v, errors.New("OldCreationTime requires an ID field in the mutation")
+	}
+	oldValue, err := m.oldValue(ctx)
+	if err != nil {
+		return v, fmt.Errorf("querying old value for OldCreationTime: %w", err)
+	}
+	return oldValue.CreationTime, nil
+}
+
+// ResetCreationTime resets all changes to the "creation_time" field.
+func (m *PosixMutation) ResetCreationTime() {
+	m.creation_time = nil
+}
+
+// SetExtendedAttributes sets the "extended_attributes" field.
+func (m *PosixMutation) SetExtendedAttributes(s string) {
+	m.extended_attributes = &s
+}
+
+// ExtendedAttributes returns the value of the "extended_attributes" field in the mutation.
+func (m *PosixMutation) ExtendedAttributes() (r string, exists bool) {
+	v := m.extended_attributes
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// OldExtendedAttributes returns the old "extended_attributes" field's value of the Posix entity.
+// If the Posix object wasn't provided to the builder, the object is fetched from the database.
+// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
+func (m *PosixMutation) OldExtendedAttributes(ctx context.Context) (v string, err error) {
+	if !m.op.Is(OpUpdateOne) {
+		return v, errors.New("OldExtendedAttributes is only allowed on UpdateOne operations")
+	}
+	if m.id == nil || m.oldValue == nil {
+		return v, errors.New("OldExtendedAttributes requires an ID field in the mutation")
+	}
+	oldValue, err := m.oldValue(ctx)
+	if err != nil {
+		return v, fmt.Errorf("querying old value for OldExtendedAttributes: %w", err)
+	}
+	return oldValue.ExtendedAttributes, nil
+}
+
+// ResetExtendedAttributes resets all changes to the "extended_attributes" field.
+func (m *PosixMutation) ResetExtendedAttributes() {
+	m.extended_attributes = nil
+}
+
+// SetFileDeviceID sets the "file_device_id" field.
+func (m *PosixMutation) SetFileDeviceID(s string) {
+	m.file_device_id = &s
+}
+
+// FileDeviceID returns the value of the "file_device_id" field in the mutation.
+func (m *PosixMutation) FileDeviceID() (r string, exists bool) {
+	v := m.file_device_id
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// OldFileDeviceID returns the old "file_device_id" field's value of the Posix entity.
+// If the Posix object wasn't provided to the builder, the object is fetched from the database.
+// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
+func (m *PosixMutation) OldFileDeviceID(ctx context.Context) (v string, err error) {
+	if !m.op.Is(OpUpdateOne) {
+		return v, errors.New("OldFileDeviceID is only allowed on UpdateOne operations")
+	}
+	if m.id == nil || m.oldValue == nil {
+		return v, errors.New("OldFileDeviceID requires an ID field in the mutation")
+	}
+	oldValue, err := m.oldValue(ctx)
+	if err != nil {
+		return v, fmt.Errorf("querying old value for OldFileDeviceID: %w", err)
+	}
+	return oldValue.FileDeviceID, nil
+}
+
+// ResetFileDeviceID resets all changes to the "file_device_id" field.
+func (m *PosixMutation) ResetFileDeviceID() {
+	m.file_device_id = nil
+}
+
+// SetFileFlags sets the "file_flags" field.
+func (m *PosixMutation) SetFileFlags(s string) {
+	m.file_flags = &s
+}
+
+// FileFlags returns the value of the "file_flags" field in the mutation.
+func (m *PosixMutation) FileFlags() (r string, exists bool) {
+	v := m.file_flags
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// OldFileFlags returns the old "file_flags" field's value of the Posix entity.
+// If the Posix object wasn't provided to the builder, the object is fetched from the database.
+// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
+func (m *PosixMutation) OldFileFlags(ctx context.Context) (v string, err error) {
+	if !m.op.Is(OpUpdateOne) {
+		return v, errors.New("OldFileFlags is only allowed on UpdateOne operations")
+	}
+	if m.id == nil || m.oldValue == nil {
+		return v, errors.New("OldFileFlags requires an ID field in the mutation")
+	}
+	oldValue, err := m.oldValue(ctx)
+	if err != nil {
+		return v, fmt.Errorf("querying old value for OldFileFlags: %w", err)
+	}
+	return oldValue.FileFlags, nil
+}
+
+// ResetFileFlags resets all changes to the "file_flags" field.
+func (m *PosixMutation) ResetFileFlags() {
+	m.file_flags = nil
+}
+
+// SetFileInode sets the "file_inode" field.
+func (m *PosixMutation) SetFileInode(s string) {
+	m.file_inode = &s
+}
+
+// FileInode returns the value of the "file_inode" field in the mutation.
+func (m *PosixMutation) FileInode() (r string, exists bool) {
+	v := m.file_inode
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// OldFileInode returns the old "file_inode" field's value of the Posix entity.
+// If the Posix object wasn't provided to the builder, the object is fetched from the database.
+// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
+func (m *PosixMutation) OldFileInode(ctx context.Context) (v string, err error) {
+	if !m.op.Is(OpUpdateOne) {
+		return v, errors.New("OldFileInode is only allowed on UpdateOne operations")
+	}
+	if m.id == nil || m.oldValue == nil {
+		return v, errors.New("OldFileInode requires an ID field in the mutation")
+	}
+	oldValue, err := m.oldValue(ctx)
+	if err != nil {
+		return v, fmt.Errorf("querying old value for OldFileInode: %w", err)
+	}
+	return oldValue.FileInode, nil
+}
+
+// ResetFileInode resets all changes to the "file_inode" field.
+func (m *PosixMutation) ResetFileInode() {
+	m.file_inode = nil
+}
+
+// SetFileSystemID sets the "file_system_id" field.
+func (m *PosixMutation) SetFileSystemID(s string) {
+	m.file_system_id = &s
+}
+
+// FileSystemID returns the value of the "file_system_id" field in the mutation.
+func (m *PosixMutation) FileSystemID() (r string, exists bool) {
+	v := m.file_system_id
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// OldFileSystemID returns the old "file_system_id" field's value of the Posix entity.
+// If the Posix object wasn't provided to the builder, the object is fetched from the database.
+// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
+func (m *PosixMutation) OldFileSystemID(ctx context.Context) (v string, err error) {
+	if !m.op.Is(OpUpdateOne) {
+		return v, errors.New("OldFileSystemID is only allowed on UpdateOne operations")
+	}
+	if m.id == nil || m.oldValue == nil {
+		return v, errors.New("OldFileSystemID requires an ID field in the mutation")
+	}
+	oldValue, err := m.oldValue(ctx)
+	if err != nil {
+		return v, fmt.Errorf("querying old value for OldFileSystemID: %w", err)
+	}
+	return oldValue.FileSystemID, nil
+}
+
+// ResetFileSystemID resets all changes to the "file_system_id" field.
+func (m *PosixMutation) ResetFileSystemID() {
+	m.file_system_id = nil
+}
+
+// SetFileType sets the "file_type" field.
+func (m *PosixMutation) SetFileType(s string) {
+	m.file_type = &s
+}
+
+// FileType returns the value of the "file_type" field in the mutation.
+func (m *PosixMutation) FileType() (r string, exists bool) {
+	v := m.file_type
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// OldFileType returns the old "file_type" field's value of the Posix entity.
+// If the Posix object wasn't provided to the builder, the object is fetched from the database.
+// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
+func (m *PosixMutation) OldFileType(ctx context.Context) (v string, err error) {
+	if !m.op.Is(OpUpdateOne) {
+		return v, errors.New("OldFileType is only allowed on UpdateOne operations")
+	}
+	if m.id == nil || m.oldValue == nil {
+		return v, errors.New("OldFileType requires an ID field in the mutation")
+	}
+	oldValue, err := m.oldValue(ctx)
+	if err != nil {
+		return v, fmt.Errorf("querying old value for OldFileType: %w", err)
+	}
+	return oldValue.FileType, nil
+}
+
+// ResetFileType resets all changes to the "file_type" field.
+func (m *PosixMutation) ResetFileType() {
+	m.file_type = nil
+}
+
+// SetHardLinkCount sets the "hard_link_count" field.
+func (m *PosixMutation) SetHardLinkCount(s string) {
+	m.hard_link_count = &s
+}
+
+// HardLinkCount returns the value of the "hard_link_count" field in the mutation.
+func (m *PosixMutation) HardLinkCount() (r string, exists bool) {
+	v := m.hard_link_count
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// OldHardLinkCount returns the old "hard_link_count" field's value of the Posix entity.
+// If the Posix object wasn't provided to the builder, the object is fetched from the database.
+// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
+func (m *PosixMutation) OldHardLinkCount(ctx context.Context) (v string, err error) {
+	if !m.op.Is(OpUpdateOne) {
+		return v, errors.New("OldHardLinkCount is only allowed on UpdateOne operations")
+	}
+	if m.id == nil || m.oldValue == nil {
+		return v, errors.New("OldHardLinkCount requires an ID field in the mutation")
+	}
+	oldValue, err := m.oldValue(ctx)
+	if err != nil {
+		return v, fmt.Errorf("querying old value for OldHardLinkCount: %w", err)
+	}
+	return oldValue.HardLinkCount, nil
+}
+
+// ResetHardLinkCount resets all changes to the "hard_link_count" field.
+func (m *PosixMutation) ResetHardLinkCount() {
+	m.hard_link_count = nil
+}
+
+// SetMtime sets the "mtime" field.
+func (m *PosixMutation) SetMtime(s string) {
+	m.mtime = &s
+}
+
+// Mtime returns the value of the "mtime" field in the mutation.
+func (m *PosixMutation) Mtime() (r string, exists bool) {
+	v := m.mtime
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// OldMtime returns the old "mtime" field's value of the Posix entity.
+// If the Posix object wasn't provided to the builder, the object is fetched from the database.
+// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
+func (m *PosixMutation) OldMtime(ctx context.Context) (v string, err error) {
+	if !m.op.Is(OpUpdateOne) {
+		return v, errors.New("OldMtime is only allowed on UpdateOne operations")
+	}
+	if m.id == nil || m.oldValue == nil {
+		return v, errors.New("OldMtime requires an ID field in the mutation")
+	}
+	oldValue, err := m.oldValue(ctx)
+	if err != nil {
+		return v, fmt.Errorf("querying old value for OldMtime: %w", err)
+	}
+	return oldValue.Mtime, nil
+}
+
+// ResetMtime resets all changes to the "mtime" field.
+func (m *PosixMutation) ResetMtime() {
+	m.mtime = nil
+}
+
+// SetMetadataCtime sets the "metadata_ctime" field.
+func (m *PosixMutation) SetMetadataCtime(s string) {
+	m.metadata_ctime = &s
+}
+
+// MetadataCtime returns the value of the "metadata_ctime" field in the mutation.
+func (m *PosixMutation) MetadataCtime() (r string, exists bool) {
+	v := m.metadata_ctime
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// OldMetadataCtime returns the old "metadata_ctime" field's value of the Posix entity.
+// If the Posix object wasn't provided to the builder, the object is fetched from the database.
+// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
+func (m *PosixMutation) OldMetadataCtime(ctx context.Context) (v string, err error) {
+	if !m.op.Is(OpUpdateOne) {
+		return v, errors.New("OldMetadataCtime is only allowed on UpdateOne operations")
+	}
+	if m.id == nil || m.oldValue == nil {
+		return v, errors.New("OldMetadataCtime requires an ID field in the mutation")
+	}
+	oldValue, err := m.oldValue(ctx)
+	if err != nil {
+		return v, fmt.Errorf("querying old value for OldMetadataCtime: %w", err)
+	}
+	return oldValue.MetadataCtime, nil
+}
+
+// ResetMetadataCtime resets all changes to the "metadata_ctime" field.
+func (m *PosixMutation) ResetMetadataCtime() {
+	m.metadata_ctime = nil
+}
+
+// SetOwnerGid sets the "owner_gid" field.
+func (m *PosixMutation) SetOwnerGid(s string) {
+	m.owner_gid = &s
+}
+
+// OwnerGid returns the value of the "owner_gid" field in the mutation.
+func (m *PosixMutation) OwnerGid() (r string, exists bool) {
+	v := m.owner_gid
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// OldOwnerGid returns the old "owner_gid" field's value of the Posix entity.
+// If the Posix object wasn't provided to the builder, the object is fetched from the database.
+// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
+func (m *PosixMutation) OldOwnerGid(ctx context.Context) (v string, err error) {
+	if !m.op.Is(OpUpdateOne) {
+		return v, errors.New("OldOwnerGid is only allowed on UpdateOne operations")
+	}
+	if m.id == nil || m.oldValue == nil {
+		return v, errors.New("OldOwnerGid requires an ID field in the mutation")
+	}
+	oldValue, err := m.oldValue(ctx)
+	if err != nil {
+		return v, fmt.Errorf("querying old value for OldOwnerGid: %w", err)
+	}
+	return oldValue.OwnerGid, nil
+}
+
+// ResetOwnerGid resets all changes to the "owner_gid" field.
+func (m *PosixMutation) ResetOwnerGid() {
+	m.owner_gid = nil
+}
+
+// SetOwnerUID sets the "owner_uid" field.
+func (m *PosixMutation) SetOwnerUID(s string) {
+	m.owner_uid = &s
+}
+
+// OwnerUID returns the value of the "owner_uid" field in the mutation.
+func (m *PosixMutation) OwnerUID() (r string, exists bool) {
+	v := m.owner_uid
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// OldOwnerUID returns the old "owner_uid" field's value of the Posix entity.
+// If the Posix object wasn't provided to the builder, the object is fetched from the database.
+// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
+func (m *PosixMutation) OldOwnerUID(ctx context.Context) (v string, err error) {
+	if !m.op.Is(OpUpdateOne) {
+		return v, errors.New("OldOwnerUID is only allowed on UpdateOne operations")
+	}
+	if m.id == nil || m.oldValue == nil {
+		return v, errors.New("OldOwnerUID requires an ID field in the mutation")
+	}
+	oldValue, err := m.oldValue(ctx)
+	if err != nil {
+		return v, fmt.Errorf("querying old value for OldOwnerUID: %w", err)
+	}
+	return oldValue.OwnerUID, nil
+}
+
+// ResetOwnerUID resets all changes to the "owner_uid" field.
+func (m *PosixMutation) ResetOwnerUID() {
+	m.owner_uid = nil
+}
+
+// SetPermissions sets the "permissions" field.
+func (m *PosixMutation) SetPermissions(s string) {
+	m.permissions = &s
+}
+
+// Permissions returns the value of the "permissions" field in the mutation.
+func (m *PosixMutation) Permissions() (r string, exists bool) {
+	v := m.permissions
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// OldPermissions returns the old "permissions" field's value of the Posix entity.
+// If the Posix object wasn't provided to the builder, the object is fetched from the database.
+// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
+func (m *PosixMutation) OldPermissions(ctx context.Context) (v string, err error) {
+	if !m.op.Is(OpUpdateOne) {
+		return v, errors.New("OldPermissions is only allowed on UpdateOne operations")
+	}
+	if m.id == nil || m.oldValue == nil {
+		return v, errors.New("OldPermissions requires an ID field in the mutation")
+	}
+	oldValue, err := m.oldValue(ctx)
+	if err != nil {
+		return v, fmt.Errorf("querying old value for OldPermissions: %w", err)
+	}
+	return oldValue.Permissions, nil
+}
+
+// ResetPermissions resets all changes to the "permissions" field.
+func (m *PosixMutation) ResetPermissions() {
+	m.permissions = nil
+}
+
+// SetSize sets the "size" field.
+func (m *PosixMutation) SetSize(s string) {
+	m.size = &s
+}
+
+// Size returns the value of the "size" field in the mutation.
+func (m *PosixMutation) Size() (r string, exists bool) {
+	v := m.size
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// OldSize returns the old "size" field's value of the Posix entity.
+// If the Posix object wasn't provided to the builder, the object is fetched from the database.
+// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
+func (m *PosixMutation) OldSize(ctx context.Context) (v string, err error) {
+	if !m.op.Is(OpUpdateOne) {
+		return v, errors.New("OldSize is only allowed on UpdateOne operations")
+	}
+	if m.id == nil || m.oldValue == nil {
+		return v, errors.New("OldSize requires an ID field in the mutation")
+	}
+	oldValue, err := m.oldValue(ctx)
+	if err != nil {
+		return v, fmt.Errorf("querying old value for OldSize: %w", err)
+	}
+	return oldValue.Size, nil
+}
+
+// ResetSize resets all changes to the "size" field.
+func (m *PosixMutation) ResetSize() {
+	m.size = nil
+}
+
+// SetMappingID sets the "mapping" edge to the Mapping entity by id.
+func (m *PosixMutation) SetMappingID(id uuid.UUID) {
+	m.mapping = &id
+}
+
+// ClearMapping clears the "mapping" edge to the Mapping entity.
+func (m *PosixMutation) ClearMapping() {
+	m.clearedmapping = true
+}
+
+// MappingCleared reports if the "mapping" edge to the Mapping entity was cleared.
+func (m *PosixMutation) MappingCleared() bool {
+	return m.clearedmapping
+}
+
+// MappingID returns the "mapping" edge ID in the mutation.
+func (m *PosixMutation) MappingID() (id uuid.UUID, exists bool) {
+	if m.mapping != nil {
+		return *m.mapping, true
+	}
+	return
+}
+
+// MappingIDs returns the "mapping" edge IDs in the mutation.
+// Note that IDs always returns len(IDs) <= 1 for unique edges, and you should use
+// MappingID instead. It exists only for internal usage by the builders.
+func (m *PosixMutation) MappingIDs() (ids []uuid.UUID) {
+	if id := m.mapping; id != nil {
+		ids = append(ids, *id)
+	}
+	return
+}
+
+// ResetMapping resets all changes to the "mapping" edge.
+func (m *PosixMutation) ResetMapping() {
+	m.mapping = nil
+	m.clearedmapping = false
+}
+
+// Where appends a list predicates to the PosixMutation builder.
+func (m *PosixMutation) Where(ps ...predicate.Posix) {
+	m.predicates = append(m.predicates, ps...)
+}
+
+// WhereP appends storage-level predicates to the PosixMutation builder. Using this method,
+// users can use type-assertion to append predicates that do not depend on any generated package.
+func (m *PosixMutation) WhereP(ps ...func(*sql.Selector)) {
+	p := make([]predicate.Posix, len(ps))
+	for i := range ps {
+		p[i] = ps[i]
+	}
+	m.Where(p...)
+}
+
+// Op returns the operation name.
+func (m *PosixMutation) Op() Op {
+	return m.op
+}
+
+// SetOp allows setting the mutation operation.
+func (m *PosixMutation) SetOp(op Op) {
+	m.op = op
+}
+
+// Type returns the node type of this mutation (Posix).
+func (m *PosixMutation) Type() string {
+	return m.typ
+}
+
+// Fields returns all fields that were changed during this mutation. Note that in
+// order to get all numeric fields that were incremented/decremented, call
+// AddedFields().
+func (m *PosixMutation) Fields() []string {
+	fields := make([]string, 0, 16)
+	if m.atime != nil {
+		fields = append(fields, posix.FieldAtime)
+	}
+	if m.ctime != nil {
+		fields = append(fields, posix.FieldCtime)
+	}
+	if m.creation_time != nil {
+		fields = append(fields, posix.FieldCreationTime)
+	}
+	if m.extended_attributes != nil {
+		fields = append(fields, posix.FieldExtendedAttributes)
+	}
+	if m.file_device_id != nil {
+		fields = append(fields, posix.FieldFileDeviceID)
+	}
+	if m.file_flags != nil {
+		fields = append(fields, posix.FieldFileFlags)
+	}
+	if m.file_inode != nil {
+		fields = append(fields, posix.FieldFileInode)
+	}
+	if m.file_system_id != nil {
+		fields = append(fields, posix.FieldFileSystemID)
+	}
+	if m.file_type != nil {
+		fields = append(fields, posix.FieldFileType)
+	}
+	if m.hard_link_count != nil {
+		fields = append(fields, posix.FieldHardLinkCount)
+	}
+	if m.mtime != nil {
+		fields = append(fields, posix.FieldMtime)
+	}
+	if m.metadata_ctime != nil {
+		fields = append(fields, posix.FieldMetadataCtime)
+	}
+	if m.owner_gid != nil {
+		fields = append(fields, posix.FieldOwnerGid)
+	}
+	if m.owner_uid != nil {
+		fields = append(fields, posix.FieldOwnerUID)
+	}
+	if m.permissions != nil {
+		fields = append(fields, posix.FieldPermissions)
+	}
+	if m.size != nil {
+		fields = append(fields, posix.FieldSize)
+	}
+	return fields
+}
+
+// Field returns the value of a field with the given name. The second boolean
+// return value indicates that this field was not set, or was not defined in the
+// schema.
+func (m *PosixMutation) Field(name string) (ent.Value, bool) {
+	switch name {
+	case posix.FieldAtime:
+		return m.Atime()
+	case posix.FieldCtime:
+		return m.Ctime()
+	case posix.FieldCreationTime:
+		return m.CreationTime()
+	case posix.FieldExtendedAttributes:
+		return m.ExtendedAttributes()
+	case posix.FieldFileDeviceID:
+		return m.FileDeviceID()
+	case posix.FieldFileFlags:
+		return m.FileFlags()
+	case posix.FieldFileInode:
+		return m.FileInode()
+	case posix.FieldFileSystemID:
+		return m.FileSystemID()
+	case posix.FieldFileType:
+		return m.FileType()
+	case posix.FieldHardLinkCount:
+		return m.HardLinkCount()
+	case posix.FieldMtime:
+		return m.Mtime()
+	case posix.FieldMetadataCtime:
+		return m.MetadataCtime()
+	case posix.FieldOwnerGid:
+		return m.OwnerGid()
+	case posix.FieldOwnerUID:
+		return m.OwnerUID()
+	case posix.FieldPermissions:
+		return m.Permissions()
+	case posix.FieldSize:
+		return m.Size()
+	}
+	return nil, false
+}
+
+// OldField returns the old value of the field from the database. An error is
+// returned if the mutation operation is not UpdateOne, or the query to the
+// database failed.
+func (m *PosixMutation) OldField(ctx context.Context, name string) (ent.Value, error) {
+	switch name {
+	case posix.FieldAtime:
+		return m.OldAtime(ctx)
+	case posix.FieldCtime:
+		return m.OldCtime(ctx)
+	case posix.FieldCreationTime:
+		return m.OldCreationTime(ctx)
+	case posix.FieldExtendedAttributes:
+		return m.OldExtendedAttributes(ctx)
+	case posix.FieldFileDeviceID:
+		return m.OldFileDeviceID(ctx)
+	case posix.FieldFileFlags:
+		return m.OldFileFlags(ctx)
+	case posix.FieldFileInode:
+		return m.OldFileInode(ctx)
+	case posix.FieldFileSystemID:
+		return m.OldFileSystemID(ctx)
+	case posix.FieldFileType:
+		return m.OldFileType(ctx)
+	case posix.FieldHardLinkCount:
+		return m.OldHardLinkCount(ctx)
+	case posix.FieldMtime:
+		return m.OldMtime(ctx)
+	case posix.FieldMetadataCtime:
+		return m.OldMetadataCtime(ctx)
+	case posix.FieldOwnerGid:
+		return m.OldOwnerGid(ctx)
+	case posix.FieldOwnerUID:
+		return m.OldOwnerUID(ctx)
+	case posix.FieldPermissions:
+		return m.OldPermissions(ctx)
+	case posix.FieldSize:
+		return m.OldSize(ctx)
+	}
+	return nil, fmt.Errorf("unknown Posix field %s", name)
+}
+
+// SetField sets the value of a field with the given name. It returns an error if
+// the field is not defined in the schema, or if the type mismatched the field
+// type.
+func (m *PosixMutation) SetField(name string, value ent.Value) error {
+	switch name {
+	case posix.FieldAtime:
+		v, ok := value.(string)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.SetAtime(v)
+		return nil
+	case posix.FieldCtime:
+		v, ok := value.(string)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.SetCtime(v)
+		return nil
+	case posix.FieldCreationTime:
+		v, ok := value.(string)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.SetCreationTime(v)
+		return nil
+	case posix.FieldExtendedAttributes:
+		v, ok := value.(string)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.SetExtendedAttributes(v)
+		return nil
+	case posix.FieldFileDeviceID:
+		v, ok := value.(string)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.SetFileDeviceID(v)
+		return nil
+	case posix.FieldFileFlags:
+		v, ok := value.(string)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.SetFileFlags(v)
+		return nil
+	case posix.FieldFileInode:
+		v, ok := value.(string)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.SetFileInode(v)
+		return nil
+	case posix.FieldFileSystemID:
+		v, ok := value.(string)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.SetFileSystemID(v)
+		return nil
+	case posix.FieldFileType:
+		v, ok := value.(string)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.SetFileType(v)
+		return nil
+	case posix.FieldHardLinkCount:
+		v, ok := value.(string)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.SetHardLinkCount(v)
+		return nil
+	case posix.FieldMtime:
+		v, ok := value.(string)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.SetMtime(v)
+		return nil
+	case posix.FieldMetadataCtime:
+		v, ok := value.(string)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.SetMetadataCtime(v)
+		return nil
+	case posix.FieldOwnerGid:
+		v, ok := value.(string)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.SetOwnerGid(v)
+		return nil
+	case posix.FieldOwnerUID:
+		v, ok := value.(string)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.SetOwnerUID(v)
+		return nil
+	case posix.FieldPermissions:
+		v, ok := value.(string)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.SetPermissions(v)
+		return nil
+	case posix.FieldSize:
+		v, ok := value.(string)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.SetSize(v)
+		return nil
+	}
+	return fmt.Errorf("unknown Posix field %s", name)
+}
+
+// AddedFields returns all numeric fields that were incremented/decremented during
+// this mutation.
+func (m *PosixMutation) AddedFields() []string {
+	return nil
+}
+
+// AddedField returns the numeric value that was incremented/decremented on a field
+// with the given name. The second boolean return value indicates that this field
+// was not set, or was not defined in the schema.
+func (m *PosixMutation) AddedField(name string) (ent.Value, bool) {
+	return nil, false
+}
+
+// AddField adds the value to the field with the given name. It returns an error if
+// the field is not defined in the schema, or if the type mismatched the field
+// type.
+func (m *PosixMutation) AddField(name string, value ent.Value) error {
+	switch name {
+	}
+	return fmt.Errorf("unknown Posix numeric field %s", name)
+}
+
+// ClearedFields returns all nullable fields that were cleared during this
+// mutation.
+func (m *PosixMutation) ClearedFields() []string {
+	return nil
+}
+
+// FieldCleared returns a boolean indicating if a field with the given name was
+// cleared in this mutation.
+func (m *PosixMutation) FieldCleared(name string) bool {
+	_, ok := m.clearedFields[name]
+	return ok
+}
+
+// ClearField clears the value of the field with the given name. It returns an
+// error if the field is not defined in the schema.
+func (m *PosixMutation) ClearField(name string) error {
+	return fmt.Errorf("unknown Posix nullable field %s", name)
+}
+
+// ResetField resets all changes in the mutation for the field with the given name.
+// It returns an error if the field is not defined in the schema.
+func (m *PosixMutation) ResetField(name string) error {
+	switch name {
+	case posix.FieldAtime:
+		m.ResetAtime()
+		return nil
+	case posix.FieldCtime:
+		m.ResetCtime()
+		return nil
+	case posix.FieldCreationTime:
+		m.ResetCreationTime()
+		return nil
+	case posix.FieldExtendedAttributes:
+		m.ResetExtendedAttributes()
+		return nil
+	case posix.FieldFileDeviceID:
+		m.ResetFileDeviceID()
+		return nil
+	case posix.FieldFileFlags:
+		m.ResetFileFlags()
+		return nil
+	case posix.FieldFileInode:
+		m.ResetFileInode()
+		return nil
+	case posix.FieldFileSystemID:
+		m.ResetFileSystemID()
+		return nil
+	case posix.FieldFileType:
+		m.ResetFileType()
+		return nil
+	case posix.FieldHardLinkCount:
+		m.ResetHardLinkCount()
+		return nil
+	case posix.FieldMtime:
+		m.ResetMtime()
+		return nil
+	case posix.FieldMetadataCtime:
+		m.ResetMetadataCtime()
+		return nil
+	case posix.FieldOwnerGid:
+		m.ResetOwnerGid()
+		return nil
+	case posix.FieldOwnerUID:
+		m.ResetOwnerUID()
+		return nil
+	case posix.FieldPermissions:
+		m.ResetPermissions()
+		return nil
+	case posix.FieldSize:
+		m.ResetSize()
+		return nil
+	}
+	return fmt.Errorf("unknown Posix field %s", name)
+}
+
+// AddedEdges returns all edge names that were set/added in this mutation.
+func (m *PosixMutation) AddedEdges() []string {
+	edges := make([]string, 0, 1)
+	if m.mapping != nil {
+		edges = append(edges, posix.EdgeMapping)
+	}
+	return edges
+}
+
+// AddedIDs returns all IDs (to other nodes) that were added for the given edge
+// name in this mutation.
+func (m *PosixMutation) AddedIDs(name string) []ent.Value {
+	switch name {
+	case posix.EdgeMapping:
+		if id := m.mapping; id != nil {
+			return []ent.Value{*id}
+		}
+	}
+	return nil
+}
+
+// RemovedEdges returns all edge names that were removed in this mutation.
+func (m *PosixMutation) RemovedEdges() []string {
+	edges := make([]string, 0, 1)
+	return edges
+}
+
+// RemovedIDs returns all IDs (to other nodes) that were removed for the edge with
+// the given name in this mutation.
+func (m *PosixMutation) RemovedIDs(name string) []ent.Value {
+	return nil
+}
+
+// ClearedEdges returns all edge names that were cleared in this mutation.
+func (m *PosixMutation) ClearedEdges() []string {
+	edges := make([]string, 0, 1)
+	if m.clearedmapping {
+		edges = append(edges, posix.EdgeMapping)
+	}
+	return edges
+}
+
+// EdgeCleared returns a boolean which indicates if the edge with the given name
+// was cleared in this mutation.
+func (m *PosixMutation) EdgeCleared(name string) bool {
+	switch name {
+	case posix.EdgeMapping:
+		return m.clearedmapping
+	}
+	return false
+}
+
+// ClearEdge clears the value of the edge with the given name. It returns an error
+// if that edge is not defined in the schema.
+func (m *PosixMutation) ClearEdge(name string) error {
+	switch name {
+	case posix.EdgeMapping:
+		m.ClearMapping()
+		return nil
+	}
+	return fmt.Errorf("unknown Posix unique edge %s", name)
+}
+
+// ResetEdge resets all changes to the edge with the given name in this mutation.
+// It returns an error if the edge is not defined in the schema.
+func (m *PosixMutation) ResetEdge(name string) error {
+	switch name {
+	case posix.EdgeMapping:
+		m.ResetMapping()
+		return nil
+	}
+	return fmt.Errorf("unknown Posix edge %s", name)
 }
 
 // SignatureMutation represents an operation that mutates the Signature nodes in the graph.

@@ -11,6 +11,7 @@ import (
 	"github.com/google/uuid"
 	"github.com/in-toto/archivista/ent/attestation"
 	"github.com/in-toto/archivista/ent/attestationcollection"
+	"github.com/in-toto/archivista/ent/omnitrail"
 )
 
 // Attestation is the model entity for the Attestation schema.
@@ -29,13 +30,26 @@ type Attestation struct {
 
 // AttestationEdges holds the relations/edges for other nodes in the graph.
 type AttestationEdges struct {
+	// Omnitrail holds the value of the omnitrail edge.
+	Omnitrail *Omnitrail `json:"omnitrail,omitempty"`
 	// AttestationCollection holds the value of the attestation_collection edge.
 	AttestationCollection *AttestationCollection `json:"attestation_collection,omitempty"`
 	// loadedTypes holds the information for reporting if a
 	// type was loaded (or requested) in eager-loading or not.
-	loadedTypes [1]bool
+	loadedTypes [2]bool
 	// totalCount holds the count of the edges above.
-	totalCount [1]map[string]int
+	totalCount [2]map[string]int
+}
+
+// OmnitrailOrErr returns the Omnitrail value or an error if the edge
+// was not loaded in eager-loading, or loaded but was not found.
+func (e AttestationEdges) OmnitrailOrErr() (*Omnitrail, error) {
+	if e.Omnitrail != nil {
+		return e.Omnitrail, nil
+	} else if e.loadedTypes[0] {
+		return nil, &NotFoundError{label: omnitrail.Label}
+	}
+	return nil, &NotLoadedError{edge: "omnitrail"}
 }
 
 // AttestationCollectionOrErr returns the AttestationCollection value or an error if the edge
@@ -43,7 +57,7 @@ type AttestationEdges struct {
 func (e AttestationEdges) AttestationCollectionOrErr() (*AttestationCollection, error) {
 	if e.AttestationCollection != nil {
 		return e.AttestationCollection, nil
-	} else if e.loadedTypes[0] {
+	} else if e.loadedTypes[1] {
 		return nil, &NotFoundError{label: attestationcollection.Label}
 	}
 	return nil, &NotLoadedError{edge: "attestation_collection"}
@@ -105,6 +119,11 @@ func (a *Attestation) assignValues(columns []string, values []any) error {
 // This includes values selected through modifiers, order, etc.
 func (a *Attestation) Value(name string) (ent.Value, error) {
 	return a.selectValues.Get(name)
+}
+
+// QueryOmnitrail queries the "omnitrail" edge of the Attestation entity.
+func (a *Attestation) QueryOmnitrail() *OmnitrailQuery {
+	return NewAttestationClient(a.config).QueryOmnitrail(a)
 }
 
 // QueryAttestationCollection queries the "attestation_collection" edge of the Attestation entity.

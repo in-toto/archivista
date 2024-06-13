@@ -8,6 +8,14 @@ import (
 	"github.com/99designs/gqlgen/graphql"
 )
 
+func (a *Attestation) Omnitrail(ctx context.Context) (*Omnitrail, error) {
+	result, err := a.Edges.OmnitrailOrErr()
+	if IsNotLoaded(err) {
+		result, err = a.QueryOmnitrail().Only(ctx)
+	}
+	return result, MaskNotFound(err)
+}
+
 func (a *Attestation) AttestationCollection(ctx context.Context) (*AttestationCollection, error) {
 	result, err := a.Edges.AttestationCollectionOrErr()
 	if IsNotLoaded(err) {
@@ -76,12 +84,60 @@ func (d *Dsse) PayloadDigests(ctx context.Context) (result []*PayloadDigest, err
 	return result, err
 }
 
+func (m *Mapping) Posix(ctx context.Context) (result []*Posix, err error) {
+	if fc := graphql.GetFieldContext(ctx); fc != nil && fc.Field.Alias != "" {
+		result, err = m.NamedPosix(graphql.GetFieldContext(ctx).Field.Alias)
+	} else {
+		result, err = m.Edges.PosixOrErr()
+	}
+	if IsNotLoaded(err) {
+		result, err = m.QueryPosix().All(ctx)
+	}
+	return result, err
+}
+
+func (m *Mapping) Omnitrail(ctx context.Context) (*Omnitrail, error) {
+	result, err := m.Edges.OmnitrailOrErr()
+	if IsNotLoaded(err) {
+		result, err = m.QueryOmnitrail().Only(ctx)
+	}
+	return result, err
+}
+
+func (o *Omnitrail) Mappings(ctx context.Context) (result []*Mapping, err error) {
+	if fc := graphql.GetFieldContext(ctx); fc != nil && fc.Field.Alias != "" {
+		result, err = o.NamedMappings(graphql.GetFieldContext(ctx).Field.Alias)
+	} else {
+		result, err = o.Edges.MappingsOrErr()
+	}
+	if IsNotLoaded(err) {
+		result, err = o.QueryMappings().All(ctx)
+	}
+	return result, err
+}
+
+func (o *Omnitrail) Attestation(ctx context.Context) (*Attestation, error) {
+	result, err := o.Edges.AttestationOrErr()
+	if IsNotLoaded(err) {
+		result, err = o.QueryAttestation().Only(ctx)
+	}
+	return result, err
+}
+
 func (pd *PayloadDigest) Dsse(ctx context.Context) (*Dsse, error) {
 	result, err := pd.Edges.DsseOrErr()
 	if IsNotLoaded(err) {
 		result, err = pd.QueryDsse().Only(ctx)
 	}
 	return result, MaskNotFound(err)
+}
+
+func (po *Posix) Mapping(ctx context.Context) (*Mapping, error) {
+	result, err := po.Edges.MappingOrErr()
+	if IsNotLoaded(err) {
+		result, err = po.QueryMapping().Only(ctx)
+	}
+	return result, err
 }
 
 func (s *Signature) Dsse(ctx context.Context) (*Dsse, error) {

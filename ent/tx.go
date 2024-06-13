@@ -20,8 +20,14 @@ type Tx struct {
 	AttestationPolicy *AttestationPolicyClient
 	// Dsse is the client for interacting with the Dsse builders.
 	Dsse *DsseClient
+	// Mapping is the client for interacting with the Mapping builders.
+	Mapping *MappingClient
+	// Omnitrail is the client for interacting with the Omnitrail builders.
+	Omnitrail *OmnitrailClient
 	// PayloadDigest is the client for interacting with the PayloadDigest builders.
 	PayloadDigest *PayloadDigestClient
+	// Posix is the client for interacting with the Posix builders.
+	Posix *PosixClient
 	// Signature is the client for interacting with the Signature builders.
 	Signature *SignatureClient
 	// Statement is the client for interacting with the Statement builders.
@@ -167,7 +173,10 @@ func (tx *Tx) init() {
 	tx.AttestationCollection = NewAttestationCollectionClient(tx.config)
 	tx.AttestationPolicy = NewAttestationPolicyClient(tx.config)
 	tx.Dsse = NewDsseClient(tx.config)
+	tx.Mapping = NewMappingClient(tx.config)
+	tx.Omnitrail = NewOmnitrailClient(tx.config)
 	tx.PayloadDigest = NewPayloadDigestClient(tx.config)
+	tx.Posix = NewPosixClient(tx.config)
 	tx.Signature = NewSignatureClient(tx.config)
 	tx.Statement = NewStatementClient(tx.config)
 	tx.Subject = NewSubjectClient(tx.config)

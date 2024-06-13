@@ -57,6 +57,30 @@ func (f DsseFunc) Mutate(ctx context.Context, m ent.Mutation) (ent.Value, error)
 	return nil, fmt.Errorf("unexpected mutation type %T. expect *ent.DsseMutation", m)
 }
 
+// The MappingFunc type is an adapter to allow the use of ordinary
+// function as Mapping mutator.
+type MappingFunc func(context.Context, *ent.MappingMutation) (ent.Value, error)
+
+// Mutate calls f(ctx, m).
+func (f MappingFunc) Mutate(ctx context.Context, m ent.Mutation) (ent.Value, error) {
+	if mv, ok := m.(*ent.MappingMutation); ok {
+		return f(ctx, mv)
+	}
+	return nil, fmt.Errorf("unexpected mutation type %T. expect *ent.MappingMutation", m)
+}
+
+// The OmnitrailFunc type is an adapter to allow the use of ordinary
+// function as Omnitrail mutator.
+type OmnitrailFunc func(context.Context, *ent.OmnitrailMutation) (ent.Value, error)
+
+// Mutate calls f(ctx, m).
+func (f OmnitrailFunc) Mutate(ctx context.Context, m ent.Mutation) (ent.Value, error) {
+	if mv, ok := m.(*ent.OmnitrailMutation); ok {
+		return f(ctx, mv)
+	}
+	return nil, fmt.Errorf("unexpected mutation type %T. expect *ent.OmnitrailMutation", m)
+}
+
 // The PayloadDigestFunc type is an adapter to allow the use of ordinary
 // function as PayloadDigest mutator.
 type PayloadDigestFunc func(context.Context, *ent.PayloadDigestMutation) (ent.Value, error)
@@ -67,6 +91,18 @@ func (f PayloadDigestFunc) Mutate(ctx context.Context, m ent.Mutation) (ent.Valu
 		return f(ctx, mv)
 	}
 	return nil, fmt.Errorf("unexpected mutation type %T. expect *ent.PayloadDigestMutation", m)
+}
+
+// The PosixFunc type is an adapter to allow the use of ordinary
+// function as Posix mutator.
+type PosixFunc func(context.Context, *ent.PosixMutation) (ent.Value, error)
+
+// Mutate calls f(ctx, m).
+func (f PosixFunc) Mutate(ctx context.Context, m ent.Mutation) (ent.Value, error) {
+	if mv, ok := m.(*ent.PosixMutation); ok {
+		return f(ctx, mv)
+	}
+	return nil, fmt.Errorf("unexpected mutation type %T. expect *ent.PosixMutation", m)
 }
 
 // The SignatureFunc type is an adapter to allow the use of ordinary

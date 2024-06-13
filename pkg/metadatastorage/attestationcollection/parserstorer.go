@@ -1,4 +1,4 @@
-// Copyright 2023 The Archivista Contributors
+// Copyright 2024 The Archivista Contributors
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -25,12 +25,11 @@ import (
 )
 
 const (
+	// Predicate is the URL that defines the schema for the attestation collection.
 	Predicate = "https://witness.testifysec.com/attestation-collection/v0.1"
 )
 
-// attestation.Collection from go-witness will try to parse each of the attestations by calling their factory functions,
-// which require the attestations to be registered in the go-witness library.  We don't really care about the actual attestation
-// data for the purposes here, so just leave it as a raw message.
+// ParsedCollection represents a collection of attestations.
 type ParsedCollection struct {
 	attestation.Collection
 	Attestations []struct {
@@ -39,16 +38,17 @@ type ParsedCollection struct {
 	} `json:"attestations"`
 }
 
+// Parse takes a byte array of JSON data and unmarshals it into a ParsedCollection.
 func Parse(data []byte) (metadatastorage.Storer, error) {
-	parsedCollection := ParsedCollection{}
+	var parsedCollection ParsedCollection
 	if err := json.Unmarshal(data, &parsedCollection); err != nil {
 		return parsedCollection, err
 	}
-
 	return parsedCollection, nil
 }
 
 func (parsedCollection ParsedCollection) Store(ctx context.Context, tx *ent.Tx, stmtID uuid.UUID) error {
+	// Create a new AttestationCollection entity in the database.
 	collection, err := tx.AttestationCollection.Create().
 		SetStatementID(stmtID).
 		SetName(parsedCollection.Name).
@@ -57,8 +57,10 @@ func (parsedCollection ParsedCollection) Store(ctx context.Context, tx *ent.Tx, 
 		return err
 	}
 
+	// Iterate over each attestation in the parsed collection.
 	for _, a := range parsedCollection.Attestations {
-		newAttestation, err := tx.Attestation.Create().
+		// Create a new Attestation entity in the database.
+		attestation, err := tx.Attestation.Create().
 			SetAttestationCollectionID(collection.ID).
 			SetType(a.Type).
 			Save(ctx)
@@ -68,7 +70,7 @@ func (parsedCollection ParsedCollection) Store(ctx context.Context, tx *ent.Tx, 
 
 		// we parse if a parser is available. otherwise, we ignore it if no parser is available.
 		if parser, exists := registeredParsers[a.Type]; exists {
-			if err := parser(ctx, tx, newAttestation, a.Type, a.Attestation); err != nil {
+			if err := parser(ctx, tx, attestation, a.Type, a.Attestation); err != nil {
 				log.Errorf("failed to parse attestation of type %s: %w", a.Type, err)
 				return err
 			}

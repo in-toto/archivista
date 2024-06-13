@@ -110,6 +110,50 @@ var (
 			},
 		},
 	}
+	// MappingsColumns holds the columns for the "mappings" table.
+	MappingsColumns = []*schema.Column{
+		{Name: "id", Type: field.TypeUUID, Unique: true},
+		{Name: "path", Type: field.TypeString},
+		{Name: "type", Type: field.TypeString},
+		{Name: "sha1", Type: field.TypeString},
+		{Name: "sha256", Type: field.TypeString},
+		{Name: "gitoid_sha1", Type: field.TypeString},
+		{Name: "gitoid_sha256", Type: field.TypeString},
+		{Name: "omnitrail_mappings", Type: field.TypeUUID},
+	}
+	// MappingsTable holds the schema information for the "mappings" table.
+	MappingsTable = &schema.Table{
+		Name:       "mappings",
+		Columns:    MappingsColumns,
+		PrimaryKey: []*schema.Column{MappingsColumns[0]},
+		ForeignKeys: []*schema.ForeignKey{
+			{
+				Symbol:     "mappings_omnitrails_mappings",
+				Columns:    []*schema.Column{MappingsColumns[7]},
+				RefColumns: []*schema.Column{OmnitrailsColumns[0]},
+				OnDelete:   schema.NoAction,
+			},
+		},
+	}
+	// OmnitrailsColumns holds the columns for the "omnitrails" table.
+	OmnitrailsColumns = []*schema.Column{
+		{Name: "id", Type: field.TypeUUID, Unique: true},
+		{Name: "attestation_omnitrail", Type: field.TypeUUID, Unique: true},
+	}
+	// OmnitrailsTable holds the schema information for the "omnitrails" table.
+	OmnitrailsTable = &schema.Table{
+		Name:       "omnitrails",
+		Columns:    OmnitrailsColumns,
+		PrimaryKey: []*schema.Column{OmnitrailsColumns[0]},
+		ForeignKeys: []*schema.ForeignKey{
+			{
+				Symbol:     "omnitrails_attestations_omnitrail",
+				Columns:    []*schema.Column{OmnitrailsColumns[1]},
+				RefColumns: []*schema.Column{AttestationsColumns[0]},
+				OnDelete:   schema.NoAction,
+			},
+		},
+	}
 	// PayloadDigestsColumns holds the columns for the "payload_digests" table.
 	PayloadDigestsColumns = []*schema.Column{
 		{Name: "id", Type: field.TypeUUID, Unique: true},
@@ -135,6 +179,41 @@ var (
 				Name:    "payloaddigest_value",
 				Unique:  false,
 				Columns: []*schema.Column{PayloadDigestsColumns[2]},
+			},
+		},
+	}
+	// PosixesColumns holds the columns for the "posixes" table.
+	PosixesColumns = []*schema.Column{
+		{Name: "id", Type: field.TypeUUID, Unique: true},
+		{Name: "atime", Type: field.TypeString},
+		{Name: "ctime", Type: field.TypeString},
+		{Name: "creation_time", Type: field.TypeString},
+		{Name: "extended_attributes", Type: field.TypeString},
+		{Name: "file_device_id", Type: field.TypeString},
+		{Name: "file_flags", Type: field.TypeString},
+		{Name: "file_inode", Type: field.TypeString},
+		{Name: "file_system_id", Type: field.TypeString},
+		{Name: "file_type", Type: field.TypeString},
+		{Name: "hard_link_count", Type: field.TypeString},
+		{Name: "mtime", Type: field.TypeString},
+		{Name: "metadata_ctime", Type: field.TypeString},
+		{Name: "owner_gid", Type: field.TypeString},
+		{Name: "owner_uid", Type: field.TypeString},
+		{Name: "permissions", Type: field.TypeString},
+		{Name: "size", Type: field.TypeString},
+		{Name: "mapping_posix", Type: field.TypeUUID},
+	}
+	// PosixesTable holds the schema information for the "posixes" table.
+	PosixesTable = &schema.Table{
+		Name:       "posixes",
+		Columns:    PosixesColumns,
+		PrimaryKey: []*schema.Column{PosixesColumns[0]},
+		ForeignKeys: []*schema.ForeignKey{
+			{
+				Symbol:     "posixes_mappings_posix",
+				Columns:    []*schema.Column{PosixesColumns[17]},
+				RefColumns: []*schema.Column{MappingsColumns[0]},
+				OnDelete:   schema.NoAction,
 			},
 		},
 	}
@@ -266,7 +345,10 @@ var (
 		AttestationCollectionsTable,
 		AttestationPoliciesTable,
 		DssesTable,
+		MappingsTable,
+		OmnitrailsTable,
 		PayloadDigestsTable,
+		PosixesTable,
 		SignaturesTable,
 		StatementsTable,
 		SubjectsTable,
@@ -280,7 +362,10 @@ func init() {
 	AttestationCollectionsTable.ForeignKeys[0].RefTable = StatementsTable
 	AttestationPoliciesTable.ForeignKeys[0].RefTable = StatementsTable
 	DssesTable.ForeignKeys[0].RefTable = StatementsTable
+	MappingsTable.ForeignKeys[0].RefTable = OmnitrailsTable
+	OmnitrailsTable.ForeignKeys[0].RefTable = AttestationsTable
 	PayloadDigestsTable.ForeignKeys[0].RefTable = DssesTable
+	PosixesTable.ForeignKeys[0].RefTable = MappingsTable
 	SignaturesTable.ForeignKeys[0].RefTable = DssesTable
 	SubjectsTable.ForeignKeys[0].RefTable = StatementsTable
 	SubjectDigestsTable.ForeignKeys[0].RefTable = SubjectsTable

@@ -13,6 +13,7 @@ import (
 	"github.com/google/uuid"
 	"github.com/in-toto/archivista/ent/attestation"
 	"github.com/in-toto/archivista/ent/attestationcollection"
+	"github.com/in-toto/archivista/ent/omnitrail"
 	"github.com/in-toto/archivista/ent/predicate"
 )
 
@@ -43,6 +44,25 @@ func (au *AttestationUpdate) SetNillableType(s *string) *AttestationUpdate {
 	return au
 }
 
+// SetOmnitrailID sets the "omnitrail" edge to the Omnitrail entity by ID.
+func (au *AttestationUpdate) SetOmnitrailID(id uuid.UUID) *AttestationUpdate {
+	au.mutation.SetOmnitrailID(id)
+	return au
+}
+
+// SetNillableOmnitrailID sets the "omnitrail" edge to the Omnitrail entity by ID if the given value is not nil.
+func (au *AttestationUpdate) SetNillableOmnitrailID(id *uuid.UUID) *AttestationUpdate {
+	if id != nil {
+		au = au.SetOmnitrailID(*id)
+	}
+	return au
+}
+
+// SetOmnitrail sets the "omnitrail" edge to the Omnitrail entity.
+func (au *AttestationUpdate) SetOmnitrail(o *Omnitrail) *AttestationUpdate {
+	return au.SetOmnitrailID(o.ID)
+}
+
 // SetAttestationCollectionID sets the "attestation_collection" edge to the AttestationCollection entity by ID.
 func (au *AttestationUpdate) SetAttestationCollectionID(id uuid.UUID) *AttestationUpdate {
 	au.mutation.SetAttestationCollectionID(id)
@@ -57,6 +77,12 @@ func (au *AttestationUpdate) SetAttestationCollection(a *AttestationCollection) 
 // Mutation returns the AttestationMutation object of the builder.
 func (au *AttestationUpdate) Mutation() *AttestationMutation {
 	return au.mutation
+}
+
+// ClearOmnitrail clears the "omnitrail" edge to the Omnitrail entity.
+func (au *AttestationUpdate) ClearOmnitrail() *AttestationUpdate {
+	au.mutation.ClearOmnitrail()
+	return au
 }
 
 // ClearAttestationCollection clears the "attestation_collection" edge to the AttestationCollection entity.
@@ -119,6 +145,35 @@ func (au *AttestationUpdate) sqlSave(ctx context.Context) (n int, err error) {
 	}
 	if value, ok := au.mutation.GetType(); ok {
 		_spec.SetField(attestation.FieldType, field.TypeString, value)
+	}
+	if au.mutation.OmnitrailCleared() {
+		edge := &sqlgraph.EdgeSpec{
+			Rel:     sqlgraph.O2O,
+			Inverse: false,
+			Table:   attestation.OmnitrailTable,
+			Columns: []string{attestation.OmnitrailColumn},
+			Bidi:    false,
+			Target: &sqlgraph.EdgeTarget{
+				IDSpec: sqlgraph.NewFieldSpec(omnitrail.FieldID, field.TypeUUID),
+			},
+		}
+		_spec.Edges.Clear = append(_spec.Edges.Clear, edge)
+	}
+	if nodes := au.mutation.OmnitrailIDs(); len(nodes) > 0 {
+		edge := &sqlgraph.EdgeSpec{
+			Rel:     sqlgraph.O2O,
+			Inverse: false,
+			Table:   attestation.OmnitrailTable,
+			Columns: []string{attestation.OmnitrailColumn},
+			Bidi:    false,
+			Target: &sqlgraph.EdgeTarget{
+				IDSpec: sqlgraph.NewFieldSpec(omnitrail.FieldID, field.TypeUUID),
+			},
+		}
+		for _, k := range nodes {
+			edge.Target.Nodes = append(edge.Target.Nodes, k)
+		}
+		_spec.Edges.Add = append(_spec.Edges.Add, edge)
 	}
 	if au.mutation.AttestationCollectionCleared() {
 		edge := &sqlgraph.EdgeSpec{
@@ -183,6 +238,25 @@ func (auo *AttestationUpdateOne) SetNillableType(s *string) *AttestationUpdateOn
 	return auo
 }
 
+// SetOmnitrailID sets the "omnitrail" edge to the Omnitrail entity by ID.
+func (auo *AttestationUpdateOne) SetOmnitrailID(id uuid.UUID) *AttestationUpdateOne {
+	auo.mutation.SetOmnitrailID(id)
+	return auo
+}
+
+// SetNillableOmnitrailID sets the "omnitrail" edge to the Omnitrail entity by ID if the given value is not nil.
+func (auo *AttestationUpdateOne) SetNillableOmnitrailID(id *uuid.UUID) *AttestationUpdateOne {
+	if id != nil {
+		auo = auo.SetOmnitrailID(*id)
+	}
+	return auo
+}
+
+// SetOmnitrail sets the "omnitrail" edge to the Omnitrail entity.
+func (auo *AttestationUpdateOne) SetOmnitrail(o *Omnitrail) *AttestationUpdateOne {
+	return auo.SetOmnitrailID(o.ID)
+}
+
 // SetAttestationCollectionID sets the "attestation_collection" edge to the AttestationCollection entity by ID.
 func (auo *AttestationUpdateOne) SetAttestationCollectionID(id uuid.UUID) *AttestationUpdateOne {
 	auo.mutation.SetAttestationCollectionID(id)
@@ -197,6 +271,12 @@ func (auo *AttestationUpdateOne) SetAttestationCollection(a *AttestationCollecti
 // Mutation returns the AttestationMutation object of the builder.
 func (auo *AttestationUpdateOne) Mutation() *AttestationMutation {
 	return auo.mutation
+}
+
+// ClearOmnitrail clears the "omnitrail" edge to the Omnitrail entity.
+func (auo *AttestationUpdateOne) ClearOmnitrail() *AttestationUpdateOne {
+	auo.mutation.ClearOmnitrail()
+	return auo
 }
 
 // ClearAttestationCollection clears the "attestation_collection" edge to the AttestationCollection entity.
@@ -289,6 +369,35 @@ func (auo *AttestationUpdateOne) sqlSave(ctx context.Context) (_node *Attestatio
 	}
 	if value, ok := auo.mutation.GetType(); ok {
 		_spec.SetField(attestation.FieldType, field.TypeString, value)
+	}
+	if auo.mutation.OmnitrailCleared() {
+		edge := &sqlgraph.EdgeSpec{
+			Rel:     sqlgraph.O2O,
+			Inverse: false,
+			Table:   attestation.OmnitrailTable,
+			Columns: []string{attestation.OmnitrailColumn},
+			Bidi:    false,
+			Target: &sqlgraph.EdgeTarget{
+				IDSpec: sqlgraph.NewFieldSpec(omnitrail.FieldID, field.TypeUUID),
+			},
+		}
+		_spec.Edges.Clear = append(_spec.Edges.Clear, edge)
+	}
+	if nodes := auo.mutation.OmnitrailIDs(); len(nodes) > 0 {
+		edge := &sqlgraph.EdgeSpec{
+			Rel:     sqlgraph.O2O,
+			Inverse: false,
+			Table:   attestation.OmnitrailTable,
+			Columns: []string{attestation.OmnitrailColumn},
+			Bidi:    false,
+			Target: &sqlgraph.EdgeTarget{
+				IDSpec: sqlgraph.NewFieldSpec(omnitrail.FieldID, field.TypeUUID),
+			},
+		}
+		for _, k := range nodes {
+			edge.Target.Nodes = append(edge.Target.Nodes, k)
+		}
+		_spec.Edges.Add = append(_spec.Edges.Add, edge)
 	}
 	if auo.mutation.AttestationCollectionCleared() {
 		edge := &sqlgraph.EdgeSpec{
