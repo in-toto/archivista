@@ -15,10 +15,19 @@ const (
 	FieldID = "id"
 	// FieldType holds the string denoting the type field in the database.
 	FieldType = "type"
+	// EdgeOmnitrail holds the string denoting the omnitrail edge name in mutations.
+	EdgeOmnitrail = "omnitrail"
 	// EdgeAttestationCollection holds the string denoting the attestation_collection edge name in mutations.
 	EdgeAttestationCollection = "attestation_collection"
 	// Table holds the table name of the attestation in the database.
 	Table = "attestations"
+	// OmnitrailTable is the table that holds the omnitrail relation/edge.
+	OmnitrailTable = "omnitrails"
+	// OmnitrailInverseTable is the table name for the Omnitrail entity.
+	// It exists in this package in order to avoid circular dependency with the "omnitrail" package.
+	OmnitrailInverseTable = "omnitrails"
+	// OmnitrailColumn is the table column denoting the omnitrail relation/edge.
+	OmnitrailColumn = "attestation_omnitrail"
 	// AttestationCollectionTable is the table that holds the attestation_collection relation/edge.
 	AttestationCollectionTable = "attestations"
 	// AttestationCollectionInverseTable is the table name for the AttestationCollection entity.
@@ -75,11 +84,25 @@ func ByType(opts ...sql.OrderTermOption) OrderOption {
 	return sql.OrderByField(FieldType, opts...).ToFunc()
 }
 
+// ByOmnitrailField orders the results by omnitrail field.
+func ByOmnitrailField(field string, opts ...sql.OrderTermOption) OrderOption {
+	return func(s *sql.Selector) {
+		sqlgraph.OrderByNeighborTerms(s, newOmnitrailStep(), sql.OrderByField(field, opts...))
+	}
+}
+
 // ByAttestationCollectionField orders the results by attestation_collection field.
 func ByAttestationCollectionField(field string, opts ...sql.OrderTermOption) OrderOption {
 	return func(s *sql.Selector) {
 		sqlgraph.OrderByNeighborTerms(s, newAttestationCollectionStep(), sql.OrderByField(field, opts...))
 	}
+}
+func newOmnitrailStep() *sqlgraph.Step {
+	return sqlgraph.NewStep(
+		sqlgraph.From(Table, FieldID),
+		sqlgraph.To(OmnitrailInverseTable, FieldID),
+		sqlgraph.Edge(sqlgraph.O2O, false, OmnitrailTable, OmnitrailColumn),
+	)
 }
 func newAttestationCollectionStep() *sqlgraph.Step {
 	return sqlgraph.NewStep(

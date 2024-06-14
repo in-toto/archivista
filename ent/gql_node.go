@@ -14,7 +14,10 @@ import (
 	"github.com/in-toto/archivista/ent/attestationcollection"
 	"github.com/in-toto/archivista/ent/attestationpolicy"
 	"github.com/in-toto/archivista/ent/dsse"
+	"github.com/in-toto/archivista/ent/mapping"
+	"github.com/in-toto/archivista/ent/omnitrail"
 	"github.com/in-toto/archivista/ent/payloaddigest"
+	"github.com/in-toto/archivista/ent/posix"
 	"github.com/in-toto/archivista/ent/signature"
 	"github.com/in-toto/archivista/ent/statement"
 	"github.com/in-toto/archivista/ent/subject"
@@ -47,10 +50,25 @@ var dsseImplementors = []string{"Dsse", "Node"}
 // IsNode implements the Node interface check for GQLGen.
 func (*Dsse) IsNode() {}
 
+var mappingImplementors = []string{"Mapping", "Node"}
+
+// IsNode implements the Node interface check for GQLGen.
+func (*Mapping) IsNode() {}
+
+var omnitrailImplementors = []string{"Omnitrail", "Node"}
+
+// IsNode implements the Node interface check for GQLGen.
+func (*Omnitrail) IsNode() {}
+
 var payloaddigestImplementors = []string{"PayloadDigest", "Node"}
 
 // IsNode implements the Node interface check for GQLGen.
 func (*PayloadDigest) IsNode() {}
+
+var posixImplementors = []string{"Posix", "Node"}
+
+// IsNode implements the Node interface check for GQLGen.
+func (*Posix) IsNode() {}
 
 var signatureImplementors = []string{"Signature", "Node"}
 
@@ -171,11 +189,38 @@ func (c *Client) noder(ctx context.Context, table string, id uuid.UUID) (Noder, 
 			}
 		}
 		return query.Only(ctx)
+	case mapping.Table:
+		query := c.Mapping.Query().
+			Where(mapping.ID(id))
+		if fc := graphql.GetFieldContext(ctx); fc != nil {
+			if err := query.collectField(ctx, true, graphql.GetOperationContext(ctx), fc.Field, nil, mappingImplementors...); err != nil {
+				return nil, err
+			}
+		}
+		return query.Only(ctx)
+	case omnitrail.Table:
+		query := c.Omnitrail.Query().
+			Where(omnitrail.ID(id))
+		if fc := graphql.GetFieldContext(ctx); fc != nil {
+			if err := query.collectField(ctx, true, graphql.GetOperationContext(ctx), fc.Field, nil, omnitrailImplementors...); err != nil {
+				return nil, err
+			}
+		}
+		return query.Only(ctx)
 	case payloaddigest.Table:
 		query := c.PayloadDigest.Query().
 			Where(payloaddigest.ID(id))
 		if fc := graphql.GetFieldContext(ctx); fc != nil {
 			if err := query.collectField(ctx, true, graphql.GetOperationContext(ctx), fc.Field, nil, payloaddigestImplementors...); err != nil {
+				return nil, err
+			}
+		}
+		return query.Only(ctx)
+	case posix.Table:
+		query := c.Posix.Query().
+			Where(posix.ID(id))
+		if fc := graphql.GetFieldContext(ctx); fc != nil {
+			if err := query.collectField(ctx, true, graphql.GetOperationContext(ctx), fc.Field, nil, posixImplementors...); err != nil {
 				return nil, err
 			}
 		}
@@ -362,10 +407,58 @@ func (c *Client) noders(ctx context.Context, table string, ids []uuid.UUID) ([]N
 				*noder = node
 			}
 		}
+	case mapping.Table:
+		query := c.Mapping.Query().
+			Where(mapping.IDIn(ids...))
+		query, err := query.CollectFields(ctx, mappingImplementors...)
+		if err != nil {
+			return nil, err
+		}
+		nodes, err := query.All(ctx)
+		if err != nil {
+			return nil, err
+		}
+		for _, node := range nodes {
+			for _, noder := range idmap[node.ID] {
+				*noder = node
+			}
+		}
+	case omnitrail.Table:
+		query := c.Omnitrail.Query().
+			Where(omnitrail.IDIn(ids...))
+		query, err := query.CollectFields(ctx, omnitrailImplementors...)
+		if err != nil {
+			return nil, err
+		}
+		nodes, err := query.All(ctx)
+		if err != nil {
+			return nil, err
+		}
+		for _, node := range nodes {
+			for _, noder := range idmap[node.ID] {
+				*noder = node
+			}
+		}
 	case payloaddigest.Table:
 		query := c.PayloadDigest.Query().
 			Where(payloaddigest.IDIn(ids...))
 		query, err := query.CollectFields(ctx, payloaddigestImplementors...)
+		if err != nil {
+			return nil, err
+		}
+		nodes, err := query.All(ctx)
+		if err != nil {
+			return nil, err
+		}
+		for _, node := range nodes {
+			for _, noder := range idmap[node.ID] {
+				*noder = node
+			}
+		}
+	case posix.Table:
+		query := c.Posix.Query().
+			Where(posix.IDIn(ids...))
+		query, err := query.CollectFields(ctx, posixImplementors...)
 		if err != nil {
 			return nil, err
 		}

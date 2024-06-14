@@ -4,6 +4,7 @@ package ent
 
 import (
 	"context"
+	"database/sql/driver"
 	"fmt"
 	"math"
 
@@ -13,6 +14,7 @@ import (
 	"github.com/google/uuid"
 	"github.com/in-toto/archivista/ent/attestation"
 	"github.com/in-toto/archivista/ent/attestationcollection"
+	"github.com/in-toto/archivista/ent/omnitrail"
 	"github.com/in-toto/archivista/ent/predicate"
 )
 
@@ -23,6 +25,7 @@ type AttestationQuery struct {
 	order                     []attestation.OrderOption
 	inters                    []Interceptor
 	predicates                []predicate.Attestation
+	withOmnitrail             *OmnitrailQuery
 	withAttestationCollection *AttestationCollectionQuery
 	withFKs                   bool
 	modifiers                 []func(*sql.Selector)
@@ -61,6 +64,28 @@ func (aq *AttestationQuery) Unique(unique bool) *AttestationQuery {
 func (aq *AttestationQuery) Order(o ...attestation.OrderOption) *AttestationQuery {
 	aq.order = append(aq.order, o...)
 	return aq
+}
+
+// QueryOmnitrail chains the current query on the "omnitrail" edge.
+func (aq *AttestationQuery) QueryOmnitrail() *OmnitrailQuery {
+	query := (&OmnitrailClient{config: aq.config}).Query()
+	query.path = func(ctx context.Context) (fromU *sql.Selector, err error) {
+		if err := aq.prepareQuery(ctx); err != nil {
+			return nil, err
+		}
+		selector := aq.sqlQuery(ctx)
+		if err := selector.Err(); err != nil {
+			return nil, err
+		}
+		step := sqlgraph.NewStep(
+			sqlgraph.From(attestation.Table, attestation.FieldID, selector),
+			sqlgraph.To(omnitrail.Table, omnitrail.FieldID),
+			sqlgraph.Edge(sqlgraph.O2O, false, attestation.OmnitrailTable, attestation.OmnitrailColumn),
+		)
+		fromU = sqlgraph.SetNeighbors(aq.driver.Dialect(), step)
+		return fromU, nil
+	}
+	return query
 }
 
 // QueryAttestationCollection chains the current query on the "attestation_collection" edge.
@@ -277,11 +302,23 @@ func (aq *AttestationQuery) Clone() *AttestationQuery {
 		order:                     append([]attestation.OrderOption{}, aq.order...),
 		inters:                    append([]Interceptor{}, aq.inters...),
 		predicates:                append([]predicate.Attestation{}, aq.predicates...),
+		withOmnitrail:             aq.withOmnitrail.Clone(),
 		withAttestationCollection: aq.withAttestationCollection.Clone(),
 		// clone intermediate query.
 		sql:  aq.sql.Clone(),
 		path: aq.path,
 	}
+}
+
+// WithOmnitrail tells the query-builder to eager-load the nodes that are connected to
+// the "omnitrail" edge. The optional arguments are used to configure the query builder of the edge.
+func (aq *AttestationQuery) WithOmnitrail(opts ...func(*OmnitrailQuery)) *AttestationQuery {
+	query := (&OmnitrailClient{config: aq.config}).Query()
+	for _, opt := range opts {
+		opt(query)
+	}
+	aq.withOmnitrail = query
+	return aq
 }
 
 // WithAttestationCollection tells the query-builder to eager-load the nodes that are connected to
@@ -374,7 +411,8 @@ func (aq *AttestationQuery) sqlAll(ctx context.Context, hooks ...queryHook) ([]*
 		nodes       = []*Attestation{}
 		withFKs     = aq.withFKs
 		_spec       = aq.querySpec()
-		loadedTypes = [1]bool{
+		loadedTypes = [2]bool{
+			aq.withOmnitrail != nil,
 			aq.withAttestationCollection != nil,
 		}
 	)
@@ -405,6 +443,12 @@ func (aq *AttestationQuery) sqlAll(ctx context.Context, hooks ...queryHook) ([]*
 	if len(nodes) == 0 {
 		return nodes, nil
 	}
+	if query := aq.withOmnitrail; query != nil {
+		if err := aq.loadOmnitrail(ctx, query, nodes, nil,
+			func(n *Attestation, e *Omnitrail) { n.Edges.Omnitrail = e }); err != nil {
+			return nil, err
+		}
+	}
 	if query := aq.withAttestationCollection; query != nil {
 		if err := aq.loadAttestationCollection(ctx, query, nodes, nil,
 			func(n *Attestation, e *AttestationCollection) { n.Edges.AttestationCollection = e }); err != nil {
@@ -419,6 +463,34 @@ func (aq *AttestationQuery) sqlAll(ctx context.Context, hooks ...queryHook) ([]*
 	return nodes, nil
 }
 
+func (aq *AttestationQuery) loadOmnitrail(ctx context.Context, query *OmnitrailQuery, nodes []*Attestation, init func(*Attestation), assign func(*Attestation, *Omnitrail)) error {
+	fks := make([]driver.Value, 0, len(nodes))
+	nodeids := make(map[uuid.UUID]*Attestation)
+	for i := range nodes {
+		fks = append(fks, nodes[i].ID)
+		nodeids[nodes[i].ID] = nodes[i]
+	}
+	query.withFKs = true
+	query.Where(predicate.Omnitrail(func(s *sql.Selector) {
+		s.Where(sql.InValues(s.C(attestation.OmnitrailColumn), fks...))
+	}))
+	neighbors, err := query.All(ctx)
+	if err != nil {
+		return err
+	}
+	for _, n := range neighbors {
+		fk := n.attestation_omnitrail
+		if fk == nil {
+			return fmt.Errorf(`foreign-key "attestation_omnitrail" is nil for node %v`, n.ID)
+		}
+		node, ok := nodeids[*fk]
+		if !ok {
+			return fmt.Errorf(`unexpected referenced foreign-key "attestation_omnitrail" returned %v for node %v`, *fk, n.ID)
+		}
+		assign(node, n)
+	}
+	return nil
+}
 func (aq *AttestationQuery) loadAttestationCollection(ctx context.Context, query *AttestationCollectionQuery, nodes []*Attestation, init func(*Attestation), assign func(*Attestation, *AttestationCollection)) error {
 	ids := make([]uuid.UUID, 0, len(nodes))
 	nodeids := make(map[uuid.UUID][]*Attestation)

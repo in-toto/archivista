@@ -8,7 +8,10 @@ import (
 	"github.com/in-toto/archivista/ent/attestationcollection"
 	"github.com/in-toto/archivista/ent/attestationpolicy"
 	"github.com/in-toto/archivista/ent/dsse"
+	"github.com/in-toto/archivista/ent/mapping"
+	"github.com/in-toto/archivista/ent/omnitrail"
 	"github.com/in-toto/archivista/ent/payloaddigest"
+	"github.com/in-toto/archivista/ent/posix"
 	"github.com/in-toto/archivista/ent/schema"
 	"github.com/in-toto/archivista/ent/signature"
 	"github.com/in-toto/archivista/ent/statement"
@@ -65,6 +68,34 @@ func init() {
 	dsseDescID := dsseFields[0].Descriptor()
 	// dsse.DefaultID holds the default value on creation for the id field.
 	dsse.DefaultID = dsseDescID.Default.(func() uuid.UUID)
+	mappingFields := schema.Mapping{}.Fields()
+	_ = mappingFields
+	// mappingDescPath is the schema descriptor for path field.
+	mappingDescPath := mappingFields[1].Descriptor()
+	// mapping.PathValidator is a validator for the "path" field. It is called by the builders before save.
+	mapping.PathValidator = mappingDescPath.Validators[0].(func(string) error)
+	// mappingDescType is the schema descriptor for type field.
+	mappingDescType := mappingFields[2].Descriptor()
+	// mapping.TypeValidator is a validator for the "type" field. It is called by the builders before save.
+	mapping.TypeValidator = mappingDescType.Validators[0].(func(string) error)
+	// mappingDescGitoidSha1 is the schema descriptor for gitoidSha1 field.
+	mappingDescGitoidSha1 := mappingFields[5].Descriptor()
+	// mapping.GitoidSha1Validator is a validator for the "gitoidSha1" field. It is called by the builders before save.
+	mapping.GitoidSha1Validator = mappingDescGitoidSha1.Validators[0].(func(string) error)
+	// mappingDescGitoidSha256 is the schema descriptor for gitoidSha256 field.
+	mappingDescGitoidSha256 := mappingFields[6].Descriptor()
+	// mapping.GitoidSha256Validator is a validator for the "gitoidSha256" field. It is called by the builders before save.
+	mapping.GitoidSha256Validator = mappingDescGitoidSha256.Validators[0].(func(string) error)
+	// mappingDescID is the schema descriptor for id field.
+	mappingDescID := mappingFields[0].Descriptor()
+	// mapping.DefaultID holds the default value on creation for the id field.
+	mapping.DefaultID = mappingDescID.Default.(func() uuid.UUID)
+	omnitrailFields := schema.Omnitrail{}.Fields()
+	_ = omnitrailFields
+	// omnitrailDescID is the schema descriptor for id field.
+	omnitrailDescID := omnitrailFields[0].Descriptor()
+	// omnitrail.DefaultID holds the default value on creation for the id field.
+	omnitrail.DefaultID = omnitrailDescID.Default.(func() uuid.UUID)
 	payloaddigestFields := schema.PayloadDigest{}.Fields()
 	_ = payloaddigestFields
 	// payloaddigestDescAlgorithm is the schema descriptor for algorithm field.
@@ -79,6 +110,12 @@ func init() {
 	payloaddigestDescID := payloaddigestFields[0].Descriptor()
 	// payloaddigest.DefaultID holds the default value on creation for the id field.
 	payloaddigest.DefaultID = payloaddigestDescID.Default.(func() uuid.UUID)
+	posixFields := schema.Posix{}.Fields()
+	_ = posixFields
+	// posixDescID is the schema descriptor for id field.
+	posixDescID := posixFields[0].Descriptor()
+	// posix.DefaultID holds the default value on creation for the id field.
+	posix.DefaultID = posixDescID.Default.(func() uuid.UUID)
 	signatureFields := schema.Signature{}.Fields()
 	_ = signatureFields
 	// signatureDescKeyID is the schema descriptor for key_id field.

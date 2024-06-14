@@ -20,7 +20,10 @@ import (
 	"github.com/in-toto/archivista/ent/attestationcollection"
 	"github.com/in-toto/archivista/ent/attestationpolicy"
 	"github.com/in-toto/archivista/ent/dsse"
+	"github.com/in-toto/archivista/ent/mapping"
+	"github.com/in-toto/archivista/ent/omnitrail"
 	"github.com/in-toto/archivista/ent/payloaddigest"
+	"github.com/in-toto/archivista/ent/posix"
 	"github.com/in-toto/archivista/ent/signature"
 	"github.com/in-toto/archivista/ent/statement"
 	"github.com/in-toto/archivista/ent/subject"
@@ -41,8 +44,14 @@ type Client struct {
 	AttestationPolicy *AttestationPolicyClient
 	// Dsse is the client for interacting with the Dsse builders.
 	Dsse *DsseClient
+	// Mapping is the client for interacting with the Mapping builders.
+	Mapping *MappingClient
+	// Omnitrail is the client for interacting with the Omnitrail builders.
+	Omnitrail *OmnitrailClient
 	// PayloadDigest is the client for interacting with the PayloadDigest builders.
 	PayloadDigest *PayloadDigestClient
+	// Posix is the client for interacting with the Posix builders.
+	Posix *PosixClient
 	// Signature is the client for interacting with the Signature builders.
 	Signature *SignatureClient
 	// Statement is the client for interacting with the Statement builders.
@@ -68,7 +77,10 @@ func (c *Client) init() {
 	c.AttestationCollection = NewAttestationCollectionClient(c.config)
 	c.AttestationPolicy = NewAttestationPolicyClient(c.config)
 	c.Dsse = NewDsseClient(c.config)
+	c.Mapping = NewMappingClient(c.config)
+	c.Omnitrail = NewOmnitrailClient(c.config)
 	c.PayloadDigest = NewPayloadDigestClient(c.config)
+	c.Posix = NewPosixClient(c.config)
 	c.Signature = NewSignatureClient(c.config)
 	c.Statement = NewStatementClient(c.config)
 	c.Subject = NewSubjectClient(c.config)
@@ -170,7 +182,10 @@ func (c *Client) Tx(ctx context.Context) (*Tx, error) {
 		AttestationCollection: NewAttestationCollectionClient(cfg),
 		AttestationPolicy:     NewAttestationPolicyClient(cfg),
 		Dsse:                  NewDsseClient(cfg),
+		Mapping:               NewMappingClient(cfg),
+		Omnitrail:             NewOmnitrailClient(cfg),
 		PayloadDigest:         NewPayloadDigestClient(cfg),
+		Posix:                 NewPosixClient(cfg),
 		Signature:             NewSignatureClient(cfg),
 		Statement:             NewStatementClient(cfg),
 		Subject:               NewSubjectClient(cfg),
@@ -199,7 +214,10 @@ func (c *Client) BeginTx(ctx context.Context, opts *sql.TxOptions) (*Tx, error) 
 		AttestationCollection: NewAttestationCollectionClient(cfg),
 		AttestationPolicy:     NewAttestationPolicyClient(cfg),
 		Dsse:                  NewDsseClient(cfg),
+		Mapping:               NewMappingClient(cfg),
+		Omnitrail:             NewOmnitrailClient(cfg),
 		PayloadDigest:         NewPayloadDigestClient(cfg),
+		Posix:                 NewPosixClient(cfg),
 		Signature:             NewSignatureClient(cfg),
 		Statement:             NewStatementClient(cfg),
 		Subject:               NewSubjectClient(cfg),
@@ -234,9 +252,9 @@ func (c *Client) Close() error {
 // In order to add hooks to a specific client, call: `client.Node.Use(...)`.
 func (c *Client) Use(hooks ...Hook) {
 	for _, n := range []interface{ Use(...Hook) }{
-		c.Attestation, c.AttestationCollection, c.AttestationPolicy, c.Dsse,
-		c.PayloadDigest, c.Signature, c.Statement, c.Subject, c.SubjectDigest,
-		c.Timestamp,
+		c.Attestation, c.AttestationCollection, c.AttestationPolicy, c.Dsse, c.Mapping,
+		c.Omnitrail, c.PayloadDigest, c.Posix, c.Signature, c.Statement, c.Subject,
+		c.SubjectDigest, c.Timestamp,
 	} {
 		n.Use(hooks...)
 	}
@@ -246,9 +264,9 @@ func (c *Client) Use(hooks ...Hook) {
 // In order to add interceptors to a specific client, call: `client.Node.Intercept(...)`.
 func (c *Client) Intercept(interceptors ...Interceptor) {
 	for _, n := range []interface{ Intercept(...Interceptor) }{
-		c.Attestation, c.AttestationCollection, c.AttestationPolicy, c.Dsse,
-		c.PayloadDigest, c.Signature, c.Statement, c.Subject, c.SubjectDigest,
-		c.Timestamp,
+		c.Attestation, c.AttestationCollection, c.AttestationPolicy, c.Dsse, c.Mapping,
+		c.Omnitrail, c.PayloadDigest, c.Posix, c.Signature, c.Statement, c.Subject,
+		c.SubjectDigest, c.Timestamp,
 	} {
 		n.Intercept(interceptors...)
 	}
@@ -265,8 +283,14 @@ func (c *Client) Mutate(ctx context.Context, m Mutation) (Value, error) {
 		return c.AttestationPolicy.mutate(ctx, m)
 	case *DsseMutation:
 		return c.Dsse.mutate(ctx, m)
+	case *MappingMutation:
+		return c.Mapping.mutate(ctx, m)
+	case *OmnitrailMutation:
+		return c.Omnitrail.mutate(ctx, m)
 	case *PayloadDigestMutation:
 		return c.PayloadDigest.mutate(ctx, m)
+	case *PosixMutation:
+		return c.Posix.mutate(ctx, m)
 	case *SignatureMutation:
 		return c.Signature.mutate(ctx, m)
 	case *StatementMutation:
@@ -388,6 +412,22 @@ func (c *AttestationClient) GetX(ctx context.Context, id uuid.UUID) *Attestation
 		panic(err)
 	}
 	return obj
+}
+
+// QueryOmnitrail queries the omnitrail edge of a Attestation.
+func (c *AttestationClient) QueryOmnitrail(a *Attestation) *OmnitrailQuery {
+	query := (&OmnitrailClient{config: c.config}).Query()
+	query.path = func(context.Context) (fromV *sql.Selector, _ error) {
+		id := a.ID
+		step := sqlgraph.NewStep(
+			sqlgraph.From(attestation.Table, attestation.FieldID, id),
+			sqlgraph.To(omnitrail.Table, omnitrail.FieldID),
+			sqlgraph.Edge(sqlgraph.O2O, false, attestation.OmnitrailTable, attestation.OmnitrailColumn),
+		)
+		fromV = sqlgraph.Neighbors(a.driver.Dialect(), step)
+		return fromV, nil
+	}
+	return query
 }
 
 // QueryAttestationCollection queries the attestation_collection edge of a Attestation.
@@ -926,6 +966,336 @@ func (c *DsseClient) mutate(ctx context.Context, m *DsseMutation) (Value, error)
 	}
 }
 
+// MappingClient is a client for the Mapping schema.
+type MappingClient struct {
+	config
+}
+
+// NewMappingClient returns a client for the Mapping from the given config.
+func NewMappingClient(c config) *MappingClient {
+	return &MappingClient{config: c}
+}
+
+// Use adds a list of mutation hooks to the hooks stack.
+// A call to `Use(f, g, h)` equals to `mapping.Hooks(f(g(h())))`.
+func (c *MappingClient) Use(hooks ...Hook) {
+	c.hooks.Mapping = append(c.hooks.Mapping, hooks...)
+}
+
+// Intercept adds a list of query interceptors to the interceptors stack.
+// A call to `Intercept(f, g, h)` equals to `mapping.Intercept(f(g(h())))`.
+func (c *MappingClient) Intercept(interceptors ...Interceptor) {
+	c.inters.Mapping = append(c.inters.Mapping, interceptors...)
+}
+
+// Create returns a builder for creating a Mapping entity.
+func (c *MappingClient) Create() *MappingCreate {
+	mutation := newMappingMutation(c.config, OpCreate)
+	return &MappingCreate{config: c.config, hooks: c.Hooks(), mutation: mutation}
+}
+
+// CreateBulk returns a builder for creating a bulk of Mapping entities.
+func (c *MappingClient) CreateBulk(builders ...*MappingCreate) *MappingCreateBulk {
+	return &MappingCreateBulk{config: c.config, builders: builders}
+}
+
+// MapCreateBulk creates a bulk creation builder from the given slice. For each item in the slice, the function creates
+// a builder and applies setFunc on it.
+func (c *MappingClient) MapCreateBulk(slice any, setFunc func(*MappingCreate, int)) *MappingCreateBulk {
+	rv := reflect.ValueOf(slice)
+	if rv.Kind() != reflect.Slice {
+		return &MappingCreateBulk{err: fmt.Errorf("calling to MappingClient.MapCreateBulk with wrong type %T, need slice", slice)}
+	}
+	builders := make([]*MappingCreate, rv.Len())
+	for i := 0; i < rv.Len(); i++ {
+		builders[i] = c.Create()
+		setFunc(builders[i], i)
+	}
+	return &MappingCreateBulk{config: c.config, builders: builders}
+}
+
+// Update returns an update builder for Mapping.
+func (c *MappingClient) Update() *MappingUpdate {
+	mutation := newMappingMutation(c.config, OpUpdate)
+	return &MappingUpdate{config: c.config, hooks: c.Hooks(), mutation: mutation}
+}
+
+// UpdateOne returns an update builder for the given entity.
+func (c *MappingClient) UpdateOne(m *Mapping) *MappingUpdateOne {
+	mutation := newMappingMutation(c.config, OpUpdateOne, withMapping(m))
+	return &MappingUpdateOne{config: c.config, hooks: c.Hooks(), mutation: mutation}
+}
+
+// UpdateOneID returns an update builder for the given id.
+func (c *MappingClient) UpdateOneID(id uuid.UUID) *MappingUpdateOne {
+	mutation := newMappingMutation(c.config, OpUpdateOne, withMappingID(id))
+	return &MappingUpdateOne{config: c.config, hooks: c.Hooks(), mutation: mutation}
+}
+
+// Delete returns a delete builder for Mapping.
+func (c *MappingClient) Delete() *MappingDelete {
+	mutation := newMappingMutation(c.config, OpDelete)
+	return &MappingDelete{config: c.config, hooks: c.Hooks(), mutation: mutation}
+}
+
+// DeleteOne returns a builder for deleting the given entity.
+func (c *MappingClient) DeleteOne(m *Mapping) *MappingDeleteOne {
+	return c.DeleteOneID(m.ID)
+}
+
+// DeleteOneID returns a builder for deleting the given entity by its id.
+func (c *MappingClient) DeleteOneID(id uuid.UUID) *MappingDeleteOne {
+	builder := c.Delete().Where(mapping.ID(id))
+	builder.mutation.id = &id
+	builder.mutation.op = OpDeleteOne
+	return &MappingDeleteOne{builder}
+}
+
+// Query returns a query builder for Mapping.
+func (c *MappingClient) Query() *MappingQuery {
+	return &MappingQuery{
+		config: c.config,
+		ctx:    &QueryContext{Type: TypeMapping},
+		inters: c.Interceptors(),
+	}
+}
+
+// Get returns a Mapping entity by its id.
+func (c *MappingClient) Get(ctx context.Context, id uuid.UUID) (*Mapping, error) {
+	return c.Query().Where(mapping.ID(id)).Only(ctx)
+}
+
+// GetX is like Get, but panics if an error occurs.
+func (c *MappingClient) GetX(ctx context.Context, id uuid.UUID) *Mapping {
+	obj, err := c.Get(ctx, id)
+	if err != nil {
+		panic(err)
+	}
+	return obj
+}
+
+// QueryPosix queries the posix edge of a Mapping.
+func (c *MappingClient) QueryPosix(m *Mapping) *PosixQuery {
+	query := (&PosixClient{config: c.config}).Query()
+	query.path = func(context.Context) (fromV *sql.Selector, _ error) {
+		id := m.ID
+		step := sqlgraph.NewStep(
+			sqlgraph.From(mapping.Table, mapping.FieldID, id),
+			sqlgraph.To(posix.Table, posix.FieldID),
+			sqlgraph.Edge(sqlgraph.O2M, false, mapping.PosixTable, mapping.PosixColumn),
+		)
+		fromV = sqlgraph.Neighbors(m.driver.Dialect(), step)
+		return fromV, nil
+	}
+	return query
+}
+
+// QueryOmnitrail queries the omnitrail edge of a Mapping.
+func (c *MappingClient) QueryOmnitrail(m *Mapping) *OmnitrailQuery {
+	query := (&OmnitrailClient{config: c.config}).Query()
+	query.path = func(context.Context) (fromV *sql.Selector, _ error) {
+		id := m.ID
+		step := sqlgraph.NewStep(
+			sqlgraph.From(mapping.Table, mapping.FieldID, id),
+			sqlgraph.To(omnitrail.Table, omnitrail.FieldID),
+			sqlgraph.Edge(sqlgraph.M2O, true, mapping.OmnitrailTable, mapping.OmnitrailColumn),
+		)
+		fromV = sqlgraph.Neighbors(m.driver.Dialect(), step)
+		return fromV, nil
+	}
+	return query
+}
+
+// Hooks returns the client hooks.
+func (c *MappingClient) Hooks() []Hook {
+	return c.hooks.Mapping
+}
+
+// Interceptors returns the client interceptors.
+func (c *MappingClient) Interceptors() []Interceptor {
+	return c.inters.Mapping
+}
+
+func (c *MappingClient) mutate(ctx context.Context, m *MappingMutation) (Value, error) {
+	switch m.Op() {
+	case OpCreate:
+		return (&MappingCreate{config: c.config, hooks: c.Hooks(), mutation: m}).Save(ctx)
+	case OpUpdate:
+		return (&MappingUpdate{config: c.config, hooks: c.Hooks(), mutation: m}).Save(ctx)
+	case OpUpdateOne:
+		return (&MappingUpdateOne{config: c.config, hooks: c.Hooks(), mutation: m}).Save(ctx)
+	case OpDelete, OpDeleteOne:
+		return (&MappingDelete{config: c.config, hooks: c.Hooks(), mutation: m}).Exec(ctx)
+	default:
+		return nil, fmt.Errorf("ent: unknown Mapping mutation op: %q", m.Op())
+	}
+}
+
+// OmnitrailClient is a client for the Omnitrail schema.
+type OmnitrailClient struct {
+	config
+}
+
+// NewOmnitrailClient returns a client for the Omnitrail from the given config.
+func NewOmnitrailClient(c config) *OmnitrailClient {
+	return &OmnitrailClient{config: c}
+}
+
+// Use adds a list of mutation hooks to the hooks stack.
+// A call to `Use(f, g, h)` equals to `omnitrail.Hooks(f(g(h())))`.
+func (c *OmnitrailClient) Use(hooks ...Hook) {
+	c.hooks.Omnitrail = append(c.hooks.Omnitrail, hooks...)
+}
+
+// Intercept adds a list of query interceptors to the interceptors stack.
+// A call to `Intercept(f, g, h)` equals to `omnitrail.Intercept(f(g(h())))`.
+func (c *OmnitrailClient) Intercept(interceptors ...Interceptor) {
+	c.inters.Omnitrail = append(c.inters.Omnitrail, interceptors...)
+}
+
+// Create returns a builder for creating a Omnitrail entity.
+func (c *OmnitrailClient) Create() *OmnitrailCreate {
+	mutation := newOmnitrailMutation(c.config, OpCreate)
+	return &OmnitrailCreate{config: c.config, hooks: c.Hooks(), mutation: mutation}
+}
+
+// CreateBulk returns a builder for creating a bulk of Omnitrail entities.
+func (c *OmnitrailClient) CreateBulk(builders ...*OmnitrailCreate) *OmnitrailCreateBulk {
+	return &OmnitrailCreateBulk{config: c.config, builders: builders}
+}
+
+// MapCreateBulk creates a bulk creation builder from the given slice. For each item in the slice, the function creates
+// a builder and applies setFunc on it.
+func (c *OmnitrailClient) MapCreateBulk(slice any, setFunc func(*OmnitrailCreate, int)) *OmnitrailCreateBulk {
+	rv := reflect.ValueOf(slice)
+	if rv.Kind() != reflect.Slice {
+		return &OmnitrailCreateBulk{err: fmt.Errorf("calling to OmnitrailClient.MapCreateBulk with wrong type %T, need slice", slice)}
+	}
+	builders := make([]*OmnitrailCreate, rv.Len())
+	for i := 0; i < rv.Len(); i++ {
+		builders[i] = c.Create()
+		setFunc(builders[i], i)
+	}
+	return &OmnitrailCreateBulk{config: c.config, builders: builders}
+}
+
+// Update returns an update builder for Omnitrail.
+func (c *OmnitrailClient) Update() *OmnitrailUpdate {
+	mutation := newOmnitrailMutation(c.config, OpUpdate)
+	return &OmnitrailUpdate{config: c.config, hooks: c.Hooks(), mutation: mutation}
+}
+
+// UpdateOne returns an update builder for the given entity.
+func (c *OmnitrailClient) UpdateOne(o *Omnitrail) *OmnitrailUpdateOne {
+	mutation := newOmnitrailMutation(c.config, OpUpdateOne, withOmnitrail(o))
+	return &OmnitrailUpdateOne{config: c.config, hooks: c.Hooks(), mutation: mutation}
+}
+
+// UpdateOneID returns an update builder for the given id.
+func (c *OmnitrailClient) UpdateOneID(id uuid.UUID) *OmnitrailUpdateOne {
+	mutation := newOmnitrailMutation(c.config, OpUpdateOne, withOmnitrailID(id))
+	return &OmnitrailUpdateOne{config: c.config, hooks: c.Hooks(), mutation: mutation}
+}
+
+// Delete returns a delete builder for Omnitrail.
+func (c *OmnitrailClient) Delete() *OmnitrailDelete {
+	mutation := newOmnitrailMutation(c.config, OpDelete)
+	return &OmnitrailDelete{config: c.config, hooks: c.Hooks(), mutation: mutation}
+}
+
+// DeleteOne returns a builder for deleting the given entity.
+func (c *OmnitrailClient) DeleteOne(o *Omnitrail) *OmnitrailDeleteOne {
+	return c.DeleteOneID(o.ID)
+}
+
+// DeleteOneID returns a builder for deleting the given entity by its id.
+func (c *OmnitrailClient) DeleteOneID(id uuid.UUID) *OmnitrailDeleteOne {
+	builder := c.Delete().Where(omnitrail.ID(id))
+	builder.mutation.id = &id
+	builder.mutation.op = OpDeleteOne
+	return &OmnitrailDeleteOne{builder}
+}
+
+// Query returns a query builder for Omnitrail.
+func (c *OmnitrailClient) Query() *OmnitrailQuery {
+	return &OmnitrailQuery{
+		config: c.config,
+		ctx:    &QueryContext{Type: TypeOmnitrail},
+		inters: c.Interceptors(),
+	}
+}
+
+// Get returns a Omnitrail entity by its id.
+func (c *OmnitrailClient) Get(ctx context.Context, id uuid.UUID) (*Omnitrail, error) {
+	return c.Query().Where(omnitrail.ID(id)).Only(ctx)
+}
+
+// GetX is like Get, but panics if an error occurs.
+func (c *OmnitrailClient) GetX(ctx context.Context, id uuid.UUID) *Omnitrail {
+	obj, err := c.Get(ctx, id)
+	if err != nil {
+		panic(err)
+	}
+	return obj
+}
+
+// QueryMappings queries the mappings edge of a Omnitrail.
+func (c *OmnitrailClient) QueryMappings(o *Omnitrail) *MappingQuery {
+	query := (&MappingClient{config: c.config}).Query()
+	query.path = func(context.Context) (fromV *sql.Selector, _ error) {
+		id := o.ID
+		step := sqlgraph.NewStep(
+			sqlgraph.From(omnitrail.Table, omnitrail.FieldID, id),
+			sqlgraph.To(mapping.Table, mapping.FieldID),
+			sqlgraph.Edge(sqlgraph.O2M, false, omnitrail.MappingsTable, omnitrail.MappingsColumn),
+		)
+		fromV = sqlgraph.Neighbors(o.driver.Dialect(), step)
+		return fromV, nil
+	}
+	return query
+}
+
+// QueryAttestation queries the attestation edge of a Omnitrail.
+func (c *OmnitrailClient) QueryAttestation(o *Omnitrail) *AttestationQuery {
+	query := (&AttestationClient{config: c.config}).Query()
+	query.path = func(context.Context) (fromV *sql.Selector, _ error) {
+		id := o.ID
+		step := sqlgraph.NewStep(
+			sqlgraph.From(omnitrail.Table, omnitrail.FieldID, id),
+			sqlgraph.To(attestation.Table, attestation.FieldID),
+			sqlgraph.Edge(sqlgraph.O2O, true, omnitrail.AttestationTable, omnitrail.AttestationColumn),
+		)
+		fromV = sqlgraph.Neighbors(o.driver.Dialect(), step)
+		return fromV, nil
+	}
+	return query
+}
+
+// Hooks returns the client hooks.
+func (c *OmnitrailClient) Hooks() []Hook {
+	return c.hooks.Omnitrail
+}
+
+// Interceptors returns the client interceptors.
+func (c *OmnitrailClient) Interceptors() []Interceptor {
+	return c.inters.Omnitrail
+}
+
+func (c *OmnitrailClient) mutate(ctx context.Context, m *OmnitrailMutation) (Value, error) {
+	switch m.Op() {
+	case OpCreate:
+		return (&OmnitrailCreate{config: c.config, hooks: c.Hooks(), mutation: m}).Save(ctx)
+	case OpUpdate:
+		return (&OmnitrailUpdate{config: c.config, hooks: c.Hooks(), mutation: m}).Save(ctx)
+	case OpUpdateOne:
+		return (&OmnitrailUpdateOne{config: c.config, hooks: c.Hooks(), mutation: m}).Save(ctx)
+	case OpDelete, OpDeleteOne:
+		return (&OmnitrailDelete{config: c.config, hooks: c.Hooks(), mutation: m}).Exec(ctx)
+	default:
+		return nil, fmt.Errorf("ent: unknown Omnitrail mutation op: %q", m.Op())
+	}
+}
+
 // PayloadDigestClient is a client for the PayloadDigest schema.
 type PayloadDigestClient struct {
 	config
@@ -1072,6 +1442,155 @@ func (c *PayloadDigestClient) mutate(ctx context.Context, m *PayloadDigestMutati
 		return (&PayloadDigestDelete{config: c.config, hooks: c.Hooks(), mutation: m}).Exec(ctx)
 	default:
 		return nil, fmt.Errorf("ent: unknown PayloadDigest mutation op: %q", m.Op())
+	}
+}
+
+// PosixClient is a client for the Posix schema.
+type PosixClient struct {
+	config
+}
+
+// NewPosixClient returns a client for the Posix from the given config.
+func NewPosixClient(c config) *PosixClient {
+	return &PosixClient{config: c}
+}
+
+// Use adds a list of mutation hooks to the hooks stack.
+// A call to `Use(f, g, h)` equals to `posix.Hooks(f(g(h())))`.
+func (c *PosixClient) Use(hooks ...Hook) {
+	c.hooks.Posix = append(c.hooks.Posix, hooks...)
+}
+
+// Intercept adds a list of query interceptors to the interceptors stack.
+// A call to `Intercept(f, g, h)` equals to `posix.Intercept(f(g(h())))`.
+func (c *PosixClient) Intercept(interceptors ...Interceptor) {
+	c.inters.Posix = append(c.inters.Posix, interceptors...)
+}
+
+// Create returns a builder for creating a Posix entity.
+func (c *PosixClient) Create() *PosixCreate {
+	mutation := newPosixMutation(c.config, OpCreate)
+	return &PosixCreate{config: c.config, hooks: c.Hooks(), mutation: mutation}
+}
+
+// CreateBulk returns a builder for creating a bulk of Posix entities.
+func (c *PosixClient) CreateBulk(builders ...*PosixCreate) *PosixCreateBulk {
+	return &PosixCreateBulk{config: c.config, builders: builders}
+}
+
+// MapCreateBulk creates a bulk creation builder from the given slice. For each item in the slice, the function creates
+// a builder and applies setFunc on it.
+func (c *PosixClient) MapCreateBulk(slice any, setFunc func(*PosixCreate, int)) *PosixCreateBulk {
+	rv := reflect.ValueOf(slice)
+	if rv.Kind() != reflect.Slice {
+		return &PosixCreateBulk{err: fmt.Errorf("calling to PosixClient.MapCreateBulk with wrong type %T, need slice", slice)}
+	}
+	builders := make([]*PosixCreate, rv.Len())
+	for i := 0; i < rv.Len(); i++ {
+		builders[i] = c.Create()
+		setFunc(builders[i], i)
+	}
+	return &PosixCreateBulk{config: c.config, builders: builders}
+}
+
+// Update returns an update builder for Posix.
+func (c *PosixClient) Update() *PosixUpdate {
+	mutation := newPosixMutation(c.config, OpUpdate)
+	return &PosixUpdate{config: c.config, hooks: c.Hooks(), mutation: mutation}
+}
+
+// UpdateOne returns an update builder for the given entity.
+func (c *PosixClient) UpdateOne(po *Posix) *PosixUpdateOne {
+	mutation := newPosixMutation(c.config, OpUpdateOne, withPosix(po))
+	return &PosixUpdateOne{config: c.config, hooks: c.Hooks(), mutation: mutation}
+}
+
+// UpdateOneID returns an update builder for the given id.
+func (c *PosixClient) UpdateOneID(id uuid.UUID) *PosixUpdateOne {
+	mutation := newPosixMutation(c.config, OpUpdateOne, withPosixID(id))
+	return &PosixUpdateOne{config: c.config, hooks: c.Hooks(), mutation: mutation}
+}
+
+// Delete returns a delete builder for Posix.
+func (c *PosixClient) Delete() *PosixDelete {
+	mutation := newPosixMutation(c.config, OpDelete)
+	return &PosixDelete{config: c.config, hooks: c.Hooks(), mutation: mutation}
+}
+
+// DeleteOne returns a builder for deleting the given entity.
+func (c *PosixClient) DeleteOne(po *Posix) *PosixDeleteOne {
+	return c.DeleteOneID(po.ID)
+}
+
+// DeleteOneID returns a builder for deleting the given entity by its id.
+func (c *PosixClient) DeleteOneID(id uuid.UUID) *PosixDeleteOne {
+	builder := c.Delete().Where(posix.ID(id))
+	builder.mutation.id = &id
+	builder.mutation.op = OpDeleteOne
+	return &PosixDeleteOne{builder}
+}
+
+// Query returns a query builder for Posix.
+func (c *PosixClient) Query() *PosixQuery {
+	return &PosixQuery{
+		config: c.config,
+		ctx:    &QueryContext{Type: TypePosix},
+		inters: c.Interceptors(),
+	}
+}
+
+// Get returns a Posix entity by its id.
+func (c *PosixClient) Get(ctx context.Context, id uuid.UUID) (*Posix, error) {
+	return c.Query().Where(posix.ID(id)).Only(ctx)
+}
+
+// GetX is like Get, but panics if an error occurs.
+func (c *PosixClient) GetX(ctx context.Context, id uuid.UUID) *Posix {
+	obj, err := c.Get(ctx, id)
+	if err != nil {
+		panic(err)
+	}
+	return obj
+}
+
+// QueryMapping queries the mapping edge of a Posix.
+func (c *PosixClient) QueryMapping(po *Posix) *MappingQuery {
+	query := (&MappingClient{config: c.config}).Query()
+	query.path = func(context.Context) (fromV *sql.Selector, _ error) {
+		id := po.ID
+		step := sqlgraph.NewStep(
+			sqlgraph.From(posix.Table, posix.FieldID, id),
+			sqlgraph.To(mapping.Table, mapping.FieldID),
+			sqlgraph.Edge(sqlgraph.M2O, true, posix.MappingTable, posix.MappingColumn),
+		)
+		fromV = sqlgraph.Neighbors(po.driver.Dialect(), step)
+		return fromV, nil
+	}
+	return query
+}
+
+// Hooks returns the client hooks.
+func (c *PosixClient) Hooks() []Hook {
+	return c.hooks.Posix
+}
+
+// Interceptors returns the client interceptors.
+func (c *PosixClient) Interceptors() []Interceptor {
+	return c.inters.Posix
+}
+
+func (c *PosixClient) mutate(ctx context.Context, m *PosixMutation) (Value, error) {
+	switch m.Op() {
+	case OpCreate:
+		return (&PosixCreate{config: c.config, hooks: c.Hooks(), mutation: m}).Save(ctx)
+	case OpUpdate:
+		return (&PosixUpdate{config: c.config, hooks: c.Hooks(), mutation: m}).Save(ctx)
+	case OpUpdateOne:
+		return (&PosixUpdateOne{config: c.config, hooks: c.Hooks(), mutation: m}).Save(ctx)
+	case OpDelete, OpDeleteOne:
+		return (&PosixDelete{config: c.config, hooks: c.Hooks(), mutation: m}).Exec(ctx)
+	default:
+		return nil, fmt.Errorf("ent: unknown Posix mutation op: %q", m.Op())
 	}
 }
 
@@ -1903,11 +2422,13 @@ func (c *TimestampClient) mutate(ctx context.Context, m *TimestampMutation) (Val
 // hooks and interceptors per client, for fast access.
 type (
 	hooks struct {
-		Attestation, AttestationCollection, AttestationPolicy, Dsse, PayloadDigest,
-		Signature, Statement, Subject, SubjectDigest, Timestamp []ent.Hook
+		Attestation, AttestationCollection, AttestationPolicy, Dsse, Mapping, Omnitrail,
+		PayloadDigest, Posix, Signature, Statement, Subject, SubjectDigest,
+		Timestamp []ent.Hook
 	}
 	inters struct {
-		Attestation, AttestationCollection, AttestationPolicy, Dsse, PayloadDigest,
-		Signature, Statement, Subject, SubjectDigest, Timestamp []ent.Interceptor
+		Attestation, AttestationCollection, AttestationPolicy, Dsse, Mapping, Omnitrail,
+		PayloadDigest, Posix, Signature, Statement, Subject, SubjectDigest,
+		Timestamp []ent.Interceptor
 	}
 )

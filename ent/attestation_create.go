@@ -12,6 +12,7 @@ import (
 	"github.com/google/uuid"
 	"github.com/in-toto/archivista/ent/attestation"
 	"github.com/in-toto/archivista/ent/attestationcollection"
+	"github.com/in-toto/archivista/ent/omnitrail"
 )
 
 // AttestationCreate is the builder for creating a Attestation entity.
@@ -39,6 +40,25 @@ func (ac *AttestationCreate) SetNillableID(u *uuid.UUID) *AttestationCreate {
 		ac.SetID(*u)
 	}
 	return ac
+}
+
+// SetOmnitrailID sets the "omnitrail" edge to the Omnitrail entity by ID.
+func (ac *AttestationCreate) SetOmnitrailID(id uuid.UUID) *AttestationCreate {
+	ac.mutation.SetOmnitrailID(id)
+	return ac
+}
+
+// SetNillableOmnitrailID sets the "omnitrail" edge to the Omnitrail entity by ID if the given value is not nil.
+func (ac *AttestationCreate) SetNillableOmnitrailID(id *uuid.UUID) *AttestationCreate {
+	if id != nil {
+		ac = ac.SetOmnitrailID(*id)
+	}
+	return ac
+}
+
+// SetOmnitrail sets the "omnitrail" edge to the Omnitrail entity.
+func (ac *AttestationCreate) SetOmnitrail(o *Omnitrail) *AttestationCreate {
+	return ac.SetOmnitrailID(o.ID)
 }
 
 // SetAttestationCollectionID sets the "attestation_collection" edge to the AttestationCollection entity by ID.
@@ -144,6 +164,22 @@ func (ac *AttestationCreate) createSpec() (*Attestation, *sqlgraph.CreateSpec) {
 	if value, ok := ac.mutation.GetType(); ok {
 		_spec.SetField(attestation.FieldType, field.TypeString, value)
 		_node.Type = value
+	}
+	if nodes := ac.mutation.OmnitrailIDs(); len(nodes) > 0 {
+		edge := &sqlgraph.EdgeSpec{
+			Rel:     sqlgraph.O2O,
+			Inverse: false,
+			Table:   attestation.OmnitrailTable,
+			Columns: []string{attestation.OmnitrailColumn},
+			Bidi:    false,
+			Target: &sqlgraph.EdgeTarget{
+				IDSpec: sqlgraph.NewFieldSpec(omnitrail.FieldID, field.TypeUUID),
+			},
+		}
+		for _, k := range nodes {
+			edge.Target.Nodes = append(edge.Target.Nodes, k)
+		}
+		_spec.Edges = append(_spec.Edges, edge)
 	}
 	if nodes := ac.mutation.AttestationCollectionIDs(); len(nodes) > 0 {
 		edge := &sqlgraph.EdgeSpec{

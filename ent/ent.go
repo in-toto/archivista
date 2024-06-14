@@ -16,7 +16,10 @@ import (
 	"github.com/in-toto/archivista/ent/attestationcollection"
 	"github.com/in-toto/archivista/ent/attestationpolicy"
 	"github.com/in-toto/archivista/ent/dsse"
+	"github.com/in-toto/archivista/ent/mapping"
+	"github.com/in-toto/archivista/ent/omnitrail"
 	"github.com/in-toto/archivista/ent/payloaddigest"
+	"github.com/in-toto/archivista/ent/posix"
 	"github.com/in-toto/archivista/ent/signature"
 	"github.com/in-toto/archivista/ent/statement"
 	"github.com/in-toto/archivista/ent/subject"
@@ -86,7 +89,10 @@ func checkColumn(table, column string) error {
 			attestationcollection.Table: attestationcollection.ValidColumn,
 			attestationpolicy.Table:     attestationpolicy.ValidColumn,
 			dsse.Table:                  dsse.ValidColumn,
+			mapping.Table:               mapping.ValidColumn,
+			omnitrail.Table:             omnitrail.ValidColumn,
 			payloaddigest.Table:         payloaddigest.ValidColumn,
+			posix.Table:                 posix.ValidColumn,
 			signature.Table:             signature.ValidColumn,
 			statement.Table:             statement.ValidColumn,
 			subject.Table:               subject.ValidColumn,

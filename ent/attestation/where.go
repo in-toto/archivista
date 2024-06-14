@@ -124,6 +124,29 @@ func TypeContainsFold(v string) predicate.Attestation {
 	return predicate.Attestation(sql.FieldContainsFold(FieldType, v))
 }
 
+// HasOmnitrail applies the HasEdge predicate on the "omnitrail" edge.
+func HasOmnitrail() predicate.Attestation {
+	return predicate.Attestation(func(s *sql.Selector) {
+		step := sqlgraph.NewStep(
+			sqlgraph.From(Table, FieldID),
+			sqlgraph.Edge(sqlgraph.O2O, false, OmnitrailTable, OmnitrailColumn),
+		)
+		sqlgraph.HasNeighbors(s, step)
+	})
+}
+
+// HasOmnitrailWith applies the HasEdge predicate on the "omnitrail" edge with a given conditions (other predicates).
+func HasOmnitrailWith(preds ...predicate.Omnitrail) predicate.Attestation {
+	return predicate.Attestation(func(s *sql.Selector) {
+		step := newOmnitrailStep()
+		sqlgraph.HasNeighborsWith(s, step, func(s *sql.Selector) {
+			for _, p := range preds {
+				p(s)
+			}
+		})
+	})
+}
+
 // HasAttestationCollection applies the HasEdge predicate on the "attestation_collection" edge.
 func HasAttestationCollection() predicate.Attestation {
 	return predicate.Attestation(func(s *sql.Selector) {
