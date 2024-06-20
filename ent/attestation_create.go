@@ -12,6 +12,7 @@ import (
 	"github.com/google/uuid"
 	"github.com/in-toto/archivista/ent/attestation"
 	"github.com/in-toto/archivista/ent/attestationcollection"
+	"github.com/in-toto/archivista/ent/gitattestation"
 )
 
 // AttestationCreate is the builder for creating a Attestation entity.
@@ -50,6 +51,25 @@ func (ac *AttestationCreate) SetAttestationCollectionID(id uuid.UUID) *Attestati
 // SetAttestationCollection sets the "attestation_collection" edge to the AttestationCollection entity.
 func (ac *AttestationCreate) SetAttestationCollection(a *AttestationCollection) *AttestationCreate {
 	return ac.SetAttestationCollectionID(a.ID)
+}
+
+// SetGitAttestationID sets the "git_attestation" edge to the GitAttestation entity by ID.
+func (ac *AttestationCreate) SetGitAttestationID(id uuid.UUID) *AttestationCreate {
+	ac.mutation.SetGitAttestationID(id)
+	return ac
+}
+
+// SetNillableGitAttestationID sets the "git_attestation" edge to the GitAttestation entity by ID if the given value is not nil.
+func (ac *AttestationCreate) SetNillableGitAttestationID(id *uuid.UUID) *AttestationCreate {
+	if id != nil {
+		ac = ac.SetGitAttestationID(*id)
+	}
+	return ac
+}
+
+// SetGitAttestation sets the "git_attestation" edge to the GitAttestation entity.
+func (ac *AttestationCreate) SetGitAttestation(g *GitAttestation) *AttestationCreate {
+	return ac.SetGitAttestationID(g.ID)
 }
 
 // Mutation returns the AttestationMutation object of the builder.
@@ -160,6 +180,22 @@ func (ac *AttestationCreate) createSpec() (*Attestation, *sqlgraph.CreateSpec) {
 			edge.Target.Nodes = append(edge.Target.Nodes, k)
 		}
 		_node.attestation_collection_attestations = &nodes[0]
+		_spec.Edges = append(_spec.Edges, edge)
+	}
+	if nodes := ac.mutation.GitAttestationIDs(); len(nodes) > 0 {
+		edge := &sqlgraph.EdgeSpec{
+			Rel:     sqlgraph.O2O,
+			Inverse: false,
+			Table:   attestation.GitAttestationTable,
+			Columns: []string{attestation.GitAttestationColumn},
+			Bidi:    false,
+			Target: &sqlgraph.EdgeTarget{
+				IDSpec: sqlgraph.NewFieldSpec(gitattestation.FieldID, field.TypeUUID),
+			},
+		}
+		for _, k := range nodes {
+			edge.Target.Nodes = append(edge.Target.Nodes, k)
+		}
 		_spec.Edges = append(_spec.Edges, edge)
 	}
 	return _node, _spec

@@ -14,6 +14,7 @@ import (
 	"github.com/in-toto/archivista/ent/attestationcollection"
 	"github.com/in-toto/archivista/ent/attestationpolicy"
 	"github.com/in-toto/archivista/ent/dsse"
+	"github.com/in-toto/archivista/ent/gitattestation"
 	"github.com/in-toto/archivista/ent/payloaddigest"
 	"github.com/in-toto/archivista/ent/signature"
 	"github.com/in-toto/archivista/ent/statement"
@@ -46,6 +47,11 @@ var dsseImplementors = []string{"Dsse", "Node"}
 
 // IsNode implements the Node interface check for GQLGen.
 func (*Dsse) IsNode() {}
+
+var gitattestationImplementors = []string{"GitAttestation", "Node"}
+
+// IsNode implements the Node interface check for GQLGen.
+func (*GitAttestation) IsNode() {}
 
 var payloaddigestImplementors = []string{"PayloadDigest", "Node"}
 
@@ -167,6 +173,15 @@ func (c *Client) noder(ctx context.Context, table string, id uuid.UUID) (Noder, 
 			Where(dsse.ID(id))
 		if fc := graphql.GetFieldContext(ctx); fc != nil {
 			if err := query.collectField(ctx, true, graphql.GetOperationContext(ctx), fc.Field, nil, dsseImplementors...); err != nil {
+				return nil, err
+			}
+		}
+		return query.Only(ctx)
+	case gitattestation.Table:
+		query := c.GitAttestation.Query().
+			Where(gitattestation.ID(id))
+		if fc := graphql.GetFieldContext(ctx); fc != nil {
+			if err := query.collectField(ctx, true, graphql.GetOperationContext(ctx), fc.Field, nil, gitattestationImplementors...); err != nil {
 				return nil, err
 			}
 		}
@@ -350,6 +365,22 @@ func (c *Client) noders(ctx context.Context, table string, ids []uuid.UUID) ([]N
 		query := c.Dsse.Query().
 			Where(dsse.IDIn(ids...))
 		query, err := query.CollectFields(ctx, dsseImplementors...)
+		if err != nil {
+			return nil, err
+		}
+		nodes, err := query.All(ctx)
+		if err != nil {
+			return nil, err
+		}
+		for _, node := range nodes {
+			for _, noder := range idmap[node.ID] {
+				*noder = node
+			}
+		}
+	case gitattestation.Table:
+		query := c.GitAttestation.Query().
+			Where(gitattestation.IDIn(ids...))
+		query, err := query.CollectFields(ctx, gitattestationImplementors...)
 		if err != nil {
 			return nil, err
 		}

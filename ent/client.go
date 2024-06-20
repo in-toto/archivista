@@ -20,6 +20,7 @@ import (
 	"github.com/in-toto/archivista/ent/attestationcollection"
 	"github.com/in-toto/archivista/ent/attestationpolicy"
 	"github.com/in-toto/archivista/ent/dsse"
+	"github.com/in-toto/archivista/ent/gitattestation"
 	"github.com/in-toto/archivista/ent/payloaddigest"
 	"github.com/in-toto/archivista/ent/signature"
 	"github.com/in-toto/archivista/ent/statement"
@@ -41,6 +42,8 @@ type Client struct {
 	AttestationPolicy *AttestationPolicyClient
 	// Dsse is the client for interacting with the Dsse builders.
 	Dsse *DsseClient
+	// GitAttestation is the client for interacting with the GitAttestation builders.
+	GitAttestation *GitAttestationClient
 	// PayloadDigest is the client for interacting with the PayloadDigest builders.
 	PayloadDigest *PayloadDigestClient
 	// Signature is the client for interacting with the Signature builders.
@@ -68,6 +71,7 @@ func (c *Client) init() {
 	c.AttestationCollection = NewAttestationCollectionClient(c.config)
 	c.AttestationPolicy = NewAttestationPolicyClient(c.config)
 	c.Dsse = NewDsseClient(c.config)
+	c.GitAttestation = NewGitAttestationClient(c.config)
 	c.PayloadDigest = NewPayloadDigestClient(c.config)
 	c.Signature = NewSignatureClient(c.config)
 	c.Statement = NewStatementClient(c.config)
@@ -170,6 +174,7 @@ func (c *Client) Tx(ctx context.Context) (*Tx, error) {
 		AttestationCollection: NewAttestationCollectionClient(cfg),
 		AttestationPolicy:     NewAttestationPolicyClient(cfg),
 		Dsse:                  NewDsseClient(cfg),
+		GitAttestation:        NewGitAttestationClient(cfg),
 		PayloadDigest:         NewPayloadDigestClient(cfg),
 		Signature:             NewSignatureClient(cfg),
 		Statement:             NewStatementClient(cfg),
@@ -199,6 +204,7 @@ func (c *Client) BeginTx(ctx context.Context, opts *sql.TxOptions) (*Tx, error) 
 		AttestationCollection: NewAttestationCollectionClient(cfg),
 		AttestationPolicy:     NewAttestationPolicyClient(cfg),
 		Dsse:                  NewDsseClient(cfg),
+		GitAttestation:        NewGitAttestationClient(cfg),
 		PayloadDigest:         NewPayloadDigestClient(cfg),
 		Signature:             NewSignatureClient(cfg),
 		Statement:             NewStatementClient(cfg),
@@ -235,8 +241,8 @@ func (c *Client) Close() error {
 func (c *Client) Use(hooks ...Hook) {
 	for _, n := range []interface{ Use(...Hook) }{
 		c.Attestation, c.AttestationCollection, c.AttestationPolicy, c.Dsse,
-		c.PayloadDigest, c.Signature, c.Statement, c.Subject, c.SubjectDigest,
-		c.Timestamp,
+		c.GitAttestation, c.PayloadDigest, c.Signature, c.Statement, c.Subject,
+		c.SubjectDigest, c.Timestamp,
 	} {
 		n.Use(hooks...)
 	}
@@ -247,8 +253,8 @@ func (c *Client) Use(hooks ...Hook) {
 func (c *Client) Intercept(interceptors ...Interceptor) {
 	for _, n := range []interface{ Intercept(...Interceptor) }{
 		c.Attestation, c.AttestationCollection, c.AttestationPolicy, c.Dsse,
-		c.PayloadDigest, c.Signature, c.Statement, c.Subject, c.SubjectDigest,
-		c.Timestamp,
+		c.GitAttestation, c.PayloadDigest, c.Signature, c.Statement, c.Subject,
+		c.SubjectDigest, c.Timestamp,
 	} {
 		n.Intercept(interceptors...)
 	}
@@ -265,6 +271,8 @@ func (c *Client) Mutate(ctx context.Context, m Mutation) (Value, error) {
 		return c.AttestationPolicy.mutate(ctx, m)
 	case *DsseMutation:
 		return c.Dsse.mutate(ctx, m)
+	case *GitAttestationMutation:
+		return c.GitAttestation.mutate(ctx, m)
 	case *PayloadDigestMutation:
 		return c.PayloadDigest.mutate(ctx, m)
 	case *SignatureMutation:
@@ -399,6 +407,22 @@ func (c *AttestationClient) QueryAttestationCollection(a *Attestation) *Attestat
 			sqlgraph.From(attestation.Table, attestation.FieldID, id),
 			sqlgraph.To(attestationcollection.Table, attestationcollection.FieldID),
 			sqlgraph.Edge(sqlgraph.M2O, true, attestation.AttestationCollectionTable, attestation.AttestationCollectionColumn),
+		)
+		fromV = sqlgraph.Neighbors(a.driver.Dialect(), step)
+		return fromV, nil
+	}
+	return query
+}
+
+// QueryGitAttestation queries the git_attestation edge of a Attestation.
+func (c *AttestationClient) QueryGitAttestation(a *Attestation) *GitAttestationQuery {
+	query := (&GitAttestationClient{config: c.config}).Query()
+	query.path = func(context.Context) (fromV *sql.Selector, _ error) {
+		id := a.ID
+		step := sqlgraph.NewStep(
+			sqlgraph.From(attestation.Table, attestation.FieldID, id),
+			sqlgraph.To(gitattestation.Table, gitattestation.FieldID),
+			sqlgraph.Edge(sqlgraph.O2O, false, attestation.GitAttestationTable, attestation.GitAttestationColumn),
 		)
 		fromV = sqlgraph.Neighbors(a.driver.Dialect(), step)
 		return fromV, nil
@@ -923,6 +947,155 @@ func (c *DsseClient) mutate(ctx context.Context, m *DsseMutation) (Value, error)
 		return (&DsseDelete{config: c.config, hooks: c.Hooks(), mutation: m}).Exec(ctx)
 	default:
 		return nil, fmt.Errorf("ent: unknown Dsse mutation op: %q", m.Op())
+	}
+}
+
+// GitAttestationClient is a client for the GitAttestation schema.
+type GitAttestationClient struct {
+	config
+}
+
+// NewGitAttestationClient returns a client for the GitAttestation from the given config.
+func NewGitAttestationClient(c config) *GitAttestationClient {
+	return &GitAttestationClient{config: c}
+}
+
+// Use adds a list of mutation hooks to the hooks stack.
+// A call to `Use(f, g, h)` equals to `gitattestation.Hooks(f(g(h())))`.
+func (c *GitAttestationClient) Use(hooks ...Hook) {
+	c.hooks.GitAttestation = append(c.hooks.GitAttestation, hooks...)
+}
+
+// Intercept adds a list of query interceptors to the interceptors stack.
+// A call to `Intercept(f, g, h)` equals to `gitattestation.Intercept(f(g(h())))`.
+func (c *GitAttestationClient) Intercept(interceptors ...Interceptor) {
+	c.inters.GitAttestation = append(c.inters.GitAttestation, interceptors...)
+}
+
+// Create returns a builder for creating a GitAttestation entity.
+func (c *GitAttestationClient) Create() *GitAttestationCreate {
+	mutation := newGitAttestationMutation(c.config, OpCreate)
+	return &GitAttestationCreate{config: c.config, hooks: c.Hooks(), mutation: mutation}
+}
+
+// CreateBulk returns a builder for creating a bulk of GitAttestation entities.
+func (c *GitAttestationClient) CreateBulk(builders ...*GitAttestationCreate) *GitAttestationCreateBulk {
+	return &GitAttestationCreateBulk{config: c.config, builders: builders}
+}
+
+// MapCreateBulk creates a bulk creation builder from the given slice. For each item in the slice, the function creates
+// a builder and applies setFunc on it.
+func (c *GitAttestationClient) MapCreateBulk(slice any, setFunc func(*GitAttestationCreate, int)) *GitAttestationCreateBulk {
+	rv := reflect.ValueOf(slice)
+	if rv.Kind() != reflect.Slice {
+		return &GitAttestationCreateBulk{err: fmt.Errorf("calling to GitAttestationClient.MapCreateBulk with wrong type %T, need slice", slice)}
+	}
+	builders := make([]*GitAttestationCreate, rv.Len())
+	for i := 0; i < rv.Len(); i++ {
+		builders[i] = c.Create()
+		setFunc(builders[i], i)
+	}
+	return &GitAttestationCreateBulk{config: c.config, builders: builders}
+}
+
+// Update returns an update builder for GitAttestation.
+func (c *GitAttestationClient) Update() *GitAttestationUpdate {
+	mutation := newGitAttestationMutation(c.config, OpUpdate)
+	return &GitAttestationUpdate{config: c.config, hooks: c.Hooks(), mutation: mutation}
+}
+
+// UpdateOne returns an update builder for the given entity.
+func (c *GitAttestationClient) UpdateOne(ga *GitAttestation) *GitAttestationUpdateOne {
+	mutation := newGitAttestationMutation(c.config, OpUpdateOne, withGitAttestation(ga))
+	return &GitAttestationUpdateOne{config: c.config, hooks: c.Hooks(), mutation: mutation}
+}
+
+// UpdateOneID returns an update builder for the given id.
+func (c *GitAttestationClient) UpdateOneID(id uuid.UUID) *GitAttestationUpdateOne {
+	mutation := newGitAttestationMutation(c.config, OpUpdateOne, withGitAttestationID(id))
+	return &GitAttestationUpdateOne{config: c.config, hooks: c.Hooks(), mutation: mutation}
+}
+
+// Delete returns a delete builder for GitAttestation.
+func (c *GitAttestationClient) Delete() *GitAttestationDelete {
+	mutation := newGitAttestationMutation(c.config, OpDelete)
+	return &GitAttestationDelete{config: c.config, hooks: c.Hooks(), mutation: mutation}
+}
+
+// DeleteOne returns a builder for deleting the given entity.
+func (c *GitAttestationClient) DeleteOne(ga *GitAttestation) *GitAttestationDeleteOne {
+	return c.DeleteOneID(ga.ID)
+}
+
+// DeleteOneID returns a builder for deleting the given entity by its id.
+func (c *GitAttestationClient) DeleteOneID(id uuid.UUID) *GitAttestationDeleteOne {
+	builder := c.Delete().Where(gitattestation.ID(id))
+	builder.mutation.id = &id
+	builder.mutation.op = OpDeleteOne
+	return &GitAttestationDeleteOne{builder}
+}
+
+// Query returns a query builder for GitAttestation.
+func (c *GitAttestationClient) Query() *GitAttestationQuery {
+	return &GitAttestationQuery{
+		config: c.config,
+		ctx:    &QueryContext{Type: TypeGitAttestation},
+		inters: c.Interceptors(),
+	}
+}
+
+// Get returns a GitAttestation entity by its id.
+func (c *GitAttestationClient) Get(ctx context.Context, id uuid.UUID) (*GitAttestation, error) {
+	return c.Query().Where(gitattestation.ID(id)).Only(ctx)
+}
+
+// GetX is like Get, but panics if an error occurs.
+func (c *GitAttestationClient) GetX(ctx context.Context, id uuid.UUID) *GitAttestation {
+	obj, err := c.Get(ctx, id)
+	if err != nil {
+		panic(err)
+	}
+	return obj
+}
+
+// QueryAttestation queries the attestation edge of a GitAttestation.
+func (c *GitAttestationClient) QueryAttestation(ga *GitAttestation) *AttestationQuery {
+	query := (&AttestationClient{config: c.config}).Query()
+	query.path = func(context.Context) (fromV *sql.Selector, _ error) {
+		id := ga.ID
+		step := sqlgraph.NewStep(
+			sqlgraph.From(gitattestation.Table, gitattestation.FieldID, id),
+			sqlgraph.To(attestation.Table, attestation.FieldID),
+			sqlgraph.Edge(sqlgraph.O2O, true, gitattestation.AttestationTable, gitattestation.AttestationColumn),
+		)
+		fromV = sqlgraph.Neighbors(ga.driver.Dialect(), step)
+		return fromV, nil
+	}
+	return query
+}
+
+// Hooks returns the client hooks.
+func (c *GitAttestationClient) Hooks() []Hook {
+	return c.hooks.GitAttestation
+}
+
+// Interceptors returns the client interceptors.
+func (c *GitAttestationClient) Interceptors() []Interceptor {
+	return c.inters.GitAttestation
+}
+
+func (c *GitAttestationClient) mutate(ctx context.Context, m *GitAttestationMutation) (Value, error) {
+	switch m.Op() {
+	case OpCreate:
+		return (&GitAttestationCreate{config: c.config, hooks: c.Hooks(), mutation: m}).Save(ctx)
+	case OpUpdate:
+		return (&GitAttestationUpdate{config: c.config, hooks: c.Hooks(), mutation: m}).Save(ctx)
+	case OpUpdateOne:
+		return (&GitAttestationUpdateOne{config: c.config, hooks: c.Hooks(), mutation: m}).Save(ctx)
+	case OpDelete, OpDeleteOne:
+		return (&GitAttestationDelete{config: c.config, hooks: c.Hooks(), mutation: m}).Exec(ctx)
+	default:
+		return nil, fmt.Errorf("ent: unknown GitAttestation mutation op: %q", m.Op())
 	}
 }
 
@@ -1903,11 +2076,13 @@ func (c *TimestampClient) mutate(ctx context.Context, m *TimestampMutation) (Val
 // hooks and interceptors per client, for fast access.
 type (
 	hooks struct {
-		Attestation, AttestationCollection, AttestationPolicy, Dsse, PayloadDigest,
-		Signature, Statement, Subject, SubjectDigest, Timestamp []ent.Hook
+		Attestation, AttestationCollection, AttestationPolicy, Dsse, GitAttestation,
+		PayloadDigest, Signature, Statement, Subject, SubjectDigest,
+		Timestamp []ent.Hook
 	}
 	inters struct {
-		Attestation, AttestationCollection, AttestationPolicy, Dsse, PayloadDigest,
-		Signature, Statement, Subject, SubjectDigest, Timestamp []ent.Interceptor
+		Attestation, AttestationCollection, AttestationPolicy, Dsse, GitAttestation,
+		PayloadDigest, Signature, Statement, Subject, SubjectDigest,
+		Timestamp []ent.Interceptor
 	}
 )

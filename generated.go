@@ -52,6 +52,7 @@ type DirectiveRoot struct {
 type ComplexityRoot struct {
 	Attestation struct {
 		AttestationCollection func(childComplexity int) int
+		GitAttestation        func(childComplexity int) int
 		ID                    func(childComplexity int) int
 		Type                  func(childComplexity int) int
 	}
@@ -98,6 +99,26 @@ type ComplexityRoot struct {
 	DsseEdge struct {
 		Cursor func(childComplexity int) int
 		Node   func(childComplexity int) int
+	}
+
+	GitAttestation struct {
+		Attestation    func(childComplexity int) int
+		Author         func(childComplexity int) int
+		AuthorEmail    func(childComplexity int) int
+		CommitDate     func(childComplexity int) int
+		CommitDigest   func(childComplexity int) int
+		CommitHash     func(childComplexity int) int
+		CommitMessage  func(childComplexity int) int
+		CommitType     func(childComplexity int) int
+		CommitterEmail func(childComplexity int) int
+		CommitterName  func(childComplexity int) int
+		ID             func(childComplexity int) int
+		ParentHashes   func(childComplexity int) int
+		Refs           func(childComplexity int) int
+		Remotes        func(childComplexity int) int
+		Signature      func(childComplexity int) int
+		Status         func(childComplexity int) int
+		TreeHash       func(childComplexity int) int
 	}
 
 	PageInfo struct {
@@ -205,6 +226,13 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 		}
 
 		return e.complexity.Attestation.AttestationCollection(childComplexity), true
+
+	case "Attestation.gitAttestation":
+		if e.complexity.Attestation.GitAttestation == nil {
+			break
+		}
+
+		return e.complexity.Attestation.GitAttestation(childComplexity), true
 
 	case "Attestation.id":
 		if e.complexity.Attestation.ID == nil {
@@ -380,6 +408,125 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 		}
 
 		return e.complexity.DsseEdge.Node(childComplexity), true
+
+	case "GitAttestation.attestation":
+		if e.complexity.GitAttestation.Attestation == nil {
+			break
+		}
+
+		return e.complexity.GitAttestation.Attestation(childComplexity), true
+
+	case "GitAttestation.author":
+		if e.complexity.GitAttestation.Author == nil {
+			break
+		}
+
+		return e.complexity.GitAttestation.Author(childComplexity), true
+
+	case "GitAttestation.authorEmail":
+		if e.complexity.GitAttestation.AuthorEmail == nil {
+			break
+		}
+
+		return e.complexity.GitAttestation.AuthorEmail(childComplexity), true
+
+	case "GitAttestation.commitDate":
+		if e.complexity.GitAttestation.CommitDate == nil {
+			break
+		}
+
+		return e.complexity.GitAttestation.CommitDate(childComplexity), true
+
+	case "GitAttestation.commitDigest":
+		if e.complexity.GitAttestation.CommitDigest == nil {
+			break
+		}
+
+		return e.complexity.GitAttestation.CommitDigest(childComplexity), true
+
+	case "GitAttestation.commitHash":
+		if e.complexity.GitAttestation.CommitHash == nil {
+			break
+		}
+
+		return e.complexity.GitAttestation.CommitHash(childComplexity), true
+
+	case "GitAttestation.commitMessage":
+		if e.complexity.GitAttestation.CommitMessage == nil {
+			break
+		}
+
+		return e.complexity.GitAttestation.CommitMessage(childComplexity), true
+
+	case "GitAttestation.commitType":
+		if e.complexity.GitAttestation.CommitType == nil {
+			break
+		}
+
+		return e.complexity.GitAttestation.CommitType(childComplexity), true
+
+	case "GitAttestation.committerEmail":
+		if e.complexity.GitAttestation.CommitterEmail == nil {
+			break
+		}
+
+		return e.complexity.GitAttestation.CommitterEmail(childComplexity), true
+
+	case "GitAttestation.committerName":
+		if e.complexity.GitAttestation.CommitterName == nil {
+			break
+		}
+
+		return e.complexity.GitAttestation.CommitterName(childComplexity), true
+
+	case "GitAttestation.id":
+		if e.complexity.GitAttestation.ID == nil {
+			break
+		}
+
+		return e.complexity.GitAttestation.ID(childComplexity), true
+
+	case "GitAttestation.parentHashes":
+		if e.complexity.GitAttestation.ParentHashes == nil {
+			break
+		}
+
+		return e.complexity.GitAttestation.ParentHashes(childComplexity), true
+
+	case "GitAttestation.refs":
+		if e.complexity.GitAttestation.Refs == nil {
+			break
+		}
+
+		return e.complexity.GitAttestation.Refs(childComplexity), true
+
+	case "GitAttestation.remotes":
+		if e.complexity.GitAttestation.Remotes == nil {
+			break
+		}
+
+		return e.complexity.GitAttestation.Remotes(childComplexity), true
+
+	case "GitAttestation.signature":
+		if e.complexity.GitAttestation.Signature == nil {
+			break
+		}
+
+		return e.complexity.GitAttestation.Signature(childComplexity), true
+
+	case "GitAttestation.status":
+		if e.complexity.GitAttestation.Status == nil {
+			break
+		}
+
+		return e.complexity.GitAttestation.Status(childComplexity), true
+
+	case "GitAttestation.treeHash":
+		if e.complexity.GitAttestation.TreeHash == nil {
+			break
+		}
+
+		return e.complexity.GitAttestation.TreeHash(childComplexity), true
 
 	case "PageInfo.endCursor":
 		if e.complexity.PageInfo.EndCursor == nil {
@@ -710,6 +857,7 @@ func (e *executableSchema) Exec(ctx context.Context) graphql.ResponseHandler {
 		ec.unmarshalInputAttestationPolicyWhereInput,
 		ec.unmarshalInputAttestationWhereInput,
 		ec.unmarshalInputDsseWhereInput,
+		ec.unmarshalInputGitAttestationWhereInput,
 		ec.unmarshalInputPayloadDigestWhereInput,
 		ec.unmarshalInputSignatureWhereInput,
 		ec.unmarshalInputStatementWhereInput,
@@ -1247,6 +1395,83 @@ func (ec *executionContext) fieldContext_Attestation_attestationCollection(_ con
 	return fc, nil
 }
 
+func (ec *executionContext) _Attestation_gitAttestation(ctx context.Context, field graphql.CollectedField, obj *ent.Attestation) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_Attestation_gitAttestation(ctx, field)
+	if err != nil {
+		return graphql.Null
+	}
+	ctx = graphql.WithFieldContext(ctx, fc)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.GitAttestation(ctx)
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		return graphql.Null
+	}
+	res := resTmp.(*ent.GitAttestation)
+	fc.Result = res
+	return ec.marshalOGitAttestation2ᚖgithubᚗcomᚋinᚑtotoᚋarchivistaᚋentᚐGitAttestation(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) fieldContext_Attestation_gitAttestation(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "Attestation",
+		Field:      field,
+		IsMethod:   true,
+		IsResolver: false,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			switch field.Name {
+			case "id":
+				return ec.fieldContext_GitAttestation_id(ctx, field)
+			case "commitHash":
+				return ec.fieldContext_GitAttestation_commitHash(ctx, field)
+			case "author":
+				return ec.fieldContext_GitAttestation_author(ctx, field)
+			case "authorEmail":
+				return ec.fieldContext_GitAttestation_authorEmail(ctx, field)
+			case "committerName":
+				return ec.fieldContext_GitAttestation_committerName(ctx, field)
+			case "committerEmail":
+				return ec.fieldContext_GitAttestation_committerEmail(ctx, field)
+			case "commitDate":
+				return ec.fieldContext_GitAttestation_commitDate(ctx, field)
+			case "commitMessage":
+				return ec.fieldContext_GitAttestation_commitMessage(ctx, field)
+			case "status":
+				return ec.fieldContext_GitAttestation_status(ctx, field)
+			case "commitType":
+				return ec.fieldContext_GitAttestation_commitType(ctx, field)
+			case "commitDigest":
+				return ec.fieldContext_GitAttestation_commitDigest(ctx, field)
+			case "signature":
+				return ec.fieldContext_GitAttestation_signature(ctx, field)
+			case "parentHashes":
+				return ec.fieldContext_GitAttestation_parentHashes(ctx, field)
+			case "treeHash":
+				return ec.fieldContext_GitAttestation_treeHash(ctx, field)
+			case "refs":
+				return ec.fieldContext_GitAttestation_refs(ctx, field)
+			case "remotes":
+				return ec.fieldContext_GitAttestation_remotes(ctx, field)
+			case "attestation":
+				return ec.fieldContext_GitAttestation_attestation(ctx, field)
+			}
+			return nil, fmt.Errorf("no field named %q was found under type GitAttestation", field.Name)
+		},
+	}
+	return fc, nil
+}
+
 func (ec *executionContext) _AttestationCollection_id(ctx context.Context, field graphql.CollectedField, obj *ent.AttestationCollection) (ret graphql.Marshaler) {
 	fc, err := ec.fieldContext_AttestationCollection_id(ctx, field)
 	if err != nil {
@@ -1377,6 +1602,8 @@ func (ec *executionContext) fieldContext_AttestationCollection_attestations(_ co
 				return ec.fieldContext_Attestation_type(ctx, field)
 			case "attestationCollection":
 				return ec.fieldContext_Attestation_attestationCollection(ctx, field)
+			case "gitAttestation":
+				return ec.fieldContext_Attestation_gitAttestation(ctx, field)
 			}
 			return nil, fmt.Errorf("no field named %q was found under type Attestation", field.Name)
 		},
@@ -2353,6 +2580,764 @@ func (ec *executionContext) fieldContext_DsseEdge_cursor(_ context.Context, fiel
 		IsResolver: false,
 		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
 			return nil, errors.New("field of type Cursor does not have child fields")
+		},
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _GitAttestation_id(ctx context.Context, field graphql.CollectedField, obj *ent.GitAttestation) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_GitAttestation_id(ctx, field)
+	if err != nil {
+		return graphql.Null
+	}
+	ctx = graphql.WithFieldContext(ctx, fc)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.ID, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.(uuid.UUID)
+	fc.Result = res
+	return ec.marshalNID2githubᚗcomᚋgoogleᚋuuidᚐUUID(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) fieldContext_GitAttestation_id(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "GitAttestation",
+		Field:      field,
+		IsMethod:   false,
+		IsResolver: false,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return nil, errors.New("field of type ID does not have child fields")
+		},
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _GitAttestation_commitHash(ctx context.Context, field graphql.CollectedField, obj *ent.GitAttestation) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_GitAttestation_commitHash(ctx, field)
+	if err != nil {
+		return graphql.Null
+	}
+	ctx = graphql.WithFieldContext(ctx, fc)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.CommitHash, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.(string)
+	fc.Result = res
+	return ec.marshalNString2string(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) fieldContext_GitAttestation_commitHash(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "GitAttestation",
+		Field:      field,
+		IsMethod:   false,
+		IsResolver: false,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return nil, errors.New("field of type String does not have child fields")
+		},
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _GitAttestation_author(ctx context.Context, field graphql.CollectedField, obj *ent.GitAttestation) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_GitAttestation_author(ctx, field)
+	if err != nil {
+		return graphql.Null
+	}
+	ctx = graphql.WithFieldContext(ctx, fc)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.Author, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.(string)
+	fc.Result = res
+	return ec.marshalNString2string(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) fieldContext_GitAttestation_author(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "GitAttestation",
+		Field:      field,
+		IsMethod:   false,
+		IsResolver: false,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return nil, errors.New("field of type String does not have child fields")
+		},
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _GitAttestation_authorEmail(ctx context.Context, field graphql.CollectedField, obj *ent.GitAttestation) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_GitAttestation_authorEmail(ctx, field)
+	if err != nil {
+		return graphql.Null
+	}
+	ctx = graphql.WithFieldContext(ctx, fc)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.AuthorEmail, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.(string)
+	fc.Result = res
+	return ec.marshalNString2string(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) fieldContext_GitAttestation_authorEmail(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "GitAttestation",
+		Field:      field,
+		IsMethod:   false,
+		IsResolver: false,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return nil, errors.New("field of type String does not have child fields")
+		},
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _GitAttestation_committerName(ctx context.Context, field graphql.CollectedField, obj *ent.GitAttestation) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_GitAttestation_committerName(ctx, field)
+	if err != nil {
+		return graphql.Null
+	}
+	ctx = graphql.WithFieldContext(ctx, fc)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.CommitterName, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.(string)
+	fc.Result = res
+	return ec.marshalNString2string(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) fieldContext_GitAttestation_committerName(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "GitAttestation",
+		Field:      field,
+		IsMethod:   false,
+		IsResolver: false,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return nil, errors.New("field of type String does not have child fields")
+		},
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _GitAttestation_committerEmail(ctx context.Context, field graphql.CollectedField, obj *ent.GitAttestation) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_GitAttestation_committerEmail(ctx, field)
+	if err != nil {
+		return graphql.Null
+	}
+	ctx = graphql.WithFieldContext(ctx, fc)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.CommitterEmail, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.(string)
+	fc.Result = res
+	return ec.marshalNString2string(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) fieldContext_GitAttestation_committerEmail(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "GitAttestation",
+		Field:      field,
+		IsMethod:   false,
+		IsResolver: false,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return nil, errors.New("field of type String does not have child fields")
+		},
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _GitAttestation_commitDate(ctx context.Context, field graphql.CollectedField, obj *ent.GitAttestation) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_GitAttestation_commitDate(ctx, field)
+	if err != nil {
+		return graphql.Null
+	}
+	ctx = graphql.WithFieldContext(ctx, fc)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.CommitDate, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.(string)
+	fc.Result = res
+	return ec.marshalNString2string(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) fieldContext_GitAttestation_commitDate(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "GitAttestation",
+		Field:      field,
+		IsMethod:   false,
+		IsResolver: false,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return nil, errors.New("field of type String does not have child fields")
+		},
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _GitAttestation_commitMessage(ctx context.Context, field graphql.CollectedField, obj *ent.GitAttestation) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_GitAttestation_commitMessage(ctx, field)
+	if err != nil {
+		return graphql.Null
+	}
+	ctx = graphql.WithFieldContext(ctx, fc)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.CommitMessage, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.(string)
+	fc.Result = res
+	return ec.marshalNString2string(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) fieldContext_GitAttestation_commitMessage(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "GitAttestation",
+		Field:      field,
+		IsMethod:   false,
+		IsResolver: false,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return nil, errors.New("field of type String does not have child fields")
+		},
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _GitAttestation_status(ctx context.Context, field graphql.CollectedField, obj *ent.GitAttestation) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_GitAttestation_status(ctx, field)
+	if err != nil {
+		return graphql.Null
+	}
+	ctx = graphql.WithFieldContext(ctx, fc)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.Status, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.([]string)
+	fc.Result = res
+	return ec.marshalNString2ᚕstringᚄ(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) fieldContext_GitAttestation_status(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "GitAttestation",
+		Field:      field,
+		IsMethod:   false,
+		IsResolver: false,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return nil, errors.New("field of type String does not have child fields")
+		},
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _GitAttestation_commitType(ctx context.Context, field graphql.CollectedField, obj *ent.GitAttestation) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_GitAttestation_commitType(ctx, field)
+	if err != nil {
+		return graphql.Null
+	}
+	ctx = graphql.WithFieldContext(ctx, fc)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.CommitType, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.(string)
+	fc.Result = res
+	return ec.marshalNString2string(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) fieldContext_GitAttestation_commitType(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "GitAttestation",
+		Field:      field,
+		IsMethod:   false,
+		IsResolver: false,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return nil, errors.New("field of type String does not have child fields")
+		},
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _GitAttestation_commitDigest(ctx context.Context, field graphql.CollectedField, obj *ent.GitAttestation) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_GitAttestation_commitDigest(ctx, field)
+	if err != nil {
+		return graphql.Null
+	}
+	ctx = graphql.WithFieldContext(ctx, fc)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.CommitDigest, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.(string)
+	fc.Result = res
+	return ec.marshalNString2string(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) fieldContext_GitAttestation_commitDigest(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "GitAttestation",
+		Field:      field,
+		IsMethod:   false,
+		IsResolver: false,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return nil, errors.New("field of type String does not have child fields")
+		},
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _GitAttestation_signature(ctx context.Context, field graphql.CollectedField, obj *ent.GitAttestation) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_GitAttestation_signature(ctx, field)
+	if err != nil {
+		return graphql.Null
+	}
+	ctx = graphql.WithFieldContext(ctx, fc)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.Signature, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.(string)
+	fc.Result = res
+	return ec.marshalNString2string(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) fieldContext_GitAttestation_signature(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "GitAttestation",
+		Field:      field,
+		IsMethod:   false,
+		IsResolver: false,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return nil, errors.New("field of type String does not have child fields")
+		},
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _GitAttestation_parentHashes(ctx context.Context, field graphql.CollectedField, obj *ent.GitAttestation) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_GitAttestation_parentHashes(ctx, field)
+	if err != nil {
+		return graphql.Null
+	}
+	ctx = graphql.WithFieldContext(ctx, fc)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.ParentHashes, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.([]string)
+	fc.Result = res
+	return ec.marshalNString2ᚕstringᚄ(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) fieldContext_GitAttestation_parentHashes(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "GitAttestation",
+		Field:      field,
+		IsMethod:   false,
+		IsResolver: false,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return nil, errors.New("field of type String does not have child fields")
+		},
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _GitAttestation_treeHash(ctx context.Context, field graphql.CollectedField, obj *ent.GitAttestation) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_GitAttestation_treeHash(ctx, field)
+	if err != nil {
+		return graphql.Null
+	}
+	ctx = graphql.WithFieldContext(ctx, fc)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.TreeHash, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.(string)
+	fc.Result = res
+	return ec.marshalNString2string(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) fieldContext_GitAttestation_treeHash(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "GitAttestation",
+		Field:      field,
+		IsMethod:   false,
+		IsResolver: false,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return nil, errors.New("field of type String does not have child fields")
+		},
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _GitAttestation_refs(ctx context.Context, field graphql.CollectedField, obj *ent.GitAttestation) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_GitAttestation_refs(ctx, field)
+	if err != nil {
+		return graphql.Null
+	}
+	ctx = graphql.WithFieldContext(ctx, fc)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.Refs, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.([]string)
+	fc.Result = res
+	return ec.marshalNString2ᚕstringᚄ(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) fieldContext_GitAttestation_refs(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "GitAttestation",
+		Field:      field,
+		IsMethod:   false,
+		IsResolver: false,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return nil, errors.New("field of type String does not have child fields")
+		},
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _GitAttestation_remotes(ctx context.Context, field graphql.CollectedField, obj *ent.GitAttestation) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_GitAttestation_remotes(ctx, field)
+	if err != nil {
+		return graphql.Null
+	}
+	ctx = graphql.WithFieldContext(ctx, fc)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.Remotes, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.([]string)
+	fc.Result = res
+	return ec.marshalNString2ᚕstringᚄ(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) fieldContext_GitAttestation_remotes(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "GitAttestation",
+		Field:      field,
+		IsMethod:   false,
+		IsResolver: false,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return nil, errors.New("field of type String does not have child fields")
+		},
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _GitAttestation_attestation(ctx context.Context, field graphql.CollectedField, obj *ent.GitAttestation) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_GitAttestation_attestation(ctx, field)
+	if err != nil {
+		return graphql.Null
+	}
+	ctx = graphql.WithFieldContext(ctx, fc)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.Attestation(ctx)
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.(*ent.Attestation)
+	fc.Result = res
+	return ec.marshalNAttestation2ᚖgithubᚗcomᚋinᚑtotoᚋarchivistaᚋentᚐAttestation(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) fieldContext_GitAttestation_attestation(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "GitAttestation",
+		Field:      field,
+		IsMethod:   true,
+		IsResolver: false,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			switch field.Name {
+			case "id":
+				return ec.fieldContext_Attestation_id(ctx, field)
+			case "type":
+				return ec.fieldContext_Attestation_type(ctx, field)
+			case "attestationCollection":
+				return ec.fieldContext_Attestation_attestationCollection(ctx, field)
+			case "gitAttestation":
+				return ec.fieldContext_Attestation_gitAttestation(ctx, field)
+			}
+			return nil, fmt.Errorf("no field named %q was found under type Attestation", field.Name)
 		},
 	}
 	return fc, nil
@@ -6684,7 +7669,7 @@ func (ec *executionContext) unmarshalInputAttestationWhereInput(ctx context.Cont
 		asMap[k] = v
 	}
 
-	fieldsInOrder := [...]string{"not", "and", "or", "id", "idNEQ", "idIn", "idNotIn", "idGT", "idGTE", "idLT", "idLTE", "type", "typeNEQ", "typeIn", "typeNotIn", "typeGT", "typeGTE", "typeLT", "typeLTE", "typeContains", "typeHasPrefix", "typeHasSuffix", "typeEqualFold", "typeContainsFold", "hasAttestationCollection", "hasAttestationCollectionWith"}
+	fieldsInOrder := [...]string{"not", "and", "or", "id", "idNEQ", "idIn", "idNotIn", "idGT", "idGTE", "idLT", "idLTE", "type", "typeNEQ", "typeIn", "typeNotIn", "typeGT", "typeGTE", "typeLT", "typeLTE", "typeContains", "typeHasPrefix", "typeHasSuffix", "typeEqualFold", "typeContainsFold", "hasAttestationCollection", "hasAttestationCollectionWith", "hasGitAttestation", "hasGitAttestationWith"}
 	for _, k := range fieldsInOrder {
 		v, ok := asMap[k]
 		if !ok {
@@ -6873,6 +7858,20 @@ func (ec *executionContext) unmarshalInputAttestationWhereInput(ctx context.Cont
 				return it, err
 			}
 			it.HasAttestationCollectionWith = data
+		case "hasGitAttestation":
+			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("hasGitAttestation"))
+			data, err := ec.unmarshalOBoolean2ᚖbool(ctx, v)
+			if err != nil {
+				return it, err
+			}
+			it.HasGitAttestation = data
+		case "hasGitAttestationWith":
+			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("hasGitAttestationWith"))
+			data, err := ec.unmarshalOGitAttestationWhereInput2ᚕᚖgithubᚗcomᚋinᚑtotoᚋarchivistaᚋentᚐGitAttestationWhereInputᚄ(ctx, v)
+			if err != nil {
+				return it, err
+			}
+			it.HasGitAttestationWith = data
 		}
 	}
 
@@ -7194,6 +8193,1118 @@ func (ec *executionContext) unmarshalInputDsseWhereInput(ctx context.Context, ob
 				return it, err
 			}
 			it.HasPayloadDigestsWith = data
+		}
+	}
+
+	return it, nil
+}
+
+func (ec *executionContext) unmarshalInputGitAttestationWhereInput(ctx context.Context, obj interface{}) (ent.GitAttestationWhereInput, error) {
+	var it ent.GitAttestationWhereInput
+	asMap := map[string]interface{}{}
+	for k, v := range obj.(map[string]interface{}) {
+		asMap[k] = v
+	}
+
+	fieldsInOrder := [...]string{"not", "and", "or", "id", "idNEQ", "idIn", "idNotIn", "idGT", "idGTE", "idLT", "idLTE", "commitHash", "commitHashNEQ", "commitHashIn", "commitHashNotIn", "commitHashGT", "commitHashGTE", "commitHashLT", "commitHashLTE", "commitHashContains", "commitHashHasPrefix", "commitHashHasSuffix", "commitHashEqualFold", "commitHashContainsFold", "author", "authorNEQ", "authorIn", "authorNotIn", "authorGT", "authorGTE", "authorLT", "authorLTE", "authorContains", "authorHasPrefix", "authorHasSuffix", "authorEqualFold", "authorContainsFold", "authorEmail", "authorEmailNEQ", "authorEmailIn", "authorEmailNotIn", "authorEmailGT", "authorEmailGTE", "authorEmailLT", "authorEmailLTE", "authorEmailContains", "authorEmailHasPrefix", "authorEmailHasSuffix", "authorEmailEqualFold", "authorEmailContainsFold", "committerName", "committerNameNEQ", "committerNameIn", "committerNameNotIn", "committerNameGT", "committerNameGTE", "committerNameLT", "committerNameLTE", "committerNameContains", "committerNameHasPrefix", "committerNameHasSuffix", "committerNameEqualFold", "committerNameContainsFold", "committerEmail", "committerEmailNEQ", "committerEmailIn", "committerEmailNotIn", "committerEmailGT", "committerEmailGTE", "committerEmailLT", "committerEmailLTE", "committerEmailContains", "committerEmailHasPrefix", "committerEmailHasSuffix", "committerEmailEqualFold", "committerEmailContainsFold", "commitDate", "commitDateNEQ", "commitDateIn", "commitDateNotIn", "commitDateGT", "commitDateGTE", "commitDateLT", "commitDateLTE", "commitDateContains", "commitDateHasPrefix", "commitDateHasSuffix", "commitDateEqualFold", "commitDateContainsFold", "commitMessage", "commitMessageNEQ", "commitMessageIn", "commitMessageNotIn", "commitMessageGT", "commitMessageGTE", "commitMessageLT", "commitMessageLTE", "commitMessageContains", "commitMessageHasPrefix", "commitMessageHasSuffix", "commitMessageEqualFold", "commitMessageContainsFold", "commitType", "commitTypeNEQ", "commitTypeIn", "commitTypeNotIn", "commitTypeGT", "commitTypeGTE", "commitTypeLT", "commitTypeLTE", "commitTypeContains", "commitTypeHasPrefix", "commitTypeHasSuffix", "commitTypeEqualFold", "commitTypeContainsFold", "commitDigest", "commitDigestNEQ", "commitDigestIn", "commitDigestNotIn", "commitDigestGT", "commitDigestGTE", "commitDigestLT", "commitDigestLTE", "commitDigestContains", "commitDigestHasPrefix", "commitDigestHasSuffix", "commitDigestEqualFold", "commitDigestContainsFold", "signature", "signatureNEQ", "signatureIn", "signatureNotIn", "signatureGT", "signatureGTE", "signatureLT", "signatureLTE", "signatureContains", "signatureHasPrefix", "signatureHasSuffix", "signatureEqualFold", "signatureContainsFold", "treeHash", "treeHashNEQ", "treeHashIn", "treeHashNotIn", "treeHashGT", "treeHashGTE", "treeHashLT", "treeHashLTE", "treeHashContains", "treeHashHasPrefix", "treeHashHasSuffix", "treeHashEqualFold", "treeHashContainsFold", "hasAttestation", "hasAttestationWith"}
+	for _, k := range fieldsInOrder {
+		v, ok := asMap[k]
+		if !ok {
+			continue
+		}
+		switch k {
+		case "not":
+			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("not"))
+			data, err := ec.unmarshalOGitAttestationWhereInput2ᚖgithubᚗcomᚋinᚑtotoᚋarchivistaᚋentᚐGitAttestationWhereInput(ctx, v)
+			if err != nil {
+				return it, err
+			}
+			it.Not = data
+		case "and":
+			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("and"))
+			data, err := ec.unmarshalOGitAttestationWhereInput2ᚕᚖgithubᚗcomᚋinᚑtotoᚋarchivistaᚋentᚐGitAttestationWhereInputᚄ(ctx, v)
+			if err != nil {
+				return it, err
+			}
+			it.And = data
+		case "or":
+			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("or"))
+			data, err := ec.unmarshalOGitAttestationWhereInput2ᚕᚖgithubᚗcomᚋinᚑtotoᚋarchivistaᚋentᚐGitAttestationWhereInputᚄ(ctx, v)
+			if err != nil {
+				return it, err
+			}
+			it.Or = data
+		case "id":
+			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("id"))
+			data, err := ec.unmarshalOID2ᚖgithubᚗcomᚋgoogleᚋuuidᚐUUID(ctx, v)
+			if err != nil {
+				return it, err
+			}
+			it.ID = data
+		case "idNEQ":
+			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("idNEQ"))
+			data, err := ec.unmarshalOID2ᚖgithubᚗcomᚋgoogleᚋuuidᚐUUID(ctx, v)
+			if err != nil {
+				return it, err
+			}
+			it.IDNEQ = data
+		case "idIn":
+			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("idIn"))
+			data, err := ec.unmarshalOID2ᚕgithubᚗcomᚋgoogleᚋuuidᚐUUIDᚄ(ctx, v)
+			if err != nil {
+				return it, err
+			}
+			it.IDIn = data
+		case "idNotIn":
+			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("idNotIn"))
+			data, err := ec.unmarshalOID2ᚕgithubᚗcomᚋgoogleᚋuuidᚐUUIDᚄ(ctx, v)
+			if err != nil {
+				return it, err
+			}
+			it.IDNotIn = data
+		case "idGT":
+			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("idGT"))
+			data, err := ec.unmarshalOID2ᚖgithubᚗcomᚋgoogleᚋuuidᚐUUID(ctx, v)
+			if err != nil {
+				return it, err
+			}
+			it.IDGT = data
+		case "idGTE":
+			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("idGTE"))
+			data, err := ec.unmarshalOID2ᚖgithubᚗcomᚋgoogleᚋuuidᚐUUID(ctx, v)
+			if err != nil {
+				return it, err
+			}
+			it.IDGTE = data
+		case "idLT":
+			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("idLT"))
+			data, err := ec.unmarshalOID2ᚖgithubᚗcomᚋgoogleᚋuuidᚐUUID(ctx, v)
+			if err != nil {
+				return it, err
+			}
+			it.IDLT = data
+		case "idLTE":
+			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("idLTE"))
+			data, err := ec.unmarshalOID2ᚖgithubᚗcomᚋgoogleᚋuuidᚐUUID(ctx, v)
+			if err != nil {
+				return it, err
+			}
+			it.IDLTE = data
+		case "commitHash":
+			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("commitHash"))
+			data, err := ec.unmarshalOString2ᚖstring(ctx, v)
+			if err != nil {
+				return it, err
+			}
+			it.CommitHash = data
+		case "commitHashNEQ":
+			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("commitHashNEQ"))
+			data, err := ec.unmarshalOString2ᚖstring(ctx, v)
+			if err != nil {
+				return it, err
+			}
+			it.CommitHashNEQ = data
+		case "commitHashIn":
+			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("commitHashIn"))
+			data, err := ec.unmarshalOString2ᚕstringᚄ(ctx, v)
+			if err != nil {
+				return it, err
+			}
+			it.CommitHashIn = data
+		case "commitHashNotIn":
+			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("commitHashNotIn"))
+			data, err := ec.unmarshalOString2ᚕstringᚄ(ctx, v)
+			if err != nil {
+				return it, err
+			}
+			it.CommitHashNotIn = data
+		case "commitHashGT":
+			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("commitHashGT"))
+			data, err := ec.unmarshalOString2ᚖstring(ctx, v)
+			if err != nil {
+				return it, err
+			}
+			it.CommitHashGT = data
+		case "commitHashGTE":
+			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("commitHashGTE"))
+			data, err := ec.unmarshalOString2ᚖstring(ctx, v)
+			if err != nil {
+				return it, err
+			}
+			it.CommitHashGTE = data
+		case "commitHashLT":
+			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("commitHashLT"))
+			data, err := ec.unmarshalOString2ᚖstring(ctx, v)
+			if err != nil {
+				return it, err
+			}
+			it.CommitHashLT = data
+		case "commitHashLTE":
+			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("commitHashLTE"))
+			data, err := ec.unmarshalOString2ᚖstring(ctx, v)
+			if err != nil {
+				return it, err
+			}
+			it.CommitHashLTE = data
+		case "commitHashContains":
+			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("commitHashContains"))
+			data, err := ec.unmarshalOString2ᚖstring(ctx, v)
+			if err != nil {
+				return it, err
+			}
+			it.CommitHashContains = data
+		case "commitHashHasPrefix":
+			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("commitHashHasPrefix"))
+			data, err := ec.unmarshalOString2ᚖstring(ctx, v)
+			if err != nil {
+				return it, err
+			}
+			it.CommitHashHasPrefix = data
+		case "commitHashHasSuffix":
+			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("commitHashHasSuffix"))
+			data, err := ec.unmarshalOString2ᚖstring(ctx, v)
+			if err != nil {
+				return it, err
+			}
+			it.CommitHashHasSuffix = data
+		case "commitHashEqualFold":
+			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("commitHashEqualFold"))
+			data, err := ec.unmarshalOString2ᚖstring(ctx, v)
+			if err != nil {
+				return it, err
+			}
+			it.CommitHashEqualFold = data
+		case "commitHashContainsFold":
+			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("commitHashContainsFold"))
+			data, err := ec.unmarshalOString2ᚖstring(ctx, v)
+			if err != nil {
+				return it, err
+			}
+			it.CommitHashContainsFold = data
+		case "author":
+			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("author"))
+			data, err := ec.unmarshalOString2ᚖstring(ctx, v)
+			if err != nil {
+				return it, err
+			}
+			it.Author = data
+		case "authorNEQ":
+			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("authorNEQ"))
+			data, err := ec.unmarshalOString2ᚖstring(ctx, v)
+			if err != nil {
+				return it, err
+			}
+			it.AuthorNEQ = data
+		case "authorIn":
+			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("authorIn"))
+			data, err := ec.unmarshalOString2ᚕstringᚄ(ctx, v)
+			if err != nil {
+				return it, err
+			}
+			it.AuthorIn = data
+		case "authorNotIn":
+			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("authorNotIn"))
+			data, err := ec.unmarshalOString2ᚕstringᚄ(ctx, v)
+			if err != nil {
+				return it, err
+			}
+			it.AuthorNotIn = data
+		case "authorGT":
+			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("authorGT"))
+			data, err := ec.unmarshalOString2ᚖstring(ctx, v)
+			if err != nil {
+				return it, err
+			}
+			it.AuthorGT = data
+		case "authorGTE":
+			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("authorGTE"))
+			data, err := ec.unmarshalOString2ᚖstring(ctx, v)
+			if err != nil {
+				return it, err
+			}
+			it.AuthorGTE = data
+		case "authorLT":
+			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("authorLT"))
+			data, err := ec.unmarshalOString2ᚖstring(ctx, v)
+			if err != nil {
+				return it, err
+			}
+			it.AuthorLT = data
+		case "authorLTE":
+			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("authorLTE"))
+			data, err := ec.unmarshalOString2ᚖstring(ctx, v)
+			if err != nil {
+				return it, err
+			}
+			it.AuthorLTE = data
+		case "authorContains":
+			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("authorContains"))
+			data, err := ec.unmarshalOString2ᚖstring(ctx, v)
+			if err != nil {
+				return it, err
+			}
+			it.AuthorContains = data
+		case "authorHasPrefix":
+			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("authorHasPrefix"))
+			data, err := ec.unmarshalOString2ᚖstring(ctx, v)
+			if err != nil {
+				return it, err
+			}
+			it.AuthorHasPrefix = data
+		case "authorHasSuffix":
+			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("authorHasSuffix"))
+			data, err := ec.unmarshalOString2ᚖstring(ctx, v)
+			if err != nil {
+				return it, err
+			}
+			it.AuthorHasSuffix = data
+		case "authorEqualFold":
+			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("authorEqualFold"))
+			data, err := ec.unmarshalOString2ᚖstring(ctx, v)
+			if err != nil {
+				return it, err
+			}
+			it.AuthorEqualFold = data
+		case "authorContainsFold":
+			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("authorContainsFold"))
+			data, err := ec.unmarshalOString2ᚖstring(ctx, v)
+			if err != nil {
+				return it, err
+			}
+			it.AuthorContainsFold = data
+		case "authorEmail":
+			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("authorEmail"))
+			data, err := ec.unmarshalOString2ᚖstring(ctx, v)
+			if err != nil {
+				return it, err
+			}
+			it.AuthorEmail = data
+		case "authorEmailNEQ":
+			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("authorEmailNEQ"))
+			data, err := ec.unmarshalOString2ᚖstring(ctx, v)
+			if err != nil {
+				return it, err
+			}
+			it.AuthorEmailNEQ = data
+		case "authorEmailIn":
+			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("authorEmailIn"))
+			data, err := ec.unmarshalOString2ᚕstringᚄ(ctx, v)
+			if err != nil {
+				return it, err
+			}
+			it.AuthorEmailIn = data
+		case "authorEmailNotIn":
+			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("authorEmailNotIn"))
+			data, err := ec.unmarshalOString2ᚕstringᚄ(ctx, v)
+			if err != nil {
+				return it, err
+			}
+			it.AuthorEmailNotIn = data
+		case "authorEmailGT":
+			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("authorEmailGT"))
+			data, err := ec.unmarshalOString2ᚖstring(ctx, v)
+			if err != nil {
+				return it, err
+			}
+			it.AuthorEmailGT = data
+		case "authorEmailGTE":
+			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("authorEmailGTE"))
+			data, err := ec.unmarshalOString2ᚖstring(ctx, v)
+			if err != nil {
+				return it, err
+			}
+			it.AuthorEmailGTE = data
+		case "authorEmailLT":
+			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("authorEmailLT"))
+			data, err := ec.unmarshalOString2ᚖstring(ctx, v)
+			if err != nil {
+				return it, err
+			}
+			it.AuthorEmailLT = data
+		case "authorEmailLTE":
+			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("authorEmailLTE"))
+			data, err := ec.unmarshalOString2ᚖstring(ctx, v)
+			if err != nil {
+				return it, err
+			}
+			it.AuthorEmailLTE = data
+		case "authorEmailContains":
+			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("authorEmailContains"))
+			data, err := ec.unmarshalOString2ᚖstring(ctx, v)
+			if err != nil {
+				return it, err
+			}
+			it.AuthorEmailContains = data
+		case "authorEmailHasPrefix":
+			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("authorEmailHasPrefix"))
+			data, err := ec.unmarshalOString2ᚖstring(ctx, v)
+			if err != nil {
+				return it, err
+			}
+			it.AuthorEmailHasPrefix = data
+		case "authorEmailHasSuffix":
+			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("authorEmailHasSuffix"))
+			data, err := ec.unmarshalOString2ᚖstring(ctx, v)
+			if err != nil {
+				return it, err
+			}
+			it.AuthorEmailHasSuffix = data
+		case "authorEmailEqualFold":
+			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("authorEmailEqualFold"))
+			data, err := ec.unmarshalOString2ᚖstring(ctx, v)
+			if err != nil {
+				return it, err
+			}
+			it.AuthorEmailEqualFold = data
+		case "authorEmailContainsFold":
+			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("authorEmailContainsFold"))
+			data, err := ec.unmarshalOString2ᚖstring(ctx, v)
+			if err != nil {
+				return it, err
+			}
+			it.AuthorEmailContainsFold = data
+		case "committerName":
+			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("committerName"))
+			data, err := ec.unmarshalOString2ᚖstring(ctx, v)
+			if err != nil {
+				return it, err
+			}
+			it.CommitterName = data
+		case "committerNameNEQ":
+			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("committerNameNEQ"))
+			data, err := ec.unmarshalOString2ᚖstring(ctx, v)
+			if err != nil {
+				return it, err
+			}
+			it.CommitterNameNEQ = data
+		case "committerNameIn":
+			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("committerNameIn"))
+			data, err := ec.unmarshalOString2ᚕstringᚄ(ctx, v)
+			if err != nil {
+				return it, err
+			}
+			it.CommitterNameIn = data
+		case "committerNameNotIn":
+			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("committerNameNotIn"))
+			data, err := ec.unmarshalOString2ᚕstringᚄ(ctx, v)
+			if err != nil {
+				return it, err
+			}
+			it.CommitterNameNotIn = data
+		case "committerNameGT":
+			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("committerNameGT"))
+			data, err := ec.unmarshalOString2ᚖstring(ctx, v)
+			if err != nil {
+				return it, err
+			}
+			it.CommitterNameGT = data
+		case "committerNameGTE":
+			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("committerNameGTE"))
+			data, err := ec.unmarshalOString2ᚖstring(ctx, v)
+			if err != nil {
+				return it, err
+			}
+			it.CommitterNameGTE = data
+		case "committerNameLT":
+			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("committerNameLT"))
+			data, err := ec.unmarshalOString2ᚖstring(ctx, v)
+			if err != nil {
+				return it, err
+			}
+			it.CommitterNameLT = data
+		case "committerNameLTE":
+			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("committerNameLTE"))
+			data, err := ec.unmarshalOString2ᚖstring(ctx, v)
+			if err != nil {
+				return it, err
+			}
+			it.CommitterNameLTE = data
+		case "committerNameContains":
+			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("committerNameContains"))
+			data, err := ec.unmarshalOString2ᚖstring(ctx, v)
+			if err != nil {
+				return it, err
+			}
+			it.CommitterNameContains = data
+		case "committerNameHasPrefix":
+			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("committerNameHasPrefix"))
+			data, err := ec.unmarshalOString2ᚖstring(ctx, v)
+			if err != nil {
+				return it, err
+			}
+			it.CommitterNameHasPrefix = data
+		case "committerNameHasSuffix":
+			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("committerNameHasSuffix"))
+			data, err := ec.unmarshalOString2ᚖstring(ctx, v)
+			if err != nil {
+				return it, err
+			}
+			it.CommitterNameHasSuffix = data
+		case "committerNameEqualFold":
+			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("committerNameEqualFold"))
+			data, err := ec.unmarshalOString2ᚖstring(ctx, v)
+			if err != nil {
+				return it, err
+			}
+			it.CommitterNameEqualFold = data
+		case "committerNameContainsFold":
+			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("committerNameContainsFold"))
+			data, err := ec.unmarshalOString2ᚖstring(ctx, v)
+			if err != nil {
+				return it, err
+			}
+			it.CommitterNameContainsFold = data
+		case "committerEmail":
+			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("committerEmail"))
+			data, err := ec.unmarshalOString2ᚖstring(ctx, v)
+			if err != nil {
+				return it, err
+			}
+			it.CommitterEmail = data
+		case "committerEmailNEQ":
+			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("committerEmailNEQ"))
+			data, err := ec.unmarshalOString2ᚖstring(ctx, v)
+			if err != nil {
+				return it, err
+			}
+			it.CommitterEmailNEQ = data
+		case "committerEmailIn":
+			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("committerEmailIn"))
+			data, err := ec.unmarshalOString2ᚕstringᚄ(ctx, v)
+			if err != nil {
+				return it, err
+			}
+			it.CommitterEmailIn = data
+		case "committerEmailNotIn":
+			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("committerEmailNotIn"))
+			data, err := ec.unmarshalOString2ᚕstringᚄ(ctx, v)
+			if err != nil {
+				return it, err
+			}
+			it.CommitterEmailNotIn = data
+		case "committerEmailGT":
+			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("committerEmailGT"))
+			data, err := ec.unmarshalOString2ᚖstring(ctx, v)
+			if err != nil {
+				return it, err
+			}
+			it.CommitterEmailGT = data
+		case "committerEmailGTE":
+			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("committerEmailGTE"))
+			data, err := ec.unmarshalOString2ᚖstring(ctx, v)
+			if err != nil {
+				return it, err
+			}
+			it.CommitterEmailGTE = data
+		case "committerEmailLT":
+			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("committerEmailLT"))
+			data, err := ec.unmarshalOString2ᚖstring(ctx, v)
+			if err != nil {
+				return it, err
+			}
+			it.CommitterEmailLT = data
+		case "committerEmailLTE":
+			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("committerEmailLTE"))
+			data, err := ec.unmarshalOString2ᚖstring(ctx, v)
+			if err != nil {
+				return it, err
+			}
+			it.CommitterEmailLTE = data
+		case "committerEmailContains":
+			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("committerEmailContains"))
+			data, err := ec.unmarshalOString2ᚖstring(ctx, v)
+			if err != nil {
+				return it, err
+			}
+			it.CommitterEmailContains = data
+		case "committerEmailHasPrefix":
+			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("committerEmailHasPrefix"))
+			data, err := ec.unmarshalOString2ᚖstring(ctx, v)
+			if err != nil {
+				return it, err
+			}
+			it.CommitterEmailHasPrefix = data
+		case "committerEmailHasSuffix":
+			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("committerEmailHasSuffix"))
+			data, err := ec.unmarshalOString2ᚖstring(ctx, v)
+			if err != nil {
+				return it, err
+			}
+			it.CommitterEmailHasSuffix = data
+		case "committerEmailEqualFold":
+			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("committerEmailEqualFold"))
+			data, err := ec.unmarshalOString2ᚖstring(ctx, v)
+			if err != nil {
+				return it, err
+			}
+			it.CommitterEmailEqualFold = data
+		case "committerEmailContainsFold":
+			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("committerEmailContainsFold"))
+			data, err := ec.unmarshalOString2ᚖstring(ctx, v)
+			if err != nil {
+				return it, err
+			}
+			it.CommitterEmailContainsFold = data
+		case "commitDate":
+			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("commitDate"))
+			data, err := ec.unmarshalOString2ᚖstring(ctx, v)
+			if err != nil {
+				return it, err
+			}
+			it.CommitDate = data
+		case "commitDateNEQ":
+			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("commitDateNEQ"))
+			data, err := ec.unmarshalOString2ᚖstring(ctx, v)
+			if err != nil {
+				return it, err
+			}
+			it.CommitDateNEQ = data
+		case "commitDateIn":
+			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("commitDateIn"))
+			data, err := ec.unmarshalOString2ᚕstringᚄ(ctx, v)
+			if err != nil {
+				return it, err
+			}
+			it.CommitDateIn = data
+		case "commitDateNotIn":
+			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("commitDateNotIn"))
+			data, err := ec.unmarshalOString2ᚕstringᚄ(ctx, v)
+			if err != nil {
+				return it, err
+			}
+			it.CommitDateNotIn = data
+		case "commitDateGT":
+			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("commitDateGT"))
+			data, err := ec.unmarshalOString2ᚖstring(ctx, v)
+			if err != nil {
+				return it, err
+			}
+			it.CommitDateGT = data
+		case "commitDateGTE":
+			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("commitDateGTE"))
+			data, err := ec.unmarshalOString2ᚖstring(ctx, v)
+			if err != nil {
+				return it, err
+			}
+			it.CommitDateGTE = data
+		case "commitDateLT":
+			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("commitDateLT"))
+			data, err := ec.unmarshalOString2ᚖstring(ctx, v)
+			if err != nil {
+				return it, err
+			}
+			it.CommitDateLT = data
+		case "commitDateLTE":
+			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("commitDateLTE"))
+			data, err := ec.unmarshalOString2ᚖstring(ctx, v)
+			if err != nil {
+				return it, err
+			}
+			it.CommitDateLTE = data
+		case "commitDateContains":
+			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("commitDateContains"))
+			data, err := ec.unmarshalOString2ᚖstring(ctx, v)
+			if err != nil {
+				return it, err
+			}
+			it.CommitDateContains = data
+		case "commitDateHasPrefix":
+			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("commitDateHasPrefix"))
+			data, err := ec.unmarshalOString2ᚖstring(ctx, v)
+			if err != nil {
+				return it, err
+			}
+			it.CommitDateHasPrefix = data
+		case "commitDateHasSuffix":
+			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("commitDateHasSuffix"))
+			data, err := ec.unmarshalOString2ᚖstring(ctx, v)
+			if err != nil {
+				return it, err
+			}
+			it.CommitDateHasSuffix = data
+		case "commitDateEqualFold":
+			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("commitDateEqualFold"))
+			data, err := ec.unmarshalOString2ᚖstring(ctx, v)
+			if err != nil {
+				return it, err
+			}
+			it.CommitDateEqualFold = data
+		case "commitDateContainsFold":
+			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("commitDateContainsFold"))
+			data, err := ec.unmarshalOString2ᚖstring(ctx, v)
+			if err != nil {
+				return it, err
+			}
+			it.CommitDateContainsFold = data
+		case "commitMessage":
+			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("commitMessage"))
+			data, err := ec.unmarshalOString2ᚖstring(ctx, v)
+			if err != nil {
+				return it, err
+			}
+			it.CommitMessage = data
+		case "commitMessageNEQ":
+			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("commitMessageNEQ"))
+			data, err := ec.unmarshalOString2ᚖstring(ctx, v)
+			if err != nil {
+				return it, err
+			}
+			it.CommitMessageNEQ = data
+		case "commitMessageIn":
+			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("commitMessageIn"))
+			data, err := ec.unmarshalOString2ᚕstringᚄ(ctx, v)
+			if err != nil {
+				return it, err
+			}
+			it.CommitMessageIn = data
+		case "commitMessageNotIn":
+			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("commitMessageNotIn"))
+			data, err := ec.unmarshalOString2ᚕstringᚄ(ctx, v)
+			if err != nil {
+				return it, err
+			}
+			it.CommitMessageNotIn = data
+		case "commitMessageGT":
+			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("commitMessageGT"))
+			data, err := ec.unmarshalOString2ᚖstring(ctx, v)
+			if err != nil {
+				return it, err
+			}
+			it.CommitMessageGT = data
+		case "commitMessageGTE":
+			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("commitMessageGTE"))
+			data, err := ec.unmarshalOString2ᚖstring(ctx, v)
+			if err != nil {
+				return it, err
+			}
+			it.CommitMessageGTE = data
+		case "commitMessageLT":
+			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("commitMessageLT"))
+			data, err := ec.unmarshalOString2ᚖstring(ctx, v)
+			if err != nil {
+				return it, err
+			}
+			it.CommitMessageLT = data
+		case "commitMessageLTE":
+			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("commitMessageLTE"))
+			data, err := ec.unmarshalOString2ᚖstring(ctx, v)
+			if err != nil {
+				return it, err
+			}
+			it.CommitMessageLTE = data
+		case "commitMessageContains":
+			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("commitMessageContains"))
+			data, err := ec.unmarshalOString2ᚖstring(ctx, v)
+			if err != nil {
+				return it, err
+			}
+			it.CommitMessageContains = data
+		case "commitMessageHasPrefix":
+			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("commitMessageHasPrefix"))
+			data, err := ec.unmarshalOString2ᚖstring(ctx, v)
+			if err != nil {
+				return it, err
+			}
+			it.CommitMessageHasPrefix = data
+		case "commitMessageHasSuffix":
+			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("commitMessageHasSuffix"))
+			data, err := ec.unmarshalOString2ᚖstring(ctx, v)
+			if err != nil {
+				return it, err
+			}
+			it.CommitMessageHasSuffix = data
+		case "commitMessageEqualFold":
+			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("commitMessageEqualFold"))
+			data, err := ec.unmarshalOString2ᚖstring(ctx, v)
+			if err != nil {
+				return it, err
+			}
+			it.CommitMessageEqualFold = data
+		case "commitMessageContainsFold":
+			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("commitMessageContainsFold"))
+			data, err := ec.unmarshalOString2ᚖstring(ctx, v)
+			if err != nil {
+				return it, err
+			}
+			it.CommitMessageContainsFold = data
+		case "commitType":
+			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("commitType"))
+			data, err := ec.unmarshalOString2ᚖstring(ctx, v)
+			if err != nil {
+				return it, err
+			}
+			it.CommitType = data
+		case "commitTypeNEQ":
+			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("commitTypeNEQ"))
+			data, err := ec.unmarshalOString2ᚖstring(ctx, v)
+			if err != nil {
+				return it, err
+			}
+			it.CommitTypeNEQ = data
+		case "commitTypeIn":
+			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("commitTypeIn"))
+			data, err := ec.unmarshalOString2ᚕstringᚄ(ctx, v)
+			if err != nil {
+				return it, err
+			}
+			it.CommitTypeIn = data
+		case "commitTypeNotIn":
+			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("commitTypeNotIn"))
+			data, err := ec.unmarshalOString2ᚕstringᚄ(ctx, v)
+			if err != nil {
+				return it, err
+			}
+			it.CommitTypeNotIn = data
+		case "commitTypeGT":
+			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("commitTypeGT"))
+			data, err := ec.unmarshalOString2ᚖstring(ctx, v)
+			if err != nil {
+				return it, err
+			}
+			it.CommitTypeGT = data
+		case "commitTypeGTE":
+			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("commitTypeGTE"))
+			data, err := ec.unmarshalOString2ᚖstring(ctx, v)
+			if err != nil {
+				return it, err
+			}
+			it.CommitTypeGTE = data
+		case "commitTypeLT":
+			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("commitTypeLT"))
+			data, err := ec.unmarshalOString2ᚖstring(ctx, v)
+			if err != nil {
+				return it, err
+			}
+			it.CommitTypeLT = data
+		case "commitTypeLTE":
+			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("commitTypeLTE"))
+			data, err := ec.unmarshalOString2ᚖstring(ctx, v)
+			if err != nil {
+				return it, err
+			}
+			it.CommitTypeLTE = data
+		case "commitTypeContains":
+			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("commitTypeContains"))
+			data, err := ec.unmarshalOString2ᚖstring(ctx, v)
+			if err != nil {
+				return it, err
+			}
+			it.CommitTypeContains = data
+		case "commitTypeHasPrefix":
+			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("commitTypeHasPrefix"))
+			data, err := ec.unmarshalOString2ᚖstring(ctx, v)
+			if err != nil {
+				return it, err
+			}
+			it.CommitTypeHasPrefix = data
+		case "commitTypeHasSuffix":
+			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("commitTypeHasSuffix"))
+			data, err := ec.unmarshalOString2ᚖstring(ctx, v)
+			if err != nil {
+				return it, err
+			}
+			it.CommitTypeHasSuffix = data
+		case "commitTypeEqualFold":
+			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("commitTypeEqualFold"))
+			data, err := ec.unmarshalOString2ᚖstring(ctx, v)
+			if err != nil {
+				return it, err
+			}
+			it.CommitTypeEqualFold = data
+		case "commitTypeContainsFold":
+			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("commitTypeContainsFold"))
+			data, err := ec.unmarshalOString2ᚖstring(ctx, v)
+			if err != nil {
+				return it, err
+			}
+			it.CommitTypeContainsFold = data
+		case "commitDigest":
+			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("commitDigest"))
+			data, err := ec.unmarshalOString2ᚖstring(ctx, v)
+			if err != nil {
+				return it, err
+			}
+			it.CommitDigest = data
+		case "commitDigestNEQ":
+			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("commitDigestNEQ"))
+			data, err := ec.unmarshalOString2ᚖstring(ctx, v)
+			if err != nil {
+				return it, err
+			}
+			it.CommitDigestNEQ = data
+		case "commitDigestIn":
+			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("commitDigestIn"))
+			data, err := ec.unmarshalOString2ᚕstringᚄ(ctx, v)
+			if err != nil {
+				return it, err
+			}
+			it.CommitDigestIn = data
+		case "commitDigestNotIn":
+			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("commitDigestNotIn"))
+			data, err := ec.unmarshalOString2ᚕstringᚄ(ctx, v)
+			if err != nil {
+				return it, err
+			}
+			it.CommitDigestNotIn = data
+		case "commitDigestGT":
+			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("commitDigestGT"))
+			data, err := ec.unmarshalOString2ᚖstring(ctx, v)
+			if err != nil {
+				return it, err
+			}
+			it.CommitDigestGT = data
+		case "commitDigestGTE":
+			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("commitDigestGTE"))
+			data, err := ec.unmarshalOString2ᚖstring(ctx, v)
+			if err != nil {
+				return it, err
+			}
+			it.CommitDigestGTE = data
+		case "commitDigestLT":
+			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("commitDigestLT"))
+			data, err := ec.unmarshalOString2ᚖstring(ctx, v)
+			if err != nil {
+				return it, err
+			}
+			it.CommitDigestLT = data
+		case "commitDigestLTE":
+			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("commitDigestLTE"))
+			data, err := ec.unmarshalOString2ᚖstring(ctx, v)
+			if err != nil {
+				return it, err
+			}
+			it.CommitDigestLTE = data
+		case "commitDigestContains":
+			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("commitDigestContains"))
+			data, err := ec.unmarshalOString2ᚖstring(ctx, v)
+			if err != nil {
+				return it, err
+			}
+			it.CommitDigestContains = data
+		case "commitDigestHasPrefix":
+			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("commitDigestHasPrefix"))
+			data, err := ec.unmarshalOString2ᚖstring(ctx, v)
+			if err != nil {
+				return it, err
+			}
+			it.CommitDigestHasPrefix = data
+		case "commitDigestHasSuffix":
+			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("commitDigestHasSuffix"))
+			data, err := ec.unmarshalOString2ᚖstring(ctx, v)
+			if err != nil {
+				return it, err
+			}
+			it.CommitDigestHasSuffix = data
+		case "commitDigestEqualFold":
+			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("commitDigestEqualFold"))
+			data, err := ec.unmarshalOString2ᚖstring(ctx, v)
+			if err != nil {
+				return it, err
+			}
+			it.CommitDigestEqualFold = data
+		case "commitDigestContainsFold":
+			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("commitDigestContainsFold"))
+			data, err := ec.unmarshalOString2ᚖstring(ctx, v)
+			if err != nil {
+				return it, err
+			}
+			it.CommitDigestContainsFold = data
+		case "signature":
+			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("signature"))
+			data, err := ec.unmarshalOString2ᚖstring(ctx, v)
+			if err != nil {
+				return it, err
+			}
+			it.Signature = data
+		case "signatureNEQ":
+			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("signatureNEQ"))
+			data, err := ec.unmarshalOString2ᚖstring(ctx, v)
+			if err != nil {
+				return it, err
+			}
+			it.SignatureNEQ = data
+		case "signatureIn":
+			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("signatureIn"))
+			data, err := ec.unmarshalOString2ᚕstringᚄ(ctx, v)
+			if err != nil {
+				return it, err
+			}
+			it.SignatureIn = data
+		case "signatureNotIn":
+			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("signatureNotIn"))
+			data, err := ec.unmarshalOString2ᚕstringᚄ(ctx, v)
+			if err != nil {
+				return it, err
+			}
+			it.SignatureNotIn = data
+		case "signatureGT":
+			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("signatureGT"))
+			data, err := ec.unmarshalOString2ᚖstring(ctx, v)
+			if err != nil {
+				return it, err
+			}
+			it.SignatureGT = data
+		case "signatureGTE":
+			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("signatureGTE"))
+			data, err := ec.unmarshalOString2ᚖstring(ctx, v)
+			if err != nil {
+				return it, err
+			}
+			it.SignatureGTE = data
+		case "signatureLT":
+			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("signatureLT"))
+			data, err := ec.unmarshalOString2ᚖstring(ctx, v)
+			if err != nil {
+				return it, err
+			}
+			it.SignatureLT = data
+		case "signatureLTE":
+			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("signatureLTE"))
+			data, err := ec.unmarshalOString2ᚖstring(ctx, v)
+			if err != nil {
+				return it, err
+			}
+			it.SignatureLTE = data
+		case "signatureContains":
+			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("signatureContains"))
+			data, err := ec.unmarshalOString2ᚖstring(ctx, v)
+			if err != nil {
+				return it, err
+			}
+			it.SignatureContains = data
+		case "signatureHasPrefix":
+			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("signatureHasPrefix"))
+			data, err := ec.unmarshalOString2ᚖstring(ctx, v)
+			if err != nil {
+				return it, err
+			}
+			it.SignatureHasPrefix = data
+		case "signatureHasSuffix":
+			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("signatureHasSuffix"))
+			data, err := ec.unmarshalOString2ᚖstring(ctx, v)
+			if err != nil {
+				return it, err
+			}
+			it.SignatureHasSuffix = data
+		case "signatureEqualFold":
+			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("signatureEqualFold"))
+			data, err := ec.unmarshalOString2ᚖstring(ctx, v)
+			if err != nil {
+				return it, err
+			}
+			it.SignatureEqualFold = data
+		case "signatureContainsFold":
+			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("signatureContainsFold"))
+			data, err := ec.unmarshalOString2ᚖstring(ctx, v)
+			if err != nil {
+				return it, err
+			}
+			it.SignatureContainsFold = data
+		case "treeHash":
+			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("treeHash"))
+			data, err := ec.unmarshalOString2ᚖstring(ctx, v)
+			if err != nil {
+				return it, err
+			}
+			it.TreeHash = data
+		case "treeHashNEQ":
+			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("treeHashNEQ"))
+			data, err := ec.unmarshalOString2ᚖstring(ctx, v)
+			if err != nil {
+				return it, err
+			}
+			it.TreeHashNEQ = data
+		case "treeHashIn":
+			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("treeHashIn"))
+			data, err := ec.unmarshalOString2ᚕstringᚄ(ctx, v)
+			if err != nil {
+				return it, err
+			}
+			it.TreeHashIn = data
+		case "treeHashNotIn":
+			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("treeHashNotIn"))
+			data, err := ec.unmarshalOString2ᚕstringᚄ(ctx, v)
+			if err != nil {
+				return it, err
+			}
+			it.TreeHashNotIn = data
+		case "treeHashGT":
+			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("treeHashGT"))
+			data, err := ec.unmarshalOString2ᚖstring(ctx, v)
+			if err != nil {
+				return it, err
+			}
+			it.TreeHashGT = data
+		case "treeHashGTE":
+			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("treeHashGTE"))
+			data, err := ec.unmarshalOString2ᚖstring(ctx, v)
+			if err != nil {
+				return it, err
+			}
+			it.TreeHashGTE = data
+		case "treeHashLT":
+			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("treeHashLT"))
+			data, err := ec.unmarshalOString2ᚖstring(ctx, v)
+			if err != nil {
+				return it, err
+			}
+			it.TreeHashLT = data
+		case "treeHashLTE":
+			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("treeHashLTE"))
+			data, err := ec.unmarshalOString2ᚖstring(ctx, v)
+			if err != nil {
+				return it, err
+			}
+			it.TreeHashLTE = data
+		case "treeHashContains":
+			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("treeHashContains"))
+			data, err := ec.unmarshalOString2ᚖstring(ctx, v)
+			if err != nil {
+				return it, err
+			}
+			it.TreeHashContains = data
+		case "treeHashHasPrefix":
+			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("treeHashHasPrefix"))
+			data, err := ec.unmarshalOString2ᚖstring(ctx, v)
+			if err != nil {
+				return it, err
+			}
+			it.TreeHashHasPrefix = data
+		case "treeHashHasSuffix":
+			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("treeHashHasSuffix"))
+			data, err := ec.unmarshalOString2ᚖstring(ctx, v)
+			if err != nil {
+				return it, err
+			}
+			it.TreeHashHasSuffix = data
+		case "treeHashEqualFold":
+			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("treeHashEqualFold"))
+			data, err := ec.unmarshalOString2ᚖstring(ctx, v)
+			if err != nil {
+				return it, err
+			}
+			it.TreeHashEqualFold = data
+		case "treeHashContainsFold":
+			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("treeHashContainsFold"))
+			data, err := ec.unmarshalOString2ᚖstring(ctx, v)
+			if err != nil {
+				return it, err
+			}
+			it.TreeHashContainsFold = data
+		case "hasAttestation":
+			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("hasAttestation"))
+			data, err := ec.unmarshalOBoolean2ᚖbool(ctx, v)
+			if err != nil {
+				return it, err
+			}
+			it.HasAttestation = data
+		case "hasAttestationWith":
+			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("hasAttestationWith"))
+			data, err := ec.unmarshalOAttestationWhereInput2ᚕᚖgithubᚗcomᚋinᚑtotoᚋarchivistaᚋentᚐAttestationWhereInputᚄ(ctx, v)
+			if err != nil {
+				return it, err
+			}
+			it.HasAttestationWith = data
 		}
 	}
 
@@ -8839,6 +10950,11 @@ func (ec *executionContext) _Node(ctx context.Context, sel ast.SelectionSet, obj
 			return graphql.Null
 		}
 		return ec._Dsse(ctx, sel, obj)
+	case *ent.GitAttestation:
+		if obj == nil {
+			return graphql.Null
+		}
+		return ec._GitAttestation(ctx, sel, obj)
 	case *ent.PayloadDigest:
 		if obj == nil {
 			return graphql.Null
@@ -8912,6 +11028,39 @@ func (ec *executionContext) _Attestation(ctx context.Context, sel ast.SelectionS
 				if res == graphql.Null {
 					atomic.AddUint32(&fs.Invalids, 1)
 				}
+				return res
+			}
+
+			if field.Deferrable != nil {
+				dfs, ok := deferred[field.Deferrable.Label]
+				di := 0
+				if ok {
+					dfs.AddField(field)
+					di = len(dfs.Values) - 1
+				} else {
+					dfs = graphql.NewFieldSet([]graphql.CollectedField{field})
+					deferred[field.Deferrable.Label] = dfs
+				}
+				dfs.Concurrently(di, func(ctx context.Context) graphql.Marshaler {
+					return innerFunc(ctx, dfs)
+				})
+
+				// don't run the out.Concurrently() call below
+				out.Values[i] = graphql.Null
+				continue
+			}
+
+			out.Concurrently(i, func(ctx context.Context) graphql.Marshaler { return innerFunc(ctx, out) })
+		case "gitAttestation":
+			field := field
+
+			innerFunc := func(ctx context.Context, _ *graphql.FieldSet) (res graphql.Marshaler) {
+				defer func() {
+					if r := recover(); r != nil {
+						ec.Error(ctx, ec.Recover(ctx, r))
+					}
+				}()
+				res = ec._Attestation_gitAttestation(ctx, field, obj)
 				return res
 			}
 
@@ -9447,6 +11596,156 @@ func (ec *executionContext) _DsseEdge(ctx context.Context, sel ast.SelectionSet,
 			if out.Values[i] == graphql.Null {
 				out.Invalids++
 			}
+		default:
+			panic("unknown field " + strconv.Quote(field.Name))
+		}
+	}
+	out.Dispatch(ctx)
+	if out.Invalids > 0 {
+		return graphql.Null
+	}
+
+	atomic.AddInt32(&ec.deferred, int32(len(deferred)))
+
+	for label, dfs := range deferred {
+		ec.processDeferredGroup(graphql.DeferredGroup{
+			Label:    label,
+			Path:     graphql.GetPath(ctx),
+			FieldSet: dfs,
+			Context:  ctx,
+		})
+	}
+
+	return out
+}
+
+var gitAttestationImplementors = []string{"GitAttestation", "Node"}
+
+func (ec *executionContext) _GitAttestation(ctx context.Context, sel ast.SelectionSet, obj *ent.GitAttestation) graphql.Marshaler {
+	fields := graphql.CollectFields(ec.OperationContext, sel, gitAttestationImplementors)
+
+	out := graphql.NewFieldSet(fields)
+	deferred := make(map[string]*graphql.FieldSet)
+	for i, field := range fields {
+		switch field.Name {
+		case "__typename":
+			out.Values[i] = graphql.MarshalString("GitAttestation")
+		case "id":
+			out.Values[i] = ec._GitAttestation_id(ctx, field, obj)
+			if out.Values[i] == graphql.Null {
+				atomic.AddUint32(&out.Invalids, 1)
+			}
+		case "commitHash":
+			out.Values[i] = ec._GitAttestation_commitHash(ctx, field, obj)
+			if out.Values[i] == graphql.Null {
+				atomic.AddUint32(&out.Invalids, 1)
+			}
+		case "author":
+			out.Values[i] = ec._GitAttestation_author(ctx, field, obj)
+			if out.Values[i] == graphql.Null {
+				atomic.AddUint32(&out.Invalids, 1)
+			}
+		case "authorEmail":
+			out.Values[i] = ec._GitAttestation_authorEmail(ctx, field, obj)
+			if out.Values[i] == graphql.Null {
+				atomic.AddUint32(&out.Invalids, 1)
+			}
+		case "committerName":
+			out.Values[i] = ec._GitAttestation_committerName(ctx, field, obj)
+			if out.Values[i] == graphql.Null {
+				atomic.AddUint32(&out.Invalids, 1)
+			}
+		case "committerEmail":
+			out.Values[i] = ec._GitAttestation_committerEmail(ctx, field, obj)
+			if out.Values[i] == graphql.Null {
+				atomic.AddUint32(&out.Invalids, 1)
+			}
+		case "commitDate":
+			out.Values[i] = ec._GitAttestation_commitDate(ctx, field, obj)
+			if out.Values[i] == graphql.Null {
+				atomic.AddUint32(&out.Invalids, 1)
+			}
+		case "commitMessage":
+			out.Values[i] = ec._GitAttestation_commitMessage(ctx, field, obj)
+			if out.Values[i] == graphql.Null {
+				atomic.AddUint32(&out.Invalids, 1)
+			}
+		case "status":
+			out.Values[i] = ec._GitAttestation_status(ctx, field, obj)
+			if out.Values[i] == graphql.Null {
+				atomic.AddUint32(&out.Invalids, 1)
+			}
+		case "commitType":
+			out.Values[i] = ec._GitAttestation_commitType(ctx, field, obj)
+			if out.Values[i] == graphql.Null {
+				atomic.AddUint32(&out.Invalids, 1)
+			}
+		case "commitDigest":
+			out.Values[i] = ec._GitAttestation_commitDigest(ctx, field, obj)
+			if out.Values[i] == graphql.Null {
+				atomic.AddUint32(&out.Invalids, 1)
+			}
+		case "signature":
+			out.Values[i] = ec._GitAttestation_signature(ctx, field, obj)
+			if out.Values[i] == graphql.Null {
+				atomic.AddUint32(&out.Invalids, 1)
+			}
+		case "parentHashes":
+			out.Values[i] = ec._GitAttestation_parentHashes(ctx, field, obj)
+			if out.Values[i] == graphql.Null {
+				atomic.AddUint32(&out.Invalids, 1)
+			}
+		case "treeHash":
+			out.Values[i] = ec._GitAttestation_treeHash(ctx, field, obj)
+			if out.Values[i] == graphql.Null {
+				atomic.AddUint32(&out.Invalids, 1)
+			}
+		case "refs":
+			out.Values[i] = ec._GitAttestation_refs(ctx, field, obj)
+			if out.Values[i] == graphql.Null {
+				atomic.AddUint32(&out.Invalids, 1)
+			}
+		case "remotes":
+			out.Values[i] = ec._GitAttestation_remotes(ctx, field, obj)
+			if out.Values[i] == graphql.Null {
+				atomic.AddUint32(&out.Invalids, 1)
+			}
+		case "attestation":
+			field := field
+
+			innerFunc := func(ctx context.Context, fs *graphql.FieldSet) (res graphql.Marshaler) {
+				defer func() {
+					if r := recover(); r != nil {
+						ec.Error(ctx, ec.Recover(ctx, r))
+					}
+				}()
+				res = ec._GitAttestation_attestation(ctx, field, obj)
+				if res == graphql.Null {
+					atomic.AddUint32(&fs.Invalids, 1)
+				}
+				return res
+			}
+
+			if field.Deferrable != nil {
+				dfs, ok := deferred[field.Deferrable.Label]
+				di := 0
+				if ok {
+					dfs.AddField(field)
+					di = len(dfs.Values) - 1
+				} else {
+					dfs = graphql.NewFieldSet([]graphql.CollectedField{field})
+					deferred[field.Deferrable.Label] = dfs
+				}
+				dfs.Concurrently(di, func(ctx context.Context) graphql.Marshaler {
+					return innerFunc(ctx, dfs)
+				})
+
+				// don't run the out.Concurrently() call below
+				out.Values[i] = graphql.Null
+				continue
+			}
+
+			out.Concurrently(i, func(ctx context.Context) graphql.Marshaler { return innerFunc(ctx, out) })
 		default:
 			panic("unknown field " + strconv.Quote(field.Name))
 		}
@@ -10841,6 +13140,11 @@ func (ec *executionContext) unmarshalNDsseWhereInput2ᚖgithubᚗcomᚋinᚑtoto
 	return &res, graphql.ErrorOnPath(ctx, err)
 }
 
+func (ec *executionContext) unmarshalNGitAttestationWhereInput2ᚖgithubᚗcomᚋinᚑtotoᚋarchivistaᚋentᚐGitAttestationWhereInput(ctx context.Context, v interface{}) (*ent.GitAttestationWhereInput, error) {
+	res, err := ec.unmarshalInputGitAttestationWhereInput(ctx, v)
+	return &res, graphql.ErrorOnPath(ctx, err)
+}
+
 func (ec *executionContext) unmarshalNID2githubᚗcomᚋgoogleᚋuuidᚐUUID(ctx context.Context, v interface{}) (uuid.UUID, error) {
 	res, err := uuidgql.UnmarshalUUID(v)
 	return res, graphql.ErrorOnPath(ctx, err)
@@ -11003,6 +13307,38 @@ func (ec *executionContext) marshalNString2string(ctx context.Context, sel ast.S
 		}
 	}
 	return res
+}
+
+func (ec *executionContext) unmarshalNString2ᚕstringᚄ(ctx context.Context, v interface{}) ([]string, error) {
+	var vSlice []interface{}
+	if v != nil {
+		vSlice = graphql.CoerceList(v)
+	}
+	var err error
+	res := make([]string, len(vSlice))
+	for i := range vSlice {
+		ctx := graphql.WithPathContext(ctx, graphql.NewPathWithIndex(i))
+		res[i], err = ec.unmarshalNString2string(ctx, vSlice[i])
+		if err != nil {
+			return nil, err
+		}
+	}
+	return res, nil
+}
+
+func (ec *executionContext) marshalNString2ᚕstringᚄ(ctx context.Context, sel ast.SelectionSet, v []string) graphql.Marshaler {
+	ret := make(graphql.Array, len(v))
+	for i := range v {
+		ret[i] = ec.marshalNString2string(ctx, sel, v[i])
+	}
+
+	for _, e := range ret {
+		if e == graphql.Null {
+			return graphql.Null
+		}
+	}
+
+	return ret
 }
 
 func (ec *executionContext) marshalNSubjectConnection2githubᚗcomᚋinᚑtotoᚋarchivistaᚋentᚐSubjectConnection(ctx context.Context, sel ast.SelectionSet, v ent.SubjectConnection) graphql.Marshaler {
@@ -11684,6 +14020,41 @@ func (ec *executionContext) unmarshalODsseWhereInput2ᚖgithubᚗcomᚋinᚑtoto
 		return nil, nil
 	}
 	res, err := ec.unmarshalInputDsseWhereInput(ctx, v)
+	return &res, graphql.ErrorOnPath(ctx, err)
+}
+
+func (ec *executionContext) marshalOGitAttestation2ᚖgithubᚗcomᚋinᚑtotoᚋarchivistaᚋentᚐGitAttestation(ctx context.Context, sel ast.SelectionSet, v *ent.GitAttestation) graphql.Marshaler {
+	if v == nil {
+		return graphql.Null
+	}
+	return ec._GitAttestation(ctx, sel, v)
+}
+
+func (ec *executionContext) unmarshalOGitAttestationWhereInput2ᚕᚖgithubᚗcomᚋinᚑtotoᚋarchivistaᚋentᚐGitAttestationWhereInputᚄ(ctx context.Context, v interface{}) ([]*ent.GitAttestationWhereInput, error) {
+	if v == nil {
+		return nil, nil
+	}
+	var vSlice []interface{}
+	if v != nil {
+		vSlice = graphql.CoerceList(v)
+	}
+	var err error
+	res := make([]*ent.GitAttestationWhereInput, len(vSlice))
+	for i := range vSlice {
+		ctx := graphql.WithPathContext(ctx, graphql.NewPathWithIndex(i))
+		res[i], err = ec.unmarshalNGitAttestationWhereInput2ᚖgithubᚗcomᚋinᚑtotoᚋarchivistaᚋentᚐGitAttestationWhereInput(ctx, vSlice[i])
+		if err != nil {
+			return nil, err
+		}
+	}
+	return res, nil
+}
+
+func (ec *executionContext) unmarshalOGitAttestationWhereInput2ᚖgithubᚗcomᚋinᚑtotoᚋarchivistaᚋentᚐGitAttestationWhereInput(ctx context.Context, v interface{}) (*ent.GitAttestationWhereInput, error) {
+	if v == nil {
+		return nil, nil
+	}
+	res, err := ec.unmarshalInputGitAttestationWhereInput(ctx, v)
 	return &res, graphql.ErrorOnPath(ctx, err)
 }
 

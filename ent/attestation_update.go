@@ -13,6 +13,7 @@ import (
 	"github.com/google/uuid"
 	"github.com/in-toto/archivista/ent/attestation"
 	"github.com/in-toto/archivista/ent/attestationcollection"
+	"github.com/in-toto/archivista/ent/gitattestation"
 	"github.com/in-toto/archivista/ent/predicate"
 )
 
@@ -54,6 +55,25 @@ func (au *AttestationUpdate) SetAttestationCollection(a *AttestationCollection) 
 	return au.SetAttestationCollectionID(a.ID)
 }
 
+// SetGitAttestationID sets the "git_attestation" edge to the GitAttestation entity by ID.
+func (au *AttestationUpdate) SetGitAttestationID(id uuid.UUID) *AttestationUpdate {
+	au.mutation.SetGitAttestationID(id)
+	return au
+}
+
+// SetNillableGitAttestationID sets the "git_attestation" edge to the GitAttestation entity by ID if the given value is not nil.
+func (au *AttestationUpdate) SetNillableGitAttestationID(id *uuid.UUID) *AttestationUpdate {
+	if id != nil {
+		au = au.SetGitAttestationID(*id)
+	}
+	return au
+}
+
+// SetGitAttestation sets the "git_attestation" edge to the GitAttestation entity.
+func (au *AttestationUpdate) SetGitAttestation(g *GitAttestation) *AttestationUpdate {
+	return au.SetGitAttestationID(g.ID)
+}
+
 // Mutation returns the AttestationMutation object of the builder.
 func (au *AttestationUpdate) Mutation() *AttestationMutation {
 	return au.mutation
@@ -62,6 +82,12 @@ func (au *AttestationUpdate) Mutation() *AttestationMutation {
 // ClearAttestationCollection clears the "attestation_collection" edge to the AttestationCollection entity.
 func (au *AttestationUpdate) ClearAttestationCollection() *AttestationUpdate {
 	au.mutation.ClearAttestationCollection()
+	return au
+}
+
+// ClearGitAttestation clears the "git_attestation" edge to the GitAttestation entity.
+func (au *AttestationUpdate) ClearGitAttestation() *AttestationUpdate {
+	au.mutation.ClearGitAttestation()
 	return au
 }
 
@@ -149,6 +175,35 @@ func (au *AttestationUpdate) sqlSave(ctx context.Context) (n int, err error) {
 		}
 		_spec.Edges.Add = append(_spec.Edges.Add, edge)
 	}
+	if au.mutation.GitAttestationCleared() {
+		edge := &sqlgraph.EdgeSpec{
+			Rel:     sqlgraph.O2O,
+			Inverse: false,
+			Table:   attestation.GitAttestationTable,
+			Columns: []string{attestation.GitAttestationColumn},
+			Bidi:    false,
+			Target: &sqlgraph.EdgeTarget{
+				IDSpec: sqlgraph.NewFieldSpec(gitattestation.FieldID, field.TypeUUID),
+			},
+		}
+		_spec.Edges.Clear = append(_spec.Edges.Clear, edge)
+	}
+	if nodes := au.mutation.GitAttestationIDs(); len(nodes) > 0 {
+		edge := &sqlgraph.EdgeSpec{
+			Rel:     sqlgraph.O2O,
+			Inverse: false,
+			Table:   attestation.GitAttestationTable,
+			Columns: []string{attestation.GitAttestationColumn},
+			Bidi:    false,
+			Target: &sqlgraph.EdgeTarget{
+				IDSpec: sqlgraph.NewFieldSpec(gitattestation.FieldID, field.TypeUUID),
+			},
+		}
+		for _, k := range nodes {
+			edge.Target.Nodes = append(edge.Target.Nodes, k)
+		}
+		_spec.Edges.Add = append(_spec.Edges.Add, edge)
+	}
 	if n, err = sqlgraph.UpdateNodes(ctx, au.driver, _spec); err != nil {
 		if _, ok := err.(*sqlgraph.NotFoundError); ok {
 			err = &NotFoundError{attestation.Label}
@@ -194,6 +249,25 @@ func (auo *AttestationUpdateOne) SetAttestationCollection(a *AttestationCollecti
 	return auo.SetAttestationCollectionID(a.ID)
 }
 
+// SetGitAttestationID sets the "git_attestation" edge to the GitAttestation entity by ID.
+func (auo *AttestationUpdateOne) SetGitAttestationID(id uuid.UUID) *AttestationUpdateOne {
+	auo.mutation.SetGitAttestationID(id)
+	return auo
+}
+
+// SetNillableGitAttestationID sets the "git_attestation" edge to the GitAttestation entity by ID if the given value is not nil.
+func (auo *AttestationUpdateOne) SetNillableGitAttestationID(id *uuid.UUID) *AttestationUpdateOne {
+	if id != nil {
+		auo = auo.SetGitAttestationID(*id)
+	}
+	return auo
+}
+
+// SetGitAttestation sets the "git_attestation" edge to the GitAttestation entity.
+func (auo *AttestationUpdateOne) SetGitAttestation(g *GitAttestation) *AttestationUpdateOne {
+	return auo.SetGitAttestationID(g.ID)
+}
+
 // Mutation returns the AttestationMutation object of the builder.
 func (auo *AttestationUpdateOne) Mutation() *AttestationMutation {
 	return auo.mutation
@@ -202,6 +276,12 @@ func (auo *AttestationUpdateOne) Mutation() *AttestationMutation {
 // ClearAttestationCollection clears the "attestation_collection" edge to the AttestationCollection entity.
 func (auo *AttestationUpdateOne) ClearAttestationCollection() *AttestationUpdateOne {
 	auo.mutation.ClearAttestationCollection()
+	return auo
+}
+
+// ClearGitAttestation clears the "git_attestation" edge to the GitAttestation entity.
+func (auo *AttestationUpdateOne) ClearGitAttestation() *AttestationUpdateOne {
+	auo.mutation.ClearGitAttestation()
 	return auo
 }
 
@@ -312,6 +392,35 @@ func (auo *AttestationUpdateOne) sqlSave(ctx context.Context) (_node *Attestatio
 			Bidi:    false,
 			Target: &sqlgraph.EdgeTarget{
 				IDSpec: sqlgraph.NewFieldSpec(attestationcollection.FieldID, field.TypeUUID),
+			},
+		}
+		for _, k := range nodes {
+			edge.Target.Nodes = append(edge.Target.Nodes, k)
+		}
+		_spec.Edges.Add = append(_spec.Edges.Add, edge)
+	}
+	if auo.mutation.GitAttestationCleared() {
+		edge := &sqlgraph.EdgeSpec{
+			Rel:     sqlgraph.O2O,
+			Inverse: false,
+			Table:   attestation.GitAttestationTable,
+			Columns: []string{attestation.GitAttestationColumn},
+			Bidi:    false,
+			Target: &sqlgraph.EdgeTarget{
+				IDSpec: sqlgraph.NewFieldSpec(gitattestation.FieldID, field.TypeUUID),
+			},
+		}
+		_spec.Edges.Clear = append(_spec.Edges.Clear, edge)
+	}
+	if nodes := auo.mutation.GitAttestationIDs(); len(nodes) > 0 {
+		edge := &sqlgraph.EdgeSpec{
+			Rel:     sqlgraph.O2O,
+			Inverse: false,
+			Table:   attestation.GitAttestationTable,
+			Columns: []string{attestation.GitAttestationColumn},
+			Bidi:    false,
+			Target: &sqlgraph.EdgeTarget{
+				IDSpec: sqlgraph.NewFieldSpec(gitattestation.FieldID, field.TypeUUID),
 			},
 		}
 		for _, k := range nodes {

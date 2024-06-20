@@ -18,6 +18,9 @@ type AttestationPolicy func(*sql.Selector)
 // Dsse is the predicate function for dsse builders.
 type Dsse func(*sql.Selector)
 
+// GitAttestation is the predicate function for gitattestation builders.
+type GitAttestation func(*sql.Selector)
+
 // PayloadDigest is the predicate function for payloaddigest builders.
 type PayloadDigest func(*sql.Selector)
 
