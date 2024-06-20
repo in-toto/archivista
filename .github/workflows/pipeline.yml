@@ -70,11 +70,11 @@ jobs:
 
         steps:
             - name: Harden Runner
-              uses: step-security/harden-runner@f086349bfa2bd1361f7909c78558e816508cdc10 # v2.8.0
+              uses: step-security/harden-runner@17d0e2bd7d51742c71671bd19fa12bdc9d40a3d6 # v2.8.1
               with:
                 egress-policy: audit
 
-            - uses: actions/checkout@a5ac7e51b41094c92402da3b24376905380afc29 # v4.1.6
+            - uses: actions/checkout@692973e3d937129bcbf40652eb9f2f61becf3332 # v4.1.7
             - uses: actions/setup-go@cdcb36043654635271a94b9a6d1392de5bb323a7 # v5.0.1
               with:
                 go-version: 1.21.x
@@ -90,7 +90,7 @@ jobs:
               run: go install github.com/goreleaser/goreleaser@v1.23.0
 
             - name: Run GoReleaser
-              uses: testifysec/witness-run-action@2ae7f93c013ccf24b8ff52b4f042b32ca95ec7b8
+              uses: testifysec/witness-run-action@85ddab8b46a86b2905a3b547a1806ab264fbb810
               env:
                 GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
                 GITHUB_REPOSITORY_OWNER: ${{ github.repository_owner }}
