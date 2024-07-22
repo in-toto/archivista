@@ -74,18 +74,54 @@ release:
   prerelease: auto
   github:
     owner: "{{ .Env.GITHUB_REPOSITORY_OWNER }}"
+dockers:
+  - image_templates:
+    - "ghcr.io/in-toto/archivista:{{ .Version }}-amd64"
+    use: buildx
+    build_flag_templates:
+      - "--pull"
+      - "--platform=linux/amd64"
+    extra_files:
+      - "archivista.graphql"
+      - "ent.graphql"
+      - "ent.resolvers.go"
+      - "entrypoint.sh"
+      - "gen.go"
+      - "generated.go"
+      - "go.mod"
+      - "go.sum"
+      - "resolver.go"
+      - "ent"
+      - "cmd"
+      - "ent"
+      - "pkg"
+  - image_templates:
+    - "ghcr.io/in-toto/archivista:{{ .Version }}-arm64"
+    use: buildx
+    build_flag_templates:
+      - "--pull"
+      - "--platform=linux/arm64"
+    extra_files:
+      - "archivista.graphql"
+      - "ent.graphql"
+      - "ent.resolvers.go"
+      - "entrypoint.sh"
+      - "gen.go"
+      - "generated.go"
+      - "go.mod"
+      - "go.sum"
+      - "resolver.go"
+      - "ent"
+      - "cmd"
+      - "ent"
+      - "pkg"
+    goarch: arm64
+docker_manifests:
+  - name_template: "ghcr.io/in-toto/archivista:{{ .Version }}"
+    image_templates:
+      - "ghcr.io/in-toto/archivista:{{ .Version }}-amd64"
+      - "ghcr.io/in-toto/archivista:{{ .Version }}-arm64"
 kos:
-  - repository: ghcr.io/in-toto/archivista
-    id: archivista
-    build: archivista
-    tags:
-    - '{{.Version}}'
-    bare: true
-    preserve_import_paths: false
-    creation_time: '{{.CommitTimestamp}}'
-    platforms:
-    - linux/amd64
-    - linux/arm64
   - repository: ghcr.io/in-toto/archivistactl
     id: archivistactl
     build: archivistactl
