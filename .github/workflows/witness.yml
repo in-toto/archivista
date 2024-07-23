@@ -49,8 +49,9 @@ jobs:
               go-version: 1.21.x
 
           - if: ${{ inputs.pull_request == false }}
-            uses: testifysec/witness-run-action@85ddab8b46a86b2905a3b547a1806ab264fbb810
+            uses: testifysec/witness-run-action@36dc38f2cf61b02e1841c1c1f9fed67205435ca5
             with:
+              witness-install-dir: /opt/witness
               step: ${{ inputs.step }}
               attestations: ${{ inputs.attestations }}
               command: /bin/sh -c "${{ inputs.command }}"
