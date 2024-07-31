@@ -21,6 +21,10 @@ on:
       - master
       - main
   pull_request:
+    paths:
+      - 'ent/**'
+      - 'ent.*'
+      - '.github/workflows/db-migrations.yml'
   workflow_dispatch:
 
 permissions:
