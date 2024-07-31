@@ -1,12 +1,9 @@
 module github.com/in-toto/archivista
 
 go 1.22.0
-
-toolchain go1.22.2
-
 require (
 	ariga.io/sqlcomment v0.1.0
-	entgo.io/contrib v0.5.0
+	entgo.io/contrib v0.6.0
 	entgo.io/ent v0.14.0
 	github.com/99designs/gqlgen v0.17.49
 	github.com/antonfisher/nested-logrus-formatter v1.3.1
@@ -31,7 +28,7 @@ require (
 )
 
 require (
-	ariga.io/atlas v0.21.1 // indirect
+	ariga.io/atlas v0.25.1-0.20240717145915-af51d3945208 // indirect
 	filippo.io/edwards25519 v1.1.0 // indirect
 	github.com/KyleBanks/depth v1.2.1 // indirect
 	github.com/OneOfOne/xxhash v1.2.8 // indirect
@@ -112,7 +109,7 @@ require (
 	golang.org/x/sys v0.21.0 // indirect
 	golang.org/x/text v0.16.0 // indirect
 	golang.org/x/tools v0.22.0 // indirect
-	google.golang.org/protobuf v1.34.1 // indirect
+	google.golang.org/protobuf v1.34.2 // indirect
 	gopkg.in/inf.v0 v0.9.1 // indirect
 	gopkg.in/yaml.v2 v2.4.0 // indirect
 	k8s.io/apimachinery v0.30.0 // indirect
