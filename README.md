@@ -91,6 +91,8 @@ Archivista is configured through environment variables currently.
 | Variable                                   | Default Value                             | Description                                                                                   |
 | ------------------------------------------ | ----------------------------------------- | --------------------------------------------------------------------------------------------- |
 | ARCHIVISTA_LISTEN_ON                       | tcp://127.0.0.1:8082                      | URL endpoint for Archivista to listen on                                                      |
+| ARCHIVISTA_READ_TIMEOUT                    | 120                                       | HTTP server read timeout                                                                      |
+| ARCHIVISTA_WRITE_TIMEOUT                   | 120                                       | HTTP server write timeout                                                                     |
 | ARCHIVISTA_LOG_LEVEL                       | INFO                                      | Log level. Options are DEBUG, INFO, WARN, ERROR                                               |
 | ARCHIVISTA_CORS_ALLOW_ORIGINS              |                                           | Comma separated list of origins to allow CORS requests from                                   |
 | ARCHIVISTA_SQL_STORE_BACKEND               |                                           | Backend to use for SQL. Options are MYSQL or PSQL                                             |
