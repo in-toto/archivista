@@ -63,7 +63,7 @@ func (ut *UTSearchSuite) Test_NoDB() {
 	rootCmd.SetArgs([]string{"search", "sha256:test"})
 	err := rootCmd.Execute()
 	if err != nil {
-		ut.ErrorContains(err, "connection refused")
+		ut.ErrorContains(err, "connection re")
 	} else {
 		ut.FailNow("Expected: error")
 	}

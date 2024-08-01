@@ -26,6 +26,8 @@ import (
 
 type Config struct {
 	ListenOn         string   `default:"tcp://127.0.0.1:8082" desc:"URL endpoint for Archivista to listen on" split_words:"true"`
+	ReadTimeout      int      `default:"120" desc:"HTTP read timeout in seconds" split_words:"true"`
+	WriteTimeout     int      `default:"120" desc:"HTTP write timeout in seconds" split_words:"true"`
 	LogLevel         string   `default:"INFO" desc:"Log level" split_words:"true"`
 	CORSAllowOrigins []string `default:"" desc:"Comma separated list of origins to allow CORS requests from" split_words:"true"`
 

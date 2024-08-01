@@ -26,6 +26,8 @@ import (
 func TestConfig_Process(t *testing.T) {
 	// Set up test environment variables
 	os.Setenv("ARCHIVISTA_LISTEN_ON", "tcp://0.0.0.0:8082")
+	os.Setenv("ARCHIVISTA_READ_TIMEOUT", "300")
+	os.Setenv("ARCHIVISTA_WRITE_TIMEOUT", "300")
 	os.Setenv("ARCHIVISTA_LOG_LEVEL", "DEBUG")
 	os.Setenv("ARCHIVISTA_CORS_ALLOW_ORIGINS", "http://localhost,https://example.com")
 	os.Setenv("ARCHIVISTA_ENABLE_SPIFFE", "FALSE")
@@ -44,6 +46,8 @@ func TestConfig_Process(t *testing.T) {
 
 	// Check that the expected values were read from environment variables
 	require.Equal(t, "tcp://0.0.0.0:8082", c.ListenOn)
+	require.Equal(t, 300, c.ReadTimeout)
+	require.Equal(t, 300, c.WriteTimeout)
 	require.Equal(t, "DEBUG", c.LogLevel)
 	require.Equal(t, []string{"http://localhost", "https://example.com"}, c.CORSAllowOrigins)
 	require.False(t, c.EnableSPIFFE)
@@ -57,6 +61,8 @@ func TestConfig_Process(t *testing.T) {
 
 	// Clean up environment variables
 	os.Unsetenv("ARCHIVISTA_LISTEN_ON")
+	os.Unsetenv("ARCHIVISTA_READ_TIMEOUT")
+	os.Unsetenv("ARCHIVISTA_WRITE_TIMEOUT")
 	os.Unsetenv("ARCHIVISTA_LOG_LEVEL")
 	os.Unsetenv("ARCHIVISTA_CORS_ALLOW_ORIGINS")
 	os.Unsetenv("ARCHIVISTA_ENABLE_SPIFFE")

@@ -83,8 +83,8 @@ func main() {
 			handlers.AllowedMethods([]string{"GET", "POST", "OPTIONS"}),
 			handlers.AllowedHeaders([]string{"Accept", "Content-Type", "Content-Length", "Accept-Encoding", "X-CSRF-Token", "Authorization"}),
 		)(server.Router()),
-		ReadTimeout:  5 * time.Second,
-		WriteTimeout: 10 * time.Second,
+		ReadTimeout:  time.Duration(archivistaService.Cfg.ReadTimeout) * time.Second,
+		WriteTimeout: time.Duration(archivistaService.Cfg.WriteTimeout) * time.Second,
 	}
 	go func() {
 		if err := srv.Serve(listener); err != nil {

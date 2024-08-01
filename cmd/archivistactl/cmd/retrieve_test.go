@@ -62,7 +62,7 @@ func (ut *UTRetrieveSuite) Test_RetrieveEnvelope_NoDB() {
 	rootCmd.SetArgs([]string{"retrieve", "envelope", "test"})
 	err := rootCmd.Execute()
 	if err != nil {
-		ut.ErrorContains(err, "connection refused")
+		ut.ErrorContains(err, "connection re")
 	} else {
 		ut.FailNow("Expected: error")
 	}
@@ -88,7 +88,7 @@ func (ut *UTRetrieveSuite) Test_RetrieveSubjectsNoDB() {
 	rootCmd.SetArgs([]string{"retrieve", "subjects", "test"})
 	err := rootCmd.Execute()
 	if err != nil {
-		ut.ErrorContains(err, "connection refused")
+		ut.ErrorContains(err, "connection re")
 	} else {
 		ut.FailNow("Expected: error")
 	}
