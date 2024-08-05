@@ -96,7 +96,7 @@ jobs:
               run: go install github.com/goreleaser/goreleaser@v1.23.0
 
             - name: Run GoReleaser
-              uses: testifysec/witness-run-action@cceed291062b350dc658d7d189933ac47d4f4dec
+              uses: testifysec/witness-run-action@f77c0a5b024ed206a6d2e7426611e4306af4dd66
               env:
                 GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
                 GITHUB_REPOSITORY_OWNER: ${{ github.repository_owner }}
