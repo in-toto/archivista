@@ -81,7 +81,7 @@ you stay up-to-date with our repository:
 ### Running Archivista Development Environment
 
 *Please note that the following `make` commands make use of both the `docker` and
-`docker-compose` commands, so you may need to modify this locally if using tools
+`docker compose` commands, so you may need to modify this locally if using tools
 such as [nerdctl](https://github.com/containerd/nerdctl) or [podman](https://github.com/containers/podman).*
 
 To start the Archivista development environment, simply execute the command:
