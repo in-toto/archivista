@@ -23,7 +23,7 @@ run-dev:  ## Run the dev server
 
 .PHONY: stop
 stop:  ## Stop the dev server
-	@docker-compose -f compose-dev.yml down -v
+	@docker compose -f compose-dev.yml down -v
 
 
 .PHONY: clean
