@@ -46,7 +46,7 @@ jobs:
           - uses: actions/checkout@692973e3d937129bcbf40652eb9f2f61becf3332 # v4.1.7
           - uses: actions/setup-go@0a12ed9d6a96ab950c8f026ed9f722fe0da7ef32 # v5.0.2
             with:
-              go-version: 1.21.x
+              go-version: 1.22.x
 
           - if: ${{ inputs.pull_request == false }}
             uses: testifysec/witness-run-action@79320a907f611f2fb40ced8e13c66af988b2d9db
