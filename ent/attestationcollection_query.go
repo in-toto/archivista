@@ -8,6 +8,7 @@ import (
 	"fmt"
 	"math"
 
+	"entgo.io/ent"
 	"entgo.io/ent/dialect/sql"
 	"entgo.io/ent/dialect/sql/sqlgraph"
 	"entgo.io/ent/schema/field"
@@ -114,7 +115,7 @@ func (acq *AttestationCollectionQuery) QueryStatement() *StatementQuery {
 // First returns the first AttestationCollection entity from the query.
 // Returns a *NotFoundError when no AttestationCollection was found.
 func (acq *AttestationCollectionQuery) First(ctx context.Context) (*AttestationCollection, error) {
-	nodes, err := acq.Limit(1).All(setContextOp(ctx, acq.ctx, "First"))
+	nodes, err := acq.Limit(1).All(setContextOp(ctx, acq.ctx, ent.OpQueryFirst))
 	if err != nil {
 		return nil, err
 	}
@@ -137,7 +138,7 @@ func (acq *AttestationCollectionQuery) FirstX(ctx context.Context) *AttestationC
 // Returns a *NotFoundError when no AttestationCollection ID was found.
 func (acq *AttestationCollectionQuery) FirstID(ctx context.Context) (id uuid.UUID, err error) {
 	var ids []uuid.UUID
-	if ids, err = acq.Limit(1).IDs(setContextOp(ctx, acq.ctx, "FirstID")); err != nil {
+	if ids, err = acq.Limit(1).IDs(setContextOp(ctx, acq.ctx, ent.OpQueryFirstID)); err != nil {
 		return
 	}
 	if len(ids) == 0 {
@@ -160,7 +161,7 @@ func (acq *AttestationCollectionQuery) FirstIDX(ctx context.Context) uuid.UUID {
 // Returns a *NotSingularError when more than one AttestationCollection entity is found.
 // Returns a *NotFoundError when no AttestationCollection entities are found.
 func (acq *AttestationCollectionQuery) Only(ctx context.Context) (*AttestationCollection, error) {
-	nodes, err := acq.Limit(2).All(setContextOp(ctx, acq.ctx, "Only"))
+	nodes, err := acq.Limit(2).All(setContextOp(ctx, acq.ctx, ent.OpQueryOnly))
 	if err != nil {
 		return nil, err
 	}
@@ -188,7 +189,7 @@ func (acq *AttestationCollectionQuery) OnlyX(ctx context.Context) *AttestationCo
 // Returns a *NotFoundError when no entities are found.
 func (acq *AttestationCollectionQuery) OnlyID(ctx context.Context) (id uuid.UUID, err error) {
 	var ids []uuid.UUID
-	if ids, err = acq.Limit(2).IDs(setContextOp(ctx, acq.ctx, "OnlyID")); err != nil {
+	if ids, err = acq.Limit(2).IDs(setContextOp(ctx, acq.ctx, ent.OpQueryOnlyID)); err != nil {
 		return
 	}
 	switch len(ids) {
@@ -213,7 +214,7 @@ func (acq *AttestationCollectionQuery) OnlyIDX(ctx context.Context) uuid.UUID {
 
 // All executes the query and returns a list of AttestationCollections.
 func (acq *AttestationCollectionQuery) All(ctx context.Context) ([]*AttestationCollection, error) {
-	ctx = setContextOp(ctx, acq.ctx, "All")
+	ctx = setContextOp(ctx, acq.ctx, ent.OpQueryAll)
 	if err := acq.prepareQuery(ctx); err != nil {
 		return nil, err
 	}
@@ -235,7 +236,7 @@ func (acq *AttestationCollectionQuery) IDs(ctx context.Context) (ids []uuid.UUID
 	if acq.ctx.Unique == nil && acq.path != nil {
 		acq.Unique(true)
 	}
-	ctx = setContextOp(ctx, acq.ctx, "IDs")
+	ctx = setContextOp(ctx, acq.ctx, ent.OpQueryIDs)
 	if err = acq.Select(attestationcollection.FieldID).Scan(ctx, &ids); err != nil {
 		return nil, err
 	}
@@ -253,7 +254,7 @@ func (acq *AttestationCollectionQuery) IDsX(ctx context.Context) []uuid.UUID {
 
 // Count returns the count of the given query.
 func (acq *AttestationCollectionQuery) Count(ctx context.Context) (int, error) {
-	ctx = setContextOp(ctx, acq.ctx, "Count")
+	ctx = setContextOp(ctx, acq.ctx, ent.OpQueryCount)
 	if err := acq.prepareQuery(ctx); err != nil {
 		return 0, err
 	}
@@ -271,7 +272,7 @@ func (acq *AttestationCollectionQuery) CountX(ctx context.Context) int {
 
 // Exist returns true if the query has elements in the graph.
 func (acq *AttestationCollectionQuery) Exist(ctx context.Context) (bool, error) {
-	ctx = setContextOp(ctx, acq.ctx, "Exist")
+	ctx = setContextOp(ctx, acq.ctx, ent.OpQueryExist)
 	switch _, err := acq.FirstID(ctx); {
 	case IsNotFound(err):
 		return false, nil
@@ -648,7 +649,7 @@ func (acgb *AttestationCollectionGroupBy) Aggregate(fns ...AggregateFunc) *Attes
 
 // Scan applies the selector query and scans the result into the given value.
 func (acgb *AttestationCollectionGroupBy) Scan(ctx context.Context, v any) error {
-	ctx = setContextOp(ctx, acgb.build.ctx, "GroupBy")
+	ctx = setContextOp(ctx, acgb.build.ctx, ent.OpQueryGroupBy)
 	if err := acgb.build.prepareQuery(ctx); err != nil {
 		return err
 	}
@@ -696,7 +697,7 @@ func (acs *AttestationCollectionSelect) Aggregate(fns ...AggregateFunc) *Attesta
 
 // Scan applies the selector query and scans the result into the given value.
 func (acs *AttestationCollectionSelect) Scan(ctx context.Context, v any) error {
-	ctx = setContextOp(ctx, acs.ctx, "Select")
+	ctx = setContextOp(ctx, acs.ctx, ent.OpQuerySelect)
 	if err := acs.prepareQuery(ctx); err != nil {
 		return err
 	}

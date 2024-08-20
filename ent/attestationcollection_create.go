@@ -119,7 +119,7 @@ func (acc *AttestationCollectionCreate) check() error {
 			return &ValidationError{Name: "name", err: fmt.Errorf(`ent: validator failed for field "AttestationCollection.name": %w`, err)}
 		}
 	}
-	if _, ok := acc.mutation.StatementID(); !ok {
+	if len(acc.mutation.StatementIDs()) == 0 {
 		return &ValidationError{Name: "statement", err: errors.New(`ent: missing required edge "AttestationCollection.statement"`)}
 	}
 	return nil

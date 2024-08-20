@@ -7,6 +7,7 @@ import (
 	"fmt"
 	"math"
 
+	"entgo.io/ent"
 	"entgo.io/ent/dialect/sql"
 	"entgo.io/ent/dialect/sql/sqlgraph"
 	"entgo.io/ent/schema/field"
@@ -88,7 +89,7 @@ func (apq *AttestationPolicyQuery) QueryStatement() *StatementQuery {
 // First returns the first AttestationPolicy entity from the query.
 // Returns a *NotFoundError when no AttestationPolicy was found.
 func (apq *AttestationPolicyQuery) First(ctx context.Context) (*AttestationPolicy, error) {
-	nodes, err := apq.Limit(1).All(setContextOp(ctx, apq.ctx, "First"))
+	nodes, err := apq.Limit(1).All(setContextOp(ctx, apq.ctx, ent.OpQueryFirst))
 	if err != nil {
 		return nil, err
 	}
@@ -111,7 +112,7 @@ func (apq *AttestationPolicyQuery) FirstX(ctx context.Context) *AttestationPolic
 // Returns a *NotFoundError when no AttestationPolicy ID was found.
 func (apq *AttestationPolicyQuery) FirstID(ctx context.Context) (id uuid.UUID, err error) {
 	var ids []uuid.UUID
-	if ids, err = apq.Limit(1).IDs(setContextOp(ctx, apq.ctx, "FirstID")); err != nil {
+	if ids, err = apq.Limit(1).IDs(setContextOp(ctx, apq.ctx, ent.OpQueryFirstID)); err != nil {
 		return
 	}
 	if len(ids) == 0 {
@@ -134,7 +135,7 @@ func (apq *AttestationPolicyQuery) FirstIDX(ctx context.Context) uuid.UUID {
 // Returns a *NotSingularError when more than one AttestationPolicy entity is found.
 // Returns a *NotFoundError when no AttestationPolicy entities are found.
 func (apq *AttestationPolicyQuery) Only(ctx context.Context) (*AttestationPolicy, error) {
-	nodes, err := apq.Limit(2).All(setContextOp(ctx, apq.ctx, "Only"))
+	nodes, err := apq.Limit(2).All(setContextOp(ctx, apq.ctx, ent.OpQueryOnly))
 	if err != nil {
 		return nil, err
 	}
@@ -162,7 +163,7 @@ func (apq *AttestationPolicyQuery) OnlyX(ctx context.Context) *AttestationPolicy
 // Returns a *NotFoundError when no entities are found.
 func (apq *AttestationPolicyQuery) OnlyID(ctx context.Context) (id uuid.UUID, err error) {
 	var ids []uuid.UUID
-	if ids, err = apq.Limit(2).IDs(setContextOp(ctx, apq.ctx, "OnlyID")); err != nil {
+	if ids, err = apq.Limit(2).IDs(setContextOp(ctx, apq.ctx, ent.OpQueryOnlyID)); err != nil {
 		return
 	}
 	switch len(ids) {
@@ -187,7 +188,7 @@ func (apq *AttestationPolicyQuery) OnlyIDX(ctx context.Context) uuid.UUID {
 
 // All executes the query and returns a list of AttestationPolicies.
 func (apq *AttestationPolicyQuery) All(ctx context.Context) ([]*AttestationPolicy, error) {
-	ctx = setContextOp(ctx, apq.ctx, "All")
+	ctx = setContextOp(ctx, apq.ctx, ent.OpQueryAll)
 	if err := apq.prepareQuery(ctx); err != nil {
 		return nil, err
 	}
@@ -209,7 +210,7 @@ func (apq *AttestationPolicyQuery) IDs(ctx context.Context) (ids []uuid.UUID, er
 	if apq.ctx.Unique == nil && apq.path != nil {
 		apq.Unique(true)
 	}
-	ctx = setContextOp(ctx, apq.ctx, "IDs")
+	ctx = setContextOp(ctx, apq.ctx, ent.OpQueryIDs)
 	if err = apq.Select(attestationpolicy.FieldID).Scan(ctx, &ids); err != nil {
 		return nil, err
 	}
@@ -227,7 +228,7 @@ func (apq *AttestationPolicyQuery) IDsX(ctx context.Context) []uuid.UUID {
 
 // Count returns the count of the given query.
 func (apq *AttestationPolicyQuery) Count(ctx context.Context) (int, error) {
-	ctx = setContextOp(ctx, apq.ctx, "Count")
+	ctx = setContextOp(ctx, apq.ctx, ent.OpQueryCount)
 	if err := apq.prepareQuery(ctx); err != nil {
 		return 0, err
 	}
@@ -245,7 +246,7 @@ func (apq *AttestationPolicyQuery) CountX(ctx context.Context) int {
 
 // Exist returns true if the query has elements in the graph.
 func (apq *AttestationPolicyQuery) Exist(ctx context.Context) (bool, error) {
-	ctx = setContextOp(ctx, apq.ctx, "Exist")
+	ctx = setContextOp(ctx, apq.ctx, ent.OpQueryExist)
 	switch _, err := apq.FirstID(ctx); {
 	case IsNotFound(err):
 		return false, nil
@@ -550,7 +551,7 @@ func (apgb *AttestationPolicyGroupBy) Aggregate(fns ...AggregateFunc) *Attestati
 
 // Scan applies the selector query and scans the result into the given value.
 func (apgb *AttestationPolicyGroupBy) Scan(ctx context.Context, v any) error {
-	ctx = setContextOp(ctx, apgb.build.ctx, "GroupBy")
+	ctx = setContextOp(ctx, apgb.build.ctx, ent.OpQueryGroupBy)
 	if err := apgb.build.prepareQuery(ctx); err != nil {
 		return err
 	}
@@ -598,7 +599,7 @@ func (aps *AttestationPolicySelect) Aggregate(fns ...AggregateFunc) *Attestation
 
 // Scan applies the selector query and scans the result into the given value.
 func (aps *AttestationPolicySelect) Scan(ctx context.Context, v any) error {
-	ctx = setContextOp(ctx, aps.ctx, "Select")
+	ctx = setContextOp(ctx, aps.ctx, ent.OpQuerySelect)
 	if err := aps.prepareQuery(ctx); err != nil {
 		return err
 	}

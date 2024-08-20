@@ -136,7 +136,7 @@ func (acu *AttestationCollectionUpdate) check() error {
 			return &ValidationError{Name: "name", err: fmt.Errorf(`ent: validator failed for field "AttestationCollection.name": %w`, err)}
 		}
 	}
-	if _, ok := acu.mutation.StatementID(); acu.mutation.StatementCleared() && !ok {
+	if acu.mutation.StatementCleared() && len(acu.mutation.StatementIDs()) > 0 {
 		return errors.New(`ent: clearing a required unique edge "AttestationCollection.statement"`)
 	}
 	return nil
@@ -370,7 +370,7 @@ func (acuo *AttestationCollectionUpdateOne) check() error {
 			return &ValidationError{Name: "name", err: fmt.Errorf(`ent: validator failed for field "AttestationCollection.name": %w`, err)}
 		}
 	}
-	if _, ok := acuo.mutation.StatementID(); acuo.mutation.StatementCleared() && !ok {
+	if acuo.mutation.StatementCleared() && len(acuo.mutation.StatementIDs()) > 0 {
 		return errors.New(`ent: clearing a required unique edge "AttestationCollection.statement"`)
 	}
 	return nil

@@ -99,7 +99,7 @@ func (au *AttestationUpdate) check() error {
 			return &ValidationError{Name: "type", err: fmt.Errorf(`ent: validator failed for field "Attestation.type": %w`, err)}
 		}
 	}
-	if _, ok := au.mutation.AttestationCollectionID(); au.mutation.AttestationCollectionCleared() && !ok {
+	if au.mutation.AttestationCollectionCleared() && len(au.mutation.AttestationCollectionIDs()) > 0 {
 		return errors.New(`ent: clearing a required unique edge "Attestation.attestation_collection"`)
 	}
 	return nil
@@ -252,7 +252,7 @@ func (auo *AttestationUpdateOne) check() error {
 			return &ValidationError{Name: "type", err: fmt.Errorf(`ent: validator failed for field "Attestation.type": %w`, err)}
 		}
 	}
-	if _, ok := auo.mutation.AttestationCollectionID(); auo.mutation.AttestationCollectionCleared() && !ok {
+	if auo.mutation.AttestationCollectionCleared() && len(auo.mutation.AttestationCollectionIDs()) > 0 {
 		return errors.New(`ent: clearing a required unique edge "Attestation.attestation_collection"`)
 	}
 	return nil

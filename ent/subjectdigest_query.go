@@ -7,6 +7,7 @@ import (
 	"fmt"
 	"math"
 
+	"entgo.io/ent"
 	"entgo.io/ent/dialect/sql"
 	"entgo.io/ent/dialect/sql/sqlgraph"
 	"entgo.io/ent/schema/field"
@@ -88,7 +89,7 @@ func (sdq *SubjectDigestQuery) QuerySubject() *SubjectQuery {
 // First returns the first SubjectDigest entity from the query.
 // Returns a *NotFoundError when no SubjectDigest was found.
 func (sdq *SubjectDigestQuery) First(ctx context.Context) (*SubjectDigest, error) {
-	nodes, err := sdq.Limit(1).All(setContextOp(ctx, sdq.ctx, "First"))
+	nodes, err := sdq.Limit(1).All(setContextOp(ctx, sdq.ctx, ent.OpQueryFirst))
 	if err != nil {
 		return nil, err
 	}
@@ -111,7 +112,7 @@ func (sdq *SubjectDigestQuery) FirstX(ctx context.Context) *SubjectDigest {
 // Returns a *NotFoundError when no SubjectDigest ID was found.
 func (sdq *SubjectDigestQuery) FirstID(ctx context.Context) (id uuid.UUID, err error) {
 	var ids []uuid.UUID
-	if ids, err = sdq.Limit(1).IDs(setContextOp(ctx, sdq.ctx, "FirstID")); err != nil {
+	if ids, err = sdq.Limit(1).IDs(setContextOp(ctx, sdq.ctx, ent.OpQueryFirstID)); err != nil {
 		return
 	}
 	if len(ids) == 0 {
@@ -134,7 +135,7 @@ func (sdq *SubjectDigestQuery) FirstIDX(ctx context.Context) uuid.UUID {
 // Returns a *NotSingularError when more than one SubjectDigest entity is found.
 // Returns a *NotFoundError when no SubjectDigest entities are found.
 func (sdq *SubjectDigestQuery) Only(ctx context.Context) (*SubjectDigest, error) {
-	nodes, err := sdq.Limit(2).All(setContextOp(ctx, sdq.ctx, "Only"))
+	nodes, err := sdq.Limit(2).All(setContextOp(ctx, sdq.ctx, ent.OpQueryOnly))
 	if err != nil {
 		return nil, err
 	}
@@ -162,7 +163,7 @@ func (sdq *SubjectDigestQuery) OnlyX(ctx context.Context) *SubjectDigest {
 // Returns a *NotFoundError when no entities are found.
 func (sdq *SubjectDigestQuery) OnlyID(ctx context.Context) (id uuid.UUID, err error) {
 	var ids []uuid.UUID
-	if ids, err = sdq.Limit(2).IDs(setContextOp(ctx, sdq.ctx, "OnlyID")); err != nil {
+	if ids, err = sdq.Limit(2).IDs(setContextOp(ctx, sdq.ctx, ent.OpQueryOnlyID)); err != nil {
 		return
 	}
 	switch len(ids) {
@@ -187,7 +188,7 @@ func (sdq *SubjectDigestQuery) OnlyIDX(ctx context.Context) uuid.UUID {
 
 // All executes the query and returns a list of SubjectDigests.
 func (sdq *SubjectDigestQuery) All(ctx context.Context) ([]*SubjectDigest, error) {
-	ctx = setContextOp(ctx, sdq.ctx, "All")
+	ctx = setContextOp(ctx, sdq.ctx, ent.OpQueryAll)
 	if err := sdq.prepareQuery(ctx); err != nil {
 		return nil, err
 	}
@@ -209,7 +210,7 @@ func (sdq *SubjectDigestQuery) IDs(ctx context.Context) (ids []uuid.UUID, err er
 	if sdq.ctx.Unique == nil && sdq.path != nil {
 		sdq.Unique(true)
 	}
-	ctx = setContextOp(ctx, sdq.ctx, "IDs")
+	ctx = setContextOp(ctx, sdq.ctx, ent.OpQueryIDs)
 	if err = sdq.Select(subjectdigest.FieldID).Scan(ctx, &ids); err != nil {
 		return nil, err
 	}
@@ -227,7 +228,7 @@ func (sdq *SubjectDigestQuery) IDsX(ctx context.Context) []uuid.UUID {
 
 // Count returns the count of the given query.
 func (sdq *SubjectDigestQuery) Count(ctx context.Context) (int, error) {
-	ctx = setContextOp(ctx, sdq.ctx, "Count")
+	ctx = setContextOp(ctx, sdq.ctx, ent.OpQueryCount)
 	if err := sdq.prepareQuery(ctx); err != nil {
 		return 0, err
 	}
@@ -245,7 +246,7 @@ func (sdq *SubjectDigestQuery) CountX(ctx context.Context) int {
 
 // Exist returns true if the query has elements in the graph.
 func (sdq *SubjectDigestQuery) Exist(ctx context.Context) (bool, error) {
-	ctx = setContextOp(ctx, sdq.ctx, "Exist")
+	ctx = setContextOp(ctx, sdq.ctx, ent.OpQueryExist)
 	switch _, err := sdq.FirstID(ctx); {
 	case IsNotFound(err):
 		return false, nil
@@ -550,7 +551,7 @@ func (sdgb *SubjectDigestGroupBy) Aggregate(fns ...AggregateFunc) *SubjectDigest
 
 // Scan applies the selector query and scans the result into the given value.
 func (sdgb *SubjectDigestGroupBy) Scan(ctx context.Context, v any) error {
-	ctx = setContextOp(ctx, sdgb.build.ctx, "GroupBy")
+	ctx = setContextOp(ctx, sdgb.build.ctx, ent.OpQueryGroupBy)
 	if err := sdgb.build.prepareQuery(ctx); err != nil {
 		return err
 	}
@@ -598,7 +599,7 @@ func (sds *SubjectDigestSelect) Aggregate(fns ...AggregateFunc) *SubjectDigestSe
 
 // Scan applies the selector query and scans the result into the given value.
 func (sds *SubjectDigestSelect) Scan(ctx context.Context, v any) error {
-	ctx = setContextOp(ctx, sds.ctx, "Select")
+	ctx = setContextOp(ctx, sds.ctx, ent.OpQuerySelect)
 	if err := sds.prepareQuery(ctx); err != nil {
 		return err
 	}
