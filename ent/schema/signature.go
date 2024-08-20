@@ -32,7 +32,7 @@ type Signature struct {
 func (Signature) Fields() []ent.Field {
 	return []ent.Field{
 		field.UUID("id", uuid.UUID{}).Default(uuid.New).Immutable().Unique(),
-		field.String("key_id").NotEmpty(),
+		field.String("key_id"),
 		field.String("signature").NotEmpty().SchemaType(map[string]string{dialect.MySQL: "text"}),
 	}
 }
