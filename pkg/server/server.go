@@ -465,7 +465,7 @@ func (s *Server) DownloadArtifactHandler(w http.ResponseWriter, r *http.Request)
 
 	defer func() {
 		if err := file.Close(); err != nil {
-			logrus.Errorf(fmt.Sprintf("failed to close artifact distribution file %s: %+v", distro.FileLocation, err))
+			logrus.Errorf("failed to close artifact distribution file %s: %+v", distro.FileLocation, err)
 		}
 	}()
 
