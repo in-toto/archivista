@@ -68,8 +68,6 @@ func ValidColumn(column string) bool {
 }
 
 var (
-	// KeyIDValidator is a validator for the "key_id" field. It is called by the builders before save.
-	KeyIDValidator func(string) error
 	// SignatureValidator is a validator for the "signature" field. It is called by the builders before save.
 	SignatureValidator func(string) error
 	// DefaultID holds the default value on creation for the "id" field.

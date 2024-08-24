@@ -153,11 +153,6 @@ func (su *SignatureUpdate) ExecX(ctx context.Context) {
 
 // check runs all checks and user-defined validators on the builder.
 func (su *SignatureUpdate) check() error {
-	if v, ok := su.mutation.KeyID(); ok {
-		if err := signature.KeyIDValidator(v); err != nil {
-			return &ValidationError{Name: "key_id", err: fmt.Errorf(`ent: validator failed for field "Signature.key_id": %w`, err)}
-		}
-	}
 	if v, ok := su.mutation.Signature(); ok {
 		if err := signature.SignatureValidator(v); err != nil {
 			return &ValidationError{Name: "signature", err: fmt.Errorf(`ent: validator failed for field "Signature.signature": %w`, err)}
@@ -414,11 +409,6 @@ func (suo *SignatureUpdateOne) ExecX(ctx context.Context) {
 
 // check runs all checks and user-defined validators on the builder.
 func (suo *SignatureUpdateOne) check() error {
-	if v, ok := suo.mutation.KeyID(); ok {
-		if err := signature.KeyIDValidator(v); err != nil {
-			return &ValidationError{Name: "key_id", err: fmt.Errorf(`ent: validator failed for field "Signature.key_id": %w`, err)}
-		}
-	}
 	if v, ok := suo.mutation.Signature(); ok {
 		if err := signature.SignatureValidator(v); err != nil {
 			return &ValidationError{Name: "signature", err: fmt.Errorf(`ent: validator failed for field "Signature.signature": %w`, err)}

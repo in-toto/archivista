@@ -7,6 +7,7 @@ import (
 	"fmt"
 	"math"
 
+	"entgo.io/ent"
 	"entgo.io/ent/dialect/sql"
 	"entgo.io/ent/dialect/sql/sqlgraph"
 	"entgo.io/ent/schema/field"
@@ -88,7 +89,7 @@ func (pdq *PayloadDigestQuery) QueryDsse() *DsseQuery {
 // First returns the first PayloadDigest entity from the query.
 // Returns a *NotFoundError when no PayloadDigest was found.
 func (pdq *PayloadDigestQuery) First(ctx context.Context) (*PayloadDigest, error) {
-	nodes, err := pdq.Limit(1).All(setContextOp(ctx, pdq.ctx, "First"))
+	nodes, err := pdq.Limit(1).All(setContextOp(ctx, pdq.ctx, ent.OpQueryFirst))
 	if err != nil {
 		return nil, err
 	}
@@ -111,7 +112,7 @@ func (pdq *PayloadDigestQuery) FirstX(ctx context.Context) *PayloadDigest {
 // Returns a *NotFoundError when no PayloadDigest ID was found.
 func (pdq *PayloadDigestQuery) FirstID(ctx context.Context) (id uuid.UUID, err error) {
 	var ids []uuid.UUID
-	if ids, err = pdq.Limit(1).IDs(setContextOp(ctx, pdq.ctx, "FirstID")); err != nil {
+	if ids, err = pdq.Limit(1).IDs(setContextOp(ctx, pdq.ctx, ent.OpQueryFirstID)); err != nil {
 		return
 	}
 	if len(ids) == 0 {
@@ -134,7 +135,7 @@ func (pdq *PayloadDigestQuery) FirstIDX(ctx context.Context) uuid.UUID {
 // Returns a *NotSingularError when more than one PayloadDigest entity is found.
 // Returns a *NotFoundError when no PayloadDigest entities are found.
 func (pdq *PayloadDigestQuery) Only(ctx context.Context) (*PayloadDigest, error) {
-	nodes, err := pdq.Limit(2).All(setContextOp(ctx, pdq.ctx, "Only"))
+	nodes, err := pdq.Limit(2).All(setContextOp(ctx, pdq.ctx, ent.OpQueryOnly))
 	if err != nil {
 		return nil, err
 	}
@@ -162,7 +163,7 @@ func (pdq *PayloadDigestQuery) OnlyX(ctx context.Context) *PayloadDigest {
 // Returns a *NotFoundError when no entities are found.
 func (pdq *PayloadDigestQuery) OnlyID(ctx context.Context) (id uuid.UUID, err error) {
 	var ids []uuid.UUID
-	if ids, err = pdq.Limit(2).IDs(setContextOp(ctx, pdq.ctx, "OnlyID")); err != nil {
+	if ids, err = pdq.Limit(2).IDs(setContextOp(ctx, pdq.ctx, ent.OpQueryOnlyID)); err != nil {
 		return
 	}
 	switch len(ids) {
@@ -187,7 +188,7 @@ func (pdq *PayloadDigestQuery) OnlyIDX(ctx context.Context) uuid.UUID {
 
 // All executes the query and returns a list of PayloadDigests.
 func (pdq *PayloadDigestQuery) All(ctx context.Context) ([]*PayloadDigest, error) {
-	ctx = setContextOp(ctx, pdq.ctx, "All")
+	ctx = setContextOp(ctx, pdq.ctx, ent.OpQueryAll)
 	if err := pdq.prepareQuery(ctx); err != nil {
 		return nil, err
 	}
@@ -209,7 +210,7 @@ func (pdq *PayloadDigestQuery) IDs(ctx context.Context) (ids []uuid.UUID, err er
 	if pdq.ctx.Unique == nil && pdq.path != nil {
 		pdq.Unique(true)
 	}
-	ctx = setContextOp(ctx, pdq.ctx, "IDs")
+	ctx = setContextOp(ctx, pdq.ctx, ent.OpQueryIDs)
 	if err = pdq.Select(payloaddigest.FieldID).Scan(ctx, &ids); err != nil {
 		return nil, err
 	}
@@ -227,7 +228,7 @@ func (pdq *PayloadDigestQuery) IDsX(ctx context.Context) []uuid.UUID {
 
 // Count returns the count of the given query.
 func (pdq *PayloadDigestQuery) Count(ctx context.Context) (int, error) {
-	ctx = setContextOp(ctx, pdq.ctx, "Count")
+	ctx = setContextOp(ctx, pdq.ctx, ent.OpQueryCount)
 	if err := pdq.prepareQuery(ctx); err != nil {
 		return 0, err
 	}
@@ -245,7 +246,7 @@ func (pdq *PayloadDigestQuery) CountX(ctx context.Context) int {
 
 // Exist returns true if the query has elements in the graph.
 func (pdq *PayloadDigestQuery) Exist(ctx context.Context) (bool, error) {
-	ctx = setContextOp(ctx, pdq.ctx, "Exist")
+	ctx = setContextOp(ctx, pdq.ctx, ent.OpQueryExist)
 	switch _, err := pdq.FirstID(ctx); {
 	case IsNotFound(err):
 		return false, nil
@@ -550,7 +551,7 @@ func (pdgb *PayloadDigestGroupBy) Aggregate(fns ...AggregateFunc) *PayloadDigest
 
 // Scan applies the selector query and scans the result into the given value.
 func (pdgb *PayloadDigestGroupBy) Scan(ctx context.Context, v any) error {
-	ctx = setContextOp(ctx, pdgb.build.ctx, "GroupBy")
+	ctx = setContextOp(ctx, pdgb.build.ctx, ent.OpQueryGroupBy)
 	if err := pdgb.build.prepareQuery(ctx); err != nil {
 		return err
 	}
@@ -598,7 +599,7 @@ func (pds *PayloadDigestSelect) Aggregate(fns ...AggregateFunc) *PayloadDigestSe
 
 // Scan applies the selector query and scans the result into the given value.
 func (pds *PayloadDigestSelect) Scan(ctx context.Context, v any) error {
-	ctx = setContextOp(ctx, pds.ctx, "Select")
+	ctx = setContextOp(ctx, pds.ctx, ent.OpQuerySelect)
 	if err := pds.prepareQuery(ctx); err != nil {
 		return err
 	}

@@ -81,10 +81,6 @@ func init() {
 	payloaddigest.DefaultID = payloaddigestDescID.Default.(func() uuid.UUID)
 	signatureFields := schema.Signature{}.Fields()
 	_ = signatureFields
-	// signatureDescKeyID is the schema descriptor for key_id field.
-	signatureDescKeyID := signatureFields[1].Descriptor()
-	// signature.KeyIDValidator is a validator for the "key_id" field. It is called by the builders before save.
-	signature.KeyIDValidator = signatureDescKeyID.Validators[0].(func(string) error)
 	// signatureDescSignature is the schema descriptor for signature field.
 	signatureDescSignature := signatureFields[2].Descriptor()
 	// signature.SignatureValidator is a validator for the "signature" field. It is called by the builders before save.

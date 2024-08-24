@@ -128,11 +128,6 @@ func (sc *SignatureCreate) check() error {
 	if _, ok := sc.mutation.KeyID(); !ok {
 		return &ValidationError{Name: "key_id", err: errors.New(`ent: missing required field "Signature.key_id"`)}
 	}
-	if v, ok := sc.mutation.KeyID(); ok {
-		if err := signature.KeyIDValidator(v); err != nil {
-			return &ValidationError{Name: "key_id", err: fmt.Errorf(`ent: validator failed for field "Signature.key_id": %w`, err)}
-		}
-	}
 	if _, ok := sc.mutation.Signature(); !ok {
 		return &ValidationError{Name: "signature", err: errors.New(`ent: missing required field "Signature.signature"`)}
 	}
