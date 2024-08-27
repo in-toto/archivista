@@ -30,6 +30,7 @@ import (
 	"github.com/in-toto/archivista/pkg/metadatastorage/sqlstore"
 	"github.com/in-toto/archivista/pkg/objectstorage/blobstore"
 	"github.com/in-toto/archivista/pkg/objectstorage/filestore"
+	"github.com/in-toto/archivista/pkg/publisherstore"
 	"github.com/minio/minio-go/v7/pkg/credentials"
 	"github.com/sirupsen/logrus"
 )
@@ -53,10 +54,11 @@ type ArchivistaService struct {
 // Setup Archivista Service
 func (a *ArchivistaService) Setup() (*Server, error) {
 	var (
-		level     logrus.Level
-		err       error
-		sqlStore  *sqlstore.Store
-		fileStore StorerGetter
+		level          logrus.Level
+		err            error
+		sqlStore       *sqlstore.Store
+		fileStore      StorerGetter
+		publisherStore []publisherstore.Publisher
 	)
 	serverOpts := make([]Option, 0)
 
@@ -128,6 +130,10 @@ func (a *ArchivistaService) Setup() (*Server, error) {
 		serverOpts = append(serverOpts, WithArtifactStore(wds))
 	}
 
+	if a.Cfg.Publisher != nil {
+		publisherStore = publisherstore.New(a.Cfg)
+		serverOpts = append(serverOpts, WithPublishers(publisherStore))
+	}
 	// Create the Archivista server with all options
 	server, err := New(a.Cfg, serverOpts...)
 	if err != nil {

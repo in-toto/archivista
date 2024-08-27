@@ -111,6 +111,7 @@ Archivista is configured through environment variables currently.
 | ARCHIVISTA_ENABLE_ARTIFACT_STORE           | FALSE                                     | Enable Artifact Store Endpoints                                                               |
 | ARCHIVISTA_ARTIFACT_STORE_CONFIG           | /tmp/artifacts/config.yaml                | Location of the config describing available artifacts                                         |
 
+
 ## Using Archivista
 
 Archivista exposes two HTTP endpoints to upload or download attestations:

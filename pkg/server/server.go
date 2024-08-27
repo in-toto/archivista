@@ -38,16 +38,18 @@ import (
 	"github.com/in-toto/archivista/pkg/api"
 	"github.com/in-toto/archivista/pkg/artifactstore"
 	"github.com/in-toto/archivista/pkg/config"
+	"github.com/in-toto/archivista/pkg/publisherstore"
 	"github.com/sirupsen/logrus"
 	httpSwagger "github.com/swaggo/http-swagger/v2"
 )
 
 type Server struct {
-	metadataStore Storer
-	objectStore   StorerGetter
-	artifactStore artifactstore.Store
-	router        *mux.Router
-	sqlClient     *ent.Client
+	metadataStore  Storer
+	objectStore    StorerGetter
+	artifactStore  artifactstore.Store
+	router         *mux.Router
+	sqlClient      *ent.Client
+	publisherStore []publisherstore.Publisher
 }
 
 type Storer interface {
@@ -86,6 +88,12 @@ func WithEntSqlClient(sqlClient *ent.Client) Option {
 func WithArtifactStore(wds artifactstore.Store) Option {
 	return func(s *Server) {
 		s.artifactStore = wds
+	}
+}
+
+func WithPublishers(pub []publisherstore.Publisher) Option {
+	return func(s *Server) {
+		s.publisherStore = pub
 	}
 }
 
@@ -166,6 +174,15 @@ func (s *Server) Upload(ctx context.Context, r io.Reader) (api.UploadResponse, e
 	if err := s.metadataStore.Store(ctx, gid.String(), payload); err != nil {
 		logrus.Errorf("received error from metadata store: %+v", err)
 		return api.UploadResponse{}, err
+	}
+
+	if s.publisherStore != nil {
+		for _, publisher := range s.publisherStore {
+			// TODO: Make publish asynchrouns and use goroutine
+			if err := publisher.Publish(ctx, gid.String(), payload); err != nil {
+				logrus.Errorf("received error from publisher: %+v", err)
+			}
+		}
 	}
 
 	return api.UploadResponse{Gitoid: gid.String()}, nil
