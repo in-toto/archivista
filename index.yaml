@@ -1,0 +1,22 @@
+apiVersion: v1
+entries:
+  archivista:
+  - apiVersion: v2
+    appVersion: 0.4.0
+    created: "2024-09-12T13:03:01.857313+02:00"
+    description: A Helm chart for Archivista
+    digest: e901c42ea1bf688a0d495d3664b1d5115be2335bec1559240624ecb0ef207916
+    home: https://github.com/in-toto/
+    keywords:
+    - attestation
+    maintainers:
+    - name: in-toto
+    name: archivista
+    sources:
+    - https://github.com/in-toto/archivista/chart
+    - https://github.com/in-toto/archivista
+    type: application
+    urls:
+    - archivista-0.4.0.tgz
+    version: 0.4.0
+generated: "2024-09-12T13:03:01.856497+02:00"
