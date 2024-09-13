@@ -19,6 +19,7 @@ import (
 
 	"github.com/in-toto/archivista/pkg/config"
 	"github.com/in-toto/archivista/pkg/publisherstore/dapr"
+	"github.com/in-toto/archivista/pkg/publisherstore/rstuf"
 	"github.com/sirupsen/logrus"
 )
 
@@ -35,6 +36,9 @@ func New(config *config.Config) []Publisher {
 			publisherStore = append(publisherStore, dapr.NewPublisher(config))
 			logrus.Info("Using publisher: DAPR")
 
+		case "RSTUF":
+			publisherStore = append(publisherStore, rstuf.NewPublisher(config))
+			logrus.Info("Using publisher: RSTUF")
 		default:
 			logrus.Errorf("unsupported publisher type: %s", pubType)
 		}
