@@ -18,6 +18,7 @@ import (
 	"strings"
 
 	"github.com/in-toto/archivista/pkg/config"
+	"github.com/in-toto/archivista/pkg/publisherstore/dapr"
 	"github.com/sirupsen/logrus"
 )
 
@@ -30,7 +31,10 @@ func New(config *config.Config) []Publisher {
 	for _, pubType := range config.Publisher {
 		pubType = strings.ToUpper(pubType) // Normalize the input
 		switch pubType {
-		// cases here
+		case "DAPR":
+			publisherStore = append(publisherStore, dapr.NewPublisher(config))
+			logrus.Info("Using publisher: DAPR")
+
 		default:
 			logrus.Errorf("unsupported publisher type: %s", pubType)
 		}

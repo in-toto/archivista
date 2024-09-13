@@ -54,8 +54,11 @@ type Config struct {
 	EnableGraphql          bool `default:"TRUE" desc:"*** Enable GraphQL Endpoint" split_words:"true"`
 	GraphqlWebClientEnable bool `default:"TRUE" desc:"Enable GraphiQL, the GraphQL web client" split_words:"true"`
 
-	EnableArtifactStore bool   `default:"FALSE" desc:"*** Enable Artifact Store Endpoints" split_words:"true"`
-	ArtifactStoreConfig string `default:"/tmp/artifacts/config.yaml" desc:"Location of the config describing available artifacts" split_words:"true"`
+	EnableArtifactStore bool     `default:"FALSE" desc:"*** Enable Artifact Store Endpoints" split_words:"true"`
+	ArtifactStoreConfig string   `default:"/tmp/artifacts/config.yaml" desc:"Location of the config describing available artifacts" split_words:"true"`
+	Publisher           []string `default:"" desc:"Publisher to use. Options are DAPR or empty string for disabled." split_words:"true"`
+	PublisherDaprHost   string   `default:"http://127.0.0.1" desc:"Host for Dapr" split_words:"true"`
+	PublisherDaprPort   string   `default:"3500" desc:"Port for Dapr" split_words:"true"`
 }
 
 // Process reads config from env

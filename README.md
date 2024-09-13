@@ -110,6 +110,12 @@ Archivista is configured through environment variables currently.
 | ARCHIVISTA_GRAPHQL_WEB_CLIENT_ENABLE       | TRUE                                      | Enable GraphiQL, the GraphQL web client                                                       |
 | ARCHIVISTA_ENABLE_ARTIFACT_STORE           | FALSE                                     | Enable Artifact Store Endpoints                                                               |
 | ARCHIVISTA_ARTIFACT_STORE_CONFIG           | /tmp/artifacts/config.yaml                | Location of the config describing available artifacts                                         |
+| ARCHIVISTA_PUBLISHER                       | ""                                        | Publisher to use. Options are DAPR. Supports multiple, Comma-separated list of String         |
+| ARCHIVISTA_PUBLISHER_DAPR_HOST             | localhost                                 | Dapr host                                                                                     |
+| ARCHIVISTA_PUBLISHER_DAPR_PORT             | 3500                                      | Dapr port                                                                                     |
+| ARCHIVISTA_PUBLISHER_DAPR_COMPONENT_NAME   | "archivista"                              | Dapr pubsub component name                                                                    |
+| ARCHIVISTA_PUBLISHER_DAPR_TOPIC            | "attestations"                            | Dapr pubsub topic                                                                             |
+| ARCHIVISTA_PUBLISHER_DAPR_URL              |                                           | Dapr full URL                                                                                 |
 
 
 ## Using Archivista
