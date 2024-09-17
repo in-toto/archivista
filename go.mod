@@ -1,13 +1,13 @@
 module github.com/in-toto/archivista
 
-go 1.22.5
+go 1.23.0
 
-toolchain go1.22.6
+toolchain go1.23.1
 
 require (
 	ariga.io/sqlcomment v0.1.0
 	entgo.io/contrib v0.6.0
-	entgo.io/ent v0.14.0
+	entgo.io/ent v0.14.1
 	github.com/99designs/gqlgen v0.17.51
 	github.com/antonfisher/nested-logrus-formatter v1.3.1
 	github.com/digitorus/timestamp v0.0.0-20231217203849-220c5c2851b7
