@@ -1,4 +1,4 @@
-# Copyright 2023 The Archivista Contributors
+# Copyright 2024 The Archivista Contributors
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
@@ -17,7 +17,7 @@ name: archivista
 description: A Helm chart for Archivista
 
 type: application
-version: 0.5.0
+version: 0.5.1
 
 keywords:
   - attestation
@@ -31,4 +31,4 @@ sources:
 maintainers:
   - name: in-toto
 
-appVersion: "0.5.3"
+appVersion: "0.5.4"
