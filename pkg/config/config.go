@@ -56,6 +56,14 @@ type Config struct {
 
 	EnableArtifactStore bool   `default:"FALSE" desc:"*** Enable Artifact Store Endpoints" split_words:"true"`
 	ArtifactStoreConfig string `default:"/tmp/artifacts/config.yaml" desc:"Location of the config describing available artifacts" split_words:"true"`
+
+	Publisher                  []string `default:"" desc:"Publisher to use. Options are DAPR, RSTUF or empty string for disabled." split_words:"true"`
+	PublisherDaprHost          string   `default:"http://127.0.0.1" desc:"Host for Dapr" split_words:"true"`
+	PublisherDaprPort          string   `default:"3500" desc:"Port for Dapr" split_words:"true"`
+	PublisherDaprURL           string   `default:"" desc:"URL for Dapr" split_words:"true"`
+	PublisherDaprComponentName string   `default:"archivista" desc:"Dapr pubsub component name" split_words:"true"`
+	PublisherDaprTopic         string   `default:"attestations" desc:"Dapr pubsub topic" split_words:"true"`
+	PublisherRstufHost         string   `default:"http://127.0.0.1" desc:"Host for RSTUF" split_words:"true"`
 }
 
 // Process reads config from env
