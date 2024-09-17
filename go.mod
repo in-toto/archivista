@@ -1,6 +1,7 @@
 module github.com/in-toto/archivista
 
-go 1.22.5
+go 1.23.0
+
 toolchain go1.23.1
 
 require (
