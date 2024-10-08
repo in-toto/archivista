@@ -18,8 +18,8 @@ RUN apk update && apk add --no-cache file git curl
 RUN curl -sSf https://atlasgo.sh | sh
 ENV GOMODCACHE /root/.cache/gocache
 RUN --mount=target=. --mount=target=/root/.cache,type=cache \
-    CGO_ENABLED=0 go build -o /out/archivista -ldflags '-s -d -w' ./cmd/archivista; \
-    file /out/archivista | grep "statically linked"
+  CGO_ENABLED=0 go build -o /out/archivista -ldflags '-s -d -w' ./cmd/archivista; \
+  file /out/archivista | grep "statically linked"
 
 FROM alpine:3.20.3@sha256:beefdbd8a1da6d2915566fde36db9db0b524eb737fc57cd1367effd16dc0d06d
 COPY --from=build /out/archivista /bin/archivista
