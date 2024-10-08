@@ -35,6 +35,7 @@ type Config struct {
 	SPIFFEAddress         string `default:"unix:///tmp/spire-agent/public/api.sock" desc:"SPIFFE server address" split_words:"true"`
 	SPIFFETrustedServerId string `default:"" desc:"Trusted SPIFFE server ID; defaults to any" split_words:"true"`
 
+	EnableSQLStore                bool          `default:"TRUE" desc:"*** Enable SQL Metadata store. If disabled, GraphQL will also be disabled ***" split_words:"true"`
 	SQLStoreConnectionString      string        `default:"root:example@tcp(db)/testify" desc:"SQL store connection string" split_words:"true"`
 	SQLStoreBackend               string        `default:"MYSQL" desc:"SQL backend to use. Options are MYSQL, PSQL" split_words:"true"`
 	SQLStoreMaxIdleConnections    int           `default:"10" desc:"Maximum number of connections in the idle connection pool" split_words:"true"`
@@ -86,7 +87,7 @@ func (c *Config) Process() error {
 		}
 	}
 
-	//check if both are being used and error if so
+	// check if both are being used and error if so
 	if usingDeprecatedEnv && usingNewEnv {
 		err := errors.New("both deprecated and new environment variables are being used. Please use only the new environment variables")
 		return err
