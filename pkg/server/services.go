@@ -97,28 +97,36 @@ func (a *ArchivistaService) Setup() (*Server, error) {
 	}
 	serverOpts = append(serverOpts, WithObjectStore(fileStore))
 
-	entClient, err := sqlstore.NewEntClient(
-		a.Cfg.SQLStoreBackend,
-		a.Cfg.SQLStoreConnectionString,
-		sqlstore.ClientWithMaxIdleConns(a.Cfg.SQLStoreMaxIdleConnections),
-		sqlstore.ClientWithMaxOpenConns(a.Cfg.SQLStoreMaxOpenConnections),
-		sqlstore.ClientWithConnMaxLifetime(a.Cfg.SQLStoreConnectionMaxLifetime),
-	)
+	if a.Cfg.EnableSQLStore {
+		entClient, err := sqlstore.NewEntClient(
+			a.Cfg.SQLStoreBackend,
+			a.Cfg.SQLStoreConnectionString,
+			sqlstore.ClientWithMaxIdleConns(a.Cfg.SQLStoreMaxIdleConnections),
+			sqlstore.ClientWithMaxOpenConns(a.Cfg.SQLStoreMaxOpenConnections),
+			sqlstore.ClientWithConnMaxLifetime(a.Cfg.SQLStoreConnectionMaxLifetime),
+		)
+		if err != nil {
+			logrus.Fatalf("could not create ent client: %+v", err)
+		}
 
-	if err != nil {
-		logrus.Fatalf("could not create ent client: %+v", err)
+		// Continue with the existing setup code for the SQLStore
+		sqlStore, a.sqlStoreCh, err = sqlstore.New(context.Background(), entClient)
+		if err != nil {
+			logrus.Fatalf("error initializing new SQLStore: %+v", err)
+		}
+		serverOpts = append(serverOpts, WithMetadataStore(sqlStore))
+
+		// Add SQL client for ent
+		sqlClient := sqlStore.GetClient()
+		serverOpts = append(serverOpts, WithEntSqlClient(sqlClient))
+	} else {
+		sqlStoreChan := make(chan error)
+		a.sqlStoreCh = sqlStoreChan
+		go func() {
+			<-a.Ctx.Done()
+			close(sqlStoreChan)
+		}()
 	}
-
-	// Continue with the existing setup code for the SQLStore
-	sqlStore, a.sqlStoreCh, err = sqlstore.New(context.Background(), entClient)
-	if err != nil {
-		logrus.Fatalf("error initializing new SQLStore: %+v", err)
-	}
-	serverOpts = append(serverOpts, WithMetadataStore(sqlStore))
-
-	// Add SQL client for ent
-	sqlClient := sqlStore.GetClient()
-	serverOpts = append(serverOpts, WithEntSqlClient(sqlClient))
 
 	// initialize the artifact store
 	if a.Cfg.EnableArtifactStore {
@@ -140,14 +148,7 @@ func (a *ArchivistaService) Setup() (*Server, error) {
 		logrus.Fatalf("could not create archivista server: %+v", err)
 	}
 
-	// Ensure background processes are managed
-	go func() {
-		<-a.sqlStoreCh
-		<-a.fileStoreCh
-	}()
-
 	logrus.WithField("duration", time.Since(now)).Infof("completed phase: initializing storage clients")
-
 	return &server, nil
 }
 

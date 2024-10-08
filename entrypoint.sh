@@ -13,34 +13,40 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-if [[ -z $ARCHIVISTA_SQL_STORE_BACKEND ]]; then
-    SQL_TYPE="MYSQL"
-else
-    SQL_TYPE=$(echo "$ARCHIVISTA_SQL_STORE_BACKEND" | tr '[:lower:]' '[:upper:]')
-fi
-case $SQL_TYPE in
-    MYSQL)
-        if [[ -z $ARCHIVISTA_SQL_STORE_CONNECTION_STRING ]]; then
-            ARCHIVISTA_SQL_STORE_CONNECTION_STRING="root:example@db/testify"
-        fi
-        echo "Running migrations for MySQL"
-        atlas migrate apply --dir "file:///archivista/migrations/mysql" --url "mysql://$ARCHIVISTA_SQL_STORE_CONNECTION_STRING"
-        atlas_rc=$?
-        ;;
-    PSQL)
-        echo "Running migrations for Postgres"
-        atlas migrate apply --dir "file:///archivista/migrations/pgsql" --url "$ARCHIVISTA_SQL_STORE_CONNECTION_STRING"
-        atlas_rc=$?
-        ;;
-    *)
-        echo "Unknown SQL backend: $ARCHIVISTA_SQL_STORE_BACKEND"
-        exit 1
-        ;;
-    esac
+ARCHIVISTA_ENABLE_SQL_STORE=$(echo ${ARCHIVISTA_ENABLE_SQL_STORE} | tr '[:lower:]' '[:upper:]')
 
-if [[ $atlas_rc -ne 0 ]]; then
+if [ "${ARCHIVISTA_ENABLE_SQL_STORE}" = "FALSE" ]; then
+  echo "Skipping migrations"
+else
+  if [[ -z $ARCHIVISTA_SQL_STORE_BACKEND ]]; then
+    SQL_TYPE="MYSQL"
+  else
+    SQL_TYPE=$(echo "$ARCHIVISTA_SQL_STORE_BACKEND" | tr '[:lower:]' '[:upper:]')
+  fi
+  case $SQL_TYPE in
+  MYSQL)
+    if [[ -z $ARCHIVISTA_SQL_STORE_CONNECTION_STRING ]]; then
+      ARCHIVISTA_SQL_STORE_CONNECTION_STRING="root:example@db/testify"
+    fi
+    echo "Running migrations for MySQL"
+    atlas migrate apply --dir "file:///archivista/migrations/mysql" --url "mysql://$ARCHIVISTA_SQL_STORE_CONNECTION_STRING"
+    atlas_rc=$?
+    ;;
+  PSQL)
+    echo "Running migrations for Postgres"
+    atlas migrate apply --dir "file:///archivista/migrations/pgsql" --url "$ARCHIVISTA_SQL_STORE_CONNECTION_STRING"
+    atlas_rc=$?
+    ;;
+  *)
+    echo "Unknown SQL backend: $ARCHIVISTA_SQL_STORE_BACKEND"
+    exit 1
+    ;;
+  esac
+
+  if [[ $atlas_rc -ne 0 ]]; then
     echo "Failed to apply migrations"
     exit 1
+  fi
 fi
 
 /bin/archivista

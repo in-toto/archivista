@@ -110,14 +110,14 @@ func New(cfg *config.Config, opts ...Option) (Server, error) {
 	// TODO: remove from future version (v0.6.0) endpoint with version
 	r.HandleFunc("/download/{gitoid}", s.DownloadHandler)
 	r.HandleFunc("/upload", s.UploadHandler)
-	if cfg.EnableGraphql {
+	if cfg.EnableSQLStore && cfg.EnableGraphql {
 		r.Handle("/query", s.Query(s.sqlClient))
 		r.Handle("/v1/query", s.Query(s.sqlClient))
 	}
 
 	r.HandleFunc("/v1/download/{gitoid}", s.DownloadHandler)
 	r.HandleFunc("/v1/upload", s.UploadHandler)
-	if cfg.GraphqlWebClientEnable {
+	if cfg.EnableSQLStore && cfg.EnableGraphql && cfg.GraphqlWebClientEnable {
 		r.Handle("/",
 			playground.Handler("Archivista", "/v1/query"),
 		)
@@ -171,9 +171,11 @@ func (s *Server) Upload(ctx context.Context, r io.Reader) (api.UploadResponse, e
 		}
 	}
 
-	if err := s.metadataStore.Store(ctx, gid.String(), payload); err != nil {
-		logrus.Errorf("received error from metadata store: %+v", err)
-		return api.UploadResponse{}, err
+	if s.metadataStore != nil {
+		if err := s.metadataStore.Store(ctx, gid.String(), payload); err != nil {
+			logrus.Errorf("received error from metadata store: %+v", err)
+			return api.UploadResponse{}, err
+		}
 	}
 
 	if s.publisherStore != nil {
@@ -321,7 +323,6 @@ func (s *Server) AllArtifactsHandler(w http.ResponseWriter, r *http.Request) {
 	}
 
 	w.Header().Set("Content-Type", "application/json")
-
 }
 
 // @Summary List Artifact Versions
