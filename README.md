@@ -88,36 +88,38 @@ file.
 
 Archivista is configured through environment variables currently.
 
-| Variable                                   | Default Value                             | Description                                                                                   |
-| ------------------------------------------ | ----------------------------------------- | --------------------------------------------------------------------------------------------- |
-| ARCHIVISTA_LISTEN_ON                       | tcp://127.0.0.1:8082                      | URL endpoint for Archivista to listen on                                                      |
-| ARCHIVISTA_READ_TIMEOUT                    | 120                                       | HTTP server read timeout                                                                      |
-| ARCHIVISTA_WRITE_TIMEOUT                   | 120                                       | HTTP server write timeout                                                                     |
-| ARCHIVISTA_LOG_LEVEL                       | INFO                                      | Log level. Options are DEBUG, INFO, WARN, ERROR                                               |
-| ARCHIVISTA_CORS_ALLOW_ORIGINS              |                                           | Comma separated list of origins to allow CORS requests from                                   |
-| ARCHIVISTA_SQL_STORE_BACKEND               |                                           | Backend to use for SQL. Options are MYSQL or PSQL                                             |
-| ARCHIVISTA_SQL_STORE_CONNECTION_STRING     | postgresql://root:example@tcp(db)/testify | SQL store connection string                                                                   |
-| ARCHIVISTA_STORAGE_BACKEND                 |                                           | Backend to use for attestation storage. Options are FILE, BLOB, or empty string for disabled. |
-| ARCHIVISTA_FILE_SERVE_ON                   |                                           | What address to serve files on. Only valid when using FILE storage backend (e.g. `:8081`).    |
-| ARCHIVISTA_FILE_DIR                        | /tmp/archivista/                          | Directory to store and serve files. Only valid when using FILE storage backend.               |
-| ARCHIVISTA_BLOB_STORE_ENDPOINT             | 127.0.0.1:9000                            | URL endpoint for blob storage. Only valid when using BLOB storage backend.                    |
-| ARCHIVISTA_BLOB_STORE_CREDENTIAL_TYPE      |                                           | Blob store credential type. Options are IAM or ACCESS_KEY.                                    |
-| ARCHIVISTA_BLOB_STORE_ACCESS_KEY_ID        |                                           | Blob store access key id. Only valid when using BLOB storage backend.                         |
-| ARCHIVISTA_BLOB_STORE_SECRET_ACCESS_KEY_ID |                                           | Blob store secret access key id. Only valid when using BLOB storage backend.                  |
-| ARCHIVISTA_BLOB_STORE_USE_TLS              | TRUE                                      | Use TLS for BLOB storage backend. Only valid when using BLOB storage backend.                 |
-| ARCHIVISTA_BLOB_STORE_BUCKET_NAME          |                                           | Bucket to use for storage. Only valid when using BLOB storage backend.                        |
-| ARCHIVISTA_ENABLE_GRAPHQL                  | TRUE                                      | Enable GraphQL Endpoint                                                                       |
-| ARCHIVISTA_GRAPHQL_WEB_CLIENT_ENABLE       | TRUE                                      | Enable GraphiQL, the GraphQL web client                                                       |
-| ARCHIVISTA_ENABLE_ARTIFACT_STORE           | FALSE                                     | Enable Artifact Store Endpoints                                                               |
-| ARCHIVISTA_ARTIFACT_STORE_CONFIG           | /tmp/artifacts/config.yaml                | Location of the config describing available artifacts                                         |
-| ARCHIVISTA_PUBLISHER                       | ""                                        | Publisher to use. Options are DAPR, RSTUF. Supports multiple, Comma-separated list of String  |
-| ARCHIVISTA_PUBLISHER_DAPR_HOST             | localhost                                 | Dapr host                                                                                     |
-| ARCHIVISTA_PUBLISHER_DAPR_PORT             | 3500                                      | Dapr port                                                                                     |
-| ARCHIVISTA_PUBLISHER_DAPR_COMPONENT_NAME   | "archivista"                              | Dapr pubsub component name                                                                    |
-| ARCHIVISTA_PUBLISHER_DAPR_TOPIC            | "attestations"                            | Dapr pubsub topic                                                                             |
-| ARCHIVISTA_PUBLISHER_DAPR_URL              |                                           | Dapr full URL                                                                                 |
-| ARCHIVISTA_PUBLISHER_RSTUF_HOST            |                                           | RSTUF URL                                                                                     |
+**Note**: If `ARCHIVISTA_ENABLE_SQL_STORE` is set to false no metadata about store attestations will be collected. Archivista will only store and retrieve attestations by Gitoid from it's storage. Archivista servers with GraphQL or SQL store disabled cannot be used to verify Witness policies.
 
+| Variable                                   | Default Value                             | Description                                                                                                 |
+| ------------------------------------------ | ----------------------------------------- | ----------------------------------------------------------------------------------------------------------- |
+| ARCHIVISTA_LISTEN_ON                       | tcp://127.0.0.1:8082                      | URL endpoint for Archivista to listen on                                                                    |
+| ARCHIVISTA_READ_TIMEOUT                    | 120                                       | HTTP server read timeout                                                                                    |
+| ARCHIVISTA_WRITE_TIMEOUT                   | 120                                       | HTTP server write timeout                                                                                   |
+| ARCHIVISTA_LOG_LEVEL                       | INFO                                      | Log level. Options are DEBUG, INFO, WARN, ERROR                                                             |
+| ARCHIVISTA_CORS_ALLOW_ORIGINS              |                                           | Comma separated list of origins to allow CORS requests from                                                 |
+| ARCHIVISTA_ENABLE_SQL_STORE                | TRUE                                      | Enable SQL Metadata store. If disabled, GraphQL will also be disabled                                       |
+| ARCHIVISTA_SQL_STORE_BACKEND               |                                           | Backend to use for SQL. Options are MYSQL or PSQL                                                           |
+| ARCHIVISTA_SQL_STORE_CONNECTION_STRING     | postgresql://root:example@tcp(db)/testify | SQL store connection string                                                                                 |
+| ARCHIVISTA_STORAGE_BACKEND                 |                                           | Backend to use for attestation storage. Options are FILE, BLOB, or empty string for disabled.               |
+| ARCHIVISTA_FILE_SERVE_ON                   |                                           | What address to serve files on. Only valid when using FILE storage backend (e.g. `:8081`).                  |
+| ARCHIVISTA_FILE_DIR                        | /tmp/archivista/                          | Directory to store and serve files. Only valid when using FILE storage backend.                             |
+| ARCHIVISTA_BLOB_STORE_ENDPOINT             | 127.0.0.1:9000                            | URL endpoint for blob storage. Only valid when using BLOB storage backend.                                  |
+| ARCHIVISTA_BLOB_STORE_CREDENTIAL_TYPE      |                                           | Blob store credential type. Options are IAM or ACCESS_KEY.                                                  |
+| ARCHIVISTA_BLOB_STORE_ACCESS_KEY_ID        |                                           | Blob store access key id. Only valid when using BLOB storage backend.                                       |
+| ARCHIVISTA_BLOB_STORE_SECRET_ACCESS_KEY_ID |                                           | Blob store secret access key id. Only valid when using BLOB storage backend.                                |
+| ARCHIVISTA_BLOB_STORE_USE_TLS              | TRUE                                      | Use TLS for BLOB storage backend. Only valid when using BLOB storage backend.                               |
+| ARCHIVISTA_BLOB_STORE_BUCKET_NAME          |                                           | Bucket to use for storage. Only valid when using BLOB storage backend.                                      |
+| ARCHIVISTA_ENABLE_GRAPHQL                  | TRUE                                      | Enable GraphQL Endpoint. Archivista servers with GraphQL disabled cannot be used to verify Witness policies |
+| ARCHIVISTA_GRAPHQL_WEB_CLIENT_ENABLE       | TRUE                                      | Enable GraphiQL, the GraphQL web client                                                                     |
+| ARCHIVISTA_ENABLE_ARTIFACT_STORE           | FALSE                                     | Enable Artifact Store Endpoints                                                                             |
+| ARCHIVISTA_ARTIFACT_STORE_CONFIG           | /tmp/artifacts/config.yaml                | Location of the config describing available artifacts                                                       |
+| ARCHIVISTA_PUBLISHER                       | ""                                        | Publisher to use. Options are DAPR, RSTUF. Supports multiple, Comma-separated list of String                |
+| ARCHIVISTA_PUBLISHER_DAPR_HOST             | localhost                                 | Dapr host                                                                                                   |
+| ARCHIVISTA_PUBLISHER_DAPR_PORT             | 3500                                      | Dapr port                                                                                                   |
+| ARCHIVISTA_PUBLISHER_DAPR_COMPONENT_NAME   | "archivista"                              | Dapr pubsub component name                                                                                  |
+| ARCHIVISTA_PUBLISHER_DAPR_TOPIC            | "attestations"                            | Dapr pubsub topic                                                                                           |
+| ARCHIVISTA_PUBLISHER_DAPR_URL              |                                           | Dapr full URL                                                                                               |
+| ARCHIVISTA_PUBLISHER_RSTUF_HOST            |                                           | RSTUF URL                                                                                                   |
 
 ## Using Archivista
 
