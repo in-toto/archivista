@@ -31,6 +31,10 @@ type Config struct {
 	LogLevel         string   `default:"INFO" desc:"Log level" split_words:"true"`
 	CORSAllowOrigins []string `default:"" desc:"Comma separated list of origins to allow CORS requests from" split_words:"true"`
 
+	EnableTLS bool   `default:"FALSE" desc:"Enables TLS on the Archivista server" split_words:"true"`
+	TLSCert   string `default:"" desc:"Path to the file containing the TLS Certificate" split_words:"true"`
+	TLSKey    string `default:"" desc:"Path to the file containing the TLS Key" split_words:"true"`
+
 	EnableSPIFFE          bool   `default:"TRUE" desc:"*** Enable SPIFFE support" split_words:"true"`
 	SPIFFEAddress         string `default:"unix:///tmp/spire-agent/public/api.sock" desc:"SPIFFE server address" split_words:"true"`
 	SPIFFETrustedServerId string `default:"" desc:"Trusted SPIFFE server ID; defaults to any" split_words:"true"`

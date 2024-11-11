@@ -86,9 +86,16 @@ func main() {
 		ReadTimeout:  time.Duration(archivistaService.Cfg.ReadTimeout) * time.Second,
 		WriteTimeout: time.Duration(archivistaService.Cfg.WriteTimeout) * time.Second,
 	}
+
 	go func() {
-		if err := srv.Serve(listener); err != nil {
-			logrus.Fatalf("unable to start http server: %+v", err)
+		if archivistaService.Cfg.EnableTLS {
+			if err := srv.ListenAndServeTLS(archivistaService.Cfg.TLSCert, archivistaService.Cfg.TLSKey); err != nil {
+				logrus.Fatalf("unable to start http serveR: %+v", err)
+			}
+		} else {
+			if err := srv.Serve(listener); err != nil {
+				logrus.Fatalf("unable to start http server: %+v", err)
+			}
 		}
 	}()
 
