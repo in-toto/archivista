@@ -1,4 +1,4 @@
-// Copyright 2022 The Archivista Contributors
+// Copyright 2022-2024 The Archivista Contributors
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -54,7 +54,7 @@ func storeAttestationByPath(ctx context.Context, baseUrl, path string) (string, 
 	}
 
 	defer file.Close()
-	resp, err := api.UploadWithReader(ctx, baseUrl, file)
+	resp, err := api.StoreWithReader(ctx, baseUrl, file)
 	if err != nil {
 		return "", err
 	}

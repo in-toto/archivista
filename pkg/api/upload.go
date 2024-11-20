@@ -1,4 +1,4 @@
-// Copyright 2023 The Witness Contributors
+// Copyright 2023-2024 The Archivista Contributors
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -33,28 +33,27 @@ type UploadResponse struct {
 // Deprecated: Use UploadResponse instead. It will be removed in version >= v0.6.0
 type StoreResponse = UploadResponse
 
-// Deprecated: Use Upload instead. It will be removed in version >= v0.6.0
-func Store(ctx context.Context, baseUrl string, envelope dsse.Envelope) (StoreResponse, error) {
-	return Upload(ctx, baseUrl, envelope)
+// Deprecated: Use Store instead. It will be removed in version >= v0.6.0
+func Upload(ctx context.Context, baseURL string, envelope dsse.Envelope) (UploadResponse, error) {
+	return Store(ctx, baseURL, envelope)
 }
 
-func Upload(ctx context.Context, baseUrl string, envelope dsse.Envelope) (StoreResponse, error) {
+func Store(ctx context.Context, baseURL string, envelope dsse.Envelope) (StoreResponse, error) {
 	buf := &bytes.Buffer{}
 	enc := json.NewEncoder(buf)
 	if err := enc.Encode(envelope); err != nil {
 		return StoreResponse{}, err
 	}
 
-	return UploadWithReader(ctx, baseUrl, buf)
+	return StoreWithReader(ctx, baseURL, buf)
 }
 
-// Deprecated: Use UploadWithReader instead. It will be removed in version >= v0.6.0
-func StoreWithReader(ctx context.Context, baseUrl string, r io.Reader) (StoreResponse, error) {
-	return UploadWithReader(ctx, baseUrl, r)
+func StoreWithReader(ctx context.Context, baseURL string, r io.Reader) (StoreResponse, error) {
+	return StoreWithReaderWithHTTPClient(ctx, &http.Client{}, baseURL, r)
 }
 
-func UploadWithReader(ctx context.Context, baseUrl string, r io.Reader) (StoreResponse, error) {
-	uploadPath, err := url.JoinPath(baseUrl, "upload")
+func StoreWithReaderWithHTTPClient(ctx context.Context, client *http.Client, baseURL string, r io.Reader) (StoreResponse, error) {
+	uploadPath, err := url.JoinPath(baseURL, "upload")
 	if err != nil {
 		return UploadResponse{}, err
 	}
