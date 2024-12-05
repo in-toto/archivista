@@ -1,4 +1,4 @@
-// Copyright 2023 The Witness Contributors
+// Copyright 2023-2024 The Witness Contributors
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -25,28 +25,69 @@ import (
 	"net/url"
 )
 
-type graphQLError struct {
-	Message string `json:"message"`
-}
+const RetrieveSubjectsQuery = `query($gitoid: String!) {
+	subjects(
+		where: {
+			hasStatementWith:{
+        hasDsseWith:{
+          gitoidSha256: $gitoid
+        }
+      }
+		}
+	) {
+		edges {
+      node{
+        name
+        subjectDigests{
+          algorithm
+          value
+        }
+      }
+    }
+  }
+}`
 
-type graphQLResponse[T any] struct {
-	Data   T              `json:"data,omitempty"`
-	Errors []graphQLError `json:"errors,omitempty"`
-}
-
-type graphQLRequestBody[TVars any] struct {
-	Query     string `json:"query"`
-	Variables TVars  `json:"variables,omitempty"`
-}
+const SearchQuery = `query($algo: String!, $digest: String!) {
+  dsses(
+    where: {
+      hasStatementWith: {
+        hasSubjectsWith: {
+          hasSubjectDigestsWith: {
+            value: $digest,
+            algorithm: $algo
+          }
+        }
+      }
+    }
+  ) {
+    edges {
+      node {
+        gitoidSha256
+        statement {
+          attestationCollections {
+            name
+            attestations {
+              type
+            }
+          }
+        }
+      }
+    }
+  }
+}`
 
 func GraphQlQuery[TRes any, TVars any](ctx context.Context, baseUrl, query string, vars TVars) (TRes, error) {
+	return GraphQlQueryWithHeaders[TRes, TVars](ctx, baseUrl, query, vars, nil)
+}
+
+func GraphQlQueryWithHeaders[TRes any, TVars any](ctx context.Context, baseUrl, query string, vars TVars, headers map[string]string) (TRes, error) {
 	var response TRes
 	queryUrl, err := url.JoinPath(baseUrl, "query")
 	if err != nil {
 		return response, err
 	}
 
-	requestBody := graphQLRequestBody[TVars]{
+	requestBody := GraphQLRequestBodyGeneric[TVars]{
 		Query:     query,
 		Variables: vars,
 	}
@@ -56,9 +97,13 @@ func GraphQlQuery[TRes any, TVars any](ctx context.Context, baseUrl, query strin
 		return response, err
 	}
 
-	req, err := http.NewRequestWithContext(ctx, "POST", queryUrl, bytes.NewReader(reqBody))
+	req, err := http.NewRequestWithContext(ctx, http.MethodPost, queryUrl, bytes.NewReader(reqBody))
 	if err != nil {
 		return response, err
+	}
+
+	for k, v := range headers {
+		req.Header.Set(k, v)
 	}
 
 	req.Header.Set("Content-Type", "application/json")
@@ -79,7 +124,7 @@ func GraphQlQuery[TRes any, TVars any](ctx context.Context, baseUrl, query strin
 	}
 
 	dec := json.NewDecoder(res.Body)
-	gqlRes := graphQLResponse[TRes]{}
+	gqlRes := GraphQLResponseGeneric[TRes]{}
 	if err := dec.Decode(&gqlRes); err != nil {
 		return response, err
 	}
