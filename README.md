@@ -210,7 +210,7 @@ timestamp {
 ## Deployment
 
 Archivista can be easily deployed thru the provided helm chart into your
-kubernetes cluster. See the [README](chart/README.md) for more details.
+kubernetes cluster. See the [README](https://github.com/in-toto/helm-charts/blob/main/charts/archivista/README.md) for more details.
 
 ## What's Next
 
