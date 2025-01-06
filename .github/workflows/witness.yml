@@ -60,4 +60,4 @@ jobs:
             run: ${{ inputs.command }}
 
           - if: ${{ inputs.step == 'tests' }}
-            uses: codecov/codecov-action@7f8b4b4bde536c465e797be725718b88c5d95e0e
+            uses: codecov/codecov-action@1e68e06f1dbfde0e4cefc87efeba9e4643565303
