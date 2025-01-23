@@ -101,6 +101,7 @@ type GraphQLResponseInterface struct {
 	Errors []api.GraphQLError `json:"errors,omitempty"`
 }
 
+// GraphQLRetrieveSubjectResults retrieves the subjects for a given gitoid.
 func (ac *ArchivistaClient) GraphQLRetrieveSubjectResults(
 	ctx context.Context,
 	gitoid string,
@@ -113,6 +114,7 @@ func (ac *ArchivistaClient) GraphQLRetrieveSubjectResults(
 	)
 }
 
+// GraphQLRetrieveSearchResults retrieves the search results for a given algorithm and digest.
 func (ac *ArchivistaClient) GraphQLRetrieveSearchResults(
 	ctx context.Context,
 	algo string,
@@ -126,6 +128,24 @@ func (ac *ArchivistaClient) GraphQLRetrieveSearchResults(
 	)
 }
 
+// GraphQLQueryIface executes a GraphQL query against the Archivista API and returns the response as an interface.
+//
+// Parameters:
+//   - ctx: The context to control the query's lifecycle, such as cancellations or deadlines.
+//   - query: A string representing the GraphQL query to be executed.
+//   - variables: A map or struct containing variables to parameterize the query.
+//
+// Returns:
+//   - A pointer to a GraphQLResponseInterface containing the query's result or errors.
+//   - An error if the query execution or response parsing fails.
+//
+// Example:
+//
+//	response, err := client.GraphQLQueryIface(ctx, query, variables)
+//	if err != nil {
+//	    log.Fatalf("GraphQL query failed: %v", err)
+//	}
+//	fmt.Printf("Response data: %+v\n", response.Data)
 func (ac *ArchivistaClient) GraphQLQueryIface(
 	ctx context.Context,
 	query string,
@@ -147,6 +167,7 @@ func (ac *ArchivistaClient) GraphQLQueryIface(
 	return &gqlRes, nil
 }
 
+// GraphQLQueryToDst executes a GraphQL query against the Archivista API and unmarshals the response into a destination object.
 func (ac *ArchivistaClient) GraphQLQueryToDst(ctx context.Context, query string, variables interface{}, dst interface{}) error {
 	reader, err := ac.GraphQLQueryReadCloser(ctx, query, variables)
 	if err != nil {
@@ -160,6 +181,7 @@ func (ac *ArchivistaClient) GraphQLQueryToDst(ctx context.Context, query string,
 	return nil
 }
 
+// GraphQLQueryReadCloser executes a GraphQL query against the Archivista API and returns the response as an io.ReadCloser.
 func (ac *ArchivistaClient) GraphQLQueryReadCloser(
 	ctx context.Context,
 	query string,
