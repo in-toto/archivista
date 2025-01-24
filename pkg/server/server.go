@@ -29,6 +29,7 @@ import (
 
 	"entgo.io/contrib/entgql"
 	"github.com/99designs/gqlgen/graphql/handler"
+	"github.com/99designs/gqlgen/graphql/handler/transport"
 	"github.com/99designs/gqlgen/graphql/playground"
 	"github.com/edwarnicke/gitoid"
 	"github.com/gorilla/mux"
@@ -291,7 +292,9 @@ func (s *Server) DownloadHandler(w http.ResponseWriter, r *http.Request) {
 // @Tags graphql
 // @Router /v1/query [post]
 func (s *Server) Query(sqlclient *ent.Client) *handler.Server {
-	srv := handler.NewDefaultServer(archivista.NewSchema(sqlclient))
+	srv := handler.New(archivista.NewSchema(sqlclient))
+	srv.AddTransport(transport.GET{})
+	srv.AddTransport(transport.POST{})
 	srv.Use(entgql.Transactioner{TxOpener: sqlclient})
 	return srv
 }
