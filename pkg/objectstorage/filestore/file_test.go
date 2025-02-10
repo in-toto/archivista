@@ -50,7 +50,7 @@ func (ut *UTFileStoreSuite) TearDownTest() {
 }
 func (ut *UTFileStoreSuite) Test_Get() {
 
-	store, _, err := filestore.New(context.Background(), ut.tempDir, "")
+	store, _, err := filestore.New(context.Background(), ut.tempDir, ":50025")
 	if err != nil {
 		ut.FailNow(err.Error())
 	}
