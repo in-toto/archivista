@@ -9,6 +9,8 @@ import (
 	"io"
 	"net/http"
 	"net/url"
+
+	"github.com/in-toto/go-witness/dsse"
 )
 
 // Client wraps HTTP calls to an Archivista service.
@@ -30,34 +32,33 @@ func NewClient(baseURL string) (*Client, error) {
 	}, nil
 }
 
-// UploadRequest describes a request to upload an artifact.
-type UploadRequest struct {
-	ArtifactType string `json:"artifactType"`
-	Payload      []byte `json:"payload"`
-	Signature    []byte `json:"signature"`
-	KeyID        string `json:"keyID"`
-}
+// UploadResponse represents the response from Archivista after a successful upload.
 
-// Upload sends an upload request to Archivista.
-func (c *Client) Upload(ctx context.Context, req *UploadRequest) (*UploadResponse, error) {
+// Upload uploads a DSSE envelope to Archivista.
+// Note that this method now accepts a dsse.Envelope rather than a pointer to an UploadRequest.
+func (c *Client) UploadDSSE(ctx context.Context, envelope dsse.Envelope) (*UploadResponse, error) {
 	uploadURL, err := url.JoinPath(c.baseURL, "upload")
 	if err != nil {
 		return nil, err
 	}
-	bodyBytes, err := json.Marshal(req)
+
+	bodyBytes, err := json.Marshal(envelope)
 	if err != nil {
 		return nil, err
 	}
-	httpReq, err := http.NewRequestWithContext(ctx, http.MethodPost, uploadURL, bytes.NewReader(bodyBytes))
+
+	req, err := http.NewRequestWithContext(ctx, http.MethodPost, uploadURL, bytes.NewReader(bodyBytes))
 	if err != nil {
 		return nil, err
 	}
-	httpReq.Header.Set("Content-Type", "application/json")
-	resp, err := c.httpClient.Do(httpReq)
+	req.Header.Set("Content-Type", "application/json")
+
+	resp, err := c.httpClient.Do(req)
 	if err != nil {
 		return nil, err
 	}
 	defer resp.Body.Close()
+
 	respBytes, err := io.ReadAll(resp.Body)
 	if err != nil {
 		return nil, err
@@ -65,6 +66,7 @@ func (c *Client) Upload(ctx context.Context, req *UploadRequest) (*UploadRespons
 	if resp.StatusCode != http.StatusOK {
 		return nil, errors.New(string(respBytes))
 	}
+
 	var uploadResp UploadResponse
 	if err := json.Unmarshal(respBytes, &uploadResp); err != nil {
 		return nil, err
@@ -84,20 +86,24 @@ func (c *Client) GetArtifact(ctx context.Context, key string) (*Artifact, error)
 	if err != nil {
 		return nil, err
 	}
-	httpReq, err := http.NewRequestWithContext(ctx, http.MethodGet, downloadURL, nil)
+
+	req, err := http.NewRequestWithContext(ctx, http.MethodGet, downloadURL, nil)
 	if err != nil {
 		return nil, err
 	}
-	httpReq.Header.Set("Content-Type", "application/json")
-	resp, err := c.httpClient.Do(httpReq)
+	req.Header.Set("Content-Type", "application/json")
+
+	resp, err := c.httpClient.Do(req)
 	if err != nil {
 		return nil, err
 	}
 	defer resp.Body.Close()
+
 	if resp.StatusCode != http.StatusOK {
 		respBytes, _ := io.ReadAll(resp.Body)
 		return nil, errors.New(string(respBytes))
 	}
+
 	var artifact Artifact
 	if err := json.NewDecoder(resp.Body).Decode(&artifact); err != nil {
 		return nil, err
