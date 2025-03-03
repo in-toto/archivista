@@ -7,7 +7,7 @@ toolchain go1.23.1
 require (
 	ariga.io/sqlcomment v0.1.0
 	entgo.io/contrib v0.6.0
-	entgo.io/ent v0.14.2
+	entgo.io/ent v0.14.3
 	github.com/99designs/gqlgen v0.17.66
 	github.com/antonfisher/nested-logrus-formatter v1.3.1
 	github.com/digitorus/timestamp v0.0.0-20231217203849-220c5c2851b7
