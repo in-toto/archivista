@@ -26,6 +26,10 @@ updates:
       interval: "weekly"
     commit-message:
       prefix: "chore"
+    groups:
+      github-actions:
+        patterns:
+          - "*"      
   - package-ecosystem: docker
     directory: /
     schedule:
