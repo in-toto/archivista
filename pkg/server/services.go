@@ -169,11 +169,13 @@ func (a *ArchivistaService) initObjectStore() (StorerGetter, <-chan error, error
 
 	case "BLOB":
 		var creds *credentials.Credentials
-		if a.Cfg.BlobStoreCredentialType == "IAM" {
+
+		switch a.Cfg.BlobStoreCredentialType {
+		case "IAM":
 			creds = credentials.NewIAM("")
-		} else if a.Cfg.BlobStoreCredentialType == "ACCESS_KEY" {
+		case "ACCESS_KEY":
 			creds = credentials.NewStaticV4(a.Cfg.BlobStoreAccessKeyId, a.Cfg.BlobStoreSecretAccessKeyId, "")
-		} else {
+		default:
 			logrus.Fatalf("invalid blob store credential type: %s", a.Cfg.BlobStoreCredentialType)
 		}
 		return blobstore.New(
