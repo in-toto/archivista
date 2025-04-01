@@ -2,7 +2,7 @@ module github.com/in-toto/archivista
 
 go 1.23.0
 
-toolchain go1.23.1
+toolchain go1.24.1
 
 require (
 	ariga.io/sqlcomment v0.1.0
@@ -20,7 +20,7 @@ require (
 	github.com/in-toto/go-witness v0.8.1
 	github.com/kelseyhightower/envconfig v1.4.0
 	github.com/lib/pq v1.10.9
-	github.com/minio/minio-go/v7 v7.0.88
+	github.com/minio/minio-go/v7 v7.0.89
 	github.com/sirupsen/logrus v1.9.3
 	github.com/spf13/cobra v1.9.1
 	github.com/stretchr/testify v1.10.0
@@ -71,8 +71,8 @@ require (
 	github.com/invopop/jsonschema v0.12.0 // indirect
 	github.com/josharian/intern v1.0.0 // indirect
 	github.com/json-iterator/go v1.1.12 // indirect
-	github.com/klauspost/compress v1.17.11 // indirect
-	github.com/klauspost/cpuid/v2 v2.2.9 // indirect
+	github.com/klauspost/compress v1.18.0 // indirect
+	github.com/klauspost/cpuid/v2 v2.2.10 // indirect
 	github.com/mailru/easyjson v0.7.7 // indirect
 	github.com/miekg/dns v1.1.58 // indirect
 	github.com/minio/crc64nvme v1.0.1 // indirect
