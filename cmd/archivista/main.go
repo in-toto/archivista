@@ -89,8 +89,8 @@ func main() {
 
 	go func() {
 		if archivistaService.Cfg.EnableTLS {
-			if err := srv.ListenAndServeTLS(archivistaService.Cfg.TLSCert, archivistaService.Cfg.TLSKey); err != nil {
-				logrus.Fatalf("unable to start http serveR: %+v", err)
+			if err := srv.ServeTLS(listener, archivistaService.Cfg.TLSCert, archivistaService.Cfg.TLSKey); err != nil {
+				logrus.Fatalf("unable to start http server: %+v", err)
 			}
 		} else {
 			if err := srv.Serve(listener); err != nil {
