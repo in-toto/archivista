@@ -1,7 +1,8 @@
 module github.com/in-toto/archivista
 
-go 1.23.4
-toolchain go1.24.1
+go 1.23.8
+
+toolchain go1.24.2
 
 require (
 	ariga.io/sqlcomment v0.1.0
