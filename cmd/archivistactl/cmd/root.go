@@ -15,11 +15,17 @@
 package cmd
 
 import (
+	"log"
+	"net/http"
+	"strings"
+
+	"github.com/in-toto/archivista/pkg/api"
 	"github.com/spf13/cobra"
 )
 
 var (
-	archivistaUrl string
+	archivistaUrl  string
+	requestHeaders []string
 
 	rootCmd = &cobra.Command{
 		Use:   "archivistactl",
@@ -29,8 +35,28 @@ var (
 
 func init() {
 	rootCmd.PersistentFlags().StringVarP(&archivistaUrl, "archivistaurl", "u", "http://localhost:8082", "url of the archivista instance")
+	rootCmd.PersistentFlags().StringArrayVarP(&requestHeaders, "headers", "H", []string{}, "headers to use when making requests to archivista")
 }
 
 func Execute() error {
 	return rootCmd.Execute()
+}
+
+func requestOptions() []api.RequestOption {
+	opts := []api.RequestOption{}
+	headers := http.Header{}
+	for _, header := range requestHeaders {
+		headerParts := strings.SplitN(header, ":", 2)
+		if len(headerParts) != 2 {
+			log.Fatalf("invalid header: %v", header)
+		}
+
+		headers.Set(headerParts[0], headerParts[1])
+	}
+
+	if len(headers) > 0 {
+		opts = append(opts, api.WithHeaders(headers))
+	}
+
+	return opts
 }
