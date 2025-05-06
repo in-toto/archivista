@@ -22,42 +22,40 @@ import (
 	"github.com/spf13/cobra"
 )
 
-var (
-	searchCmd = &cobra.Command{
-		Use:          "search",
-		Short:        "Searches the archivista instance for an attestation matching a query",
-		SilenceUsage: true,
-		Long: `Searches the archivista instance for an envelope with a specified subject digest.
+var searchCmd = &cobra.Command{
+	Use:          "search",
+	Short:        "Searches the archivista instance for an attestation matching a query",
+	SilenceUsage: true,
+	Long: `Searches the archivista instance for an envelope with a specified subject digest.
 Optionally a collection name can be provided to further constrain results.
 
 Digests are expected to be in the form algorithm:digest, for instance: sha256:456c0c9a7c05e2a7f84c139bbacedbe3e8e88f9c`,
-		Args: func(cmd *cobra.Command, args []string) error {
-			if len(args) != 1 {
-				return errors.New("expected exactly 1 argument")
-			}
+	Args: func(cmd *cobra.Command, args []string) error {
+		if len(args) != 1 {
+			return errors.New("expected exactly 1 argument")
+		}
 
-			if _, _, err := validateDigestString(args[0]); err != nil {
-				return err
-			}
+		if _, _, err := validateDigestString(args[0]); err != nil {
+			return err
+		}
 
-			return nil
-		},
-		RunE: func(cmd *cobra.Command, args []string) error {
-			algo, digest, err := validateDigestString(args[0])
-			if err != nil {
-				return err
-			}
+		return nil
+	},
+	RunE: func(cmd *cobra.Command, args []string) error {
+		algo, digest, err := validateDigestString(args[0])
+		if err != nil {
+			return err
+		}
 
-			results, err := api.GraphQlQuery[searchResults](cmd.Context(), archivistaUrl, searchQuery, searchVars{Algorithm: algo, Digest: digest})
-			if err != nil {
-				return err
-			}
+		results, err := api.GraphQlQuery[searchResults](cmd.Context(), archivistaUrl, searchQuery, searchVars{Algorithm: algo, Digest: digest}, requestOptions()...)
+		if err != nil {
+			return err
+		}
 
-			printResults(results)
-			return nil
-		},
-	}
-)
+		printResults(results)
+		return nil
+	},
+}
 
 func init() {
 	rootCmd.AddCommand(searchCmd)
