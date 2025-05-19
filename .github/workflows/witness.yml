@@ -49,7 +49,7 @@ jobs:
               go-version: 1.22.x
 
           - if: ${{ inputs.pull_request == false }}
-            uses: testifysec/witness-run-action@79320a907f611f2fb40ced8e13c66af988b2d9db
+            uses: testifysec/witness-run-action@d5cef0eea8f8b008c91f6b25f84e8c39f454f413
             with:
               witness-install-dir: /opt/witness
               version: 0.9.1
@@ -61,4 +61,4 @@ jobs:
             run: ${{ inputs.command }}
 
           - if: ${{ inputs.step == 'tests' }}
-            uses: codecov/codecov-action@ad3126e916f78f00edff4ed0317cf185271ccc2d
+            uses: codecov/codecov-action@18283e04ce6e62d37312384ff67231eb8fd56d24
