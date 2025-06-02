@@ -16,6 +16,7 @@ package sqlstore
 
 import (
 	"fmt"
+	"net/url"
 	"strings"
 	"time"
 
@@ -57,6 +58,33 @@ func ClientWithConnMaxLifetime(connMaxLifetime time.Duration) ClientOption {
 	}
 }
 
+// ensureMySQLConnectionString ensures the connection string has the tcp protocol as required by the go-sql-driver
+func ensureMySQLConnectionString(connStr string) string {
+	schema := "mysql://"
+
+	if strings.Contains(connStr, "@tcp(") {
+		return connStr
+	}
+
+	// Add mysql:// prefix if not present. URL Parse will fail silently if a schema is not present
+	if !strings.HasPrefix(connStr, schema) {
+		connStr = schema + connStr
+	}
+
+	// Parse the connection string as a URL
+	u, err := url.Parse(connStr)
+	if err != nil {
+		return connStr
+	}
+
+	// Modify the host to include tcp
+	u.Host = "tcp(" + u.Host + ")"
+
+	// Remove the mysql:// prefix from the final string
+	result := strings.TrimPrefix(u.String(), schema)
+	return result
+}
+
 // NewEntClient creates an ent client for use in the sqlmetadata store.
 // Valid backends are MYSQL and PSQL.
 func NewEntClient(sqlBackend string, connectionString string, opts ...ClientOption) (*ent.Client, error) {
@@ -73,6 +101,8 @@ func NewEntClient(sqlBackend string, connectionString string, opts ...ClientOpti
 	var entDialect string
 	switch strings.ToUpper(sqlBackend) {
 	case "MYSQL":
+		// Ensure the connection string has the tcp protocol as required by the go-sql-driver
+		connectionString = ensureMySQLConnectionString(connectionString)
 		dbConfig, err := mysql.ParseDSN(connectionString)
 		if err != nil {
 			return nil, fmt.Errorf("could not parse mysql connection string: %w", err)
