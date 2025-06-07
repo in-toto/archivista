@@ -50,9 +50,34 @@ lint:  ## Run linter
 
 
 .PHONY: docs
-docs:  ## Generate swagger docs
+docs: check_docs # Generate swagger docs
+
+.PHONY: check_docs
+check_docs:
+	@echo "Checking if Swagger documentation needs to be updated..."
+	@temp_dir=$$(mktemp -d); \
+	mkdir -p $$temp_dir/docs; \
+	go install github.com/swaggo/swag/cmd/swag@v1.16.2; \
+	swag init -o $$temp_dir/docs -d internal/server -g server.go -pd > /dev/null 2>&1; \
+	if [ ! -f docs/swagger.json ]; then \
+		echo "Swagger documentation needs to be generated"; \
+		make update_docs; \
+	elif ! diff -q $$temp_dir/docs/swagger.json docs/swagger.json > /dev/null; then \
+		echo "Swagger documentation needs to be updated"; \
+		make update_docs; \
+	else \
+		echo "Swagger documentation is up to date"; \
+	fi; \
+	rm -rf $$temp_dir
+
+.PHONY: update_docs
+update_docs:
+	@echo "Updating Swagger documentation..."
 	@go install github.com/swaggo/swag/cmd/swag@v1.16.2
 	@swag init -o docs -d internal/server -g server.go -pd
+	@echo "Swagger documentation updated"
+
+
 
 .PHONY: db-migrations
 db-migrations:  ## Run the migrations for the database
