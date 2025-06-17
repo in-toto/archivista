@@ -8,11 +8,11 @@ require (
 	ariga.io/sqlcomment v0.1.0
 	entgo.io/contrib v0.6.0
 	entgo.io/ent v0.14.4
-	github.com/99designs/gqlgen v0.17.73
+	github.com/99designs/gqlgen v0.17.75
 	github.com/antonfisher/nested-logrus-formatter v1.3.1
 	github.com/digitorus/timestamp v0.0.0-20231217203849-220c5c2851b7
 	github.com/edwarnicke/gitoid v0.0.0-20220710194850-1be5bfda1f9d
-	github.com/go-sql-driver/mysql v1.9.2
+	github.com/go-sql-driver/mysql v1.9.3
 	github.com/google/uuid v1.6.0
 	github.com/gorilla/handlers v1.5.2
 	github.com/gorilla/mux v1.8.1
@@ -20,13 +20,13 @@ require (
 	github.com/in-toto/go-witness v0.8.6
 	github.com/kelseyhightower/envconfig v1.4.0
 	github.com/lib/pq v1.10.9
-	github.com/minio/minio-go/v7 v7.0.92
+	github.com/minio/minio-go/v7 v7.0.93
 	github.com/sirupsen/logrus v1.9.3
 	github.com/spf13/cobra v1.9.1
 	github.com/stretchr/testify v1.10.0
 	github.com/swaggo/http-swagger/v2 v2.0.2
 	github.com/swaggo/swag v1.16.4
-	github.com/vektah/gqlparser/v2 v2.5.27
+	github.com/vektah/gqlparser/v2 v2.5.28
 	gopkg.in/yaml.v3 v3.0.1
 )
 
@@ -113,14 +113,14 @@ require (
 	go.opentelemetry.io/otel/metric v1.35.0 // indirect
 	go.opentelemetry.io/otel/sdk v1.35.0 // indirect
 	go.opentelemetry.io/otel/trace v1.35.0 // indirect
-	golang.org/x/crypto v0.38.0 // indirect
+	golang.org/x/crypto v0.39.0 // indirect
 	golang.org/x/exp v0.0.0-20250506013437-ce4c2cf36ca6 // indirect
-	golang.org/x/mod v0.24.0 // indirect
-	golang.org/x/net v0.40.0 // indirect
-	golang.org/x/sync v0.14.0 // indirect
+	golang.org/x/mod v0.25.0 // indirect
+	golang.org/x/net v0.41.0 // indirect
+	golang.org/x/sync v0.15.0 // indirect
 	golang.org/x/sys v0.33.0 // indirect
-	golang.org/x/text v0.25.0 // indirect
-	golang.org/x/tools v0.33.0 // indirect
+	golang.org/x/text v0.26.0 // indirect
+	golang.org/x/tools v0.34.0 // indirect
 	google.golang.org/protobuf v1.36.6 // indirect
 	gopkg.in/inf.v0 v0.9.1 // indirect
 	k8s.io/apimachinery v0.30.12 // indirect
