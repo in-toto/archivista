@@ -7,7 +7,7 @@ toolchain go1.24.2
 require (
 	ariga.io/sqlcomment v0.1.0
 	entgo.io/contrib v0.7.0
-	entgo.io/ent v0.14.4
+	entgo.io/ent v0.14.5
 	github.com/99designs/gqlgen v0.17.78
 	github.com/antonfisher/nested-logrus-formatter v1.3.1
 	github.com/digitorus/timestamp v0.0.0-20231217203849-220c5c2851b7
@@ -31,7 +31,7 @@ require (
 )
 
 require (
-	ariga.io/atlas v0.31.1-0.20250212144724-069be8033e83 // indirect
+	ariga.io/atlas v0.32.1-0.20250325101103-175b25e1c1b9 // indirect
 	filippo.io/edwards25519 v1.1.0 // indirect
 	github.com/DATA-DOG/go-sqlmock v1.5.2 // indirect
 	github.com/KyleBanks/depth v1.2.1 // indirect
