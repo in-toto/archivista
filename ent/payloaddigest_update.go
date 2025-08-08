@@ -24,77 +24,77 @@ type PayloadDigestUpdate struct {
 }
 
 // Where appends a list predicates to the PayloadDigestUpdate builder.
-func (pdu *PayloadDigestUpdate) Where(ps ...predicate.PayloadDigest) *PayloadDigestUpdate {
-	pdu.mutation.Where(ps...)
-	return pdu
+func (_u *PayloadDigestUpdate) Where(ps ...predicate.PayloadDigest) *PayloadDigestUpdate {
+	_u.mutation.Where(ps...)
+	return _u
 }
 
 // SetAlgorithm sets the "algorithm" field.
-func (pdu *PayloadDigestUpdate) SetAlgorithm(s string) *PayloadDigestUpdate {
-	pdu.mutation.SetAlgorithm(s)
-	return pdu
+func (_u *PayloadDigestUpdate) SetAlgorithm(v string) *PayloadDigestUpdate {
+	_u.mutation.SetAlgorithm(v)
+	return _u
 }
 
 // SetNillableAlgorithm sets the "algorithm" field if the given value is not nil.
-func (pdu *PayloadDigestUpdate) SetNillableAlgorithm(s *string) *PayloadDigestUpdate {
-	if s != nil {
-		pdu.SetAlgorithm(*s)
+func (_u *PayloadDigestUpdate) SetNillableAlgorithm(v *string) *PayloadDigestUpdate {
+	if v != nil {
+		_u.SetAlgorithm(*v)
 	}
-	return pdu
+	return _u
 }
 
 // SetValue sets the "value" field.
-func (pdu *PayloadDigestUpdate) SetValue(s string) *PayloadDigestUpdate {
-	pdu.mutation.SetValue(s)
-	return pdu
+func (_u *PayloadDigestUpdate) SetValue(v string) *PayloadDigestUpdate {
+	_u.mutation.SetValue(v)
+	return _u
 }
 
 // SetNillableValue sets the "value" field if the given value is not nil.
-func (pdu *PayloadDigestUpdate) SetNillableValue(s *string) *PayloadDigestUpdate {
-	if s != nil {
-		pdu.SetValue(*s)
+func (_u *PayloadDigestUpdate) SetNillableValue(v *string) *PayloadDigestUpdate {
+	if v != nil {
+		_u.SetValue(*v)
 	}
-	return pdu
+	return _u
 }
 
 // SetDsseID sets the "dsse" edge to the Dsse entity by ID.
-func (pdu *PayloadDigestUpdate) SetDsseID(id uuid.UUID) *PayloadDigestUpdate {
-	pdu.mutation.SetDsseID(id)
-	return pdu
+func (_u *PayloadDigestUpdate) SetDsseID(id uuid.UUID) *PayloadDigestUpdate {
+	_u.mutation.SetDsseID(id)
+	return _u
 }
 
 // SetNillableDsseID sets the "dsse" edge to the Dsse entity by ID if the given value is not nil.
-func (pdu *PayloadDigestUpdate) SetNillableDsseID(id *uuid.UUID) *PayloadDigestUpdate {
+func (_u *PayloadDigestUpdate) SetNillableDsseID(id *uuid.UUID) *PayloadDigestUpdate {
 	if id != nil {
-		pdu = pdu.SetDsseID(*id)
+		_u = _u.SetDsseID(*id)
 	}
-	return pdu
+	return _u
 }
 
 // SetDsse sets the "dsse" edge to the Dsse entity.
-func (pdu *PayloadDigestUpdate) SetDsse(d *Dsse) *PayloadDigestUpdate {
-	return pdu.SetDsseID(d.ID)
+func (_u *PayloadDigestUpdate) SetDsse(v *Dsse) *PayloadDigestUpdate {
+	return _u.SetDsseID(v.ID)
 }
 
 // Mutation returns the PayloadDigestMutation object of the builder.
-func (pdu *PayloadDigestUpdate) Mutation() *PayloadDigestMutation {
-	return pdu.mutation
+func (_u *PayloadDigestUpdate) Mutation() *PayloadDigestMutation {
+	return _u.mutation
 }
 
 // ClearDsse clears the "dsse" edge to the Dsse entity.
-func (pdu *PayloadDigestUpdate) ClearDsse() *PayloadDigestUpdate {
-	pdu.mutation.ClearDsse()
-	return pdu
+func (_u *PayloadDigestUpdate) ClearDsse() *PayloadDigestUpdate {
+	_u.mutation.ClearDsse()
+	return _u
 }
 
 // Save executes the query and returns the number of nodes affected by the update operation.
-func (pdu *PayloadDigestUpdate) Save(ctx context.Context) (int, error) {
-	return withHooks(ctx, pdu.sqlSave, pdu.mutation, pdu.hooks)
+func (_u *PayloadDigestUpdate) Save(ctx context.Context) (int, error) {
+	return withHooks(ctx, _u.sqlSave, _u.mutation, _u.hooks)
 }
 
 // SaveX is like Save, but panics if an error occurs.
-func (pdu *PayloadDigestUpdate) SaveX(ctx context.Context) int {
-	affected, err := pdu.Save(ctx)
+func (_u *PayloadDigestUpdate) SaveX(ctx context.Context) int {
+	affected, err := _u.Save(ctx)
 	if err != nil {
 		panic(err)
 	}
@@ -102,26 +102,26 @@ func (pdu *PayloadDigestUpdate) SaveX(ctx context.Context) int {
 }
 
 // Exec executes the query.
-func (pdu *PayloadDigestUpdate) Exec(ctx context.Context) error {
-	_, err := pdu.Save(ctx)
+func (_u *PayloadDigestUpdate) Exec(ctx context.Context) error {
+	_, err := _u.Save(ctx)
 	return err
 }
 
 // ExecX is like Exec, but panics if an error occurs.
-func (pdu *PayloadDigestUpdate) ExecX(ctx context.Context) {
-	if err := pdu.Exec(ctx); err != nil {
+func (_u *PayloadDigestUpdate) ExecX(ctx context.Context) {
+	if err := _u.Exec(ctx); err != nil {
 		panic(err)
 	}
 }
 
 // check runs all checks and user-defined validators on the builder.
-func (pdu *PayloadDigestUpdate) check() error {
-	if v, ok := pdu.mutation.Algorithm(); ok {
+func (_u *PayloadDigestUpdate) check() error {
+	if v, ok := _u.mutation.Algorithm(); ok {
 		if err := payloaddigest.AlgorithmValidator(v); err != nil {
 			return &ValidationError{Name: "algorithm", err: fmt.Errorf(`ent: validator failed for field "PayloadDigest.algorithm": %w`, err)}
 		}
 	}
-	if v, ok := pdu.mutation.Value(); ok {
+	if v, ok := _u.mutation.Value(); ok {
 		if err := payloaddigest.ValueValidator(v); err != nil {
 			return &ValidationError{Name: "value", err: fmt.Errorf(`ent: validator failed for field "PayloadDigest.value": %w`, err)}
 		}
@@ -129,25 +129,25 @@ func (pdu *PayloadDigestUpdate) check() error {
 	return nil
 }
 
-func (pdu *PayloadDigestUpdate) sqlSave(ctx context.Context) (n int, err error) {
-	if err := pdu.check(); err != nil {
-		return n, err
+func (_u *PayloadDigestUpdate) sqlSave(ctx context.Context) (_node int, err error) {
+	if err := _u.check(); err != nil {
+		return _node, err
 	}
 	_spec := sqlgraph.NewUpdateSpec(payloaddigest.Table, payloaddigest.Columns, sqlgraph.NewFieldSpec(payloaddigest.FieldID, field.TypeUUID))
-	if ps := pdu.mutation.predicates; len(ps) > 0 {
+	if ps := _u.mutation.predicates; len(ps) > 0 {
 		_spec.Predicate = func(selector *sql.Selector) {
 			for i := range ps {
 				ps[i](selector)
 			}
 		}
 	}
-	if value, ok := pdu.mutation.Algorithm(); ok {
+	if value, ok := _u.mutation.Algorithm(); ok {
 		_spec.SetField(payloaddigest.FieldAlgorithm, field.TypeString, value)
 	}
-	if value, ok := pdu.mutation.Value(); ok {
+	if value, ok := _u.mutation.Value(); ok {
 		_spec.SetField(payloaddigest.FieldValue, field.TypeString, value)
 	}
-	if pdu.mutation.DsseCleared() {
+	if _u.mutation.DsseCleared() {
 		edge := &sqlgraph.EdgeSpec{
 			Rel:     sqlgraph.M2O,
 			Inverse: true,
@@ -160,7 +160,7 @@ func (pdu *PayloadDigestUpdate) sqlSave(ctx context.Context) (n int, err error) 
 		}
 		_spec.Edges.Clear = append(_spec.Edges.Clear, edge)
 	}
-	if nodes := pdu.mutation.DsseIDs(); len(nodes) > 0 {
+	if nodes := _u.mutation.DsseIDs(); len(nodes) > 0 {
 		edge := &sqlgraph.EdgeSpec{
 			Rel:     sqlgraph.M2O,
 			Inverse: true,
@@ -176,7 +176,7 @@ func (pdu *PayloadDigestUpdate) sqlSave(ctx context.Context) (n int, err error) 
 		}
 		_spec.Edges.Add = append(_spec.Edges.Add, edge)
 	}
-	if n, err = sqlgraph.UpdateNodes(ctx, pdu.driver, _spec); err != nil {
+	if _node, err = sqlgraph.UpdateNodes(ctx, _u.driver, _spec); err != nil {
 		if _, ok := err.(*sqlgraph.NotFoundError); ok {
 			err = &NotFoundError{payloaddigest.Label}
 		} else if sqlgraph.IsConstraintError(err) {
@@ -184,8 +184,8 @@ func (pdu *PayloadDigestUpdate) sqlSave(ctx context.Context) (n int, err error) 
 		}
 		return 0, err
 	}
-	pdu.mutation.done = true
-	return n, nil
+	_u.mutation.done = true
+	return _node, nil
 }
 
 // PayloadDigestUpdateOne is the builder for updating a single PayloadDigest entity.
@@ -197,84 +197,84 @@ type PayloadDigestUpdateOne struct {
 }
 
 // SetAlgorithm sets the "algorithm" field.
-func (pduo *PayloadDigestUpdateOne) SetAlgorithm(s string) *PayloadDigestUpdateOne {
-	pduo.mutation.SetAlgorithm(s)
-	return pduo
+func (_u *PayloadDigestUpdateOne) SetAlgorithm(v string) *PayloadDigestUpdateOne {
+	_u.mutation.SetAlgorithm(v)
+	return _u
 }
 
 // SetNillableAlgorithm sets the "algorithm" field if the given value is not nil.
-func (pduo *PayloadDigestUpdateOne) SetNillableAlgorithm(s *string) *PayloadDigestUpdateOne {
-	if s != nil {
-		pduo.SetAlgorithm(*s)
+func (_u *PayloadDigestUpdateOne) SetNillableAlgorithm(v *string) *PayloadDigestUpdateOne {
+	if v != nil {
+		_u.SetAlgorithm(*v)
 	}
-	return pduo
+	return _u
 }
 
 // SetValue sets the "value" field.
-func (pduo *PayloadDigestUpdateOne) SetValue(s string) *PayloadDigestUpdateOne {
-	pduo.mutation.SetValue(s)
-	return pduo
+func (_u *PayloadDigestUpdateOne) SetValue(v string) *PayloadDigestUpdateOne {
+	_u.mutation.SetValue(v)
+	return _u
 }
 
 // SetNillableValue sets the "value" field if the given value is not nil.
-func (pduo *PayloadDigestUpdateOne) SetNillableValue(s *string) *PayloadDigestUpdateOne {
-	if s != nil {
-		pduo.SetValue(*s)
+func (_u *PayloadDigestUpdateOne) SetNillableValue(v *string) *PayloadDigestUpdateOne {
+	if v != nil {
+		_u.SetValue(*v)
 	}
-	return pduo
+	return _u
 }
 
 // SetDsseID sets the "dsse" edge to the Dsse entity by ID.
-func (pduo *PayloadDigestUpdateOne) SetDsseID(id uuid.UUID) *PayloadDigestUpdateOne {
-	pduo.mutation.SetDsseID(id)
-	return pduo
+func (_u *PayloadDigestUpdateOne) SetDsseID(id uuid.UUID) *PayloadDigestUpdateOne {
+	_u.mutation.SetDsseID(id)
+	return _u
 }
 
 // SetNillableDsseID sets the "dsse" edge to the Dsse entity by ID if the given value is not nil.
-func (pduo *PayloadDigestUpdateOne) SetNillableDsseID(id *uuid.UUID) *PayloadDigestUpdateOne {
+func (_u *PayloadDigestUpdateOne) SetNillableDsseID(id *uuid.UUID) *PayloadDigestUpdateOne {
 	if id != nil {
-		pduo = pduo.SetDsseID(*id)
+		_u = _u.SetDsseID(*id)
 	}
-	return pduo
+	return _u
 }
 
 // SetDsse sets the "dsse" edge to the Dsse entity.
-func (pduo *PayloadDigestUpdateOne) SetDsse(d *Dsse) *PayloadDigestUpdateOne {
-	return pduo.SetDsseID(d.ID)
+func (_u *PayloadDigestUpdateOne) SetDsse(v *Dsse) *PayloadDigestUpdateOne {
+	return _u.SetDsseID(v.ID)
 }
 
 // Mutation returns the PayloadDigestMutation object of the builder.
-func (pduo *PayloadDigestUpdateOne) Mutation() *PayloadDigestMutation {
-	return pduo.mutation
+func (_u *PayloadDigestUpdateOne) Mutation() *PayloadDigestMutation {
+	return _u.mutation
 }
 
 // ClearDsse clears the "dsse" edge to the Dsse entity.
-func (pduo *PayloadDigestUpdateOne) ClearDsse() *PayloadDigestUpdateOne {
-	pduo.mutation.ClearDsse()
-	return pduo
+func (_u *PayloadDigestUpdateOne) ClearDsse() *PayloadDigestUpdateOne {
+	_u.mutation.ClearDsse()
+	return _u
 }
 
 // Where appends a list predicates to the PayloadDigestUpdate builder.
-func (pduo *PayloadDigestUpdateOne) Where(ps ...predicate.PayloadDigest) *PayloadDigestUpdateOne {
-	pduo.mutation.Where(ps...)
-	return pduo
+func (_u *PayloadDigestUpdateOne) Where(ps ...predicate.PayloadDigest) *PayloadDigestUpdateOne {
+	_u.mutation.Where(ps...)
+	return _u
 }
 
 // Select allows selecting one or more fields (columns) of the returned entity.
 // The default is selecting all fields defined in the entity schema.
-func (pduo *PayloadDigestUpdateOne) Select(field string, fields ...string) *PayloadDigestUpdateOne {
-	pduo.fields = append([]string{field}, fields...)
-	return pduo
+func (_u *PayloadDigestUpdateOne) Select(field string, fields ...string) *PayloadDigestUpdateOne {
+	_u.fields = append([]string{field}, fields...)
+	return _u
 }
 
 // Save executes the query and returns the updated PayloadDigest entity.
-func (pduo *PayloadDigestUpdateOne) Save(ctx context.Context) (*PayloadDigest, error) {
-	return withHooks(ctx, pduo.sqlSave, pduo.mutation, pduo.hooks)
+func (_u *PayloadDigestUpdateOne) Save(ctx context.Context) (*PayloadDigest, error) {
+	return withHooks(ctx, _u.sqlSave, _u.mutation, _u.hooks)
 }
 
 // SaveX is like Save, but panics if an error occurs.
-func (pduo *PayloadDigestUpdateOne) SaveX(ctx context.Context) *PayloadDigest {
-	node, err := pduo.Save(ctx)
+func (_u *PayloadDigestUpdateOne) SaveX(ctx context.Context) *PayloadDigest {
+	node, err := _u.Save(ctx)
 	if err != nil {
 		panic(err)
 	}
@@ -282,26 +282,26 @@ func (pduo *PayloadDigestUpdateOne) SaveX(ctx context.Context) *PayloadDigest {
 }
 
 // Exec executes the query on the entity.
-func (pduo *PayloadDigestUpdateOne) Exec(ctx context.Context) error {
-	_, err := pduo.Save(ctx)
+func (_u *PayloadDigestUpdateOne) Exec(ctx context.Context) error {
+	_, err := _u.Save(ctx)
 	return err
 }
 
 // ExecX is like Exec, but panics if an error occurs.
-func (pduo *PayloadDigestUpdateOne) ExecX(ctx context.Context) {
-	if err := pduo.Exec(ctx); err != nil {
+func (_u *PayloadDigestUpdateOne) ExecX(ctx context.Context) {
+	if err := _u.Exec(ctx); err != nil {
 		panic(err)
 	}
 }
 
 // check runs all checks and user-defined validators on the builder.
-func (pduo *PayloadDigestUpdateOne) check() error {
-	if v, ok := pduo.mutation.Algorithm(); ok {
+func (_u *PayloadDigestUpdateOne) check() error {
+	if v, ok := _u.mutation.Algorithm(); ok {
 		if err := payloaddigest.AlgorithmValidator(v); err != nil {
 			return &ValidationError{Name: "algorithm", err: fmt.Errorf(`ent: validator failed for field "PayloadDigest.algorithm": %w`, err)}
 		}
 	}
-	if v, ok := pduo.mutation.Value(); ok {
+	if v, ok := _u.mutation.Value(); ok {
 		if err := payloaddigest.ValueValidator(v); err != nil {
 			return &ValidationError{Name: "value", err: fmt.Errorf(`ent: validator failed for field "PayloadDigest.value": %w`, err)}
 		}
@@ -309,17 +309,17 @@ func (pduo *PayloadDigestUpdateOne) check() error {
 	return nil
 }
 
-func (pduo *PayloadDigestUpdateOne) sqlSave(ctx context.Context) (_node *PayloadDigest, err error) {
-	if err := pduo.check(); err != nil {
+func (_u *PayloadDigestUpdateOne) sqlSave(ctx context.Context) (_node *PayloadDigest, err error) {
+	if err := _u.check(); err != nil {
 		return _node, err
 	}
 	_spec := sqlgraph.NewUpdateSpec(payloaddigest.Table, payloaddigest.Columns, sqlgraph.NewFieldSpec(payloaddigest.FieldID, field.TypeUUID))
-	id, ok := pduo.mutation.ID()
+	id, ok := _u.mutation.ID()
 	if !ok {
 		return nil, &ValidationError{Name: "id", err: errors.New(`ent: missing "PayloadDigest.id" for update`)}
 	}
 	_spec.Node.ID.Value = id
-	if fields := pduo.fields; len(fields) > 0 {
+	if fields := _u.fields; len(fields) > 0 {
 		_spec.Node.Columns = make([]string, 0, len(fields))
 		_spec.Node.Columns = append(_spec.Node.Columns, payloaddigest.FieldID)
 		for _, f := range fields {
@@ -331,20 +331,20 @@ func (pduo *PayloadDigestUpdateOne) sqlSave(ctx context.Context) (_node *Payload
 			}
 		}
 	}
-	if ps := pduo.mutation.predicates; len(ps) > 0 {
+	if ps := _u.mutation.predicates; len(ps) > 0 {
 		_spec.Predicate = func(selector *sql.Selector) {
 			for i := range ps {
 				ps[i](selector)
 			}
 		}
 	}
-	if value, ok := pduo.mutation.Algorithm(); ok {
+	if value, ok := _u.mutation.Algorithm(); ok {
 		_spec.SetField(payloaddigest.FieldAlgorithm, field.TypeString, value)
 	}
-	if value, ok := pduo.mutation.Value(); ok {
+	if value, ok := _u.mutation.Value(); ok {
 		_spec.SetField(payloaddigest.FieldValue, field.TypeString, value)
 	}
-	if pduo.mutation.DsseCleared() {
+	if _u.mutation.DsseCleared() {
 		edge := &sqlgraph.EdgeSpec{
 			Rel:     sqlgraph.M2O,
 			Inverse: true,
@@ -357,7 +357,7 @@ func (pduo *PayloadDigestUpdateOne) sqlSave(ctx context.Context) (_node *Payload
 		}
 		_spec.Edges.Clear = append(_spec.Edges.Clear, edge)
 	}
-	if nodes := pduo.mutation.DsseIDs(); len(nodes) > 0 {
+	if nodes := _u.mutation.DsseIDs(); len(nodes) > 0 {
 		edge := &sqlgraph.EdgeSpec{
 			Rel:     sqlgraph.M2O,
 			Inverse: true,
@@ -373,10 +373,10 @@ func (pduo *PayloadDigestUpdateOne) sqlSave(ctx context.Context) (_node *Payload
 		}
 		_spec.Edges.Add = append(_spec.Edges.Add, edge)
 	}
-	_node = &PayloadDigest{config: pduo.config}
+	_node = &PayloadDigest{config: _u.config}
 	_spec.Assign = _node.assignValues
 	_spec.ScanValues = _node.scanValues
-	if err = sqlgraph.UpdateNode(ctx, pduo.driver, _spec); err != nil {
+	if err = sqlgraph.UpdateNode(ctx, _u.driver, _spec); err != nil {
 		if _, ok := err.(*sqlgraph.NotFoundError); ok {
 			err = &NotFoundError{payloaddigest.Label}
 		} else if sqlgraph.IsConstraintError(err) {
@@ -384,6 +384,6 @@ func (pduo *PayloadDigestUpdateOne) sqlSave(ctx context.Context) (_node *Payload
 		}
 		return nil, err
 	}
-	pduo.mutation.done = true
+	_u.mutation.done = true
 	return _node, nil
 }

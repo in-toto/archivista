@@ -84,7 +84,7 @@ func (*Signature) scanValues(columns []string) ([]any, error) {
 
 // assignValues assigns the values that were returned from sql.Rows (after scanning)
 // to the Signature fields.
-func (s *Signature) assignValues(columns []string, values []any) error {
+func (_m *Signature) assignValues(columns []string, values []any) error {
 	if m, n := len(values), len(columns); m < n {
 		return fmt.Errorf("mismatch number of scan values: %d != %d", m, n)
 	}
@@ -94,29 +94,29 @@ func (s *Signature) assignValues(columns []string, values []any) error {
 			if value, ok := values[i].(*uuid.UUID); !ok {
 				return fmt.Errorf("unexpected type %T for field id", values[i])
 			} else if value != nil {
-				s.ID = *value
+				_m.ID = *value
 			}
 		case signature.FieldKeyID:
 			if value, ok := values[i].(*sql.NullString); !ok {
 				return fmt.Errorf("unexpected type %T for field key_id", values[i])
 			} else if value.Valid {
-				s.KeyID = value.String
+				_m.KeyID = value.String
 			}
 		case signature.FieldSignature:
 			if value, ok := values[i].(*sql.NullString); !ok {
 				return fmt.Errorf("unexpected type %T for field signature", values[i])
 			} else if value.Valid {
-				s.Signature = value.String
+				_m.Signature = value.String
 			}
 		case signature.ForeignKeys[0]:
 			if value, ok := values[i].(*sql.NullScanner); !ok {
 				return fmt.Errorf("unexpected type %T for field dsse_signatures", values[i])
 			} else if value.Valid {
-				s.dsse_signatures = new(uuid.UUID)
-				*s.dsse_signatures = *value.S.(*uuid.UUID)
+				_m.dsse_signatures = new(uuid.UUID)
+				*_m.dsse_signatures = *value.S.(*uuid.UUID)
 			}
 		default:
-			s.selectValues.Set(columns[i], values[i])
+			_m.selectValues.Set(columns[i], values[i])
 		}
 	}
 	return nil
@@ -124,73 +124,73 @@ func (s *Signature) assignValues(columns []string, values []any) error {
 
 // Value returns the ent.Value that was dynamically selected and assigned to the Signature.
 // This includes values selected through modifiers, order, etc.
-func (s *Signature) Value(name string) (ent.Value, error) {
-	return s.selectValues.Get(name)
+func (_m *Signature) Value(name string) (ent.Value, error) {
+	return _m.selectValues.Get(name)
 }
 
 // QueryDsse queries the "dsse" edge of the Signature entity.
-func (s *Signature) QueryDsse() *DsseQuery {
-	return NewSignatureClient(s.config).QueryDsse(s)
+func (_m *Signature) QueryDsse() *DsseQuery {
+	return NewSignatureClient(_m.config).QueryDsse(_m)
 }
 
 // QueryTimestamps queries the "timestamps" edge of the Signature entity.
-func (s *Signature) QueryTimestamps() *TimestampQuery {
-	return NewSignatureClient(s.config).QueryTimestamps(s)
+func (_m *Signature) QueryTimestamps() *TimestampQuery {
+	return NewSignatureClient(_m.config).QueryTimestamps(_m)
 }
 
 // Update returns a builder for updating this Signature.
 // Note that you need to call Signature.Unwrap() before calling this method if this Signature
 // was returned from a transaction, and the transaction was committed or rolled back.
-func (s *Signature) Update() *SignatureUpdateOne {
-	return NewSignatureClient(s.config).UpdateOne(s)
+func (_m *Signature) Update() *SignatureUpdateOne {
+	return NewSignatureClient(_m.config).UpdateOne(_m)
 }
 
 // Unwrap unwraps the Signature entity that was returned from a transaction after it was closed,
 // so that all future queries will be executed through the driver which created the transaction.
-func (s *Signature) Unwrap() *Signature {
-	_tx, ok := s.config.driver.(*txDriver)
+func (_m *Signature) Unwrap() *Signature {
+	_tx, ok := _m.config.driver.(*txDriver)
 	if !ok {
 		panic("ent: Signature is not a transactional entity")
 	}
-	s.config.driver = _tx.drv
-	return s
+	_m.config.driver = _tx.drv
+	return _m
 }
 
 // String implements the fmt.Stringer.
-func (s *Signature) String() string {
+func (_m *Signature) String() string {
 	var builder strings.Builder
 	builder.WriteString("Signature(")
-	builder.WriteString(fmt.Sprintf("id=%v, ", s.ID))
+	builder.WriteString(fmt.Sprintf("id=%v, ", _m.ID))
 	builder.WriteString("key_id=")
-	builder.WriteString(s.KeyID)
+	builder.WriteString(_m.KeyID)
 	builder.WriteString(", ")
 	builder.WriteString("signature=")
-	builder.WriteString(s.Signature)
+	builder.WriteString(_m.Signature)
 	builder.WriteByte(')')
 	return builder.String()
 }
 
 // NamedTimestamps returns the Timestamps named value or an error if the edge was not
 // loaded in eager-loading with this name.
-func (s *Signature) NamedTimestamps(name string) ([]*Timestamp, error) {
-	if s.Edges.namedTimestamps == nil {
+func (_m *Signature) NamedTimestamps(name string) ([]*Timestamp, error) {
+	if _m.Edges.namedTimestamps == nil {
 		return nil, &NotLoadedError{edge: name}
 	}
-	nodes, ok := s.Edges.namedTimestamps[name]
+	nodes, ok := _m.Edges.namedTimestamps[name]
 	if !ok {
 		return nil, &NotLoadedError{edge: name}
 	}
 	return nodes, nil
 }
 
-func (s *Signature) appendNamedTimestamps(name string, edges ...*Timestamp) {
-	if s.Edges.namedTimestamps == nil {
-		s.Edges.namedTimestamps = make(map[string][]*Timestamp)
+func (_m *Signature) appendNamedTimestamps(name string, edges ...*Timestamp) {
+	if _m.Edges.namedTimestamps == nil {
+		_m.Edges.namedTimestamps = make(map[string][]*Timestamp)
 	}
 	if len(edges) == 0 {
-		s.Edges.namedTimestamps[name] = []*Timestamp{}
+		_m.Edges.namedTimestamps[name] = []*Timestamp{}
 	} else {
-		s.Edges.namedTimestamps[name] = append(s.Edges.namedTimestamps[name], edges...)
+		_m.Edges.namedTimestamps[name] = append(_m.Edges.namedTimestamps[name], edges...)
 	}
 }
 

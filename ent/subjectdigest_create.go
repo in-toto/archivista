@@ -22,64 +22,64 @@ type SubjectDigestCreate struct {
 }
 
 // SetAlgorithm sets the "algorithm" field.
-func (sdc *SubjectDigestCreate) SetAlgorithm(s string) *SubjectDigestCreate {
-	sdc.mutation.SetAlgorithm(s)
-	return sdc
+func (_c *SubjectDigestCreate) SetAlgorithm(v string) *SubjectDigestCreate {
+	_c.mutation.SetAlgorithm(v)
+	return _c
 }
 
 // SetValue sets the "value" field.
-func (sdc *SubjectDigestCreate) SetValue(s string) *SubjectDigestCreate {
-	sdc.mutation.SetValue(s)
-	return sdc
+func (_c *SubjectDigestCreate) SetValue(v string) *SubjectDigestCreate {
+	_c.mutation.SetValue(v)
+	return _c
 }
 
 // SetID sets the "id" field.
-func (sdc *SubjectDigestCreate) SetID(u uuid.UUID) *SubjectDigestCreate {
-	sdc.mutation.SetID(u)
-	return sdc
+func (_c *SubjectDigestCreate) SetID(v uuid.UUID) *SubjectDigestCreate {
+	_c.mutation.SetID(v)
+	return _c
 }
 
 // SetNillableID sets the "id" field if the given value is not nil.
-func (sdc *SubjectDigestCreate) SetNillableID(u *uuid.UUID) *SubjectDigestCreate {
-	if u != nil {
-		sdc.SetID(*u)
+func (_c *SubjectDigestCreate) SetNillableID(v *uuid.UUID) *SubjectDigestCreate {
+	if v != nil {
+		_c.SetID(*v)
 	}
-	return sdc
+	return _c
 }
 
 // SetSubjectID sets the "subject" edge to the Subject entity by ID.
-func (sdc *SubjectDigestCreate) SetSubjectID(id uuid.UUID) *SubjectDigestCreate {
-	sdc.mutation.SetSubjectID(id)
-	return sdc
+func (_c *SubjectDigestCreate) SetSubjectID(id uuid.UUID) *SubjectDigestCreate {
+	_c.mutation.SetSubjectID(id)
+	return _c
 }
 
 // SetNillableSubjectID sets the "subject" edge to the Subject entity by ID if the given value is not nil.
-func (sdc *SubjectDigestCreate) SetNillableSubjectID(id *uuid.UUID) *SubjectDigestCreate {
+func (_c *SubjectDigestCreate) SetNillableSubjectID(id *uuid.UUID) *SubjectDigestCreate {
 	if id != nil {
-		sdc = sdc.SetSubjectID(*id)
+		_c = _c.SetSubjectID(*id)
 	}
-	return sdc
+	return _c
 }
 
 // SetSubject sets the "subject" edge to the Subject entity.
-func (sdc *SubjectDigestCreate) SetSubject(s *Subject) *SubjectDigestCreate {
-	return sdc.SetSubjectID(s.ID)
+func (_c *SubjectDigestCreate) SetSubject(v *Subject) *SubjectDigestCreate {
+	return _c.SetSubjectID(v.ID)
 }
 
 // Mutation returns the SubjectDigestMutation object of the builder.
-func (sdc *SubjectDigestCreate) Mutation() *SubjectDigestMutation {
-	return sdc.mutation
+func (_c *SubjectDigestCreate) Mutation() *SubjectDigestMutation {
+	return _c.mutation
 }
 
 // Save creates the SubjectDigest in the database.
-func (sdc *SubjectDigestCreate) Save(ctx context.Context) (*SubjectDigest, error) {
-	sdc.defaults()
-	return withHooks(ctx, sdc.sqlSave, sdc.mutation, sdc.hooks)
+func (_c *SubjectDigestCreate) Save(ctx context.Context) (*SubjectDigest, error) {
+	_c.defaults()
+	return withHooks(ctx, _c.sqlSave, _c.mutation, _c.hooks)
 }
 
 // SaveX calls Save and panics if Save returns an error.
-func (sdc *SubjectDigestCreate) SaveX(ctx context.Context) *SubjectDigest {
-	v, err := sdc.Save(ctx)
+func (_c *SubjectDigestCreate) SaveX(ctx context.Context) *SubjectDigest {
+	v, err := _c.Save(ctx)
 	if err != nil {
 		panic(err)
 	}
@@ -87,40 +87,40 @@ func (sdc *SubjectDigestCreate) SaveX(ctx context.Context) *SubjectDigest {
 }
 
 // Exec executes the query.
-func (sdc *SubjectDigestCreate) Exec(ctx context.Context) error {
-	_, err := sdc.Save(ctx)
+func (_c *SubjectDigestCreate) Exec(ctx context.Context) error {
+	_, err := _c.Save(ctx)
 	return err
 }
 
 // ExecX is like Exec, but panics if an error occurs.
-func (sdc *SubjectDigestCreate) ExecX(ctx context.Context) {
-	if err := sdc.Exec(ctx); err != nil {
+func (_c *SubjectDigestCreate) ExecX(ctx context.Context) {
+	if err := _c.Exec(ctx); err != nil {
 		panic(err)
 	}
 }
 
 // defaults sets the default values of the builder before save.
-func (sdc *SubjectDigestCreate) defaults() {
-	if _, ok := sdc.mutation.ID(); !ok {
+func (_c *SubjectDigestCreate) defaults() {
+	if _, ok := _c.mutation.ID(); !ok {
 		v := subjectdigest.DefaultID()
-		sdc.mutation.SetID(v)
+		_c.mutation.SetID(v)
 	}
 }
 
 // check runs all checks and user-defined validators on the builder.
-func (sdc *SubjectDigestCreate) check() error {
-	if _, ok := sdc.mutation.Algorithm(); !ok {
+func (_c *SubjectDigestCreate) check() error {
+	if _, ok := _c.mutation.Algorithm(); !ok {
 		return &ValidationError{Name: "algorithm", err: errors.New(`ent: missing required field "SubjectDigest.algorithm"`)}
 	}
-	if v, ok := sdc.mutation.Algorithm(); ok {
+	if v, ok := _c.mutation.Algorithm(); ok {
 		if err := subjectdigest.AlgorithmValidator(v); err != nil {
 			return &ValidationError{Name: "algorithm", err: fmt.Errorf(`ent: validator failed for field "SubjectDigest.algorithm": %w`, err)}
 		}
 	}
-	if _, ok := sdc.mutation.Value(); !ok {
+	if _, ok := _c.mutation.Value(); !ok {
 		return &ValidationError{Name: "value", err: errors.New(`ent: missing required field "SubjectDigest.value"`)}
 	}
-	if v, ok := sdc.mutation.Value(); ok {
+	if v, ok := _c.mutation.Value(); ok {
 		if err := subjectdigest.ValueValidator(v); err != nil {
 			return &ValidationError{Name: "value", err: fmt.Errorf(`ent: validator failed for field "SubjectDigest.value": %w`, err)}
 		}
@@ -128,12 +128,12 @@ func (sdc *SubjectDigestCreate) check() error {
 	return nil
 }
 
-func (sdc *SubjectDigestCreate) sqlSave(ctx context.Context) (*SubjectDigest, error) {
-	if err := sdc.check(); err != nil {
+func (_c *SubjectDigestCreate) sqlSave(ctx context.Context) (*SubjectDigest, error) {
+	if err := _c.check(); err != nil {
 		return nil, err
 	}
-	_node, _spec := sdc.createSpec()
-	if err := sqlgraph.CreateNode(ctx, sdc.driver, _spec); err != nil {
+	_node, _spec := _c.createSpec()
+	if err := sqlgraph.CreateNode(ctx, _c.driver, _spec); err != nil {
 		if sqlgraph.IsConstraintError(err) {
 			err = &ConstraintError{msg: err.Error(), wrap: err}
 		}
@@ -146,29 +146,29 @@ func (sdc *SubjectDigestCreate) sqlSave(ctx context.Context) (*SubjectDigest, er
 			return nil, err
 		}
 	}
-	sdc.mutation.id = &_node.ID
-	sdc.mutation.done = true
+	_c.mutation.id = &_node.ID
+	_c.mutation.done = true
 	return _node, nil
 }
 
-func (sdc *SubjectDigestCreate) createSpec() (*SubjectDigest, *sqlgraph.CreateSpec) {
+func (_c *SubjectDigestCreate) createSpec() (*SubjectDigest, *sqlgraph.CreateSpec) {
 	var (
-		_node = &SubjectDigest{config: sdc.config}
+		_node = &SubjectDigest{config: _c.config}
 		_spec = sqlgraph.NewCreateSpec(subjectdigest.Table, sqlgraph.NewFieldSpec(subjectdigest.FieldID, field.TypeUUID))
 	)
-	if id, ok := sdc.mutation.ID(); ok {
+	if id, ok := _c.mutation.ID(); ok {
 		_node.ID = id
 		_spec.ID.Value = &id
 	}
-	if value, ok := sdc.mutation.Algorithm(); ok {
+	if value, ok := _c.mutation.Algorithm(); ok {
 		_spec.SetField(subjectdigest.FieldAlgorithm, field.TypeString, value)
 		_node.Algorithm = value
 	}
-	if value, ok := sdc.mutation.Value(); ok {
+	if value, ok := _c.mutation.Value(); ok {
 		_spec.SetField(subjectdigest.FieldValue, field.TypeString, value)
 		_node.Value = value
 	}
-	if nodes := sdc.mutation.SubjectIDs(); len(nodes) > 0 {
+	if nodes := _c.mutation.SubjectIDs(); len(nodes) > 0 {
 		edge := &sqlgraph.EdgeSpec{
 			Rel:     sqlgraph.M2O,
 			Inverse: true,
@@ -196,16 +196,16 @@ type SubjectDigestCreateBulk struct {
 }
 
 // Save creates the SubjectDigest entities in the database.
-func (sdcb *SubjectDigestCreateBulk) Save(ctx context.Context) ([]*SubjectDigest, error) {
-	if sdcb.err != nil {
-		return nil, sdcb.err
+func (_c *SubjectDigestCreateBulk) Save(ctx context.Context) ([]*SubjectDigest, error) {
+	if _c.err != nil {
+		return nil, _c.err
 	}
-	specs := make([]*sqlgraph.CreateSpec, len(sdcb.builders))
-	nodes := make([]*SubjectDigest, len(sdcb.builders))
-	mutators := make([]Mutator, len(sdcb.builders))
-	for i := range sdcb.builders {
+	specs := make([]*sqlgraph.CreateSpec, len(_c.builders))
+	nodes := make([]*SubjectDigest, len(_c.builders))
+	mutators := make([]Mutator, len(_c.builders))
+	for i := range _c.builders {
 		func(i int, root context.Context) {
-			builder := sdcb.builders[i]
+			builder := _c.builders[i]
 			builder.defaults()
 			var mut Mutator = MutateFunc(func(ctx context.Context, m Mutation) (Value, error) {
 				mutation, ok := m.(*SubjectDigestMutation)
@@ -219,11 +219,11 @@ func (sdcb *SubjectDigestCreateBulk) Save(ctx context.Context) ([]*SubjectDigest
 				var err error
 				nodes[i], specs[i] = builder.createSpec()
 				if i < len(mutators)-1 {
-					_, err = mutators[i+1].Mutate(root, sdcb.builders[i+1].mutation)
+					_, err = mutators[i+1].Mutate(root, _c.builders[i+1].mutation)
 				} else {
 					spec := &sqlgraph.BatchCreateSpec{Nodes: specs}
 					// Invoke the actual operation on the latest mutation in the chain.
-					if err = sqlgraph.BatchCreate(ctx, sdcb.driver, spec); err != nil {
+					if err = sqlgraph.BatchCreate(ctx, _c.driver, spec); err != nil {
 						if sqlgraph.IsConstraintError(err) {
 							err = &ConstraintError{msg: err.Error(), wrap: err}
 						}
@@ -243,7 +243,7 @@ func (sdcb *SubjectDigestCreateBulk) Save(ctx context.Context) ([]*SubjectDigest
 		}(i, ctx)
 	}
 	if len(mutators) > 0 {
-		if _, err := mutators[0].Mutate(ctx, sdcb.builders[0].mutation); err != nil {
+		if _, err := mutators[0].Mutate(ctx, _c.builders[0].mutation); err != nil {
 			return nil, err
 		}
 	}
@@ -251,8 +251,8 @@ func (sdcb *SubjectDigestCreateBulk) Save(ctx context.Context) ([]*SubjectDigest
 }
 
 // SaveX is like Save, but panics if an error occurs.
-func (sdcb *SubjectDigestCreateBulk) SaveX(ctx context.Context) []*SubjectDigest {
-	v, err := sdcb.Save(ctx)
+func (_c *SubjectDigestCreateBulk) SaveX(ctx context.Context) []*SubjectDigest {
+	v, err := _c.Save(ctx)
 	if err != nil {
 		panic(err)
 	}
@@ -260,14 +260,14 @@ func (sdcb *SubjectDigestCreateBulk) SaveX(ctx context.Context) []*SubjectDigest
 }
 
 // Exec executes the query.
-func (sdcb *SubjectDigestCreateBulk) Exec(ctx context.Context) error {
-	_, err := sdcb.Save(ctx)
+func (_c *SubjectDigestCreateBulk) Exec(ctx context.Context) error {
+	_, err := _c.Save(ctx)
 	return err
 }
 
 // ExecX is like Exec, but panics if an error occurs.
-func (sdcb *SubjectDigestCreateBulk) ExecX(ctx context.Context) {
-	if err := sdcb.Exec(ctx); err != nil {
+func (_c *SubjectDigestCreateBulk) ExecX(ctx context.Context) {
+	if err := _c.Exec(ctx); err != nil {
 		panic(err)
 	}
 }

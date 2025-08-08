@@ -25,99 +25,99 @@ type SubjectUpdate struct {
 }
 
 // Where appends a list predicates to the SubjectUpdate builder.
-func (su *SubjectUpdate) Where(ps ...predicate.Subject) *SubjectUpdate {
-	su.mutation.Where(ps...)
-	return su
+func (_u *SubjectUpdate) Where(ps ...predicate.Subject) *SubjectUpdate {
+	_u.mutation.Where(ps...)
+	return _u
 }
 
 // SetName sets the "name" field.
-func (su *SubjectUpdate) SetName(s string) *SubjectUpdate {
-	su.mutation.SetName(s)
-	return su
+func (_u *SubjectUpdate) SetName(v string) *SubjectUpdate {
+	_u.mutation.SetName(v)
+	return _u
 }
 
 // SetNillableName sets the "name" field if the given value is not nil.
-func (su *SubjectUpdate) SetNillableName(s *string) *SubjectUpdate {
-	if s != nil {
-		su.SetName(*s)
+func (_u *SubjectUpdate) SetNillableName(v *string) *SubjectUpdate {
+	if v != nil {
+		_u.SetName(*v)
 	}
-	return su
+	return _u
 }
 
 // AddSubjectDigestIDs adds the "subject_digests" edge to the SubjectDigest entity by IDs.
-func (su *SubjectUpdate) AddSubjectDigestIDs(ids ...uuid.UUID) *SubjectUpdate {
-	su.mutation.AddSubjectDigestIDs(ids...)
-	return su
+func (_u *SubjectUpdate) AddSubjectDigestIDs(ids ...uuid.UUID) *SubjectUpdate {
+	_u.mutation.AddSubjectDigestIDs(ids...)
+	return _u
 }
 
 // AddSubjectDigests adds the "subject_digests" edges to the SubjectDigest entity.
-func (su *SubjectUpdate) AddSubjectDigests(s ...*SubjectDigest) *SubjectUpdate {
-	ids := make([]uuid.UUID, len(s))
-	for i := range s {
-		ids[i] = s[i].ID
+func (_u *SubjectUpdate) AddSubjectDigests(v ...*SubjectDigest) *SubjectUpdate {
+	ids := make([]uuid.UUID, len(v))
+	for i := range v {
+		ids[i] = v[i].ID
 	}
-	return su.AddSubjectDigestIDs(ids...)
+	return _u.AddSubjectDigestIDs(ids...)
 }
 
 // SetStatementID sets the "statement" edge to the Statement entity by ID.
-func (su *SubjectUpdate) SetStatementID(id uuid.UUID) *SubjectUpdate {
-	su.mutation.SetStatementID(id)
-	return su
+func (_u *SubjectUpdate) SetStatementID(id uuid.UUID) *SubjectUpdate {
+	_u.mutation.SetStatementID(id)
+	return _u
 }
 
 // SetNillableStatementID sets the "statement" edge to the Statement entity by ID if the given value is not nil.
-func (su *SubjectUpdate) SetNillableStatementID(id *uuid.UUID) *SubjectUpdate {
+func (_u *SubjectUpdate) SetNillableStatementID(id *uuid.UUID) *SubjectUpdate {
 	if id != nil {
-		su = su.SetStatementID(*id)
+		_u = _u.SetStatementID(*id)
 	}
-	return su
+	return _u
 }
 
 // SetStatement sets the "statement" edge to the Statement entity.
-func (su *SubjectUpdate) SetStatement(s *Statement) *SubjectUpdate {
-	return su.SetStatementID(s.ID)
+func (_u *SubjectUpdate) SetStatement(v *Statement) *SubjectUpdate {
+	return _u.SetStatementID(v.ID)
 }
 
 // Mutation returns the SubjectMutation object of the builder.
-func (su *SubjectUpdate) Mutation() *SubjectMutation {
-	return su.mutation
+func (_u *SubjectUpdate) Mutation() *SubjectMutation {
+	return _u.mutation
 }
 
 // ClearSubjectDigests clears all "subject_digests" edges to the SubjectDigest entity.
-func (su *SubjectUpdate) ClearSubjectDigests() *SubjectUpdate {
-	su.mutation.ClearSubjectDigests()
-	return su
+func (_u *SubjectUpdate) ClearSubjectDigests() *SubjectUpdate {
+	_u.mutation.ClearSubjectDigests()
+	return _u
 }
 
 // RemoveSubjectDigestIDs removes the "subject_digests" edge to SubjectDigest entities by IDs.
-func (su *SubjectUpdate) RemoveSubjectDigestIDs(ids ...uuid.UUID) *SubjectUpdate {
-	su.mutation.RemoveSubjectDigestIDs(ids...)
-	return su
+func (_u *SubjectUpdate) RemoveSubjectDigestIDs(ids ...uuid.UUID) *SubjectUpdate {
+	_u.mutation.RemoveSubjectDigestIDs(ids...)
+	return _u
 }
 
 // RemoveSubjectDigests removes "subject_digests" edges to SubjectDigest entities.
-func (su *SubjectUpdate) RemoveSubjectDigests(s ...*SubjectDigest) *SubjectUpdate {
-	ids := make([]uuid.UUID, len(s))
-	for i := range s {
-		ids[i] = s[i].ID
+func (_u *SubjectUpdate) RemoveSubjectDigests(v ...*SubjectDigest) *SubjectUpdate {
+	ids := make([]uuid.UUID, len(v))
+	for i := range v {
+		ids[i] = v[i].ID
 	}
-	return su.RemoveSubjectDigestIDs(ids...)
+	return _u.RemoveSubjectDigestIDs(ids...)
 }
 
 // ClearStatement clears the "statement" edge to the Statement entity.
-func (su *SubjectUpdate) ClearStatement() *SubjectUpdate {
-	su.mutation.ClearStatement()
-	return su
+func (_u *SubjectUpdate) ClearStatement() *SubjectUpdate {
+	_u.mutation.ClearStatement()
+	return _u
 }
 
 // Save executes the query and returns the number of nodes affected by the update operation.
-func (su *SubjectUpdate) Save(ctx context.Context) (int, error) {
-	return withHooks(ctx, su.sqlSave, su.mutation, su.hooks)
+func (_u *SubjectUpdate) Save(ctx context.Context) (int, error) {
+	return withHooks(ctx, _u.sqlSave, _u.mutation, _u.hooks)
 }
 
 // SaveX is like Save, but panics if an error occurs.
-func (su *SubjectUpdate) SaveX(ctx context.Context) int {
-	affected, err := su.Save(ctx)
+func (_u *SubjectUpdate) SaveX(ctx context.Context) int {
+	affected, err := _u.Save(ctx)
 	if err != nil {
 		panic(err)
 	}
@@ -125,21 +125,21 @@ func (su *SubjectUpdate) SaveX(ctx context.Context) int {
 }
 
 // Exec executes the query.
-func (su *SubjectUpdate) Exec(ctx context.Context) error {
-	_, err := su.Save(ctx)
+func (_u *SubjectUpdate) Exec(ctx context.Context) error {
+	_, err := _u.Save(ctx)
 	return err
 }
 
 // ExecX is like Exec, but panics if an error occurs.
-func (su *SubjectUpdate) ExecX(ctx context.Context) {
-	if err := su.Exec(ctx); err != nil {
+func (_u *SubjectUpdate) ExecX(ctx context.Context) {
+	if err := _u.Exec(ctx); err != nil {
 		panic(err)
 	}
 }
 
 // check runs all checks and user-defined validators on the builder.
-func (su *SubjectUpdate) check() error {
-	if v, ok := su.mutation.Name(); ok {
+func (_u *SubjectUpdate) check() error {
+	if v, ok := _u.mutation.Name(); ok {
 		if err := subject.NameValidator(v); err != nil {
 			return &ValidationError{Name: "name", err: fmt.Errorf(`ent: validator failed for field "Subject.name": %w`, err)}
 		}
@@ -147,22 +147,25 @@ func (su *SubjectUpdate) check() error {
 	return nil
 }
 
-func (su *SubjectUpdate) sqlSave(ctx context.Context) (n int, err error) {
-	if err := su.check(); err != nil {
-		return n, err
+func (_u *SubjectUpdate) sqlSave(ctx context.Context) (_node int, err error) {
+	if err := _u.check(); err != nil {
+		return _node, err
 	}
 	_spec := sqlgraph.NewUpdateSpec(subject.Table, subject.Columns, sqlgraph.NewFieldSpec(subject.FieldID, field.TypeUUID))
-	if ps := su.mutation.predicates; len(ps) > 0 {
+	if ps := _u.mutation.predicates; len(ps) > 0 {
 		_spec.Predicate = func(selector *sql.Selector) {
 			for i := range ps {
 				ps[i](selector)
 			}
 		}
 	}
-	if value, ok := su.mutation.Name(); ok {
+	if _u.mutation.CreatedAtCleared() {
+		_spec.ClearField(subject.FieldCreatedAt, field.TypeTime)
+	}
+	if value, ok := _u.mutation.Name(); ok {
 		_spec.SetField(subject.FieldName, field.TypeString, value)
 	}
-	if su.mutation.SubjectDigestsCleared() {
+	if _u.mutation.SubjectDigestsCleared() {
 		edge := &sqlgraph.EdgeSpec{
 			Rel:     sqlgraph.O2M,
 			Inverse: false,
@@ -175,7 +178,7 @@ func (su *SubjectUpdate) sqlSave(ctx context.Context) (n int, err error) {
 		}
 		_spec.Edges.Clear = append(_spec.Edges.Clear, edge)
 	}
-	if nodes := su.mutation.RemovedSubjectDigestsIDs(); len(nodes) > 0 && !su.mutation.SubjectDigestsCleared() {
+	if nodes := _u.mutation.RemovedSubjectDigestsIDs(); len(nodes) > 0 && !_u.mutation.SubjectDigestsCleared() {
 		edge := &sqlgraph.EdgeSpec{
 			Rel:     sqlgraph.O2M,
 			Inverse: false,
@@ -191,7 +194,7 @@ func (su *SubjectUpdate) sqlSave(ctx context.Context) (n int, err error) {
 		}
 		_spec.Edges.Clear = append(_spec.Edges.Clear, edge)
 	}
-	if nodes := su.mutation.SubjectDigestsIDs(); len(nodes) > 0 {
+	if nodes := _u.mutation.SubjectDigestsIDs(); len(nodes) > 0 {
 		edge := &sqlgraph.EdgeSpec{
 			Rel:     sqlgraph.O2M,
 			Inverse: false,
@@ -207,7 +210,7 @@ func (su *SubjectUpdate) sqlSave(ctx context.Context) (n int, err error) {
 		}
 		_spec.Edges.Add = append(_spec.Edges.Add, edge)
 	}
-	if su.mutation.StatementCleared() {
+	if _u.mutation.StatementCleared() {
 		edge := &sqlgraph.EdgeSpec{
 			Rel:     sqlgraph.M2O,
 			Inverse: true,
@@ -220,7 +223,7 @@ func (su *SubjectUpdate) sqlSave(ctx context.Context) (n int, err error) {
 		}
 		_spec.Edges.Clear = append(_spec.Edges.Clear, edge)
 	}
-	if nodes := su.mutation.StatementIDs(); len(nodes) > 0 {
+	if nodes := _u.mutation.StatementIDs(); len(nodes) > 0 {
 		edge := &sqlgraph.EdgeSpec{
 			Rel:     sqlgraph.M2O,
 			Inverse: true,
@@ -236,7 +239,7 @@ func (su *SubjectUpdate) sqlSave(ctx context.Context) (n int, err error) {
 		}
 		_spec.Edges.Add = append(_spec.Edges.Add, edge)
 	}
-	if n, err = sqlgraph.UpdateNodes(ctx, su.driver, _spec); err != nil {
+	if _node, err = sqlgraph.UpdateNodes(ctx, _u.driver, _spec); err != nil {
 		if _, ok := err.(*sqlgraph.NotFoundError); ok {
 			err = &NotFoundError{subject.Label}
 		} else if sqlgraph.IsConstraintError(err) {
@@ -244,8 +247,8 @@ func (su *SubjectUpdate) sqlSave(ctx context.Context) (n int, err error) {
 		}
 		return 0, err
 	}
-	su.mutation.done = true
-	return n, nil
+	_u.mutation.done = true
+	return _node, nil
 }
 
 // SubjectUpdateOne is the builder for updating a single Subject entity.
@@ -257,106 +260,106 @@ type SubjectUpdateOne struct {
 }
 
 // SetName sets the "name" field.
-func (suo *SubjectUpdateOne) SetName(s string) *SubjectUpdateOne {
-	suo.mutation.SetName(s)
-	return suo
+func (_u *SubjectUpdateOne) SetName(v string) *SubjectUpdateOne {
+	_u.mutation.SetName(v)
+	return _u
 }
 
 // SetNillableName sets the "name" field if the given value is not nil.
-func (suo *SubjectUpdateOne) SetNillableName(s *string) *SubjectUpdateOne {
-	if s != nil {
-		suo.SetName(*s)
+func (_u *SubjectUpdateOne) SetNillableName(v *string) *SubjectUpdateOne {
+	if v != nil {
+		_u.SetName(*v)
 	}
-	return suo
+	return _u
 }
 
 // AddSubjectDigestIDs adds the "subject_digests" edge to the SubjectDigest entity by IDs.
-func (suo *SubjectUpdateOne) AddSubjectDigestIDs(ids ...uuid.UUID) *SubjectUpdateOne {
-	suo.mutation.AddSubjectDigestIDs(ids...)
-	return suo
+func (_u *SubjectUpdateOne) AddSubjectDigestIDs(ids ...uuid.UUID) *SubjectUpdateOne {
+	_u.mutation.AddSubjectDigestIDs(ids...)
+	return _u
 }
 
 // AddSubjectDigests adds the "subject_digests" edges to the SubjectDigest entity.
-func (suo *SubjectUpdateOne) AddSubjectDigests(s ...*SubjectDigest) *SubjectUpdateOne {
-	ids := make([]uuid.UUID, len(s))
-	for i := range s {
-		ids[i] = s[i].ID
+func (_u *SubjectUpdateOne) AddSubjectDigests(v ...*SubjectDigest) *SubjectUpdateOne {
+	ids := make([]uuid.UUID, len(v))
+	for i := range v {
+		ids[i] = v[i].ID
 	}
-	return suo.AddSubjectDigestIDs(ids...)
+	return _u.AddSubjectDigestIDs(ids...)
 }
 
 // SetStatementID sets the "statement" edge to the Statement entity by ID.
-func (suo *SubjectUpdateOne) SetStatementID(id uuid.UUID) *SubjectUpdateOne {
-	suo.mutation.SetStatementID(id)
-	return suo
+func (_u *SubjectUpdateOne) SetStatementID(id uuid.UUID) *SubjectUpdateOne {
+	_u.mutation.SetStatementID(id)
+	return _u
 }
 
 // SetNillableStatementID sets the "statement" edge to the Statement entity by ID if the given value is not nil.
-func (suo *SubjectUpdateOne) SetNillableStatementID(id *uuid.UUID) *SubjectUpdateOne {
+func (_u *SubjectUpdateOne) SetNillableStatementID(id *uuid.UUID) *SubjectUpdateOne {
 	if id != nil {
-		suo = suo.SetStatementID(*id)
+		_u = _u.SetStatementID(*id)
 	}
-	return suo
+	return _u
 }
 
 // SetStatement sets the "statement" edge to the Statement entity.
-func (suo *SubjectUpdateOne) SetStatement(s *Statement) *SubjectUpdateOne {
-	return suo.SetStatementID(s.ID)
+func (_u *SubjectUpdateOne) SetStatement(v *Statement) *SubjectUpdateOne {
+	return _u.SetStatementID(v.ID)
 }
 
 // Mutation returns the SubjectMutation object of the builder.
-func (suo *SubjectUpdateOne) Mutation() *SubjectMutation {
-	return suo.mutation
+func (_u *SubjectUpdateOne) Mutation() *SubjectMutation {
+	return _u.mutation
 }
 
 // ClearSubjectDigests clears all "subject_digests" edges to the SubjectDigest entity.
-func (suo *SubjectUpdateOne) ClearSubjectDigests() *SubjectUpdateOne {
-	suo.mutation.ClearSubjectDigests()
-	return suo
+func (_u *SubjectUpdateOne) ClearSubjectDigests() *SubjectUpdateOne {
+	_u.mutation.ClearSubjectDigests()
+	return _u
 }
 
 // RemoveSubjectDigestIDs removes the "subject_digests" edge to SubjectDigest entities by IDs.
-func (suo *SubjectUpdateOne) RemoveSubjectDigestIDs(ids ...uuid.UUID) *SubjectUpdateOne {
-	suo.mutation.RemoveSubjectDigestIDs(ids...)
-	return suo
+func (_u *SubjectUpdateOne) RemoveSubjectDigestIDs(ids ...uuid.UUID) *SubjectUpdateOne {
+	_u.mutation.RemoveSubjectDigestIDs(ids...)
+	return _u
 }
 
 // RemoveSubjectDigests removes "subject_digests" edges to SubjectDigest entities.
-func (suo *SubjectUpdateOne) RemoveSubjectDigests(s ...*SubjectDigest) *SubjectUpdateOne {
-	ids := make([]uuid.UUID, len(s))
-	for i := range s {
-		ids[i] = s[i].ID
+func (_u *SubjectUpdateOne) RemoveSubjectDigests(v ...*SubjectDigest) *SubjectUpdateOne {
+	ids := make([]uuid.UUID, len(v))
+	for i := range v {
+		ids[i] = v[i].ID
 	}
-	return suo.RemoveSubjectDigestIDs(ids...)
+	return _u.RemoveSubjectDigestIDs(ids...)
 }
 
 // ClearStatement clears the "statement" edge to the Statement entity.
-func (suo *SubjectUpdateOne) ClearStatement() *SubjectUpdateOne {
-	suo.mutation.ClearStatement()
-	return suo
+func (_u *SubjectUpdateOne) ClearStatement() *SubjectUpdateOne {
+	_u.mutation.ClearStatement()
+	return _u
 }
 
 // Where appends a list predicates to the SubjectUpdate builder.
-func (suo *SubjectUpdateOne) Where(ps ...predicate.Subject) *SubjectUpdateOne {
-	suo.mutation.Where(ps...)
-	return suo
+func (_u *SubjectUpdateOne) Where(ps ...predicate.Subject) *SubjectUpdateOne {
+	_u.mutation.Where(ps...)
+	return _u
 }
 
 // Select allows selecting one or more fields (columns) of the returned entity.
 // The default is selecting all fields defined in the entity schema.
-func (suo *SubjectUpdateOne) Select(field string, fields ...string) *SubjectUpdateOne {
-	suo.fields = append([]string{field}, fields...)
-	return suo
+func (_u *SubjectUpdateOne) Select(field string, fields ...string) *SubjectUpdateOne {
+	_u.fields = append([]string{field}, fields...)
+	return _u
 }
 
 // Save executes the query and returns the updated Subject entity.
-func (suo *SubjectUpdateOne) Save(ctx context.Context) (*Subject, error) {
-	return withHooks(ctx, suo.sqlSave, suo.mutation, suo.hooks)
+func (_u *SubjectUpdateOne) Save(ctx context.Context) (*Subject, error) {
+	return withHooks(ctx, _u.sqlSave, _u.mutation, _u.hooks)
 }
 
 // SaveX is like Save, but panics if an error occurs.
-func (suo *SubjectUpdateOne) SaveX(ctx context.Context) *Subject {
-	node, err := suo.Save(ctx)
+func (_u *SubjectUpdateOne) SaveX(ctx context.Context) *Subject {
+	node, err := _u.Save(ctx)
 	if err != nil {
 		panic(err)
 	}
@@ -364,21 +367,21 @@ func (suo *SubjectUpdateOne) SaveX(ctx context.Context) *Subject {
 }
 
 // Exec executes the query on the entity.
-func (suo *SubjectUpdateOne) Exec(ctx context.Context) error {
-	_, err := suo.Save(ctx)
+func (_u *SubjectUpdateOne) Exec(ctx context.Context) error {
+	_, err := _u.Save(ctx)
 	return err
 }
 
 // ExecX is like Exec, but panics if an error occurs.
-func (suo *SubjectUpdateOne) ExecX(ctx context.Context) {
-	if err := suo.Exec(ctx); err != nil {
+func (_u *SubjectUpdateOne) ExecX(ctx context.Context) {
+	if err := _u.Exec(ctx); err != nil {
 		panic(err)
 	}
 }
 
 // check runs all checks and user-defined validators on the builder.
-func (suo *SubjectUpdateOne) check() error {
-	if v, ok := suo.mutation.Name(); ok {
+func (_u *SubjectUpdateOne) check() error {
+	if v, ok := _u.mutation.Name(); ok {
 		if err := subject.NameValidator(v); err != nil {
 			return &ValidationError{Name: "name", err: fmt.Errorf(`ent: validator failed for field "Subject.name": %w`, err)}
 		}
@@ -386,17 +389,17 @@ func (suo *SubjectUpdateOne) check() error {
 	return nil
 }
 
-func (suo *SubjectUpdateOne) sqlSave(ctx context.Context) (_node *Subject, err error) {
-	if err := suo.check(); err != nil {
+func (_u *SubjectUpdateOne) sqlSave(ctx context.Context) (_node *Subject, err error) {
+	if err := _u.check(); err != nil {
 		return _node, err
 	}
 	_spec := sqlgraph.NewUpdateSpec(subject.Table, subject.Columns, sqlgraph.NewFieldSpec(subject.FieldID, field.TypeUUID))
-	id, ok := suo.mutation.ID()
+	id, ok := _u.mutation.ID()
 	if !ok {
 		return nil, &ValidationError{Name: "id", err: errors.New(`ent: missing "Subject.id" for update`)}
 	}
 	_spec.Node.ID.Value = id
-	if fields := suo.fields; len(fields) > 0 {
+	if fields := _u.fields; len(fields) > 0 {
 		_spec.Node.Columns = make([]string, 0, len(fields))
 		_spec.Node.Columns = append(_spec.Node.Columns, subject.FieldID)
 		for _, f := range fields {
@@ -408,17 +411,20 @@ func (suo *SubjectUpdateOne) sqlSave(ctx context.Context) (_node *Subject, err e
 			}
 		}
 	}
-	if ps := suo.mutation.predicates; len(ps) > 0 {
+	if ps := _u.mutation.predicates; len(ps) > 0 {
 		_spec.Predicate = func(selector *sql.Selector) {
 			for i := range ps {
 				ps[i](selector)
 			}
 		}
 	}
-	if value, ok := suo.mutation.Name(); ok {
+	if _u.mutation.CreatedAtCleared() {
+		_spec.ClearField(subject.FieldCreatedAt, field.TypeTime)
+	}
+	if value, ok := _u.mutation.Name(); ok {
 		_spec.SetField(subject.FieldName, field.TypeString, value)
 	}
-	if suo.mutation.SubjectDigestsCleared() {
+	if _u.mutation.SubjectDigestsCleared() {
 		edge := &sqlgraph.EdgeSpec{
 			Rel:     sqlgraph.O2M,
 			Inverse: false,
@@ -431,7 +437,7 @@ func (suo *SubjectUpdateOne) sqlSave(ctx context.Context) (_node *Subject, err e
 		}
 		_spec.Edges.Clear = append(_spec.Edges.Clear, edge)
 	}
-	if nodes := suo.mutation.RemovedSubjectDigestsIDs(); len(nodes) > 0 && !suo.mutation.SubjectDigestsCleared() {
+	if nodes := _u.mutation.RemovedSubjectDigestsIDs(); len(nodes) > 0 && !_u.mutation.SubjectDigestsCleared() {
 		edge := &sqlgraph.EdgeSpec{
 			Rel:     sqlgraph.O2M,
 			Inverse: false,
@@ -447,7 +453,7 @@ func (suo *SubjectUpdateOne) sqlSave(ctx context.Context) (_node *Subject, err e
 		}
 		_spec.Edges.Clear = append(_spec.Edges.Clear, edge)
 	}
-	if nodes := suo.mutation.SubjectDigestsIDs(); len(nodes) > 0 {
+	if nodes := _u.mutation.SubjectDigestsIDs(); len(nodes) > 0 {
 		edge := &sqlgraph.EdgeSpec{
 			Rel:     sqlgraph.O2M,
 			Inverse: false,
@@ -463,7 +469,7 @@ func (suo *SubjectUpdateOne) sqlSave(ctx context.Context) (_node *Subject, err e
 		}
 		_spec.Edges.Add = append(_spec.Edges.Add, edge)
 	}
-	if suo.mutation.StatementCleared() {
+	if _u.mutation.StatementCleared() {
 		edge := &sqlgraph.EdgeSpec{
 			Rel:     sqlgraph.M2O,
 			Inverse: true,
@@ -476,7 +482,7 @@ func (suo *SubjectUpdateOne) sqlSave(ctx context.Context) (_node *Subject, err e
 		}
 		_spec.Edges.Clear = append(_spec.Edges.Clear, edge)
 	}
-	if nodes := suo.mutation.StatementIDs(); len(nodes) > 0 {
+	if nodes := _u.mutation.StatementIDs(); len(nodes) > 0 {
 		edge := &sqlgraph.EdgeSpec{
 			Rel:     sqlgraph.M2O,
 			Inverse: true,
@@ -492,10 +498,10 @@ func (suo *SubjectUpdateOne) sqlSave(ctx context.Context) (_node *Subject, err e
 		}
 		_spec.Edges.Add = append(_spec.Edges.Add, edge)
 	}
-	_node = &Subject{config: suo.config}
+	_node = &Subject{config: _u.config}
 	_spec.Assign = _node.assignValues
 	_spec.ScanValues = _node.scanValues
-	if err = sqlgraph.UpdateNode(ctx, suo.driver, _spec); err != nil {
+	if err = sqlgraph.UpdateNode(ctx, _u.driver, _spec); err != nil {
 		if _, ok := err.(*sqlgraph.NotFoundError); ok {
 			err = &NotFoundError{subject.Label}
 		} else if sqlgraph.IsConstraintError(err) {
@@ -503,6 +509,6 @@ func (suo *SubjectUpdateOne) sqlSave(ctx context.Context) (_node *Subject, err e
 		}
 		return nil, err
 	}
-	suo.mutation.done = true
+	_u.mutation.done = true
 	return _node, nil
 }

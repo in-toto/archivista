@@ -25,77 +25,77 @@ type TimestampUpdate struct {
 }
 
 // Where appends a list predicates to the TimestampUpdate builder.
-func (tu *TimestampUpdate) Where(ps ...predicate.Timestamp) *TimestampUpdate {
-	tu.mutation.Where(ps...)
-	return tu
+func (_u *TimestampUpdate) Where(ps ...predicate.Timestamp) *TimestampUpdate {
+	_u.mutation.Where(ps...)
+	return _u
 }
 
 // SetType sets the "type" field.
-func (tu *TimestampUpdate) SetType(s string) *TimestampUpdate {
-	tu.mutation.SetType(s)
-	return tu
+func (_u *TimestampUpdate) SetType(v string) *TimestampUpdate {
+	_u.mutation.SetType(v)
+	return _u
 }
 
 // SetNillableType sets the "type" field if the given value is not nil.
-func (tu *TimestampUpdate) SetNillableType(s *string) *TimestampUpdate {
-	if s != nil {
-		tu.SetType(*s)
+func (_u *TimestampUpdate) SetNillableType(v *string) *TimestampUpdate {
+	if v != nil {
+		_u.SetType(*v)
 	}
-	return tu
+	return _u
 }
 
 // SetTimestamp sets the "timestamp" field.
-func (tu *TimestampUpdate) SetTimestamp(t time.Time) *TimestampUpdate {
-	tu.mutation.SetTimestamp(t)
-	return tu
+func (_u *TimestampUpdate) SetTimestamp(v time.Time) *TimestampUpdate {
+	_u.mutation.SetTimestamp(v)
+	return _u
 }
 
 // SetNillableTimestamp sets the "timestamp" field if the given value is not nil.
-func (tu *TimestampUpdate) SetNillableTimestamp(t *time.Time) *TimestampUpdate {
-	if t != nil {
-		tu.SetTimestamp(*t)
+func (_u *TimestampUpdate) SetNillableTimestamp(v *time.Time) *TimestampUpdate {
+	if v != nil {
+		_u.SetTimestamp(*v)
 	}
-	return tu
+	return _u
 }
 
 // SetSignatureID sets the "signature" edge to the Signature entity by ID.
-func (tu *TimestampUpdate) SetSignatureID(id uuid.UUID) *TimestampUpdate {
-	tu.mutation.SetSignatureID(id)
-	return tu
+func (_u *TimestampUpdate) SetSignatureID(id uuid.UUID) *TimestampUpdate {
+	_u.mutation.SetSignatureID(id)
+	return _u
 }
 
 // SetNillableSignatureID sets the "signature" edge to the Signature entity by ID if the given value is not nil.
-func (tu *TimestampUpdate) SetNillableSignatureID(id *uuid.UUID) *TimestampUpdate {
+func (_u *TimestampUpdate) SetNillableSignatureID(id *uuid.UUID) *TimestampUpdate {
 	if id != nil {
-		tu = tu.SetSignatureID(*id)
+		_u = _u.SetSignatureID(*id)
 	}
-	return tu
+	return _u
 }
 
 // SetSignature sets the "signature" edge to the Signature entity.
-func (tu *TimestampUpdate) SetSignature(s *Signature) *TimestampUpdate {
-	return tu.SetSignatureID(s.ID)
+func (_u *TimestampUpdate) SetSignature(v *Signature) *TimestampUpdate {
+	return _u.SetSignatureID(v.ID)
 }
 
 // Mutation returns the TimestampMutation object of the builder.
-func (tu *TimestampUpdate) Mutation() *TimestampMutation {
-	return tu.mutation
+func (_u *TimestampUpdate) Mutation() *TimestampMutation {
+	return _u.mutation
 }
 
 // ClearSignature clears the "signature" edge to the Signature entity.
-func (tu *TimestampUpdate) ClearSignature() *TimestampUpdate {
-	tu.mutation.ClearSignature()
-	return tu
+func (_u *TimestampUpdate) ClearSignature() *TimestampUpdate {
+	_u.mutation.ClearSignature()
+	return _u
 }
 
 // Save executes the query and returns the number of nodes affected by the update operation.
-func (tu *TimestampUpdate) Save(ctx context.Context) (int, error) {
-	return withHooks(ctx, tu.sqlSave, tu.mutation, tu.hooks)
+func (_u *TimestampUpdate) Save(ctx context.Context) (int, error) {
+	return withHooks(ctx, _u.sqlSave, _u.mutation, _u.hooks)
 }
 
 // SaveX is like Save, but panics if an error occurs.
-func (tu *TimestampUpdate) SaveX(ctx context.Context) int {
-	affected, err := tu.Save(ctx)
+func (_u *TimestampUpdate) SaveX(ctx context.Context) int {
+	affected, err := _u.Save(ctx)
 	if err != nil {
 		panic(err)
 	}
@@ -103,34 +103,34 @@ func (tu *TimestampUpdate) SaveX(ctx context.Context) int {
 }
 
 // Exec executes the query.
-func (tu *TimestampUpdate) Exec(ctx context.Context) error {
-	_, err := tu.Save(ctx)
+func (_u *TimestampUpdate) Exec(ctx context.Context) error {
+	_, err := _u.Save(ctx)
 	return err
 }
 
 // ExecX is like Exec, but panics if an error occurs.
-func (tu *TimestampUpdate) ExecX(ctx context.Context) {
-	if err := tu.Exec(ctx); err != nil {
+func (_u *TimestampUpdate) ExecX(ctx context.Context) {
+	if err := _u.Exec(ctx); err != nil {
 		panic(err)
 	}
 }
 
-func (tu *TimestampUpdate) sqlSave(ctx context.Context) (n int, err error) {
+func (_u *TimestampUpdate) sqlSave(ctx context.Context) (_node int, err error) {
 	_spec := sqlgraph.NewUpdateSpec(timestamp.Table, timestamp.Columns, sqlgraph.NewFieldSpec(timestamp.FieldID, field.TypeUUID))
-	if ps := tu.mutation.predicates; len(ps) > 0 {
+	if ps := _u.mutation.predicates; len(ps) > 0 {
 		_spec.Predicate = func(selector *sql.Selector) {
 			for i := range ps {
 				ps[i](selector)
 			}
 		}
 	}
-	if value, ok := tu.mutation.GetType(); ok {
+	if value, ok := _u.mutation.GetType(); ok {
 		_spec.SetField(timestamp.FieldType, field.TypeString, value)
 	}
-	if value, ok := tu.mutation.Timestamp(); ok {
+	if value, ok := _u.mutation.Timestamp(); ok {
 		_spec.SetField(timestamp.FieldTimestamp, field.TypeTime, value)
 	}
-	if tu.mutation.SignatureCleared() {
+	if _u.mutation.SignatureCleared() {
 		edge := &sqlgraph.EdgeSpec{
 			Rel:     sqlgraph.M2O,
 			Inverse: true,
@@ -143,7 +143,7 @@ func (tu *TimestampUpdate) sqlSave(ctx context.Context) (n int, err error) {
 		}
 		_spec.Edges.Clear = append(_spec.Edges.Clear, edge)
 	}
-	if nodes := tu.mutation.SignatureIDs(); len(nodes) > 0 {
+	if nodes := _u.mutation.SignatureIDs(); len(nodes) > 0 {
 		edge := &sqlgraph.EdgeSpec{
 			Rel:     sqlgraph.M2O,
 			Inverse: true,
@@ -159,7 +159,7 @@ func (tu *TimestampUpdate) sqlSave(ctx context.Context) (n int, err error) {
 		}
 		_spec.Edges.Add = append(_spec.Edges.Add, edge)
 	}
-	if n, err = sqlgraph.UpdateNodes(ctx, tu.driver, _spec); err != nil {
+	if _node, err = sqlgraph.UpdateNodes(ctx, _u.driver, _spec); err != nil {
 		if _, ok := err.(*sqlgraph.NotFoundError); ok {
 			err = &NotFoundError{timestamp.Label}
 		} else if sqlgraph.IsConstraintError(err) {
@@ -167,8 +167,8 @@ func (tu *TimestampUpdate) sqlSave(ctx context.Context) (n int, err error) {
 		}
 		return 0, err
 	}
-	tu.mutation.done = true
-	return n, nil
+	_u.mutation.done = true
+	return _node, nil
 }
 
 // TimestampUpdateOne is the builder for updating a single Timestamp entity.
@@ -180,84 +180,84 @@ type TimestampUpdateOne struct {
 }
 
 // SetType sets the "type" field.
-func (tuo *TimestampUpdateOne) SetType(s string) *TimestampUpdateOne {
-	tuo.mutation.SetType(s)
-	return tuo
+func (_u *TimestampUpdateOne) SetType(v string) *TimestampUpdateOne {
+	_u.mutation.SetType(v)
+	return _u
 }
 
 // SetNillableType sets the "type" field if the given value is not nil.
-func (tuo *TimestampUpdateOne) SetNillableType(s *string) *TimestampUpdateOne {
-	if s != nil {
-		tuo.SetType(*s)
+func (_u *TimestampUpdateOne) SetNillableType(v *string) *TimestampUpdateOne {
+	if v != nil {
+		_u.SetType(*v)
 	}
-	return tuo
+	return _u
 }
 
 // SetTimestamp sets the "timestamp" field.
-func (tuo *TimestampUpdateOne) SetTimestamp(t time.Time) *TimestampUpdateOne {
-	tuo.mutation.SetTimestamp(t)
-	return tuo
+func (_u *TimestampUpdateOne) SetTimestamp(v time.Time) *TimestampUpdateOne {
+	_u.mutation.SetTimestamp(v)
+	return _u
 }
 
 // SetNillableTimestamp sets the "timestamp" field if the given value is not nil.
-func (tuo *TimestampUpdateOne) SetNillableTimestamp(t *time.Time) *TimestampUpdateOne {
-	if t != nil {
-		tuo.SetTimestamp(*t)
+func (_u *TimestampUpdateOne) SetNillableTimestamp(v *time.Time) *TimestampUpdateOne {
+	if v != nil {
+		_u.SetTimestamp(*v)
 	}
-	return tuo
+	return _u
 }
 
 // SetSignatureID sets the "signature" edge to the Signature entity by ID.
-func (tuo *TimestampUpdateOne) SetSignatureID(id uuid.UUID) *TimestampUpdateOne {
-	tuo.mutation.SetSignatureID(id)
-	return tuo
+func (_u *TimestampUpdateOne) SetSignatureID(id uuid.UUID) *TimestampUpdateOne {
+	_u.mutation.SetSignatureID(id)
+	return _u
 }
 
 // SetNillableSignatureID sets the "signature" edge to the Signature entity by ID if the given value is not nil.
-func (tuo *TimestampUpdateOne) SetNillableSignatureID(id *uuid.UUID) *TimestampUpdateOne {
+func (_u *TimestampUpdateOne) SetNillableSignatureID(id *uuid.UUID) *TimestampUpdateOne {
 	if id != nil {
-		tuo = tuo.SetSignatureID(*id)
+		_u = _u.SetSignatureID(*id)
 	}
-	return tuo
+	return _u
 }
 
 // SetSignature sets the "signature" edge to the Signature entity.
-func (tuo *TimestampUpdateOne) SetSignature(s *Signature) *TimestampUpdateOne {
-	return tuo.SetSignatureID(s.ID)
+func (_u *TimestampUpdateOne) SetSignature(v *Signature) *TimestampUpdateOne {
+	return _u.SetSignatureID(v.ID)
 }
 
 // Mutation returns the TimestampMutation object of the builder.
-func (tuo *TimestampUpdateOne) Mutation() *TimestampMutation {
-	return tuo.mutation
+func (_u *TimestampUpdateOne) Mutation() *TimestampMutation {
+	return _u.mutation
 }
 
 // ClearSignature clears the "signature" edge to the Signature entity.
-func (tuo *TimestampUpdateOne) ClearSignature() *TimestampUpdateOne {
-	tuo.mutation.ClearSignature()
-	return tuo
+func (_u *TimestampUpdateOne) ClearSignature() *TimestampUpdateOne {
+	_u.mutation.ClearSignature()
+	return _u
 }
 
 // Where appends a list predicates to the TimestampUpdate builder.
-func (tuo *TimestampUpdateOne) Where(ps ...predicate.Timestamp) *TimestampUpdateOne {
-	tuo.mutation.Where(ps...)
-	return tuo
+func (_u *TimestampUpdateOne) Where(ps ...predicate.Timestamp) *TimestampUpdateOne {
+	_u.mutation.Where(ps...)
+	return _u
 }
 
 // Select allows selecting one or more fields (columns) of the returned entity.
 // The default is selecting all fields defined in the entity schema.
-func (tuo *TimestampUpdateOne) Select(field string, fields ...string) *TimestampUpdateOne {
-	tuo.fields = append([]string{field}, fields...)
-	return tuo
+func (_u *TimestampUpdateOne) Select(field string, fields ...string) *TimestampUpdateOne {
+	_u.fields = append([]string{field}, fields...)
+	return _u
 }
 
 // Save executes the query and returns the updated Timestamp entity.
-func (tuo *TimestampUpdateOne) Save(ctx context.Context) (*Timestamp, error) {
-	return withHooks(ctx, tuo.sqlSave, tuo.mutation, tuo.hooks)
+func (_u *TimestampUpdateOne) Save(ctx context.Context) (*Timestamp, error) {
+	return withHooks(ctx, _u.sqlSave, _u.mutation, _u.hooks)
 }
 
 // SaveX is like Save, but panics if an error occurs.
-func (tuo *TimestampUpdateOne) SaveX(ctx context.Context) *Timestamp {
-	node, err := tuo.Save(ctx)
+func (_u *TimestampUpdateOne) SaveX(ctx context.Context) *Timestamp {
+	node, err := _u.Save(ctx)
 	if err != nil {
 		panic(err)
 	}
@@ -265,26 +265,26 @@ func (tuo *TimestampUpdateOne) SaveX(ctx context.Context) *Timestamp {
 }
 
 // Exec executes the query on the entity.
-func (tuo *TimestampUpdateOne) Exec(ctx context.Context) error {
-	_, err := tuo.Save(ctx)
+func (_u *TimestampUpdateOne) Exec(ctx context.Context) error {
+	_, err := _u.Save(ctx)
 	return err
 }
 
 // ExecX is like Exec, but panics if an error occurs.
-func (tuo *TimestampUpdateOne) ExecX(ctx context.Context) {
-	if err := tuo.Exec(ctx); err != nil {
+func (_u *TimestampUpdateOne) ExecX(ctx context.Context) {
+	if err := _u.Exec(ctx); err != nil {
 		panic(err)
 	}
 }
 
-func (tuo *TimestampUpdateOne) sqlSave(ctx context.Context) (_node *Timestamp, err error) {
+func (_u *TimestampUpdateOne) sqlSave(ctx context.Context) (_node *Timestamp, err error) {
 	_spec := sqlgraph.NewUpdateSpec(timestamp.Table, timestamp.Columns, sqlgraph.NewFieldSpec(timestamp.FieldID, field.TypeUUID))
-	id, ok := tuo.mutation.ID()
+	id, ok := _u.mutation.ID()
 	if !ok {
 		return nil, &ValidationError{Name: "id", err: errors.New(`ent: missing "Timestamp.id" for update`)}
 	}
 	_spec.Node.ID.Value = id
-	if fields := tuo.fields; len(fields) > 0 {
+	if fields := _u.fields; len(fields) > 0 {
 		_spec.Node.Columns = make([]string, 0, len(fields))
 		_spec.Node.Columns = append(_spec.Node.Columns, timestamp.FieldID)
 		for _, f := range fields {
@@ -296,20 +296,20 @@ func (tuo *TimestampUpdateOne) sqlSave(ctx context.Context) (_node *Timestamp, e
 			}
 		}
 	}
-	if ps := tuo.mutation.predicates; len(ps) > 0 {
+	if ps := _u.mutation.predicates; len(ps) > 0 {
 		_spec.Predicate = func(selector *sql.Selector) {
 			for i := range ps {
 				ps[i](selector)
 			}
 		}
 	}
-	if value, ok := tuo.mutation.GetType(); ok {
+	if value, ok := _u.mutation.GetType(); ok {
 		_spec.SetField(timestamp.FieldType, field.TypeString, value)
 	}
-	if value, ok := tuo.mutation.Timestamp(); ok {
+	if value, ok := _u.mutation.Timestamp(); ok {
 		_spec.SetField(timestamp.FieldTimestamp, field.TypeTime, value)
 	}
-	if tuo.mutation.SignatureCleared() {
+	if _u.mutation.SignatureCleared() {
 		edge := &sqlgraph.EdgeSpec{
 			Rel:     sqlgraph.M2O,
 			Inverse: true,
@@ -322,7 +322,7 @@ func (tuo *TimestampUpdateOne) sqlSave(ctx context.Context) (_node *Timestamp, e
 		}
 		_spec.Edges.Clear = append(_spec.Edges.Clear, edge)
 	}
-	if nodes := tuo.mutation.SignatureIDs(); len(nodes) > 0 {
+	if nodes := _u.mutation.SignatureIDs(); len(nodes) > 0 {
 		edge := &sqlgraph.EdgeSpec{
 			Rel:     sqlgraph.M2O,
 			Inverse: true,
@@ -338,10 +338,10 @@ func (tuo *TimestampUpdateOne) sqlSave(ctx context.Context) (_node *Timestamp, e
 		}
 		_spec.Edges.Add = append(_spec.Edges.Add, edge)
 	}
-	_node = &Timestamp{config: tuo.config}
+	_node = &Timestamp{config: _u.config}
 	_spec.Assign = _node.assignValues
 	_spec.ScanValues = _node.scanValues
-	if err = sqlgraph.UpdateNode(ctx, tuo.driver, _spec); err != nil {
+	if err = sqlgraph.UpdateNode(ctx, _u.driver, _spec); err != nil {
 		if _, ok := err.(*sqlgraph.NotFoundError); ok {
 			err = &NotFoundError{timestamp.Label}
 		} else if sqlgraph.IsConstraintError(err) {
@@ -349,6 +349,6 @@ func (tuo *TimestampUpdateOne) sqlSave(ctx context.Context) (_node *Timestamp, e
 		}
 		return nil, err
 	}
-	tuo.mutation.done = true
+	_u.mutation.done = true
 	return _node, nil
 }

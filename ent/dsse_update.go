@@ -26,149 +26,149 @@ type DsseUpdate struct {
 }
 
 // Where appends a list predicates to the DsseUpdate builder.
-func (du *DsseUpdate) Where(ps ...predicate.Dsse) *DsseUpdate {
-	du.mutation.Where(ps...)
-	return du
+func (_u *DsseUpdate) Where(ps ...predicate.Dsse) *DsseUpdate {
+	_u.mutation.Where(ps...)
+	return _u
 }
 
 // SetGitoidSha256 sets the "gitoid_sha256" field.
-func (du *DsseUpdate) SetGitoidSha256(s string) *DsseUpdate {
-	du.mutation.SetGitoidSha256(s)
-	return du
+func (_u *DsseUpdate) SetGitoidSha256(v string) *DsseUpdate {
+	_u.mutation.SetGitoidSha256(v)
+	return _u
 }
 
 // SetNillableGitoidSha256 sets the "gitoid_sha256" field if the given value is not nil.
-func (du *DsseUpdate) SetNillableGitoidSha256(s *string) *DsseUpdate {
-	if s != nil {
-		du.SetGitoidSha256(*s)
+func (_u *DsseUpdate) SetNillableGitoidSha256(v *string) *DsseUpdate {
+	if v != nil {
+		_u.SetGitoidSha256(*v)
 	}
-	return du
+	return _u
 }
 
 // SetPayloadType sets the "payload_type" field.
-func (du *DsseUpdate) SetPayloadType(s string) *DsseUpdate {
-	du.mutation.SetPayloadType(s)
-	return du
+func (_u *DsseUpdate) SetPayloadType(v string) *DsseUpdate {
+	_u.mutation.SetPayloadType(v)
+	return _u
 }
 
 // SetNillablePayloadType sets the "payload_type" field if the given value is not nil.
-func (du *DsseUpdate) SetNillablePayloadType(s *string) *DsseUpdate {
-	if s != nil {
-		du.SetPayloadType(*s)
+func (_u *DsseUpdate) SetNillablePayloadType(v *string) *DsseUpdate {
+	if v != nil {
+		_u.SetPayloadType(*v)
 	}
-	return du
+	return _u
 }
 
 // SetStatementID sets the "statement" edge to the Statement entity by ID.
-func (du *DsseUpdate) SetStatementID(id uuid.UUID) *DsseUpdate {
-	du.mutation.SetStatementID(id)
-	return du
+func (_u *DsseUpdate) SetStatementID(id uuid.UUID) *DsseUpdate {
+	_u.mutation.SetStatementID(id)
+	return _u
 }
 
 // SetNillableStatementID sets the "statement" edge to the Statement entity by ID if the given value is not nil.
-func (du *DsseUpdate) SetNillableStatementID(id *uuid.UUID) *DsseUpdate {
+func (_u *DsseUpdate) SetNillableStatementID(id *uuid.UUID) *DsseUpdate {
 	if id != nil {
-		du = du.SetStatementID(*id)
+		_u = _u.SetStatementID(*id)
 	}
-	return du
+	return _u
 }
 
 // SetStatement sets the "statement" edge to the Statement entity.
-func (du *DsseUpdate) SetStatement(s *Statement) *DsseUpdate {
-	return du.SetStatementID(s.ID)
+func (_u *DsseUpdate) SetStatement(v *Statement) *DsseUpdate {
+	return _u.SetStatementID(v.ID)
 }
 
 // AddSignatureIDs adds the "signatures" edge to the Signature entity by IDs.
-func (du *DsseUpdate) AddSignatureIDs(ids ...uuid.UUID) *DsseUpdate {
-	du.mutation.AddSignatureIDs(ids...)
-	return du
+func (_u *DsseUpdate) AddSignatureIDs(ids ...uuid.UUID) *DsseUpdate {
+	_u.mutation.AddSignatureIDs(ids...)
+	return _u
 }
 
 // AddSignatures adds the "signatures" edges to the Signature entity.
-func (du *DsseUpdate) AddSignatures(s ...*Signature) *DsseUpdate {
-	ids := make([]uuid.UUID, len(s))
-	for i := range s {
-		ids[i] = s[i].ID
+func (_u *DsseUpdate) AddSignatures(v ...*Signature) *DsseUpdate {
+	ids := make([]uuid.UUID, len(v))
+	for i := range v {
+		ids[i] = v[i].ID
 	}
-	return du.AddSignatureIDs(ids...)
+	return _u.AddSignatureIDs(ids...)
 }
 
 // AddPayloadDigestIDs adds the "payload_digests" edge to the PayloadDigest entity by IDs.
-func (du *DsseUpdate) AddPayloadDigestIDs(ids ...uuid.UUID) *DsseUpdate {
-	du.mutation.AddPayloadDigestIDs(ids...)
-	return du
+func (_u *DsseUpdate) AddPayloadDigestIDs(ids ...uuid.UUID) *DsseUpdate {
+	_u.mutation.AddPayloadDigestIDs(ids...)
+	return _u
 }
 
 // AddPayloadDigests adds the "payload_digests" edges to the PayloadDigest entity.
-func (du *DsseUpdate) AddPayloadDigests(p ...*PayloadDigest) *DsseUpdate {
-	ids := make([]uuid.UUID, len(p))
-	for i := range p {
-		ids[i] = p[i].ID
+func (_u *DsseUpdate) AddPayloadDigests(v ...*PayloadDigest) *DsseUpdate {
+	ids := make([]uuid.UUID, len(v))
+	for i := range v {
+		ids[i] = v[i].ID
 	}
-	return du.AddPayloadDigestIDs(ids...)
+	return _u.AddPayloadDigestIDs(ids...)
 }
 
 // Mutation returns the DsseMutation object of the builder.
-func (du *DsseUpdate) Mutation() *DsseMutation {
-	return du.mutation
+func (_u *DsseUpdate) Mutation() *DsseMutation {
+	return _u.mutation
 }
 
 // ClearStatement clears the "statement" edge to the Statement entity.
-func (du *DsseUpdate) ClearStatement() *DsseUpdate {
-	du.mutation.ClearStatement()
-	return du
+func (_u *DsseUpdate) ClearStatement() *DsseUpdate {
+	_u.mutation.ClearStatement()
+	return _u
 }
 
 // ClearSignatures clears all "signatures" edges to the Signature entity.
-func (du *DsseUpdate) ClearSignatures() *DsseUpdate {
-	du.mutation.ClearSignatures()
-	return du
+func (_u *DsseUpdate) ClearSignatures() *DsseUpdate {
+	_u.mutation.ClearSignatures()
+	return _u
 }
 
 // RemoveSignatureIDs removes the "signatures" edge to Signature entities by IDs.
-func (du *DsseUpdate) RemoveSignatureIDs(ids ...uuid.UUID) *DsseUpdate {
-	du.mutation.RemoveSignatureIDs(ids...)
-	return du
+func (_u *DsseUpdate) RemoveSignatureIDs(ids ...uuid.UUID) *DsseUpdate {
+	_u.mutation.RemoveSignatureIDs(ids...)
+	return _u
 }
 
 // RemoveSignatures removes "signatures" edges to Signature entities.
-func (du *DsseUpdate) RemoveSignatures(s ...*Signature) *DsseUpdate {
-	ids := make([]uuid.UUID, len(s))
-	for i := range s {
-		ids[i] = s[i].ID
+func (_u *DsseUpdate) RemoveSignatures(v ...*Signature) *DsseUpdate {
+	ids := make([]uuid.UUID, len(v))
+	for i := range v {
+		ids[i] = v[i].ID
 	}
-	return du.RemoveSignatureIDs(ids...)
+	return _u.RemoveSignatureIDs(ids...)
 }
 
 // ClearPayloadDigests clears all "payload_digests" edges to the PayloadDigest entity.
-func (du *DsseUpdate) ClearPayloadDigests() *DsseUpdate {
-	du.mutation.ClearPayloadDigests()
-	return du
+func (_u *DsseUpdate) ClearPayloadDigests() *DsseUpdate {
+	_u.mutation.ClearPayloadDigests()
+	return _u
 }
 
 // RemovePayloadDigestIDs removes the "payload_digests" edge to PayloadDigest entities by IDs.
-func (du *DsseUpdate) RemovePayloadDigestIDs(ids ...uuid.UUID) *DsseUpdate {
-	du.mutation.RemovePayloadDigestIDs(ids...)
-	return du
+func (_u *DsseUpdate) RemovePayloadDigestIDs(ids ...uuid.UUID) *DsseUpdate {
+	_u.mutation.RemovePayloadDigestIDs(ids...)
+	return _u
 }
 
 // RemovePayloadDigests removes "payload_digests" edges to PayloadDigest entities.
-func (du *DsseUpdate) RemovePayloadDigests(p ...*PayloadDigest) *DsseUpdate {
-	ids := make([]uuid.UUID, len(p))
-	for i := range p {
-		ids[i] = p[i].ID
+func (_u *DsseUpdate) RemovePayloadDigests(v ...*PayloadDigest) *DsseUpdate {
+	ids := make([]uuid.UUID, len(v))
+	for i := range v {
+		ids[i] = v[i].ID
 	}
-	return du.RemovePayloadDigestIDs(ids...)
+	return _u.RemovePayloadDigestIDs(ids...)
 }
 
 // Save executes the query and returns the number of nodes affected by the update operation.
-func (du *DsseUpdate) Save(ctx context.Context) (int, error) {
-	return withHooks(ctx, du.sqlSave, du.mutation, du.hooks)
+func (_u *DsseUpdate) Save(ctx context.Context) (int, error) {
+	return withHooks(ctx, _u.sqlSave, _u.mutation, _u.hooks)
 }
 
 // SaveX is like Save, but panics if an error occurs.
-func (du *DsseUpdate) SaveX(ctx context.Context) int {
-	affected, err := du.Save(ctx)
+func (_u *DsseUpdate) SaveX(ctx context.Context) int {
+	affected, err := _u.Save(ctx)
 	if err != nil {
 		panic(err)
 	}
@@ -176,26 +176,26 @@ func (du *DsseUpdate) SaveX(ctx context.Context) int {
 }
 
 // Exec executes the query.
-func (du *DsseUpdate) Exec(ctx context.Context) error {
-	_, err := du.Save(ctx)
+func (_u *DsseUpdate) Exec(ctx context.Context) error {
+	_, err := _u.Save(ctx)
 	return err
 }
 
 // ExecX is like Exec, but panics if an error occurs.
-func (du *DsseUpdate) ExecX(ctx context.Context) {
-	if err := du.Exec(ctx); err != nil {
+func (_u *DsseUpdate) ExecX(ctx context.Context) {
+	if err := _u.Exec(ctx); err != nil {
 		panic(err)
 	}
 }
 
 // check runs all checks and user-defined validators on the builder.
-func (du *DsseUpdate) check() error {
-	if v, ok := du.mutation.GitoidSha256(); ok {
+func (_u *DsseUpdate) check() error {
+	if v, ok := _u.mutation.GitoidSha256(); ok {
 		if err := dsse.GitoidSha256Validator(v); err != nil {
 			return &ValidationError{Name: "gitoid_sha256", err: fmt.Errorf(`ent: validator failed for field "Dsse.gitoid_sha256": %w`, err)}
 		}
 	}
-	if v, ok := du.mutation.PayloadType(); ok {
+	if v, ok := _u.mutation.PayloadType(); ok {
 		if err := dsse.PayloadTypeValidator(v); err != nil {
 			return &ValidationError{Name: "payload_type", err: fmt.Errorf(`ent: validator failed for field "Dsse.payload_type": %w`, err)}
 		}
@@ -203,25 +203,28 @@ func (du *DsseUpdate) check() error {
 	return nil
 }
 
-func (du *DsseUpdate) sqlSave(ctx context.Context) (n int, err error) {
-	if err := du.check(); err != nil {
-		return n, err
+func (_u *DsseUpdate) sqlSave(ctx context.Context) (_node int, err error) {
+	if err := _u.check(); err != nil {
+		return _node, err
 	}
 	_spec := sqlgraph.NewUpdateSpec(dsse.Table, dsse.Columns, sqlgraph.NewFieldSpec(dsse.FieldID, field.TypeUUID))
-	if ps := du.mutation.predicates; len(ps) > 0 {
+	if ps := _u.mutation.predicates; len(ps) > 0 {
 		_spec.Predicate = func(selector *sql.Selector) {
 			for i := range ps {
 				ps[i](selector)
 			}
 		}
 	}
-	if value, ok := du.mutation.GitoidSha256(); ok {
+	if _u.mutation.CreatedAtCleared() {
+		_spec.ClearField(dsse.FieldCreatedAt, field.TypeTime)
+	}
+	if value, ok := _u.mutation.GitoidSha256(); ok {
 		_spec.SetField(dsse.FieldGitoidSha256, field.TypeString, value)
 	}
-	if value, ok := du.mutation.PayloadType(); ok {
+	if value, ok := _u.mutation.PayloadType(); ok {
 		_spec.SetField(dsse.FieldPayloadType, field.TypeString, value)
 	}
-	if du.mutation.StatementCleared() {
+	if _u.mutation.StatementCleared() {
 		edge := &sqlgraph.EdgeSpec{
 			Rel:     sqlgraph.M2O,
 			Inverse: false,
@@ -234,7 +237,7 @@ func (du *DsseUpdate) sqlSave(ctx context.Context) (n int, err error) {
 		}
 		_spec.Edges.Clear = append(_spec.Edges.Clear, edge)
 	}
-	if nodes := du.mutation.StatementIDs(); len(nodes) > 0 {
+	if nodes := _u.mutation.StatementIDs(); len(nodes) > 0 {
 		edge := &sqlgraph.EdgeSpec{
 			Rel:     sqlgraph.M2O,
 			Inverse: false,
@@ -250,7 +253,7 @@ func (du *DsseUpdate) sqlSave(ctx context.Context) (n int, err error) {
 		}
 		_spec.Edges.Add = append(_spec.Edges.Add, edge)
 	}
-	if du.mutation.SignaturesCleared() {
+	if _u.mutation.SignaturesCleared() {
 		edge := &sqlgraph.EdgeSpec{
 			Rel:     sqlgraph.O2M,
 			Inverse: false,
@@ -263,7 +266,7 @@ func (du *DsseUpdate) sqlSave(ctx context.Context) (n int, err error) {
 		}
 		_spec.Edges.Clear = append(_spec.Edges.Clear, edge)
 	}
-	if nodes := du.mutation.RemovedSignaturesIDs(); len(nodes) > 0 && !du.mutation.SignaturesCleared() {
+	if nodes := _u.mutation.RemovedSignaturesIDs(); len(nodes) > 0 && !_u.mutation.SignaturesCleared() {
 		edge := &sqlgraph.EdgeSpec{
 			Rel:     sqlgraph.O2M,
 			Inverse: false,
@@ -279,7 +282,7 @@ func (du *DsseUpdate) sqlSave(ctx context.Context) (n int, err error) {
 		}
 		_spec.Edges.Clear = append(_spec.Edges.Clear, edge)
 	}
-	if nodes := du.mutation.SignaturesIDs(); len(nodes) > 0 {
+	if nodes := _u.mutation.SignaturesIDs(); len(nodes) > 0 {
 		edge := &sqlgraph.EdgeSpec{
 			Rel:     sqlgraph.O2M,
 			Inverse: false,
@@ -295,7 +298,7 @@ func (du *DsseUpdate) sqlSave(ctx context.Context) (n int, err error) {
 		}
 		_spec.Edges.Add = append(_spec.Edges.Add, edge)
 	}
-	if du.mutation.PayloadDigestsCleared() {
+	if _u.mutation.PayloadDigestsCleared() {
 		edge := &sqlgraph.EdgeSpec{
 			Rel:     sqlgraph.O2M,
 			Inverse: false,
@@ -308,7 +311,7 @@ func (du *DsseUpdate) sqlSave(ctx context.Context) (n int, err error) {
 		}
 		_spec.Edges.Clear = append(_spec.Edges.Clear, edge)
 	}
-	if nodes := du.mutation.RemovedPayloadDigestsIDs(); len(nodes) > 0 && !du.mutation.PayloadDigestsCleared() {
+	if nodes := _u.mutation.RemovedPayloadDigestsIDs(); len(nodes) > 0 && !_u.mutation.PayloadDigestsCleared() {
 		edge := &sqlgraph.EdgeSpec{
 			Rel:     sqlgraph.O2M,
 			Inverse: false,
@@ -324,7 +327,7 @@ func (du *DsseUpdate) sqlSave(ctx context.Context) (n int, err error) {
 		}
 		_spec.Edges.Clear = append(_spec.Edges.Clear, edge)
 	}
-	if nodes := du.mutation.PayloadDigestsIDs(); len(nodes) > 0 {
+	if nodes := _u.mutation.PayloadDigestsIDs(); len(nodes) > 0 {
 		edge := &sqlgraph.EdgeSpec{
 			Rel:     sqlgraph.O2M,
 			Inverse: false,
@@ -340,7 +343,7 @@ func (du *DsseUpdate) sqlSave(ctx context.Context) (n int, err error) {
 		}
 		_spec.Edges.Add = append(_spec.Edges.Add, edge)
 	}
-	if n, err = sqlgraph.UpdateNodes(ctx, du.driver, _spec); err != nil {
+	if _node, err = sqlgraph.UpdateNodes(ctx, _u.driver, _spec); err != nil {
 		if _, ok := err.(*sqlgraph.NotFoundError); ok {
 			err = &NotFoundError{dsse.Label}
 		} else if sqlgraph.IsConstraintError(err) {
@@ -348,8 +351,8 @@ func (du *DsseUpdate) sqlSave(ctx context.Context) (n int, err error) {
 		}
 		return 0, err
 	}
-	du.mutation.done = true
-	return n, nil
+	_u.mutation.done = true
+	return _node, nil
 }
 
 // DsseUpdateOne is the builder for updating a single Dsse entity.
@@ -361,156 +364,156 @@ type DsseUpdateOne struct {
 }
 
 // SetGitoidSha256 sets the "gitoid_sha256" field.
-func (duo *DsseUpdateOne) SetGitoidSha256(s string) *DsseUpdateOne {
-	duo.mutation.SetGitoidSha256(s)
-	return duo
+func (_u *DsseUpdateOne) SetGitoidSha256(v string) *DsseUpdateOne {
+	_u.mutation.SetGitoidSha256(v)
+	return _u
 }
 
 // SetNillableGitoidSha256 sets the "gitoid_sha256" field if the given value is not nil.
-func (duo *DsseUpdateOne) SetNillableGitoidSha256(s *string) *DsseUpdateOne {
-	if s != nil {
-		duo.SetGitoidSha256(*s)
+func (_u *DsseUpdateOne) SetNillableGitoidSha256(v *string) *DsseUpdateOne {
+	if v != nil {
+		_u.SetGitoidSha256(*v)
 	}
-	return duo
+	return _u
 }
 
 // SetPayloadType sets the "payload_type" field.
-func (duo *DsseUpdateOne) SetPayloadType(s string) *DsseUpdateOne {
-	duo.mutation.SetPayloadType(s)
-	return duo
+func (_u *DsseUpdateOne) SetPayloadType(v string) *DsseUpdateOne {
+	_u.mutation.SetPayloadType(v)
+	return _u
 }
 
 // SetNillablePayloadType sets the "payload_type" field if the given value is not nil.
-func (duo *DsseUpdateOne) SetNillablePayloadType(s *string) *DsseUpdateOne {
-	if s != nil {
-		duo.SetPayloadType(*s)
+func (_u *DsseUpdateOne) SetNillablePayloadType(v *string) *DsseUpdateOne {
+	if v != nil {
+		_u.SetPayloadType(*v)
 	}
-	return duo
+	return _u
 }
 
 // SetStatementID sets the "statement" edge to the Statement entity by ID.
-func (duo *DsseUpdateOne) SetStatementID(id uuid.UUID) *DsseUpdateOne {
-	duo.mutation.SetStatementID(id)
-	return duo
+func (_u *DsseUpdateOne) SetStatementID(id uuid.UUID) *DsseUpdateOne {
+	_u.mutation.SetStatementID(id)
+	return _u
 }
 
 // SetNillableStatementID sets the "statement" edge to the Statement entity by ID if the given value is not nil.
-func (duo *DsseUpdateOne) SetNillableStatementID(id *uuid.UUID) *DsseUpdateOne {
+func (_u *DsseUpdateOne) SetNillableStatementID(id *uuid.UUID) *DsseUpdateOne {
 	if id != nil {
-		duo = duo.SetStatementID(*id)
+		_u = _u.SetStatementID(*id)
 	}
-	return duo
+	return _u
 }
 
 // SetStatement sets the "statement" edge to the Statement entity.
-func (duo *DsseUpdateOne) SetStatement(s *Statement) *DsseUpdateOne {
-	return duo.SetStatementID(s.ID)
+func (_u *DsseUpdateOne) SetStatement(v *Statement) *DsseUpdateOne {
+	return _u.SetStatementID(v.ID)
 }
 
 // AddSignatureIDs adds the "signatures" edge to the Signature entity by IDs.
-func (duo *DsseUpdateOne) AddSignatureIDs(ids ...uuid.UUID) *DsseUpdateOne {
-	duo.mutation.AddSignatureIDs(ids...)
-	return duo
+func (_u *DsseUpdateOne) AddSignatureIDs(ids ...uuid.UUID) *DsseUpdateOne {
+	_u.mutation.AddSignatureIDs(ids...)
+	return _u
 }
 
 // AddSignatures adds the "signatures" edges to the Signature entity.
-func (duo *DsseUpdateOne) AddSignatures(s ...*Signature) *DsseUpdateOne {
-	ids := make([]uuid.UUID, len(s))
-	for i := range s {
-		ids[i] = s[i].ID
+func (_u *DsseUpdateOne) AddSignatures(v ...*Signature) *DsseUpdateOne {
+	ids := make([]uuid.UUID, len(v))
+	for i := range v {
+		ids[i] = v[i].ID
 	}
-	return duo.AddSignatureIDs(ids...)
+	return _u.AddSignatureIDs(ids...)
 }
 
 // AddPayloadDigestIDs adds the "payload_digests" edge to the PayloadDigest entity by IDs.
-func (duo *DsseUpdateOne) AddPayloadDigestIDs(ids ...uuid.UUID) *DsseUpdateOne {
-	duo.mutation.AddPayloadDigestIDs(ids...)
-	return duo
+func (_u *DsseUpdateOne) AddPayloadDigestIDs(ids ...uuid.UUID) *DsseUpdateOne {
+	_u.mutation.AddPayloadDigestIDs(ids...)
+	return _u
 }
 
 // AddPayloadDigests adds the "payload_digests" edges to the PayloadDigest entity.
-func (duo *DsseUpdateOne) AddPayloadDigests(p ...*PayloadDigest) *DsseUpdateOne {
-	ids := make([]uuid.UUID, len(p))
-	for i := range p {
-		ids[i] = p[i].ID
+func (_u *DsseUpdateOne) AddPayloadDigests(v ...*PayloadDigest) *DsseUpdateOne {
+	ids := make([]uuid.UUID, len(v))
+	for i := range v {
+		ids[i] = v[i].ID
 	}
-	return duo.AddPayloadDigestIDs(ids...)
+	return _u.AddPayloadDigestIDs(ids...)
 }
 
 // Mutation returns the DsseMutation object of the builder.
-func (duo *DsseUpdateOne) Mutation() *DsseMutation {
-	return duo.mutation
+func (_u *DsseUpdateOne) Mutation() *DsseMutation {
+	return _u.mutation
 }
 
 // ClearStatement clears the "statement" edge to the Statement entity.
-func (duo *DsseUpdateOne) ClearStatement() *DsseUpdateOne {
-	duo.mutation.ClearStatement()
-	return duo
+func (_u *DsseUpdateOne) ClearStatement() *DsseUpdateOne {
+	_u.mutation.ClearStatement()
+	return _u
 }
 
 // ClearSignatures clears all "signatures" edges to the Signature entity.
-func (duo *DsseUpdateOne) ClearSignatures() *DsseUpdateOne {
-	duo.mutation.ClearSignatures()
-	return duo
+func (_u *DsseUpdateOne) ClearSignatures() *DsseUpdateOne {
+	_u.mutation.ClearSignatures()
+	return _u
 }
 
 // RemoveSignatureIDs removes the "signatures" edge to Signature entities by IDs.
-func (duo *DsseUpdateOne) RemoveSignatureIDs(ids ...uuid.UUID) *DsseUpdateOne {
-	duo.mutation.RemoveSignatureIDs(ids...)
-	return duo
+func (_u *DsseUpdateOne) RemoveSignatureIDs(ids ...uuid.UUID) *DsseUpdateOne {
+	_u.mutation.RemoveSignatureIDs(ids...)
+	return _u
 }
 
 // RemoveSignatures removes "signatures" edges to Signature entities.
-func (duo *DsseUpdateOne) RemoveSignatures(s ...*Signature) *DsseUpdateOne {
-	ids := make([]uuid.UUID, len(s))
-	for i := range s {
-		ids[i] = s[i].ID
+func (_u *DsseUpdateOne) RemoveSignatures(v ...*Signature) *DsseUpdateOne {
+	ids := make([]uuid.UUID, len(v))
+	for i := range v {
+		ids[i] = v[i].ID
 	}
-	return duo.RemoveSignatureIDs(ids...)
+	return _u.RemoveSignatureIDs(ids...)
 }
 
 // ClearPayloadDigests clears all "payload_digests" edges to the PayloadDigest entity.
-func (duo *DsseUpdateOne) ClearPayloadDigests() *DsseUpdateOne {
-	duo.mutation.ClearPayloadDigests()
-	return duo
+func (_u *DsseUpdateOne) ClearPayloadDigests() *DsseUpdateOne {
+	_u.mutation.ClearPayloadDigests()
+	return _u
 }
 
 // RemovePayloadDigestIDs removes the "payload_digests" edge to PayloadDigest entities by IDs.
-func (duo *DsseUpdateOne) RemovePayloadDigestIDs(ids ...uuid.UUID) *DsseUpdateOne {
-	duo.mutation.RemovePayloadDigestIDs(ids...)
-	return duo
+func (_u *DsseUpdateOne) RemovePayloadDigestIDs(ids ...uuid.UUID) *DsseUpdateOne {
+	_u.mutation.RemovePayloadDigestIDs(ids...)
+	return _u
 }
 
 // RemovePayloadDigests removes "payload_digests" edges to PayloadDigest entities.
-func (duo *DsseUpdateOne) RemovePayloadDigests(p ...*PayloadDigest) *DsseUpdateOne {
-	ids := make([]uuid.UUID, len(p))
-	for i := range p {
-		ids[i] = p[i].ID
+func (_u *DsseUpdateOne) RemovePayloadDigests(v ...*PayloadDigest) *DsseUpdateOne {
+	ids := make([]uuid.UUID, len(v))
+	for i := range v {
+		ids[i] = v[i].ID
 	}
-	return duo.RemovePayloadDigestIDs(ids...)
+	return _u.RemovePayloadDigestIDs(ids...)
 }
 
 // Where appends a list predicates to the DsseUpdate builder.
-func (duo *DsseUpdateOne) Where(ps ...predicate.Dsse) *DsseUpdateOne {
-	duo.mutation.Where(ps...)
-	return duo
+func (_u *DsseUpdateOne) Where(ps ...predicate.Dsse) *DsseUpdateOne {
+	_u.mutation.Where(ps...)
+	return _u
 }
 
 // Select allows selecting one or more fields (columns) of the returned entity.
 // The default is selecting all fields defined in the entity schema.
-func (duo *DsseUpdateOne) Select(field string, fields ...string) *DsseUpdateOne {
-	duo.fields = append([]string{field}, fields...)
-	return duo
+func (_u *DsseUpdateOne) Select(field string, fields ...string) *DsseUpdateOne {
+	_u.fields = append([]string{field}, fields...)
+	return _u
 }
 
 // Save executes the query and returns the updated Dsse entity.
-func (duo *DsseUpdateOne) Save(ctx context.Context) (*Dsse, error) {
-	return withHooks(ctx, duo.sqlSave, duo.mutation, duo.hooks)
+func (_u *DsseUpdateOne) Save(ctx context.Context) (*Dsse, error) {
+	return withHooks(ctx, _u.sqlSave, _u.mutation, _u.hooks)
 }
 
 // SaveX is like Save, but panics if an error occurs.
-func (duo *DsseUpdateOne) SaveX(ctx context.Context) *Dsse {
-	node, err := duo.Save(ctx)
+func (_u *DsseUpdateOne) SaveX(ctx context.Context) *Dsse {
+	node, err := _u.Save(ctx)
 	if err != nil {
 		panic(err)
 	}
@@ -518,26 +521,26 @@ func (duo *DsseUpdateOne) SaveX(ctx context.Context) *Dsse {
 }
 
 // Exec executes the query on the entity.
-func (duo *DsseUpdateOne) Exec(ctx context.Context) error {
-	_, err := duo.Save(ctx)
+func (_u *DsseUpdateOne) Exec(ctx context.Context) error {
+	_, err := _u.Save(ctx)
 	return err
 }
 
 // ExecX is like Exec, but panics if an error occurs.
-func (duo *DsseUpdateOne) ExecX(ctx context.Context) {
-	if err := duo.Exec(ctx); err != nil {
+func (_u *DsseUpdateOne) ExecX(ctx context.Context) {
+	if err := _u.Exec(ctx); err != nil {
 		panic(err)
 	}
 }
 
 // check runs all checks and user-defined validators on the builder.
-func (duo *DsseUpdateOne) check() error {
-	if v, ok := duo.mutation.GitoidSha256(); ok {
+func (_u *DsseUpdateOne) check() error {
+	if v, ok := _u.mutation.GitoidSha256(); ok {
 		if err := dsse.GitoidSha256Validator(v); err != nil {
 			return &ValidationError{Name: "gitoid_sha256", err: fmt.Errorf(`ent: validator failed for field "Dsse.gitoid_sha256": %w`, err)}
 		}
 	}
-	if v, ok := duo.mutation.PayloadType(); ok {
+	if v, ok := _u.mutation.PayloadType(); ok {
 		if err := dsse.PayloadTypeValidator(v); err != nil {
 			return &ValidationError{Name: "payload_type", err: fmt.Errorf(`ent: validator failed for field "Dsse.payload_type": %w`, err)}
 		}
@@ -545,17 +548,17 @@ func (duo *DsseUpdateOne) check() error {
 	return nil
 }
 
-func (duo *DsseUpdateOne) sqlSave(ctx context.Context) (_node *Dsse, err error) {
-	if err := duo.check(); err != nil {
+func (_u *DsseUpdateOne) sqlSave(ctx context.Context) (_node *Dsse, err error) {
+	if err := _u.check(); err != nil {
 		return _node, err
 	}
 	_spec := sqlgraph.NewUpdateSpec(dsse.Table, dsse.Columns, sqlgraph.NewFieldSpec(dsse.FieldID, field.TypeUUID))
-	id, ok := duo.mutation.ID()
+	id, ok := _u.mutation.ID()
 	if !ok {
 		return nil, &ValidationError{Name: "id", err: errors.New(`ent: missing "Dsse.id" for update`)}
 	}
 	_spec.Node.ID.Value = id
-	if fields := duo.fields; len(fields) > 0 {
+	if fields := _u.fields; len(fields) > 0 {
 		_spec.Node.Columns = make([]string, 0, len(fields))
 		_spec.Node.Columns = append(_spec.Node.Columns, dsse.FieldID)
 		for _, f := range fields {
@@ -567,20 +570,23 @@ func (duo *DsseUpdateOne) sqlSave(ctx context.Context) (_node *Dsse, err error) 
 			}
 		}
 	}
-	if ps := duo.mutation.predicates; len(ps) > 0 {
+	if ps := _u.mutation.predicates; len(ps) > 0 {
 		_spec.Predicate = func(selector *sql.Selector) {
 			for i := range ps {
 				ps[i](selector)
 			}
 		}
 	}
-	if value, ok := duo.mutation.GitoidSha256(); ok {
+	if _u.mutation.CreatedAtCleared() {
+		_spec.ClearField(dsse.FieldCreatedAt, field.TypeTime)
+	}
+	if value, ok := _u.mutation.GitoidSha256(); ok {
 		_spec.SetField(dsse.FieldGitoidSha256, field.TypeString, value)
 	}
-	if value, ok := duo.mutation.PayloadType(); ok {
+	if value, ok := _u.mutation.PayloadType(); ok {
 		_spec.SetField(dsse.FieldPayloadType, field.TypeString, value)
 	}
-	if duo.mutation.StatementCleared() {
+	if _u.mutation.StatementCleared() {
 		edge := &sqlgraph.EdgeSpec{
 			Rel:     sqlgraph.M2O,
 			Inverse: false,
@@ -593,7 +599,7 @@ func (duo *DsseUpdateOne) sqlSave(ctx context.Context) (_node *Dsse, err error) 
 		}
 		_spec.Edges.Clear = append(_spec.Edges.Clear, edge)
 	}
-	if nodes := duo.mutation.StatementIDs(); len(nodes) > 0 {
+	if nodes := _u.mutation.StatementIDs(); len(nodes) > 0 {
 		edge := &sqlgraph.EdgeSpec{
 			Rel:     sqlgraph.M2O,
 			Inverse: false,
@@ -609,7 +615,7 @@ func (duo *DsseUpdateOne) sqlSave(ctx context.Context) (_node *Dsse, err error) 
 		}
 		_spec.Edges.Add = append(_spec.Edges.Add, edge)
 	}
-	if duo.mutation.SignaturesCleared() {
+	if _u.mutation.SignaturesCleared() {
 		edge := &sqlgraph.EdgeSpec{
 			Rel:     sqlgraph.O2M,
 			Inverse: false,
@@ -622,7 +628,7 @@ func (duo *DsseUpdateOne) sqlSave(ctx context.Context) (_node *Dsse, err error) 
 		}
 		_spec.Edges.Clear = append(_spec.Edges.Clear, edge)
 	}
-	if nodes := duo.mutation.RemovedSignaturesIDs(); len(nodes) > 0 && !duo.mutation.SignaturesCleared() {
+	if nodes := _u.mutation.RemovedSignaturesIDs(); len(nodes) > 0 && !_u.mutation.SignaturesCleared() {
 		edge := &sqlgraph.EdgeSpec{
 			Rel:     sqlgraph.O2M,
 			Inverse: false,
@@ -638,7 +644,7 @@ func (duo *DsseUpdateOne) sqlSave(ctx context.Context) (_node *Dsse, err error) 
 		}
 		_spec.Edges.Clear = append(_spec.Edges.Clear, edge)
 	}
-	if nodes := duo.mutation.SignaturesIDs(); len(nodes) > 0 {
+	if nodes := _u.mutation.SignaturesIDs(); len(nodes) > 0 {
 		edge := &sqlgraph.EdgeSpec{
 			Rel:     sqlgraph.O2M,
 			Inverse: false,
@@ -654,7 +660,7 @@ func (duo *DsseUpdateOne) sqlSave(ctx context.Context) (_node *Dsse, err error) 
 		}
 		_spec.Edges.Add = append(_spec.Edges.Add, edge)
 	}
-	if duo.mutation.PayloadDigestsCleared() {
+	if _u.mutation.PayloadDigestsCleared() {
 		edge := &sqlgraph.EdgeSpec{
 			Rel:     sqlgraph.O2M,
 			Inverse: false,
@@ -667,7 +673,7 @@ func (duo *DsseUpdateOne) sqlSave(ctx context.Context) (_node *Dsse, err error) 
 		}
 		_spec.Edges.Clear = append(_spec.Edges.Clear, edge)
 	}
-	if nodes := duo.mutation.RemovedPayloadDigestsIDs(); len(nodes) > 0 && !duo.mutation.PayloadDigestsCleared() {
+	if nodes := _u.mutation.RemovedPayloadDigestsIDs(); len(nodes) > 0 && !_u.mutation.PayloadDigestsCleared() {
 		edge := &sqlgraph.EdgeSpec{
 			Rel:     sqlgraph.O2M,
 			Inverse: false,
@@ -683,7 +689,7 @@ func (duo *DsseUpdateOne) sqlSave(ctx context.Context) (_node *Dsse, err error) 
 		}
 		_spec.Edges.Clear = append(_spec.Edges.Clear, edge)
 	}
-	if nodes := duo.mutation.PayloadDigestsIDs(); len(nodes) > 0 {
+	if nodes := _u.mutation.PayloadDigestsIDs(); len(nodes) > 0 {
 		edge := &sqlgraph.EdgeSpec{
 			Rel:     sqlgraph.O2M,
 			Inverse: false,
@@ -699,10 +705,10 @@ func (duo *DsseUpdateOne) sqlSave(ctx context.Context) (_node *Dsse, err error) 
 		}
 		_spec.Edges.Add = append(_spec.Edges.Add, edge)
 	}
-	_node = &Dsse{config: duo.config}
+	_node = &Dsse{config: _u.config}
 	_spec.Assign = _node.assignValues
 	_spec.ScanValues = _node.scanValues
-	if err = sqlgraph.UpdateNode(ctx, duo.driver, _spec); err != nil {
+	if err = sqlgraph.UpdateNode(ctx, _u.driver, _spec); err != nil {
 		if _, ok := err.(*sqlgraph.NotFoundError); ok {
 			err = &NotFoundError{dsse.Label}
 		} else if sqlgraph.IsConstraintError(err) {
@@ -710,6 +716,6 @@ func (duo *DsseUpdateOne) sqlSave(ctx context.Context) (_node *Dsse, err error) 
 		}
 		return nil, err
 	}
-	duo.mutation.done = true
+	_u.mutation.done = true
 	return _node, nil
 }

@@ -71,7 +71,7 @@ func (*SubjectDigest) scanValues(columns []string) ([]any, error) {
 
 // assignValues assigns the values that were returned from sql.Rows (after scanning)
 // to the SubjectDigest fields.
-func (sd *SubjectDigest) assignValues(columns []string, values []any) error {
+func (_m *SubjectDigest) assignValues(columns []string, values []any) error {
 	if m, n := len(values), len(columns); m < n {
 		return fmt.Errorf("mismatch number of scan values: %d != %d", m, n)
 	}
@@ -81,29 +81,29 @@ func (sd *SubjectDigest) assignValues(columns []string, values []any) error {
 			if value, ok := values[i].(*uuid.UUID); !ok {
 				return fmt.Errorf("unexpected type %T for field id", values[i])
 			} else if value != nil {
-				sd.ID = *value
+				_m.ID = *value
 			}
 		case subjectdigest.FieldAlgorithm:
 			if value, ok := values[i].(*sql.NullString); !ok {
 				return fmt.Errorf("unexpected type %T for field algorithm", values[i])
 			} else if value.Valid {
-				sd.Algorithm = value.String
+				_m.Algorithm = value.String
 			}
 		case subjectdigest.FieldValue:
 			if value, ok := values[i].(*sql.NullString); !ok {
 				return fmt.Errorf("unexpected type %T for field value", values[i])
 			} else if value.Valid {
-				sd.Value = value.String
+				_m.Value = value.String
 			}
 		case subjectdigest.ForeignKeys[0]:
 			if value, ok := values[i].(*sql.NullScanner); !ok {
 				return fmt.Errorf("unexpected type %T for field subject_subject_digests", values[i])
 			} else if value.Valid {
-				sd.subject_subject_digests = new(uuid.UUID)
-				*sd.subject_subject_digests = *value.S.(*uuid.UUID)
+				_m.subject_subject_digests = new(uuid.UUID)
+				*_m.subject_subject_digests = *value.S.(*uuid.UUID)
 			}
 		default:
-			sd.selectValues.Set(columns[i], values[i])
+			_m.selectValues.Set(columns[i], values[i])
 		}
 	}
 	return nil
@@ -111,43 +111,43 @@ func (sd *SubjectDigest) assignValues(columns []string, values []any) error {
 
 // GetValue returns the ent.Value that was dynamically selected and assigned to the SubjectDigest.
 // This includes values selected through modifiers, order, etc.
-func (sd *SubjectDigest) GetValue(name string) (ent.Value, error) {
-	return sd.selectValues.Get(name)
+func (_m *SubjectDigest) GetValue(name string) (ent.Value, error) {
+	return _m.selectValues.Get(name)
 }
 
 // QuerySubject queries the "subject" edge of the SubjectDigest entity.
-func (sd *SubjectDigest) QuerySubject() *SubjectQuery {
-	return NewSubjectDigestClient(sd.config).QuerySubject(sd)
+func (_m *SubjectDigest) QuerySubject() *SubjectQuery {
+	return NewSubjectDigestClient(_m.config).QuerySubject(_m)
 }
 
 // Update returns a builder for updating this SubjectDigest.
 // Note that you need to call SubjectDigest.Unwrap() before calling this method if this SubjectDigest
 // was returned from a transaction, and the transaction was committed or rolled back.
-func (sd *SubjectDigest) Update() *SubjectDigestUpdateOne {
-	return NewSubjectDigestClient(sd.config).UpdateOne(sd)
+func (_m *SubjectDigest) Update() *SubjectDigestUpdateOne {
+	return NewSubjectDigestClient(_m.config).UpdateOne(_m)
 }
 
 // Unwrap unwraps the SubjectDigest entity that was returned from a transaction after it was closed,
 // so that all future queries will be executed through the driver which created the transaction.
-func (sd *SubjectDigest) Unwrap() *SubjectDigest {
-	_tx, ok := sd.config.driver.(*txDriver)
+func (_m *SubjectDigest) Unwrap() *SubjectDigest {
+	_tx, ok := _m.config.driver.(*txDriver)
 	if !ok {
 		panic("ent: SubjectDigest is not a transactional entity")
 	}
-	sd.config.driver = _tx.drv
-	return sd
+	_m.config.driver = _tx.drv
+	return _m
 }
 
 // String implements the fmt.Stringer.
-func (sd *SubjectDigest) String() string {
+func (_m *SubjectDigest) String() string {
 	var builder strings.Builder
 	builder.WriteString("SubjectDigest(")
-	builder.WriteString(fmt.Sprintf("id=%v, ", sd.ID))
+	builder.WriteString(fmt.Sprintf("id=%v, ", _m.ID))
 	builder.WriteString("algorithm=")
-	builder.WriteString(sd.Algorithm)
+	builder.WriteString(_m.Algorithm)
 	builder.WriteString(", ")
 	builder.WriteString("value=")
-	builder.WriteString(sd.Value)
+	builder.WriteString(_m.Value)
 	builder.WriteByte(')')
 	return builder.String()
 }

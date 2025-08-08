@@ -3,6 +3,8 @@
 package dsse
 
 import (
+	"time"
+
 	"entgo.io/ent/dialect/sql"
 	"entgo.io/ent/dialect/sql/sqlgraph"
 	"github.com/google/uuid"
@@ -54,6 +56,11 @@ func IDLTE(id uuid.UUID) predicate.Dsse {
 	return predicate.Dsse(sql.FieldLTE(FieldID, id))
 }
 
+// CreatedAt applies equality check predicate on the "created_at" field. It's identical to CreatedAtEQ.
+func CreatedAt(v time.Time) predicate.Dsse {
+	return predicate.Dsse(sql.FieldEQ(FieldCreatedAt, v))
+}
+
 // GitoidSha256 applies equality check predicate on the "gitoid_sha256" field. It's identical to GitoidSha256EQ.
 func GitoidSha256(v string) predicate.Dsse {
 	return predicate.Dsse(sql.FieldEQ(FieldGitoidSha256, v))
@@ -62,6 +69,56 @@ func GitoidSha256(v string) predicate.Dsse {
 // PayloadType applies equality check predicate on the "payload_type" field. It's identical to PayloadTypeEQ.
 func PayloadType(v string) predicate.Dsse {
 	return predicate.Dsse(sql.FieldEQ(FieldPayloadType, v))
+}
+
+// CreatedAtEQ applies the EQ predicate on the "created_at" field.
+func CreatedAtEQ(v time.Time) predicate.Dsse {
+	return predicate.Dsse(sql.FieldEQ(FieldCreatedAt, v))
+}
+
+// CreatedAtNEQ applies the NEQ predicate on the "created_at" field.
+func CreatedAtNEQ(v time.Time) predicate.Dsse {
+	return predicate.Dsse(sql.FieldNEQ(FieldCreatedAt, v))
+}
+
+// CreatedAtIn applies the In predicate on the "created_at" field.
+func CreatedAtIn(vs ...time.Time) predicate.Dsse {
+	return predicate.Dsse(sql.FieldIn(FieldCreatedAt, vs...))
+}
+
+// CreatedAtNotIn applies the NotIn predicate on the "created_at" field.
+func CreatedAtNotIn(vs ...time.Time) predicate.Dsse {
+	return predicate.Dsse(sql.FieldNotIn(FieldCreatedAt, vs...))
+}
+
+// CreatedAtGT applies the GT predicate on the "created_at" field.
+func CreatedAtGT(v time.Time) predicate.Dsse {
+	return predicate.Dsse(sql.FieldGT(FieldCreatedAt, v))
+}
+
+// CreatedAtGTE applies the GTE predicate on the "created_at" field.
+func CreatedAtGTE(v time.Time) predicate.Dsse {
+	return predicate.Dsse(sql.FieldGTE(FieldCreatedAt, v))
+}
+
+// CreatedAtLT applies the LT predicate on the "created_at" field.
+func CreatedAtLT(v time.Time) predicate.Dsse {
+	return predicate.Dsse(sql.FieldLT(FieldCreatedAt, v))
+}
+
+// CreatedAtLTE applies the LTE predicate on the "created_at" field.
+func CreatedAtLTE(v time.Time) predicate.Dsse {
+	return predicate.Dsse(sql.FieldLTE(FieldCreatedAt, v))
+}
+
+// CreatedAtIsNil applies the IsNil predicate on the "created_at" field.
+func CreatedAtIsNil() predicate.Dsse {
+	return predicate.Dsse(sql.FieldIsNull(FieldCreatedAt))
+}
+
+// CreatedAtNotNil applies the NotNil predicate on the "created_at" field.
+func CreatedAtNotNil() predicate.Dsse {
+	return predicate.Dsse(sql.FieldNotNull(FieldCreatedAt))
 }
 
 // GitoidSha256EQ applies the EQ predicate on the "gitoid_sha256" field.

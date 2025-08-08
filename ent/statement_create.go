@@ -25,107 +25,107 @@ type StatementCreate struct {
 }
 
 // SetPredicate sets the "predicate" field.
-func (sc *StatementCreate) SetPredicate(s string) *StatementCreate {
-	sc.mutation.SetPredicate(s)
-	return sc
+func (_c *StatementCreate) SetPredicate(v string) *StatementCreate {
+	_c.mutation.SetPredicate(v)
+	return _c
 }
 
 // SetID sets the "id" field.
-func (sc *StatementCreate) SetID(u uuid.UUID) *StatementCreate {
-	sc.mutation.SetID(u)
-	return sc
+func (_c *StatementCreate) SetID(v uuid.UUID) *StatementCreate {
+	_c.mutation.SetID(v)
+	return _c
 }
 
 // SetNillableID sets the "id" field if the given value is not nil.
-func (sc *StatementCreate) SetNillableID(u *uuid.UUID) *StatementCreate {
-	if u != nil {
-		sc.SetID(*u)
+func (_c *StatementCreate) SetNillableID(v *uuid.UUID) *StatementCreate {
+	if v != nil {
+		_c.SetID(*v)
 	}
-	return sc
+	return _c
 }
 
 // AddSubjectIDs adds the "subjects" edge to the Subject entity by IDs.
-func (sc *StatementCreate) AddSubjectIDs(ids ...uuid.UUID) *StatementCreate {
-	sc.mutation.AddSubjectIDs(ids...)
-	return sc
+func (_c *StatementCreate) AddSubjectIDs(ids ...uuid.UUID) *StatementCreate {
+	_c.mutation.AddSubjectIDs(ids...)
+	return _c
 }
 
 // AddSubjects adds the "subjects" edges to the Subject entity.
-func (sc *StatementCreate) AddSubjects(s ...*Subject) *StatementCreate {
-	ids := make([]uuid.UUID, len(s))
-	for i := range s {
-		ids[i] = s[i].ID
+func (_c *StatementCreate) AddSubjects(v ...*Subject) *StatementCreate {
+	ids := make([]uuid.UUID, len(v))
+	for i := range v {
+		ids[i] = v[i].ID
 	}
-	return sc.AddSubjectIDs(ids...)
+	return _c.AddSubjectIDs(ids...)
 }
 
 // SetPolicyID sets the "policy" edge to the AttestationPolicy entity by ID.
-func (sc *StatementCreate) SetPolicyID(id uuid.UUID) *StatementCreate {
-	sc.mutation.SetPolicyID(id)
-	return sc
+func (_c *StatementCreate) SetPolicyID(id uuid.UUID) *StatementCreate {
+	_c.mutation.SetPolicyID(id)
+	return _c
 }
 
 // SetNillablePolicyID sets the "policy" edge to the AttestationPolicy entity by ID if the given value is not nil.
-func (sc *StatementCreate) SetNillablePolicyID(id *uuid.UUID) *StatementCreate {
+func (_c *StatementCreate) SetNillablePolicyID(id *uuid.UUID) *StatementCreate {
 	if id != nil {
-		sc = sc.SetPolicyID(*id)
+		_c = _c.SetPolicyID(*id)
 	}
-	return sc
+	return _c
 }
 
 // SetPolicy sets the "policy" edge to the AttestationPolicy entity.
-func (sc *StatementCreate) SetPolicy(a *AttestationPolicy) *StatementCreate {
-	return sc.SetPolicyID(a.ID)
+func (_c *StatementCreate) SetPolicy(v *AttestationPolicy) *StatementCreate {
+	return _c.SetPolicyID(v.ID)
 }
 
 // SetAttestationCollectionsID sets the "attestation_collections" edge to the AttestationCollection entity by ID.
-func (sc *StatementCreate) SetAttestationCollectionsID(id uuid.UUID) *StatementCreate {
-	sc.mutation.SetAttestationCollectionsID(id)
-	return sc
+func (_c *StatementCreate) SetAttestationCollectionsID(id uuid.UUID) *StatementCreate {
+	_c.mutation.SetAttestationCollectionsID(id)
+	return _c
 }
 
 // SetNillableAttestationCollectionsID sets the "attestation_collections" edge to the AttestationCollection entity by ID if the given value is not nil.
-func (sc *StatementCreate) SetNillableAttestationCollectionsID(id *uuid.UUID) *StatementCreate {
+func (_c *StatementCreate) SetNillableAttestationCollectionsID(id *uuid.UUID) *StatementCreate {
 	if id != nil {
-		sc = sc.SetAttestationCollectionsID(*id)
+		_c = _c.SetAttestationCollectionsID(*id)
 	}
-	return sc
+	return _c
 }
 
 // SetAttestationCollections sets the "attestation_collections" edge to the AttestationCollection entity.
-func (sc *StatementCreate) SetAttestationCollections(a *AttestationCollection) *StatementCreate {
-	return sc.SetAttestationCollectionsID(a.ID)
+func (_c *StatementCreate) SetAttestationCollections(v *AttestationCollection) *StatementCreate {
+	return _c.SetAttestationCollectionsID(v.ID)
 }
 
 // AddDsseIDs adds the "dsse" edge to the Dsse entity by IDs.
-func (sc *StatementCreate) AddDsseIDs(ids ...uuid.UUID) *StatementCreate {
-	sc.mutation.AddDsseIDs(ids...)
-	return sc
+func (_c *StatementCreate) AddDsseIDs(ids ...uuid.UUID) *StatementCreate {
+	_c.mutation.AddDsseIDs(ids...)
+	return _c
 }
 
 // AddDsse adds the "dsse" edges to the Dsse entity.
-func (sc *StatementCreate) AddDsse(d ...*Dsse) *StatementCreate {
-	ids := make([]uuid.UUID, len(d))
-	for i := range d {
-		ids[i] = d[i].ID
+func (_c *StatementCreate) AddDsse(v ...*Dsse) *StatementCreate {
+	ids := make([]uuid.UUID, len(v))
+	for i := range v {
+		ids[i] = v[i].ID
 	}
-	return sc.AddDsseIDs(ids...)
+	return _c.AddDsseIDs(ids...)
 }
 
 // Mutation returns the StatementMutation object of the builder.
-func (sc *StatementCreate) Mutation() *StatementMutation {
-	return sc.mutation
+func (_c *StatementCreate) Mutation() *StatementMutation {
+	return _c.mutation
 }
 
 // Save creates the Statement in the database.
-func (sc *StatementCreate) Save(ctx context.Context) (*Statement, error) {
-	sc.defaults()
-	return withHooks(ctx, sc.sqlSave, sc.mutation, sc.hooks)
+func (_c *StatementCreate) Save(ctx context.Context) (*Statement, error) {
+	_c.defaults()
+	return withHooks(ctx, _c.sqlSave, _c.mutation, _c.hooks)
 }
 
 // SaveX calls Save and panics if Save returns an error.
-func (sc *StatementCreate) SaveX(ctx context.Context) *Statement {
-	v, err := sc.Save(ctx)
+func (_c *StatementCreate) SaveX(ctx context.Context) *Statement {
+	v, err := _c.Save(ctx)
 	if err != nil {
 		panic(err)
 	}
@@ -133,32 +133,32 @@ func (sc *StatementCreate) SaveX(ctx context.Context) *Statement {
 }
 
 // Exec executes the query.
-func (sc *StatementCreate) Exec(ctx context.Context) error {
-	_, err := sc.Save(ctx)
+func (_c *StatementCreate) Exec(ctx context.Context) error {
+	_, err := _c.Save(ctx)
 	return err
 }
 
 // ExecX is like Exec, but panics if an error occurs.
-func (sc *StatementCreate) ExecX(ctx context.Context) {
-	if err := sc.Exec(ctx); err != nil {
+func (_c *StatementCreate) ExecX(ctx context.Context) {
+	if err := _c.Exec(ctx); err != nil {
 		panic(err)
 	}
 }
 
 // defaults sets the default values of the builder before save.
-func (sc *StatementCreate) defaults() {
-	if _, ok := sc.mutation.ID(); !ok {
+func (_c *StatementCreate) defaults() {
+	if _, ok := _c.mutation.ID(); !ok {
 		v := statement.DefaultID()
-		sc.mutation.SetID(v)
+		_c.mutation.SetID(v)
 	}
 }
 
 // check runs all checks and user-defined validators on the builder.
-func (sc *StatementCreate) check() error {
-	if _, ok := sc.mutation.Predicate(); !ok {
+func (_c *StatementCreate) check() error {
+	if _, ok := _c.mutation.Predicate(); !ok {
 		return &ValidationError{Name: "predicate", err: errors.New(`ent: missing required field "Statement.predicate"`)}
 	}
-	if v, ok := sc.mutation.Predicate(); ok {
+	if v, ok := _c.mutation.Predicate(); ok {
 		if err := statement.PredicateValidator(v); err != nil {
 			return &ValidationError{Name: "predicate", err: fmt.Errorf(`ent: validator failed for field "Statement.predicate": %w`, err)}
 		}
@@ -166,12 +166,12 @@ func (sc *StatementCreate) check() error {
 	return nil
 }
 
-func (sc *StatementCreate) sqlSave(ctx context.Context) (*Statement, error) {
-	if err := sc.check(); err != nil {
+func (_c *StatementCreate) sqlSave(ctx context.Context) (*Statement, error) {
+	if err := _c.check(); err != nil {
 		return nil, err
 	}
-	_node, _spec := sc.createSpec()
-	if err := sqlgraph.CreateNode(ctx, sc.driver, _spec); err != nil {
+	_node, _spec := _c.createSpec()
+	if err := sqlgraph.CreateNode(ctx, _c.driver, _spec); err != nil {
 		if sqlgraph.IsConstraintError(err) {
 			err = &ConstraintError{msg: err.Error(), wrap: err}
 		}
@@ -184,25 +184,25 @@ func (sc *StatementCreate) sqlSave(ctx context.Context) (*Statement, error) {
 			return nil, err
 		}
 	}
-	sc.mutation.id = &_node.ID
-	sc.mutation.done = true
+	_c.mutation.id = &_node.ID
+	_c.mutation.done = true
 	return _node, nil
 }
 
-func (sc *StatementCreate) createSpec() (*Statement, *sqlgraph.CreateSpec) {
+func (_c *StatementCreate) createSpec() (*Statement, *sqlgraph.CreateSpec) {
 	var (
-		_node = &Statement{config: sc.config}
+		_node = &Statement{config: _c.config}
 		_spec = sqlgraph.NewCreateSpec(statement.Table, sqlgraph.NewFieldSpec(statement.FieldID, field.TypeUUID))
 	)
-	if id, ok := sc.mutation.ID(); ok {
+	if id, ok := _c.mutation.ID(); ok {
 		_node.ID = id
 		_spec.ID.Value = &id
 	}
-	if value, ok := sc.mutation.Predicate(); ok {
+	if value, ok := _c.mutation.Predicate(); ok {
 		_spec.SetField(statement.FieldPredicate, field.TypeString, value)
 		_node.Predicate = value
 	}
-	if nodes := sc.mutation.SubjectsIDs(); len(nodes) > 0 {
+	if nodes := _c.mutation.SubjectsIDs(); len(nodes) > 0 {
 		edge := &sqlgraph.EdgeSpec{
 			Rel:     sqlgraph.O2M,
 			Inverse: false,
@@ -218,7 +218,7 @@ func (sc *StatementCreate) createSpec() (*Statement, *sqlgraph.CreateSpec) {
 		}
 		_spec.Edges = append(_spec.Edges, edge)
 	}
-	if nodes := sc.mutation.PolicyIDs(); len(nodes) > 0 {
+	if nodes := _c.mutation.PolicyIDs(); len(nodes) > 0 {
 		edge := &sqlgraph.EdgeSpec{
 			Rel:     sqlgraph.O2O,
 			Inverse: false,
@@ -234,7 +234,7 @@ func (sc *StatementCreate) createSpec() (*Statement, *sqlgraph.CreateSpec) {
 		}
 		_spec.Edges = append(_spec.Edges, edge)
 	}
-	if nodes := sc.mutation.AttestationCollectionsIDs(); len(nodes) > 0 {
+	if nodes := _c.mutation.AttestationCollectionsIDs(); len(nodes) > 0 {
 		edge := &sqlgraph.EdgeSpec{
 			Rel:     sqlgraph.O2O,
 			Inverse: false,
@@ -250,7 +250,7 @@ func (sc *StatementCreate) createSpec() (*Statement, *sqlgraph.CreateSpec) {
 		}
 		_spec.Edges = append(_spec.Edges, edge)
 	}
-	if nodes := sc.mutation.DsseIDs(); len(nodes) > 0 {
+	if nodes := _c.mutation.DsseIDs(); len(nodes) > 0 {
 		edge := &sqlgraph.EdgeSpec{
 			Rel:     sqlgraph.O2M,
 			Inverse: true,
@@ -277,16 +277,16 @@ type StatementCreateBulk struct {
 }
 
 // Save creates the Statement entities in the database.
-func (scb *StatementCreateBulk) Save(ctx context.Context) ([]*Statement, error) {
-	if scb.err != nil {
-		return nil, scb.err
+func (_c *StatementCreateBulk) Save(ctx context.Context) ([]*Statement, error) {
+	if _c.err != nil {
+		return nil, _c.err
 	}
-	specs := make([]*sqlgraph.CreateSpec, len(scb.builders))
-	nodes := make([]*Statement, len(scb.builders))
-	mutators := make([]Mutator, len(scb.builders))
-	for i := range scb.builders {
+	specs := make([]*sqlgraph.CreateSpec, len(_c.builders))
+	nodes := make([]*Statement, len(_c.builders))
+	mutators := make([]Mutator, len(_c.builders))
+	for i := range _c.builders {
 		func(i int, root context.Context) {
-			builder := scb.builders[i]
+			builder := _c.builders[i]
 			builder.defaults()
 			var mut Mutator = MutateFunc(func(ctx context.Context, m Mutation) (Value, error) {
 				mutation, ok := m.(*StatementMutation)
@@ -300,11 +300,11 @@ func (scb *StatementCreateBulk) Save(ctx context.Context) ([]*Statement, error) 
 				var err error
 				nodes[i], specs[i] = builder.createSpec()
 				if i < len(mutators)-1 {
-					_, err = mutators[i+1].Mutate(root, scb.builders[i+1].mutation)
+					_, err = mutators[i+1].Mutate(root, _c.builders[i+1].mutation)
 				} else {
 					spec := &sqlgraph.BatchCreateSpec{Nodes: specs}
 					// Invoke the actual operation on the latest mutation in the chain.
-					if err = sqlgraph.BatchCreate(ctx, scb.driver, spec); err != nil {
+					if err = sqlgraph.BatchCreate(ctx, _c.driver, spec); err != nil {
 						if sqlgraph.IsConstraintError(err) {
 							err = &ConstraintError{msg: err.Error(), wrap: err}
 						}
@@ -324,7 +324,7 @@ func (scb *StatementCreateBulk) Save(ctx context.Context) ([]*Statement, error) 
 		}(i, ctx)
 	}
 	if len(mutators) > 0 {
-		if _, err := mutators[0].Mutate(ctx, scb.builders[0].mutation); err != nil {
+		if _, err := mutators[0].Mutate(ctx, _c.builders[0].mutation); err != nil {
 			return nil, err
 		}
 	}
@@ -332,8 +332,8 @@ func (scb *StatementCreateBulk) Save(ctx context.Context) ([]*Statement, error) 
 }
 
 // SaveX is like Save, but panics if an error occurs.
-func (scb *StatementCreateBulk) SaveX(ctx context.Context) []*Statement {
-	v, err := scb.Save(ctx)
+func (_c *StatementCreateBulk) SaveX(ctx context.Context) []*Statement {
+	v, err := _c.Save(ctx)
 	if err != nil {
 		panic(err)
 	}
@@ -341,14 +341,14 @@ func (scb *StatementCreateBulk) SaveX(ctx context.Context) []*Statement {
 }
 
 // Exec executes the query.
-func (scb *StatementCreateBulk) Exec(ctx context.Context) error {
-	_, err := scb.Save(ctx)
+func (_c *StatementCreateBulk) Exec(ctx context.Context) error {
+	_, err := _c.Save(ctx)
 	return err
 }
 
 // ExecX is like Exec, but panics if an error occurs.
-func (scb *StatementCreateBulk) ExecX(ctx context.Context) {
-	if err := scb.Exec(ctx); err != nil {
+func (_c *StatementCreateBulk) ExecX(ctx context.Context) {
+	if err := _c.Exec(ctx); err != nil {
 		panic(err)
 	}
 }
