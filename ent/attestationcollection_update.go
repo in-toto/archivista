@@ -25,91 +25,91 @@ type AttestationCollectionUpdate struct {
 }
 
 // Where appends a list predicates to the AttestationCollectionUpdate builder.
-func (acu *AttestationCollectionUpdate) Where(ps ...predicate.AttestationCollection) *AttestationCollectionUpdate {
-	acu.mutation.Where(ps...)
-	return acu
+func (_u *AttestationCollectionUpdate) Where(ps ...predicate.AttestationCollection) *AttestationCollectionUpdate {
+	_u.mutation.Where(ps...)
+	return _u
 }
 
 // SetName sets the "name" field.
-func (acu *AttestationCollectionUpdate) SetName(s string) *AttestationCollectionUpdate {
-	acu.mutation.SetName(s)
-	return acu
+func (_u *AttestationCollectionUpdate) SetName(v string) *AttestationCollectionUpdate {
+	_u.mutation.SetName(v)
+	return _u
 }
 
 // SetNillableName sets the "name" field if the given value is not nil.
-func (acu *AttestationCollectionUpdate) SetNillableName(s *string) *AttestationCollectionUpdate {
-	if s != nil {
-		acu.SetName(*s)
+func (_u *AttestationCollectionUpdate) SetNillableName(v *string) *AttestationCollectionUpdate {
+	if v != nil {
+		_u.SetName(*v)
 	}
-	return acu
+	return _u
 }
 
 // AddAttestationIDs adds the "attestations" edge to the Attestation entity by IDs.
-func (acu *AttestationCollectionUpdate) AddAttestationIDs(ids ...uuid.UUID) *AttestationCollectionUpdate {
-	acu.mutation.AddAttestationIDs(ids...)
-	return acu
+func (_u *AttestationCollectionUpdate) AddAttestationIDs(ids ...uuid.UUID) *AttestationCollectionUpdate {
+	_u.mutation.AddAttestationIDs(ids...)
+	return _u
 }
 
 // AddAttestations adds the "attestations" edges to the Attestation entity.
-func (acu *AttestationCollectionUpdate) AddAttestations(a ...*Attestation) *AttestationCollectionUpdate {
-	ids := make([]uuid.UUID, len(a))
-	for i := range a {
-		ids[i] = a[i].ID
+func (_u *AttestationCollectionUpdate) AddAttestations(v ...*Attestation) *AttestationCollectionUpdate {
+	ids := make([]uuid.UUID, len(v))
+	for i := range v {
+		ids[i] = v[i].ID
 	}
-	return acu.AddAttestationIDs(ids...)
+	return _u.AddAttestationIDs(ids...)
 }
 
 // SetStatementID sets the "statement" edge to the Statement entity by ID.
-func (acu *AttestationCollectionUpdate) SetStatementID(id uuid.UUID) *AttestationCollectionUpdate {
-	acu.mutation.SetStatementID(id)
-	return acu
+func (_u *AttestationCollectionUpdate) SetStatementID(id uuid.UUID) *AttestationCollectionUpdate {
+	_u.mutation.SetStatementID(id)
+	return _u
 }
 
 // SetStatement sets the "statement" edge to the Statement entity.
-func (acu *AttestationCollectionUpdate) SetStatement(s *Statement) *AttestationCollectionUpdate {
-	return acu.SetStatementID(s.ID)
+func (_u *AttestationCollectionUpdate) SetStatement(v *Statement) *AttestationCollectionUpdate {
+	return _u.SetStatementID(v.ID)
 }
 
 // Mutation returns the AttestationCollectionMutation object of the builder.
-func (acu *AttestationCollectionUpdate) Mutation() *AttestationCollectionMutation {
-	return acu.mutation
+func (_u *AttestationCollectionUpdate) Mutation() *AttestationCollectionMutation {
+	return _u.mutation
 }
 
 // ClearAttestations clears all "attestations" edges to the Attestation entity.
-func (acu *AttestationCollectionUpdate) ClearAttestations() *AttestationCollectionUpdate {
-	acu.mutation.ClearAttestations()
-	return acu
+func (_u *AttestationCollectionUpdate) ClearAttestations() *AttestationCollectionUpdate {
+	_u.mutation.ClearAttestations()
+	return _u
 }
 
 // RemoveAttestationIDs removes the "attestations" edge to Attestation entities by IDs.
-func (acu *AttestationCollectionUpdate) RemoveAttestationIDs(ids ...uuid.UUID) *AttestationCollectionUpdate {
-	acu.mutation.RemoveAttestationIDs(ids...)
-	return acu
+func (_u *AttestationCollectionUpdate) RemoveAttestationIDs(ids ...uuid.UUID) *AttestationCollectionUpdate {
+	_u.mutation.RemoveAttestationIDs(ids...)
+	return _u
 }
 
 // RemoveAttestations removes "attestations" edges to Attestation entities.
-func (acu *AttestationCollectionUpdate) RemoveAttestations(a ...*Attestation) *AttestationCollectionUpdate {
-	ids := make([]uuid.UUID, len(a))
-	for i := range a {
-		ids[i] = a[i].ID
+func (_u *AttestationCollectionUpdate) RemoveAttestations(v ...*Attestation) *AttestationCollectionUpdate {
+	ids := make([]uuid.UUID, len(v))
+	for i := range v {
+		ids[i] = v[i].ID
 	}
-	return acu.RemoveAttestationIDs(ids...)
+	return _u.RemoveAttestationIDs(ids...)
 }
 
 // ClearStatement clears the "statement" edge to the Statement entity.
-func (acu *AttestationCollectionUpdate) ClearStatement() *AttestationCollectionUpdate {
-	acu.mutation.ClearStatement()
-	return acu
+func (_u *AttestationCollectionUpdate) ClearStatement() *AttestationCollectionUpdate {
+	_u.mutation.ClearStatement()
+	return _u
 }
 
 // Save executes the query and returns the number of nodes affected by the update operation.
-func (acu *AttestationCollectionUpdate) Save(ctx context.Context) (int, error) {
-	return withHooks(ctx, acu.sqlSave, acu.mutation, acu.hooks)
+func (_u *AttestationCollectionUpdate) Save(ctx context.Context) (int, error) {
+	return withHooks(ctx, _u.sqlSave, _u.mutation, _u.hooks)
 }
 
 // SaveX is like Save, but panics if an error occurs.
-func (acu *AttestationCollectionUpdate) SaveX(ctx context.Context) int {
-	affected, err := acu.Save(ctx)
+func (_u *AttestationCollectionUpdate) SaveX(ctx context.Context) int {
+	affected, err := _u.Save(ctx)
 	if err != nil {
 		panic(err)
 	}
@@ -117,47 +117,47 @@ func (acu *AttestationCollectionUpdate) SaveX(ctx context.Context) int {
 }
 
 // Exec executes the query.
-func (acu *AttestationCollectionUpdate) Exec(ctx context.Context) error {
-	_, err := acu.Save(ctx)
+func (_u *AttestationCollectionUpdate) Exec(ctx context.Context) error {
+	_, err := _u.Save(ctx)
 	return err
 }
 
 // ExecX is like Exec, but panics if an error occurs.
-func (acu *AttestationCollectionUpdate) ExecX(ctx context.Context) {
-	if err := acu.Exec(ctx); err != nil {
+func (_u *AttestationCollectionUpdate) ExecX(ctx context.Context) {
+	if err := _u.Exec(ctx); err != nil {
 		panic(err)
 	}
 }
 
 // check runs all checks and user-defined validators on the builder.
-func (acu *AttestationCollectionUpdate) check() error {
-	if v, ok := acu.mutation.Name(); ok {
+func (_u *AttestationCollectionUpdate) check() error {
+	if v, ok := _u.mutation.Name(); ok {
 		if err := attestationcollection.NameValidator(v); err != nil {
 			return &ValidationError{Name: "name", err: fmt.Errorf(`ent: validator failed for field "AttestationCollection.name": %w`, err)}
 		}
 	}
-	if acu.mutation.StatementCleared() && len(acu.mutation.StatementIDs()) > 0 {
+	if _u.mutation.StatementCleared() && len(_u.mutation.StatementIDs()) > 0 {
 		return errors.New(`ent: clearing a required unique edge "AttestationCollection.statement"`)
 	}
 	return nil
 }
 
-func (acu *AttestationCollectionUpdate) sqlSave(ctx context.Context) (n int, err error) {
-	if err := acu.check(); err != nil {
-		return n, err
+func (_u *AttestationCollectionUpdate) sqlSave(ctx context.Context) (_node int, err error) {
+	if err := _u.check(); err != nil {
+		return _node, err
 	}
 	_spec := sqlgraph.NewUpdateSpec(attestationcollection.Table, attestationcollection.Columns, sqlgraph.NewFieldSpec(attestationcollection.FieldID, field.TypeUUID))
-	if ps := acu.mutation.predicates; len(ps) > 0 {
+	if ps := _u.mutation.predicates; len(ps) > 0 {
 		_spec.Predicate = func(selector *sql.Selector) {
 			for i := range ps {
 				ps[i](selector)
 			}
 		}
 	}
-	if value, ok := acu.mutation.Name(); ok {
+	if value, ok := _u.mutation.Name(); ok {
 		_spec.SetField(attestationcollection.FieldName, field.TypeString, value)
 	}
-	if acu.mutation.AttestationsCleared() {
+	if _u.mutation.AttestationsCleared() {
 		edge := &sqlgraph.EdgeSpec{
 			Rel:     sqlgraph.O2M,
 			Inverse: false,
@@ -170,7 +170,7 @@ func (acu *AttestationCollectionUpdate) sqlSave(ctx context.Context) (n int, err
 		}
 		_spec.Edges.Clear = append(_spec.Edges.Clear, edge)
 	}
-	if nodes := acu.mutation.RemovedAttestationsIDs(); len(nodes) > 0 && !acu.mutation.AttestationsCleared() {
+	if nodes := _u.mutation.RemovedAttestationsIDs(); len(nodes) > 0 && !_u.mutation.AttestationsCleared() {
 		edge := &sqlgraph.EdgeSpec{
 			Rel:     sqlgraph.O2M,
 			Inverse: false,
@@ -186,7 +186,7 @@ func (acu *AttestationCollectionUpdate) sqlSave(ctx context.Context) (n int, err
 		}
 		_spec.Edges.Clear = append(_spec.Edges.Clear, edge)
 	}
-	if nodes := acu.mutation.AttestationsIDs(); len(nodes) > 0 {
+	if nodes := _u.mutation.AttestationsIDs(); len(nodes) > 0 {
 		edge := &sqlgraph.EdgeSpec{
 			Rel:     sqlgraph.O2M,
 			Inverse: false,
@@ -202,7 +202,7 @@ func (acu *AttestationCollectionUpdate) sqlSave(ctx context.Context) (n int, err
 		}
 		_spec.Edges.Add = append(_spec.Edges.Add, edge)
 	}
-	if acu.mutation.StatementCleared() {
+	if _u.mutation.StatementCleared() {
 		edge := &sqlgraph.EdgeSpec{
 			Rel:     sqlgraph.O2O,
 			Inverse: true,
@@ -215,7 +215,7 @@ func (acu *AttestationCollectionUpdate) sqlSave(ctx context.Context) (n int, err
 		}
 		_spec.Edges.Clear = append(_spec.Edges.Clear, edge)
 	}
-	if nodes := acu.mutation.StatementIDs(); len(nodes) > 0 {
+	if nodes := _u.mutation.StatementIDs(); len(nodes) > 0 {
 		edge := &sqlgraph.EdgeSpec{
 			Rel:     sqlgraph.O2O,
 			Inverse: true,
@@ -231,7 +231,7 @@ func (acu *AttestationCollectionUpdate) sqlSave(ctx context.Context) (n int, err
 		}
 		_spec.Edges.Add = append(_spec.Edges.Add, edge)
 	}
-	if n, err = sqlgraph.UpdateNodes(ctx, acu.driver, _spec); err != nil {
+	if _node, err = sqlgraph.UpdateNodes(ctx, _u.driver, _spec); err != nil {
 		if _, ok := err.(*sqlgraph.NotFoundError); ok {
 			err = &NotFoundError{attestationcollection.Label}
 		} else if sqlgraph.IsConstraintError(err) {
@@ -239,8 +239,8 @@ func (acu *AttestationCollectionUpdate) sqlSave(ctx context.Context) (n int, err
 		}
 		return 0, err
 	}
-	acu.mutation.done = true
-	return n, nil
+	_u.mutation.done = true
+	return _node, nil
 }
 
 // AttestationCollectionUpdateOne is the builder for updating a single AttestationCollection entity.
@@ -252,98 +252,98 @@ type AttestationCollectionUpdateOne struct {
 }
 
 // SetName sets the "name" field.
-func (acuo *AttestationCollectionUpdateOne) SetName(s string) *AttestationCollectionUpdateOne {
-	acuo.mutation.SetName(s)
-	return acuo
+func (_u *AttestationCollectionUpdateOne) SetName(v string) *AttestationCollectionUpdateOne {
+	_u.mutation.SetName(v)
+	return _u
 }
 
 // SetNillableName sets the "name" field if the given value is not nil.
-func (acuo *AttestationCollectionUpdateOne) SetNillableName(s *string) *AttestationCollectionUpdateOne {
-	if s != nil {
-		acuo.SetName(*s)
+func (_u *AttestationCollectionUpdateOne) SetNillableName(v *string) *AttestationCollectionUpdateOne {
+	if v != nil {
+		_u.SetName(*v)
 	}
-	return acuo
+	return _u
 }
 
 // AddAttestationIDs adds the "attestations" edge to the Attestation entity by IDs.
-func (acuo *AttestationCollectionUpdateOne) AddAttestationIDs(ids ...uuid.UUID) *AttestationCollectionUpdateOne {
-	acuo.mutation.AddAttestationIDs(ids...)
-	return acuo
+func (_u *AttestationCollectionUpdateOne) AddAttestationIDs(ids ...uuid.UUID) *AttestationCollectionUpdateOne {
+	_u.mutation.AddAttestationIDs(ids...)
+	return _u
 }
 
 // AddAttestations adds the "attestations" edges to the Attestation entity.
-func (acuo *AttestationCollectionUpdateOne) AddAttestations(a ...*Attestation) *AttestationCollectionUpdateOne {
-	ids := make([]uuid.UUID, len(a))
-	for i := range a {
-		ids[i] = a[i].ID
+func (_u *AttestationCollectionUpdateOne) AddAttestations(v ...*Attestation) *AttestationCollectionUpdateOne {
+	ids := make([]uuid.UUID, len(v))
+	for i := range v {
+		ids[i] = v[i].ID
 	}
-	return acuo.AddAttestationIDs(ids...)
+	return _u.AddAttestationIDs(ids...)
 }
 
 // SetStatementID sets the "statement" edge to the Statement entity by ID.
-func (acuo *AttestationCollectionUpdateOne) SetStatementID(id uuid.UUID) *AttestationCollectionUpdateOne {
-	acuo.mutation.SetStatementID(id)
-	return acuo
+func (_u *AttestationCollectionUpdateOne) SetStatementID(id uuid.UUID) *AttestationCollectionUpdateOne {
+	_u.mutation.SetStatementID(id)
+	return _u
 }
 
 // SetStatement sets the "statement" edge to the Statement entity.
-func (acuo *AttestationCollectionUpdateOne) SetStatement(s *Statement) *AttestationCollectionUpdateOne {
-	return acuo.SetStatementID(s.ID)
+func (_u *AttestationCollectionUpdateOne) SetStatement(v *Statement) *AttestationCollectionUpdateOne {
+	return _u.SetStatementID(v.ID)
 }
 
 // Mutation returns the AttestationCollectionMutation object of the builder.
-func (acuo *AttestationCollectionUpdateOne) Mutation() *AttestationCollectionMutation {
-	return acuo.mutation
+func (_u *AttestationCollectionUpdateOne) Mutation() *AttestationCollectionMutation {
+	return _u.mutation
 }
 
 // ClearAttestations clears all "attestations" edges to the Attestation entity.
-func (acuo *AttestationCollectionUpdateOne) ClearAttestations() *AttestationCollectionUpdateOne {
-	acuo.mutation.ClearAttestations()
-	return acuo
+func (_u *AttestationCollectionUpdateOne) ClearAttestations() *AttestationCollectionUpdateOne {
+	_u.mutation.ClearAttestations()
+	return _u
 }
 
 // RemoveAttestationIDs removes the "attestations" edge to Attestation entities by IDs.
-func (acuo *AttestationCollectionUpdateOne) RemoveAttestationIDs(ids ...uuid.UUID) *AttestationCollectionUpdateOne {
-	acuo.mutation.RemoveAttestationIDs(ids...)
-	return acuo
+func (_u *AttestationCollectionUpdateOne) RemoveAttestationIDs(ids ...uuid.UUID) *AttestationCollectionUpdateOne {
+	_u.mutation.RemoveAttestationIDs(ids...)
+	return _u
 }
 
 // RemoveAttestations removes "attestations" edges to Attestation entities.
-func (acuo *AttestationCollectionUpdateOne) RemoveAttestations(a ...*Attestation) *AttestationCollectionUpdateOne {
-	ids := make([]uuid.UUID, len(a))
-	for i := range a {
-		ids[i] = a[i].ID
+func (_u *AttestationCollectionUpdateOne) RemoveAttestations(v ...*Attestation) *AttestationCollectionUpdateOne {
+	ids := make([]uuid.UUID, len(v))
+	for i := range v {
+		ids[i] = v[i].ID
 	}
-	return acuo.RemoveAttestationIDs(ids...)
+	return _u.RemoveAttestationIDs(ids...)
 }
 
 // ClearStatement clears the "statement" edge to the Statement entity.
-func (acuo *AttestationCollectionUpdateOne) ClearStatement() *AttestationCollectionUpdateOne {
-	acuo.mutation.ClearStatement()
-	return acuo
+func (_u *AttestationCollectionUpdateOne) ClearStatement() *AttestationCollectionUpdateOne {
+	_u.mutation.ClearStatement()
+	return _u
 }
 
 // Where appends a list predicates to the AttestationCollectionUpdate builder.
-func (acuo *AttestationCollectionUpdateOne) Where(ps ...predicate.AttestationCollection) *AttestationCollectionUpdateOne {
-	acuo.mutation.Where(ps...)
-	return acuo
+func (_u *AttestationCollectionUpdateOne) Where(ps ...predicate.AttestationCollection) *AttestationCollectionUpdateOne {
+	_u.mutation.Where(ps...)
+	return _u
 }
 
 // Select allows selecting one or more fields (columns) of the returned entity.
 // The default is selecting all fields defined in the entity schema.
-func (acuo *AttestationCollectionUpdateOne) Select(field string, fields ...string) *AttestationCollectionUpdateOne {
-	acuo.fields = append([]string{field}, fields...)
-	return acuo
+func (_u *AttestationCollectionUpdateOne) Select(field string, fields ...string) *AttestationCollectionUpdateOne {
+	_u.fields = append([]string{field}, fields...)
+	return _u
 }
 
 // Save executes the query and returns the updated AttestationCollection entity.
-func (acuo *AttestationCollectionUpdateOne) Save(ctx context.Context) (*AttestationCollection, error) {
-	return withHooks(ctx, acuo.sqlSave, acuo.mutation, acuo.hooks)
+func (_u *AttestationCollectionUpdateOne) Save(ctx context.Context) (*AttestationCollection, error) {
+	return withHooks(ctx, _u.sqlSave, _u.mutation, _u.hooks)
 }
 
 // SaveX is like Save, but panics if an error occurs.
-func (acuo *AttestationCollectionUpdateOne) SaveX(ctx context.Context) *AttestationCollection {
-	node, err := acuo.Save(ctx)
+func (_u *AttestationCollectionUpdateOne) SaveX(ctx context.Context) *AttestationCollection {
+	node, err := _u.Save(ctx)
 	if err != nil {
 		panic(err)
 	}
@@ -351,42 +351,42 @@ func (acuo *AttestationCollectionUpdateOne) SaveX(ctx context.Context) *Attestat
 }
 
 // Exec executes the query on the entity.
-func (acuo *AttestationCollectionUpdateOne) Exec(ctx context.Context) error {
-	_, err := acuo.Save(ctx)
+func (_u *AttestationCollectionUpdateOne) Exec(ctx context.Context) error {
+	_, err := _u.Save(ctx)
 	return err
 }
 
 // ExecX is like Exec, but panics if an error occurs.
-func (acuo *AttestationCollectionUpdateOne) ExecX(ctx context.Context) {
-	if err := acuo.Exec(ctx); err != nil {
+func (_u *AttestationCollectionUpdateOne) ExecX(ctx context.Context) {
+	if err := _u.Exec(ctx); err != nil {
 		panic(err)
 	}
 }
 
 // check runs all checks and user-defined validators on the builder.
-func (acuo *AttestationCollectionUpdateOne) check() error {
-	if v, ok := acuo.mutation.Name(); ok {
+func (_u *AttestationCollectionUpdateOne) check() error {
+	if v, ok := _u.mutation.Name(); ok {
 		if err := attestationcollection.NameValidator(v); err != nil {
 			return &ValidationError{Name: "name", err: fmt.Errorf(`ent: validator failed for field "AttestationCollection.name": %w`, err)}
 		}
 	}
-	if acuo.mutation.StatementCleared() && len(acuo.mutation.StatementIDs()) > 0 {
+	if _u.mutation.StatementCleared() && len(_u.mutation.StatementIDs()) > 0 {
 		return errors.New(`ent: clearing a required unique edge "AttestationCollection.statement"`)
 	}
 	return nil
 }
 
-func (acuo *AttestationCollectionUpdateOne) sqlSave(ctx context.Context) (_node *AttestationCollection, err error) {
-	if err := acuo.check(); err != nil {
+func (_u *AttestationCollectionUpdateOne) sqlSave(ctx context.Context) (_node *AttestationCollection, err error) {
+	if err := _u.check(); err != nil {
 		return _node, err
 	}
 	_spec := sqlgraph.NewUpdateSpec(attestationcollection.Table, attestationcollection.Columns, sqlgraph.NewFieldSpec(attestationcollection.FieldID, field.TypeUUID))
-	id, ok := acuo.mutation.ID()
+	id, ok := _u.mutation.ID()
 	if !ok {
 		return nil, &ValidationError{Name: "id", err: errors.New(`ent: missing "AttestationCollection.id" for update`)}
 	}
 	_spec.Node.ID.Value = id
-	if fields := acuo.fields; len(fields) > 0 {
+	if fields := _u.fields; len(fields) > 0 {
 		_spec.Node.Columns = make([]string, 0, len(fields))
 		_spec.Node.Columns = append(_spec.Node.Columns, attestationcollection.FieldID)
 		for _, f := range fields {
@@ -398,17 +398,17 @@ func (acuo *AttestationCollectionUpdateOne) sqlSave(ctx context.Context) (_node 
 			}
 		}
 	}
-	if ps := acuo.mutation.predicates; len(ps) > 0 {
+	if ps := _u.mutation.predicates; len(ps) > 0 {
 		_spec.Predicate = func(selector *sql.Selector) {
 			for i := range ps {
 				ps[i](selector)
 			}
 		}
 	}
-	if value, ok := acuo.mutation.Name(); ok {
+	if value, ok := _u.mutation.Name(); ok {
 		_spec.SetField(attestationcollection.FieldName, field.TypeString, value)
 	}
-	if acuo.mutation.AttestationsCleared() {
+	if _u.mutation.AttestationsCleared() {
 		edge := &sqlgraph.EdgeSpec{
 			Rel:     sqlgraph.O2M,
 			Inverse: false,
@@ -421,7 +421,7 @@ func (acuo *AttestationCollectionUpdateOne) sqlSave(ctx context.Context) (_node 
 		}
 		_spec.Edges.Clear = append(_spec.Edges.Clear, edge)
 	}
-	if nodes := acuo.mutation.RemovedAttestationsIDs(); len(nodes) > 0 && !acuo.mutation.AttestationsCleared() {
+	if nodes := _u.mutation.RemovedAttestationsIDs(); len(nodes) > 0 && !_u.mutation.AttestationsCleared() {
 		edge := &sqlgraph.EdgeSpec{
 			Rel:     sqlgraph.O2M,
 			Inverse: false,
@@ -437,7 +437,7 @@ func (acuo *AttestationCollectionUpdateOne) sqlSave(ctx context.Context) (_node 
 		}
 		_spec.Edges.Clear = append(_spec.Edges.Clear, edge)
 	}
-	if nodes := acuo.mutation.AttestationsIDs(); len(nodes) > 0 {
+	if nodes := _u.mutation.AttestationsIDs(); len(nodes) > 0 {
 		edge := &sqlgraph.EdgeSpec{
 			Rel:     sqlgraph.O2M,
 			Inverse: false,
@@ -453,7 +453,7 @@ func (acuo *AttestationCollectionUpdateOne) sqlSave(ctx context.Context) (_node 
 		}
 		_spec.Edges.Add = append(_spec.Edges.Add, edge)
 	}
-	if acuo.mutation.StatementCleared() {
+	if _u.mutation.StatementCleared() {
 		edge := &sqlgraph.EdgeSpec{
 			Rel:     sqlgraph.O2O,
 			Inverse: true,
@@ -466,7 +466,7 @@ func (acuo *AttestationCollectionUpdateOne) sqlSave(ctx context.Context) (_node 
 		}
 		_spec.Edges.Clear = append(_spec.Edges.Clear, edge)
 	}
-	if nodes := acuo.mutation.StatementIDs(); len(nodes) > 0 {
+	if nodes := _u.mutation.StatementIDs(); len(nodes) > 0 {
 		edge := &sqlgraph.EdgeSpec{
 			Rel:     sqlgraph.O2O,
 			Inverse: true,
@@ -482,10 +482,10 @@ func (acuo *AttestationCollectionUpdateOne) sqlSave(ctx context.Context) (_node 
 		}
 		_spec.Edges.Add = append(_spec.Edges.Add, edge)
 	}
-	_node = &AttestationCollection{config: acuo.config}
+	_node = &AttestationCollection{config: _u.config}
 	_spec.Assign = _node.assignValues
 	_spec.ScanValues = _node.scanValues
-	if err = sqlgraph.UpdateNode(ctx, acuo.driver, _spec); err != nil {
+	if err = sqlgraph.UpdateNode(ctx, _u.driver, _spec); err != nil {
 		if _, ok := err.(*sqlgraph.NotFoundError); ok {
 			err = &NotFoundError{attestationcollection.Label}
 		} else if sqlgraph.IsConstraintError(err) {
@@ -493,6 +493,6 @@ func (acuo *AttestationCollectionUpdateOne) sqlSave(ctx context.Context) (_node 
 		}
 		return nil, err
 	}
-	acuo.mutation.done = true
+	_u.mutation.done = true
 	return _node, nil
 }

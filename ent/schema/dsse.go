@@ -15,6 +15,8 @@
 package schema
 
 import (
+	"time"
+
 	"entgo.io/contrib/entgql"
 	"entgo.io/ent"
 	"entgo.io/ent/schema"
@@ -32,6 +34,7 @@ type Dsse struct {
 func (Dsse) Fields() []ent.Field {
 	return []ent.Field{
 		field.UUID("id", uuid.UUID{}).Default(uuid.New).Immutable().Unique(),
+		field.Time("created_at").Default(time.Now).Immutable().Optional().Nillable().Annotations(entgql.OrderField("CREATED_AT")),
 		field.String("gitoid_sha256").NotEmpty().Unique(),
 		field.String("payload_type").NotEmpty(),
 	}

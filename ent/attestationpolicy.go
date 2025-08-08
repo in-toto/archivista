@@ -69,7 +69,7 @@ func (*AttestationPolicy) scanValues(columns []string) ([]any, error) {
 
 // assignValues assigns the values that were returned from sql.Rows (after scanning)
 // to the AttestationPolicy fields.
-func (ap *AttestationPolicy) assignValues(columns []string, values []any) error {
+func (_m *AttestationPolicy) assignValues(columns []string, values []any) error {
 	if m, n := len(values), len(columns); m < n {
 		return fmt.Errorf("mismatch number of scan values: %d != %d", m, n)
 	}
@@ -79,23 +79,23 @@ func (ap *AttestationPolicy) assignValues(columns []string, values []any) error 
 			if value, ok := values[i].(*uuid.UUID); !ok {
 				return fmt.Errorf("unexpected type %T for field id", values[i])
 			} else if value != nil {
-				ap.ID = *value
+				_m.ID = *value
 			}
 		case attestationpolicy.FieldName:
 			if value, ok := values[i].(*sql.NullString); !ok {
 				return fmt.Errorf("unexpected type %T for field name", values[i])
 			} else if value.Valid {
-				ap.Name = value.String
+				_m.Name = value.String
 			}
 		case attestationpolicy.ForeignKeys[0]:
 			if value, ok := values[i].(*sql.NullScanner); !ok {
 				return fmt.Errorf("unexpected type %T for field statement_policy", values[i])
 			} else if value.Valid {
-				ap.statement_policy = new(uuid.UUID)
-				*ap.statement_policy = *value.S.(*uuid.UUID)
+				_m.statement_policy = new(uuid.UUID)
+				*_m.statement_policy = *value.S.(*uuid.UUID)
 			}
 		default:
-			ap.selectValues.Set(columns[i], values[i])
+			_m.selectValues.Set(columns[i], values[i])
 		}
 	}
 	return nil
@@ -103,40 +103,40 @@ func (ap *AttestationPolicy) assignValues(columns []string, values []any) error 
 
 // Value returns the ent.Value that was dynamically selected and assigned to the AttestationPolicy.
 // This includes values selected through modifiers, order, etc.
-func (ap *AttestationPolicy) Value(name string) (ent.Value, error) {
-	return ap.selectValues.Get(name)
+func (_m *AttestationPolicy) Value(name string) (ent.Value, error) {
+	return _m.selectValues.Get(name)
 }
 
 // QueryStatement queries the "statement" edge of the AttestationPolicy entity.
-func (ap *AttestationPolicy) QueryStatement() *StatementQuery {
-	return NewAttestationPolicyClient(ap.config).QueryStatement(ap)
+func (_m *AttestationPolicy) QueryStatement() *StatementQuery {
+	return NewAttestationPolicyClient(_m.config).QueryStatement(_m)
 }
 
 // Update returns a builder for updating this AttestationPolicy.
 // Note that you need to call AttestationPolicy.Unwrap() before calling this method if this AttestationPolicy
 // was returned from a transaction, and the transaction was committed or rolled back.
-func (ap *AttestationPolicy) Update() *AttestationPolicyUpdateOne {
-	return NewAttestationPolicyClient(ap.config).UpdateOne(ap)
+func (_m *AttestationPolicy) Update() *AttestationPolicyUpdateOne {
+	return NewAttestationPolicyClient(_m.config).UpdateOne(_m)
 }
 
 // Unwrap unwraps the AttestationPolicy entity that was returned from a transaction after it was closed,
 // so that all future queries will be executed through the driver which created the transaction.
-func (ap *AttestationPolicy) Unwrap() *AttestationPolicy {
-	_tx, ok := ap.config.driver.(*txDriver)
+func (_m *AttestationPolicy) Unwrap() *AttestationPolicy {
+	_tx, ok := _m.config.driver.(*txDriver)
 	if !ok {
 		panic("ent: AttestationPolicy is not a transactional entity")
 	}
-	ap.config.driver = _tx.drv
-	return ap
+	_m.config.driver = _tx.drv
+	return _m
 }
 
 // String implements the fmt.Stringer.
-func (ap *AttestationPolicy) String() string {
+func (_m *AttestationPolicy) String() string {
 	var builder strings.Builder
 	builder.WriteString("AttestationPolicy(")
-	builder.WriteString(fmt.Sprintf("id=%v, ", ap.ID))
+	builder.WriteString(fmt.Sprintf("id=%v, ", _m.ID))
 	builder.WriteString("name=")
-	builder.WriteString(ap.Name)
+	builder.WriteString(_m.Name)
 	builder.WriteByte(')')
 	return builder.String()
 }

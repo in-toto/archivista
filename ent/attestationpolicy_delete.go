@@ -20,56 +20,56 @@ type AttestationPolicyDelete struct {
 }
 
 // Where appends a list predicates to the AttestationPolicyDelete builder.
-func (apd *AttestationPolicyDelete) Where(ps ...predicate.AttestationPolicy) *AttestationPolicyDelete {
-	apd.mutation.Where(ps...)
-	return apd
+func (_d *AttestationPolicyDelete) Where(ps ...predicate.AttestationPolicy) *AttestationPolicyDelete {
+	_d.mutation.Where(ps...)
+	return _d
 }
 
 // Exec executes the deletion query and returns how many vertices were deleted.
-func (apd *AttestationPolicyDelete) Exec(ctx context.Context) (int, error) {
-	return withHooks(ctx, apd.sqlExec, apd.mutation, apd.hooks)
+func (_d *AttestationPolicyDelete) Exec(ctx context.Context) (int, error) {
+	return withHooks(ctx, _d.sqlExec, _d.mutation, _d.hooks)
 }
 
 // ExecX is like Exec, but panics if an error occurs.
-func (apd *AttestationPolicyDelete) ExecX(ctx context.Context) int {
-	n, err := apd.Exec(ctx)
+func (_d *AttestationPolicyDelete) ExecX(ctx context.Context) int {
+	n, err := _d.Exec(ctx)
 	if err != nil {
 		panic(err)
 	}
 	return n
 }
 
-func (apd *AttestationPolicyDelete) sqlExec(ctx context.Context) (int, error) {
+func (_d *AttestationPolicyDelete) sqlExec(ctx context.Context) (int, error) {
 	_spec := sqlgraph.NewDeleteSpec(attestationpolicy.Table, sqlgraph.NewFieldSpec(attestationpolicy.FieldID, field.TypeUUID))
-	if ps := apd.mutation.predicates; len(ps) > 0 {
+	if ps := _d.mutation.predicates; len(ps) > 0 {
 		_spec.Predicate = func(selector *sql.Selector) {
 			for i := range ps {
 				ps[i](selector)
 			}
 		}
 	}
-	affected, err := sqlgraph.DeleteNodes(ctx, apd.driver, _spec)
+	affected, err := sqlgraph.DeleteNodes(ctx, _d.driver, _spec)
 	if err != nil && sqlgraph.IsConstraintError(err) {
 		err = &ConstraintError{msg: err.Error(), wrap: err}
 	}
-	apd.mutation.done = true
+	_d.mutation.done = true
 	return affected, err
 }
 
 // AttestationPolicyDeleteOne is the builder for deleting a single AttestationPolicy entity.
 type AttestationPolicyDeleteOne struct {
-	apd *AttestationPolicyDelete
+	_d *AttestationPolicyDelete
 }
 
 // Where appends a list predicates to the AttestationPolicyDelete builder.
-func (apdo *AttestationPolicyDeleteOne) Where(ps ...predicate.AttestationPolicy) *AttestationPolicyDeleteOne {
-	apdo.apd.mutation.Where(ps...)
-	return apdo
+func (_d *AttestationPolicyDeleteOne) Where(ps ...predicate.AttestationPolicy) *AttestationPolicyDeleteOne {
+	_d._d.mutation.Where(ps...)
+	return _d
 }
 
 // Exec executes the deletion query.
-func (apdo *AttestationPolicyDeleteOne) Exec(ctx context.Context) error {
-	n, err := apdo.apd.Exec(ctx)
+func (_d *AttestationPolicyDeleteOne) Exec(ctx context.Context) error {
+	n, err := _d._d.Exec(ctx)
 	switch {
 	case err != nil:
 		return err
@@ -81,8 +81,8 @@ func (apdo *AttestationPolicyDeleteOne) Exec(ctx context.Context) error {
 }
 
 // ExecX is like Exec, but panics if an error occurs.
-func (apdo *AttestationPolicyDeleteOne) ExecX(ctx context.Context) {
-	if err := apdo.Exec(ctx); err != nil {
+func (_d *AttestationPolicyDeleteOne) ExecX(ctx context.Context) {
+	if err := _d.Exec(ctx); err != nil {
 		panic(err)
 	}
 }

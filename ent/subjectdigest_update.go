@@ -24,77 +24,77 @@ type SubjectDigestUpdate struct {
 }
 
 // Where appends a list predicates to the SubjectDigestUpdate builder.
-func (sdu *SubjectDigestUpdate) Where(ps ...predicate.SubjectDigest) *SubjectDigestUpdate {
-	sdu.mutation.Where(ps...)
-	return sdu
+func (_u *SubjectDigestUpdate) Where(ps ...predicate.SubjectDigest) *SubjectDigestUpdate {
+	_u.mutation.Where(ps...)
+	return _u
 }
 
 // SetAlgorithm sets the "algorithm" field.
-func (sdu *SubjectDigestUpdate) SetAlgorithm(s string) *SubjectDigestUpdate {
-	sdu.mutation.SetAlgorithm(s)
-	return sdu
+func (_u *SubjectDigestUpdate) SetAlgorithm(v string) *SubjectDigestUpdate {
+	_u.mutation.SetAlgorithm(v)
+	return _u
 }
 
 // SetNillableAlgorithm sets the "algorithm" field if the given value is not nil.
-func (sdu *SubjectDigestUpdate) SetNillableAlgorithm(s *string) *SubjectDigestUpdate {
-	if s != nil {
-		sdu.SetAlgorithm(*s)
+func (_u *SubjectDigestUpdate) SetNillableAlgorithm(v *string) *SubjectDigestUpdate {
+	if v != nil {
+		_u.SetAlgorithm(*v)
 	}
-	return sdu
+	return _u
 }
 
 // SetValue sets the "value" field.
-func (sdu *SubjectDigestUpdate) SetValue(s string) *SubjectDigestUpdate {
-	sdu.mutation.SetValue(s)
-	return sdu
+func (_u *SubjectDigestUpdate) SetValue(v string) *SubjectDigestUpdate {
+	_u.mutation.SetValue(v)
+	return _u
 }
 
 // SetNillableValue sets the "value" field if the given value is not nil.
-func (sdu *SubjectDigestUpdate) SetNillableValue(s *string) *SubjectDigestUpdate {
-	if s != nil {
-		sdu.SetValue(*s)
+func (_u *SubjectDigestUpdate) SetNillableValue(v *string) *SubjectDigestUpdate {
+	if v != nil {
+		_u.SetValue(*v)
 	}
-	return sdu
+	return _u
 }
 
 // SetSubjectID sets the "subject" edge to the Subject entity by ID.
-func (sdu *SubjectDigestUpdate) SetSubjectID(id uuid.UUID) *SubjectDigestUpdate {
-	sdu.mutation.SetSubjectID(id)
-	return sdu
+func (_u *SubjectDigestUpdate) SetSubjectID(id uuid.UUID) *SubjectDigestUpdate {
+	_u.mutation.SetSubjectID(id)
+	return _u
 }
 
 // SetNillableSubjectID sets the "subject" edge to the Subject entity by ID if the given value is not nil.
-func (sdu *SubjectDigestUpdate) SetNillableSubjectID(id *uuid.UUID) *SubjectDigestUpdate {
+func (_u *SubjectDigestUpdate) SetNillableSubjectID(id *uuid.UUID) *SubjectDigestUpdate {
 	if id != nil {
-		sdu = sdu.SetSubjectID(*id)
+		_u = _u.SetSubjectID(*id)
 	}
-	return sdu
+	return _u
 }
 
 // SetSubject sets the "subject" edge to the Subject entity.
-func (sdu *SubjectDigestUpdate) SetSubject(s *Subject) *SubjectDigestUpdate {
-	return sdu.SetSubjectID(s.ID)
+func (_u *SubjectDigestUpdate) SetSubject(v *Subject) *SubjectDigestUpdate {
+	return _u.SetSubjectID(v.ID)
 }
 
 // Mutation returns the SubjectDigestMutation object of the builder.
-func (sdu *SubjectDigestUpdate) Mutation() *SubjectDigestMutation {
-	return sdu.mutation
+func (_u *SubjectDigestUpdate) Mutation() *SubjectDigestMutation {
+	return _u.mutation
 }
 
 // ClearSubject clears the "subject" edge to the Subject entity.
-func (sdu *SubjectDigestUpdate) ClearSubject() *SubjectDigestUpdate {
-	sdu.mutation.ClearSubject()
-	return sdu
+func (_u *SubjectDigestUpdate) ClearSubject() *SubjectDigestUpdate {
+	_u.mutation.ClearSubject()
+	return _u
 }
 
 // Save executes the query and returns the number of nodes affected by the update operation.
-func (sdu *SubjectDigestUpdate) Save(ctx context.Context) (int, error) {
-	return withHooks(ctx, sdu.sqlSave, sdu.mutation, sdu.hooks)
+func (_u *SubjectDigestUpdate) Save(ctx context.Context) (int, error) {
+	return withHooks(ctx, _u.sqlSave, _u.mutation, _u.hooks)
 }
 
 // SaveX is like Save, but panics if an error occurs.
-func (sdu *SubjectDigestUpdate) SaveX(ctx context.Context) int {
-	affected, err := sdu.Save(ctx)
+func (_u *SubjectDigestUpdate) SaveX(ctx context.Context) int {
+	affected, err := _u.Save(ctx)
 	if err != nil {
 		panic(err)
 	}
@@ -102,26 +102,26 @@ func (sdu *SubjectDigestUpdate) SaveX(ctx context.Context) int {
 }
 
 // Exec executes the query.
-func (sdu *SubjectDigestUpdate) Exec(ctx context.Context) error {
-	_, err := sdu.Save(ctx)
+func (_u *SubjectDigestUpdate) Exec(ctx context.Context) error {
+	_, err := _u.Save(ctx)
 	return err
 }
 
 // ExecX is like Exec, but panics if an error occurs.
-func (sdu *SubjectDigestUpdate) ExecX(ctx context.Context) {
-	if err := sdu.Exec(ctx); err != nil {
+func (_u *SubjectDigestUpdate) ExecX(ctx context.Context) {
+	if err := _u.Exec(ctx); err != nil {
 		panic(err)
 	}
 }
 
 // check runs all checks and user-defined validators on the builder.
-func (sdu *SubjectDigestUpdate) check() error {
-	if v, ok := sdu.mutation.Algorithm(); ok {
+func (_u *SubjectDigestUpdate) check() error {
+	if v, ok := _u.mutation.Algorithm(); ok {
 		if err := subjectdigest.AlgorithmValidator(v); err != nil {
 			return &ValidationError{Name: "algorithm", err: fmt.Errorf(`ent: validator failed for field "SubjectDigest.algorithm": %w`, err)}
 		}
 	}
-	if v, ok := sdu.mutation.Value(); ok {
+	if v, ok := _u.mutation.Value(); ok {
 		if err := subjectdigest.ValueValidator(v); err != nil {
 			return &ValidationError{Name: "value", err: fmt.Errorf(`ent: validator failed for field "SubjectDigest.value": %w`, err)}
 		}
@@ -129,25 +129,25 @@ func (sdu *SubjectDigestUpdate) check() error {
 	return nil
 }
 
-func (sdu *SubjectDigestUpdate) sqlSave(ctx context.Context) (n int, err error) {
-	if err := sdu.check(); err != nil {
-		return n, err
+func (_u *SubjectDigestUpdate) sqlSave(ctx context.Context) (_node int, err error) {
+	if err := _u.check(); err != nil {
+		return _node, err
 	}
 	_spec := sqlgraph.NewUpdateSpec(subjectdigest.Table, subjectdigest.Columns, sqlgraph.NewFieldSpec(subjectdigest.FieldID, field.TypeUUID))
-	if ps := sdu.mutation.predicates; len(ps) > 0 {
+	if ps := _u.mutation.predicates; len(ps) > 0 {
 		_spec.Predicate = func(selector *sql.Selector) {
 			for i := range ps {
 				ps[i](selector)
 			}
 		}
 	}
-	if value, ok := sdu.mutation.Algorithm(); ok {
+	if value, ok := _u.mutation.Algorithm(); ok {
 		_spec.SetField(subjectdigest.FieldAlgorithm, field.TypeString, value)
 	}
-	if value, ok := sdu.mutation.Value(); ok {
+	if value, ok := _u.mutation.Value(); ok {
 		_spec.SetField(subjectdigest.FieldValue, field.TypeString, value)
 	}
-	if sdu.mutation.SubjectCleared() {
+	if _u.mutation.SubjectCleared() {
 		edge := &sqlgraph.EdgeSpec{
 			Rel:     sqlgraph.M2O,
 			Inverse: true,
@@ -160,7 +160,7 @@ func (sdu *SubjectDigestUpdate) sqlSave(ctx context.Context) (n int, err error) 
 		}
 		_spec.Edges.Clear = append(_spec.Edges.Clear, edge)
 	}
-	if nodes := sdu.mutation.SubjectIDs(); len(nodes) > 0 {
+	if nodes := _u.mutation.SubjectIDs(); len(nodes) > 0 {
 		edge := &sqlgraph.EdgeSpec{
 			Rel:     sqlgraph.M2O,
 			Inverse: true,
@@ -176,7 +176,7 @@ func (sdu *SubjectDigestUpdate) sqlSave(ctx context.Context) (n int, err error) 
 		}
 		_spec.Edges.Add = append(_spec.Edges.Add, edge)
 	}
-	if n, err = sqlgraph.UpdateNodes(ctx, sdu.driver, _spec); err != nil {
+	if _node, err = sqlgraph.UpdateNodes(ctx, _u.driver, _spec); err != nil {
 		if _, ok := err.(*sqlgraph.NotFoundError); ok {
 			err = &NotFoundError{subjectdigest.Label}
 		} else if sqlgraph.IsConstraintError(err) {
@@ -184,8 +184,8 @@ func (sdu *SubjectDigestUpdate) sqlSave(ctx context.Context) (n int, err error) 
 		}
 		return 0, err
 	}
-	sdu.mutation.done = true
-	return n, nil
+	_u.mutation.done = true
+	return _node, nil
 }
 
 // SubjectDigestUpdateOne is the builder for updating a single SubjectDigest entity.
@@ -197,84 +197,84 @@ type SubjectDigestUpdateOne struct {
 }
 
 // SetAlgorithm sets the "algorithm" field.
-func (sduo *SubjectDigestUpdateOne) SetAlgorithm(s string) *SubjectDigestUpdateOne {
-	sduo.mutation.SetAlgorithm(s)
-	return sduo
+func (_u *SubjectDigestUpdateOne) SetAlgorithm(v string) *SubjectDigestUpdateOne {
+	_u.mutation.SetAlgorithm(v)
+	return _u
 }
 
 // SetNillableAlgorithm sets the "algorithm" field if the given value is not nil.
-func (sduo *SubjectDigestUpdateOne) SetNillableAlgorithm(s *string) *SubjectDigestUpdateOne {
-	if s != nil {
-		sduo.SetAlgorithm(*s)
+func (_u *SubjectDigestUpdateOne) SetNillableAlgorithm(v *string) *SubjectDigestUpdateOne {
+	if v != nil {
+		_u.SetAlgorithm(*v)
 	}
-	return sduo
+	return _u
 }
 
 // SetValue sets the "value" field.
-func (sduo *SubjectDigestUpdateOne) SetValue(s string) *SubjectDigestUpdateOne {
-	sduo.mutation.SetValue(s)
-	return sduo
+func (_u *SubjectDigestUpdateOne) SetValue(v string) *SubjectDigestUpdateOne {
+	_u.mutation.SetValue(v)
+	return _u
 }
 
 // SetNillableValue sets the "value" field if the given value is not nil.
-func (sduo *SubjectDigestUpdateOne) SetNillableValue(s *string) *SubjectDigestUpdateOne {
-	if s != nil {
-		sduo.SetValue(*s)
+func (_u *SubjectDigestUpdateOne) SetNillableValue(v *string) *SubjectDigestUpdateOne {
+	if v != nil {
+		_u.SetValue(*v)
 	}
-	return sduo
+	return _u
 }
 
 // SetSubjectID sets the "subject" edge to the Subject entity by ID.
-func (sduo *SubjectDigestUpdateOne) SetSubjectID(id uuid.UUID) *SubjectDigestUpdateOne {
-	sduo.mutation.SetSubjectID(id)
-	return sduo
+func (_u *SubjectDigestUpdateOne) SetSubjectID(id uuid.UUID) *SubjectDigestUpdateOne {
+	_u.mutation.SetSubjectID(id)
+	return _u
 }
 
 // SetNillableSubjectID sets the "subject" edge to the Subject entity by ID if the given value is not nil.
-func (sduo *SubjectDigestUpdateOne) SetNillableSubjectID(id *uuid.UUID) *SubjectDigestUpdateOne {
+func (_u *SubjectDigestUpdateOne) SetNillableSubjectID(id *uuid.UUID) *SubjectDigestUpdateOne {
 	if id != nil {
-		sduo = sduo.SetSubjectID(*id)
+		_u = _u.SetSubjectID(*id)
 	}
-	return sduo
+	return _u
 }
 
 // SetSubject sets the "subject" edge to the Subject entity.
-func (sduo *SubjectDigestUpdateOne) SetSubject(s *Subject) *SubjectDigestUpdateOne {
-	return sduo.SetSubjectID(s.ID)
+func (_u *SubjectDigestUpdateOne) SetSubject(v *Subject) *SubjectDigestUpdateOne {
+	return _u.SetSubjectID(v.ID)
 }
 
 // Mutation returns the SubjectDigestMutation object of the builder.
-func (sduo *SubjectDigestUpdateOne) Mutation() *SubjectDigestMutation {
-	return sduo.mutation
+func (_u *SubjectDigestUpdateOne) Mutation() *SubjectDigestMutation {
+	return _u.mutation
 }
 
 // ClearSubject clears the "subject" edge to the Subject entity.
-func (sduo *SubjectDigestUpdateOne) ClearSubject() *SubjectDigestUpdateOne {
-	sduo.mutation.ClearSubject()
-	return sduo
+func (_u *SubjectDigestUpdateOne) ClearSubject() *SubjectDigestUpdateOne {
+	_u.mutation.ClearSubject()
+	return _u
 }
 
 // Where appends a list predicates to the SubjectDigestUpdate builder.
-func (sduo *SubjectDigestUpdateOne) Where(ps ...predicate.SubjectDigest) *SubjectDigestUpdateOne {
-	sduo.mutation.Where(ps...)
-	return sduo
+func (_u *SubjectDigestUpdateOne) Where(ps ...predicate.SubjectDigest) *SubjectDigestUpdateOne {
+	_u.mutation.Where(ps...)
+	return _u
 }
 
 // Select allows selecting one or more fields (columns) of the returned entity.
 // The default is selecting all fields defined in the entity schema.
-func (sduo *SubjectDigestUpdateOne) Select(field string, fields ...string) *SubjectDigestUpdateOne {
-	sduo.fields = append([]string{field}, fields...)
-	return sduo
+func (_u *SubjectDigestUpdateOne) Select(field string, fields ...string) *SubjectDigestUpdateOne {
+	_u.fields = append([]string{field}, fields...)
+	return _u
 }
 
 // Save executes the query and returns the updated SubjectDigest entity.
-func (sduo *SubjectDigestUpdateOne) Save(ctx context.Context) (*SubjectDigest, error) {
-	return withHooks(ctx, sduo.sqlSave, sduo.mutation, sduo.hooks)
+func (_u *SubjectDigestUpdateOne) Save(ctx context.Context) (*SubjectDigest, error) {
+	return withHooks(ctx, _u.sqlSave, _u.mutation, _u.hooks)
 }
 
 // SaveX is like Save, but panics if an error occurs.
-func (sduo *SubjectDigestUpdateOne) SaveX(ctx context.Context) *SubjectDigest {
-	node, err := sduo.Save(ctx)
+func (_u *SubjectDigestUpdateOne) SaveX(ctx context.Context) *SubjectDigest {
+	node, err := _u.Save(ctx)
 	if err != nil {
 		panic(err)
 	}
@@ -282,26 +282,26 @@ func (sduo *SubjectDigestUpdateOne) SaveX(ctx context.Context) *SubjectDigest {
 }
 
 // Exec executes the query on the entity.
-func (sduo *SubjectDigestUpdateOne) Exec(ctx context.Context) error {
-	_, err := sduo.Save(ctx)
+func (_u *SubjectDigestUpdateOne) Exec(ctx context.Context) error {
+	_, err := _u.Save(ctx)
 	return err
 }
 
 // ExecX is like Exec, but panics if an error occurs.
-func (sduo *SubjectDigestUpdateOne) ExecX(ctx context.Context) {
-	if err := sduo.Exec(ctx); err != nil {
+func (_u *SubjectDigestUpdateOne) ExecX(ctx context.Context) {
+	if err := _u.Exec(ctx); err != nil {
 		panic(err)
 	}
 }
 
 // check runs all checks and user-defined validators on the builder.
-func (sduo *SubjectDigestUpdateOne) check() error {
-	if v, ok := sduo.mutation.Algorithm(); ok {
+func (_u *SubjectDigestUpdateOne) check() error {
+	if v, ok := _u.mutation.Algorithm(); ok {
 		if err := subjectdigest.AlgorithmValidator(v); err != nil {
 			return &ValidationError{Name: "algorithm", err: fmt.Errorf(`ent: validator failed for field "SubjectDigest.algorithm": %w`, err)}
 		}
 	}
-	if v, ok := sduo.mutation.Value(); ok {
+	if v, ok := _u.mutation.Value(); ok {
 		if err := subjectdigest.ValueValidator(v); err != nil {
 			return &ValidationError{Name: "value", err: fmt.Errorf(`ent: validator failed for field "SubjectDigest.value": %w`, err)}
 		}
@@ -309,17 +309,17 @@ func (sduo *SubjectDigestUpdateOne) check() error {
 	return nil
 }
 
-func (sduo *SubjectDigestUpdateOne) sqlSave(ctx context.Context) (_node *SubjectDigest, err error) {
-	if err := sduo.check(); err != nil {
+func (_u *SubjectDigestUpdateOne) sqlSave(ctx context.Context) (_node *SubjectDigest, err error) {
+	if err := _u.check(); err != nil {
 		return _node, err
 	}
 	_spec := sqlgraph.NewUpdateSpec(subjectdigest.Table, subjectdigest.Columns, sqlgraph.NewFieldSpec(subjectdigest.FieldID, field.TypeUUID))
-	id, ok := sduo.mutation.ID()
+	id, ok := _u.mutation.ID()
 	if !ok {
 		return nil, &ValidationError{Name: "id", err: errors.New(`ent: missing "SubjectDigest.id" for update`)}
 	}
 	_spec.Node.ID.Value = id
-	if fields := sduo.fields; len(fields) > 0 {
+	if fields := _u.fields; len(fields) > 0 {
 		_spec.Node.Columns = make([]string, 0, len(fields))
 		_spec.Node.Columns = append(_spec.Node.Columns, subjectdigest.FieldID)
 		for _, f := range fields {
@@ -331,20 +331,20 @@ func (sduo *SubjectDigestUpdateOne) sqlSave(ctx context.Context) (_node *Subject
 			}
 		}
 	}
-	if ps := sduo.mutation.predicates; len(ps) > 0 {
+	if ps := _u.mutation.predicates; len(ps) > 0 {
 		_spec.Predicate = func(selector *sql.Selector) {
 			for i := range ps {
 				ps[i](selector)
 			}
 		}
 	}
-	if value, ok := sduo.mutation.Algorithm(); ok {
+	if value, ok := _u.mutation.Algorithm(); ok {
 		_spec.SetField(subjectdigest.FieldAlgorithm, field.TypeString, value)
 	}
-	if value, ok := sduo.mutation.Value(); ok {
+	if value, ok := _u.mutation.Value(); ok {
 		_spec.SetField(subjectdigest.FieldValue, field.TypeString, value)
 	}
-	if sduo.mutation.SubjectCleared() {
+	if _u.mutation.SubjectCleared() {
 		edge := &sqlgraph.EdgeSpec{
 			Rel:     sqlgraph.M2O,
 			Inverse: true,
@@ -357,7 +357,7 @@ func (sduo *SubjectDigestUpdateOne) sqlSave(ctx context.Context) (_node *Subject
 		}
 		_spec.Edges.Clear = append(_spec.Edges.Clear, edge)
 	}
-	if nodes := sduo.mutation.SubjectIDs(); len(nodes) > 0 {
+	if nodes := _u.mutation.SubjectIDs(); len(nodes) > 0 {
 		edge := &sqlgraph.EdgeSpec{
 			Rel:     sqlgraph.M2O,
 			Inverse: true,
@@ -373,10 +373,10 @@ func (sduo *SubjectDigestUpdateOne) sqlSave(ctx context.Context) (_node *Subject
 		}
 		_spec.Edges.Add = append(_spec.Edges.Add, edge)
 	}
-	_node = &SubjectDigest{config: sduo.config}
+	_node = &SubjectDigest{config: _u.config}
 	_spec.Assign = _node.assignValues
 	_spec.ScanValues = _node.scanValues
-	if err = sqlgraph.UpdateNode(ctx, sduo.driver, _spec); err != nil {
+	if err = sqlgraph.UpdateNode(ctx, _u.driver, _spec); err != nil {
 		if _, ok := err.(*sqlgraph.NotFoundError); ok {
 			err = &NotFoundError{subjectdigest.Label}
 		} else if sqlgraph.IsConstraintError(err) {
@@ -384,6 +384,6 @@ func (sduo *SubjectDigestUpdateOne) sqlSave(ctx context.Context) (_node *Subject
 		}
 		return nil, err
 	}
-	sduo.mutation.done = true
+	_u.mutation.done = true
 	return _node, nil
 }

@@ -81,6 +81,7 @@ type ComplexityRoot struct {
 	}
 
 	Dsse struct {
+		CreatedAt      func(childComplexity int) int
 		GitoidSha256   func(childComplexity int) int
 		ID             func(childComplexity int) int
 		PayloadDigests func(childComplexity int) int
@@ -116,10 +117,10 @@ type ComplexityRoot struct {
 
 	Query struct {
 		AttestationPolicies func(childComplexity int, after *entgql.Cursor[uuid.UUID], first *int, before *entgql.Cursor[uuid.UUID], last *int, where *ent.AttestationPolicyWhereInput) int
-		Dsses               func(childComplexity int, after *entgql.Cursor[uuid.UUID], first *int, before *entgql.Cursor[uuid.UUID], last *int, where *ent.DsseWhereInput) int
+		Dsses               func(childComplexity int, after *entgql.Cursor[uuid.UUID], first *int, before *entgql.Cursor[uuid.UUID], last *int, orderBy *ent.DsseOrder, where *ent.DsseWhereInput) int
 		Node                func(childComplexity int, id uuid.UUID) int
 		Nodes               func(childComplexity int, ids []uuid.UUID) int
-		Subjects            func(childComplexity int, after *entgql.Cursor[uuid.UUID], first *int, before *entgql.Cursor[uuid.UUID], last *int, where *ent.SubjectWhereInput) int
+		Subjects            func(childComplexity int, after *entgql.Cursor[uuid.UUID], first *int, before *entgql.Cursor[uuid.UUID], last *int, orderBy *ent.SubjectOrder, where *ent.SubjectWhereInput) int
 	}
 
 	Signature struct {
@@ -136,10 +137,11 @@ type ComplexityRoot struct {
 		ID                     func(childComplexity int) int
 		Policy                 func(childComplexity int) int
 		Predicate              func(childComplexity int) int
-		Subjects               func(childComplexity int, after *entgql.Cursor[uuid.UUID], first *int, before *entgql.Cursor[uuid.UUID], last *int, where *ent.SubjectWhereInput) int
+		Subjects               func(childComplexity int, after *entgql.Cursor[uuid.UUID], first *int, before *entgql.Cursor[uuid.UUID], last *int, orderBy *ent.SubjectOrder, where *ent.SubjectWhereInput) int
 	}
 
 	Subject struct {
+		CreatedAt      func(childComplexity int) int
 		ID             func(childComplexity int) int
 		Name           func(childComplexity int) int
 		Statement      func(childComplexity int) int
@@ -176,8 +178,8 @@ type QueryResolver interface {
 	Node(ctx context.Context, id uuid.UUID) (ent.Noder, error)
 	Nodes(ctx context.Context, ids []uuid.UUID) ([]ent.Noder, error)
 	AttestationPolicies(ctx context.Context, after *entgql.Cursor[uuid.UUID], first *int, before *entgql.Cursor[uuid.UUID], last *int, where *ent.AttestationPolicyWhereInput) (*ent.AttestationPolicyConnection, error)
-	Dsses(ctx context.Context, after *entgql.Cursor[uuid.UUID], first *int, before *entgql.Cursor[uuid.UUID], last *int, where *ent.DsseWhereInput) (*ent.DsseConnection, error)
-	Subjects(ctx context.Context, after *entgql.Cursor[uuid.UUID], first *int, before *entgql.Cursor[uuid.UUID], last *int, where *ent.SubjectWhereInput) (*ent.SubjectConnection, error)
+	Dsses(ctx context.Context, after *entgql.Cursor[uuid.UUID], first *int, before *entgql.Cursor[uuid.UUID], last *int, orderBy *ent.DsseOrder, where *ent.DsseWhereInput) (*ent.DsseConnection, error)
+	Subjects(ctx context.Context, after *entgql.Cursor[uuid.UUID], first *int, before *entgql.Cursor[uuid.UUID], last *int, orderBy *ent.SubjectOrder, where *ent.SubjectWhereInput) (*ent.SubjectConnection, error)
 }
 
 type executableSchema struct {
@@ -303,6 +305,13 @@ func (e *executableSchema) Complexity(ctx context.Context, typeName, field strin
 		}
 
 		return e.complexity.AttestationPolicyEdge.Node(childComplexity), true
+
+	case "Dsse.createdAt":
+		if e.complexity.Dsse.CreatedAt == nil {
+			break
+		}
+
+		return e.complexity.Dsse.CreatedAt(childComplexity), true
 
 	case "Dsse.gitoidSha256":
 		if e.complexity.Dsse.GitoidSha256 == nil {
@@ -459,7 +468,7 @@ func (e *executableSchema) Complexity(ctx context.Context, typeName, field strin
 			return 0, false
 		}
 
-		return e.complexity.Query.Dsses(childComplexity, args["after"].(*entgql.Cursor[uuid.UUID]), args["first"].(*int), args["before"].(*entgql.Cursor[uuid.UUID]), args["last"].(*int), args["where"].(*ent.DsseWhereInput)), true
+		return e.complexity.Query.Dsses(childComplexity, args["after"].(*entgql.Cursor[uuid.UUID]), args["first"].(*int), args["before"].(*entgql.Cursor[uuid.UUID]), args["last"].(*int), args["orderBy"].(*ent.DsseOrder), args["where"].(*ent.DsseWhereInput)), true
 
 	case "Query.node":
 		if e.complexity.Query.Node == nil {
@@ -495,7 +504,7 @@ func (e *executableSchema) Complexity(ctx context.Context, typeName, field strin
 			return 0, false
 		}
 
-		return e.complexity.Query.Subjects(childComplexity, args["after"].(*entgql.Cursor[uuid.UUID]), args["first"].(*int), args["before"].(*entgql.Cursor[uuid.UUID]), args["last"].(*int), args["where"].(*ent.SubjectWhereInput)), true
+		return e.complexity.Query.Subjects(childComplexity, args["after"].(*entgql.Cursor[uuid.UUID]), args["first"].(*int), args["before"].(*entgql.Cursor[uuid.UUID]), args["last"].(*int), args["orderBy"].(*ent.SubjectOrder), args["where"].(*ent.SubjectWhereInput)), true
 
 	case "Signature.dsse":
 		if e.complexity.Signature.Dsse == nil {
@@ -577,7 +586,14 @@ func (e *executableSchema) Complexity(ctx context.Context, typeName, field strin
 			return 0, false
 		}
 
-		return e.complexity.Statement.Subjects(childComplexity, args["after"].(*entgql.Cursor[uuid.UUID]), args["first"].(*int), args["before"].(*entgql.Cursor[uuid.UUID]), args["last"].(*int), args["where"].(*ent.SubjectWhereInput)), true
+		return e.complexity.Statement.Subjects(childComplexity, args["after"].(*entgql.Cursor[uuid.UUID]), args["first"].(*int), args["before"].(*entgql.Cursor[uuid.UUID]), args["last"].(*int), args["orderBy"].(*ent.SubjectOrder), args["where"].(*ent.SubjectWhereInput)), true
+
+	case "Subject.createdAt":
+		if e.complexity.Subject.CreatedAt == nil {
+			break
+		}
+
+		return e.complexity.Subject.CreatedAt(childComplexity), true
 
 	case "Subject.id":
 		if e.complexity.Subject.ID == nil {
@@ -709,11 +725,13 @@ func (e *executableSchema) Exec(ctx context.Context) graphql.ResponseHandler {
 		ec.unmarshalInputAttestationCollectionWhereInput,
 		ec.unmarshalInputAttestationPolicyWhereInput,
 		ec.unmarshalInputAttestationWhereInput,
+		ec.unmarshalInputDsseOrder,
 		ec.unmarshalInputDsseWhereInput,
 		ec.unmarshalInputPayloadDigestWhereInput,
 		ec.unmarshalInputSignatureWhereInput,
 		ec.unmarshalInputStatementWhereInput,
 		ec.unmarshalInputSubjectDigestWhereInput,
+		ec.unmarshalInputSubjectOrder,
 		ec.unmarshalInputSubjectWhereInput,
 		ec.unmarshalInputTimestampWhereInput,
 	)
@@ -821,677 +839,217 @@ var parsedSchema = gqlparser.MustLoadSchema(sources...)
 func (ec *executionContext) field_Query___type_args(ctx context.Context, rawArgs map[string]any) (map[string]any, error) {
 	var err error
 	args := map[string]any{}
-	arg0, err := ec.field_Query___type_argsName(ctx, rawArgs)
+	arg0, err := graphql.ProcessArgField(ctx, rawArgs, "name", ec.unmarshalNString2string)
 	if err != nil {
 		return nil, err
 	}
 	args["name"] = arg0
 	return args, nil
 }
-func (ec *executionContext) field_Query___type_argsName(
-	ctx context.Context,
-	rawArgs map[string]any,
-) (string, error) {
-	if _, ok := rawArgs["name"]; !ok {
-		var zeroVal string
-		return zeroVal, nil
-	}
-
-	ctx = graphql.WithPathContext(ctx, graphql.NewPathWithField("name"))
-	if tmp, ok := rawArgs["name"]; ok {
-		return ec.unmarshalNString2string(ctx, tmp)
-	}
-
-	var zeroVal string
-	return zeroVal, nil
-}
 
 func (ec *executionContext) field_Query_attestationPolicies_args(ctx context.Context, rawArgs map[string]any) (map[string]any, error) {
 	var err error
 	args := map[string]any{}
-	arg0, err := ec.field_Query_attestationPolicies_argsAfter(ctx, rawArgs)
+	arg0, err := graphql.ProcessArgField(ctx, rawArgs, "after", ec.unmarshalOCursor2ᚖentgoᚗioᚋcontribᚋentgqlᚐCursor)
 	if err != nil {
 		return nil, err
 	}
 	args["after"] = arg0
-	arg1, err := ec.field_Query_attestationPolicies_argsFirst(ctx, rawArgs)
+	arg1, err := graphql.ProcessArgField(ctx, rawArgs, "first", ec.unmarshalOInt2ᚖint)
 	if err != nil {
 		return nil, err
 	}
 	args["first"] = arg1
-	arg2, err := ec.field_Query_attestationPolicies_argsBefore(ctx, rawArgs)
+	arg2, err := graphql.ProcessArgField(ctx, rawArgs, "before", ec.unmarshalOCursor2ᚖentgoᚗioᚋcontribᚋentgqlᚐCursor)
 	if err != nil {
 		return nil, err
 	}
 	args["before"] = arg2
-	arg3, err := ec.field_Query_attestationPolicies_argsLast(ctx, rawArgs)
+	arg3, err := graphql.ProcessArgField(ctx, rawArgs, "last", ec.unmarshalOInt2ᚖint)
 	if err != nil {
 		return nil, err
 	}
 	args["last"] = arg3
-	arg4, err := ec.field_Query_attestationPolicies_argsWhere(ctx, rawArgs)
+	arg4, err := graphql.ProcessArgField(ctx, rawArgs, "where", ec.unmarshalOAttestationPolicyWhereInput2ᚖgithubᚗcomᚋinᚑtotoᚋarchivistaᚋentᚐAttestationPolicyWhereInput)
 	if err != nil {
 		return nil, err
 	}
 	args["where"] = arg4
 	return args, nil
-}
-func (ec *executionContext) field_Query_attestationPolicies_argsAfter(
-	ctx context.Context,
-	rawArgs map[string]any,
-) (*entgql.Cursor[uuid.UUID], error) {
-	if _, ok := rawArgs["after"]; !ok {
-		var zeroVal *entgql.Cursor[uuid.UUID]
-		return zeroVal, nil
-	}
-
-	ctx = graphql.WithPathContext(ctx, graphql.NewPathWithField("after"))
-	if tmp, ok := rawArgs["after"]; ok {
-		return ec.unmarshalOCursor2ᚖentgoᚗioᚋcontribᚋentgqlᚐCursor(ctx, tmp)
-	}
-
-	var zeroVal *entgql.Cursor[uuid.UUID]
-	return zeroVal, nil
-}
-
-func (ec *executionContext) field_Query_attestationPolicies_argsFirst(
-	ctx context.Context,
-	rawArgs map[string]any,
-) (*int, error) {
-	if _, ok := rawArgs["first"]; !ok {
-		var zeroVal *int
-		return zeroVal, nil
-	}
-
-	ctx = graphql.WithPathContext(ctx, graphql.NewPathWithField("first"))
-	if tmp, ok := rawArgs["first"]; ok {
-		return ec.unmarshalOInt2ᚖint(ctx, tmp)
-	}
-
-	var zeroVal *int
-	return zeroVal, nil
-}
-
-func (ec *executionContext) field_Query_attestationPolicies_argsBefore(
-	ctx context.Context,
-	rawArgs map[string]any,
-) (*entgql.Cursor[uuid.UUID], error) {
-	if _, ok := rawArgs["before"]; !ok {
-		var zeroVal *entgql.Cursor[uuid.UUID]
-		return zeroVal, nil
-	}
-
-	ctx = graphql.WithPathContext(ctx, graphql.NewPathWithField("before"))
-	if tmp, ok := rawArgs["before"]; ok {
-		return ec.unmarshalOCursor2ᚖentgoᚗioᚋcontribᚋentgqlᚐCursor(ctx, tmp)
-	}
-
-	var zeroVal *entgql.Cursor[uuid.UUID]
-	return zeroVal, nil
-}
-
-func (ec *executionContext) field_Query_attestationPolicies_argsLast(
-	ctx context.Context,
-	rawArgs map[string]any,
-) (*int, error) {
-	if _, ok := rawArgs["last"]; !ok {
-		var zeroVal *int
-		return zeroVal, nil
-	}
-
-	ctx = graphql.WithPathContext(ctx, graphql.NewPathWithField("last"))
-	if tmp, ok := rawArgs["last"]; ok {
-		return ec.unmarshalOInt2ᚖint(ctx, tmp)
-	}
-
-	var zeroVal *int
-	return zeroVal, nil
-}
-
-func (ec *executionContext) field_Query_attestationPolicies_argsWhere(
-	ctx context.Context,
-	rawArgs map[string]any,
-) (*ent.AttestationPolicyWhereInput, error) {
-	if _, ok := rawArgs["where"]; !ok {
-		var zeroVal *ent.AttestationPolicyWhereInput
-		return zeroVal, nil
-	}
-
-	ctx = graphql.WithPathContext(ctx, graphql.NewPathWithField("where"))
-	if tmp, ok := rawArgs["where"]; ok {
-		return ec.unmarshalOAttestationPolicyWhereInput2ᚖgithubᚗcomᚋinᚑtotoᚋarchivistaᚋentᚐAttestationPolicyWhereInput(ctx, tmp)
-	}
-
-	var zeroVal *ent.AttestationPolicyWhereInput
-	return zeroVal, nil
 }
 
 func (ec *executionContext) field_Query_dsses_args(ctx context.Context, rawArgs map[string]any) (map[string]any, error) {
 	var err error
 	args := map[string]any{}
-	arg0, err := ec.field_Query_dsses_argsAfter(ctx, rawArgs)
+	arg0, err := graphql.ProcessArgField(ctx, rawArgs, "after", ec.unmarshalOCursor2ᚖentgoᚗioᚋcontribᚋentgqlᚐCursor)
 	if err != nil {
 		return nil, err
 	}
 	args["after"] = arg0
-	arg1, err := ec.field_Query_dsses_argsFirst(ctx, rawArgs)
+	arg1, err := graphql.ProcessArgField(ctx, rawArgs, "first", ec.unmarshalOInt2ᚖint)
 	if err != nil {
 		return nil, err
 	}
 	args["first"] = arg1
-	arg2, err := ec.field_Query_dsses_argsBefore(ctx, rawArgs)
+	arg2, err := graphql.ProcessArgField(ctx, rawArgs, "before", ec.unmarshalOCursor2ᚖentgoᚗioᚋcontribᚋentgqlᚐCursor)
 	if err != nil {
 		return nil, err
 	}
 	args["before"] = arg2
-	arg3, err := ec.field_Query_dsses_argsLast(ctx, rawArgs)
+	arg3, err := graphql.ProcessArgField(ctx, rawArgs, "last", ec.unmarshalOInt2ᚖint)
 	if err != nil {
 		return nil, err
 	}
 	args["last"] = arg3
-	arg4, err := ec.field_Query_dsses_argsWhere(ctx, rawArgs)
+	arg4, err := graphql.ProcessArgField(ctx, rawArgs, "orderBy", ec.unmarshalODsseOrder2ᚖgithubᚗcomᚋinᚑtotoᚋarchivistaᚋentᚐDsseOrder)
 	if err != nil {
 		return nil, err
 	}
-	args["where"] = arg4
+	args["orderBy"] = arg4
+	arg5, err := graphql.ProcessArgField(ctx, rawArgs, "where", ec.unmarshalODsseWhereInput2ᚖgithubᚗcomᚋinᚑtotoᚋarchivistaᚋentᚐDsseWhereInput)
+	if err != nil {
+		return nil, err
+	}
+	args["where"] = arg5
 	return args, nil
-}
-func (ec *executionContext) field_Query_dsses_argsAfter(
-	ctx context.Context,
-	rawArgs map[string]any,
-) (*entgql.Cursor[uuid.UUID], error) {
-	if _, ok := rawArgs["after"]; !ok {
-		var zeroVal *entgql.Cursor[uuid.UUID]
-		return zeroVal, nil
-	}
-
-	ctx = graphql.WithPathContext(ctx, graphql.NewPathWithField("after"))
-	if tmp, ok := rawArgs["after"]; ok {
-		return ec.unmarshalOCursor2ᚖentgoᚗioᚋcontribᚋentgqlᚐCursor(ctx, tmp)
-	}
-
-	var zeroVal *entgql.Cursor[uuid.UUID]
-	return zeroVal, nil
-}
-
-func (ec *executionContext) field_Query_dsses_argsFirst(
-	ctx context.Context,
-	rawArgs map[string]any,
-) (*int, error) {
-	if _, ok := rawArgs["first"]; !ok {
-		var zeroVal *int
-		return zeroVal, nil
-	}
-
-	ctx = graphql.WithPathContext(ctx, graphql.NewPathWithField("first"))
-	if tmp, ok := rawArgs["first"]; ok {
-		return ec.unmarshalOInt2ᚖint(ctx, tmp)
-	}
-
-	var zeroVal *int
-	return zeroVal, nil
-}
-
-func (ec *executionContext) field_Query_dsses_argsBefore(
-	ctx context.Context,
-	rawArgs map[string]any,
-) (*entgql.Cursor[uuid.UUID], error) {
-	if _, ok := rawArgs["before"]; !ok {
-		var zeroVal *entgql.Cursor[uuid.UUID]
-		return zeroVal, nil
-	}
-
-	ctx = graphql.WithPathContext(ctx, graphql.NewPathWithField("before"))
-	if tmp, ok := rawArgs["before"]; ok {
-		return ec.unmarshalOCursor2ᚖentgoᚗioᚋcontribᚋentgqlᚐCursor(ctx, tmp)
-	}
-
-	var zeroVal *entgql.Cursor[uuid.UUID]
-	return zeroVal, nil
-}
-
-func (ec *executionContext) field_Query_dsses_argsLast(
-	ctx context.Context,
-	rawArgs map[string]any,
-) (*int, error) {
-	if _, ok := rawArgs["last"]; !ok {
-		var zeroVal *int
-		return zeroVal, nil
-	}
-
-	ctx = graphql.WithPathContext(ctx, graphql.NewPathWithField("last"))
-	if tmp, ok := rawArgs["last"]; ok {
-		return ec.unmarshalOInt2ᚖint(ctx, tmp)
-	}
-
-	var zeroVal *int
-	return zeroVal, nil
-}
-
-func (ec *executionContext) field_Query_dsses_argsWhere(
-	ctx context.Context,
-	rawArgs map[string]any,
-) (*ent.DsseWhereInput, error) {
-	if _, ok := rawArgs["where"]; !ok {
-		var zeroVal *ent.DsseWhereInput
-		return zeroVal, nil
-	}
-
-	ctx = graphql.WithPathContext(ctx, graphql.NewPathWithField("where"))
-	if tmp, ok := rawArgs["where"]; ok {
-		return ec.unmarshalODsseWhereInput2ᚖgithubᚗcomᚋinᚑtotoᚋarchivistaᚋentᚐDsseWhereInput(ctx, tmp)
-	}
-
-	var zeroVal *ent.DsseWhereInput
-	return zeroVal, nil
 }
 
 func (ec *executionContext) field_Query_node_args(ctx context.Context, rawArgs map[string]any) (map[string]any, error) {
 	var err error
 	args := map[string]any{}
-	arg0, err := ec.field_Query_node_argsID(ctx, rawArgs)
+	arg0, err := graphql.ProcessArgField(ctx, rawArgs, "id", ec.unmarshalNID2githubᚗcomᚋgoogleᚋuuidᚐUUID)
 	if err != nil {
 		return nil, err
 	}
 	args["id"] = arg0
 	return args, nil
 }
-func (ec *executionContext) field_Query_node_argsID(
-	ctx context.Context,
-	rawArgs map[string]any,
-) (uuid.UUID, error) {
-	if _, ok := rawArgs["id"]; !ok {
-		var zeroVal uuid.UUID
-		return zeroVal, nil
-	}
-
-	ctx = graphql.WithPathContext(ctx, graphql.NewPathWithField("id"))
-	if tmp, ok := rawArgs["id"]; ok {
-		return ec.unmarshalNID2githubᚗcomᚋgoogleᚋuuidᚐUUID(ctx, tmp)
-	}
-
-	var zeroVal uuid.UUID
-	return zeroVal, nil
-}
 
 func (ec *executionContext) field_Query_nodes_args(ctx context.Context, rawArgs map[string]any) (map[string]any, error) {
 	var err error
 	args := map[string]any{}
-	arg0, err := ec.field_Query_nodes_argsIds(ctx, rawArgs)
+	arg0, err := graphql.ProcessArgField(ctx, rawArgs, "ids", ec.unmarshalNID2ᚕgithubᚗcomᚋgoogleᚋuuidᚐUUIDᚄ)
 	if err != nil {
 		return nil, err
 	}
 	args["ids"] = arg0
 	return args, nil
 }
-func (ec *executionContext) field_Query_nodes_argsIds(
-	ctx context.Context,
-	rawArgs map[string]any,
-) ([]uuid.UUID, error) {
-	if _, ok := rawArgs["ids"]; !ok {
-		var zeroVal []uuid.UUID
-		return zeroVal, nil
-	}
-
-	ctx = graphql.WithPathContext(ctx, graphql.NewPathWithField("ids"))
-	if tmp, ok := rawArgs["ids"]; ok {
-		return ec.unmarshalNID2ᚕgithubᚗcomᚋgoogleᚋuuidᚐUUIDᚄ(ctx, tmp)
-	}
-
-	var zeroVal []uuid.UUID
-	return zeroVal, nil
-}
 
 func (ec *executionContext) field_Query_subjects_args(ctx context.Context, rawArgs map[string]any) (map[string]any, error) {
 	var err error
 	args := map[string]any{}
-	arg0, err := ec.field_Query_subjects_argsAfter(ctx, rawArgs)
+	arg0, err := graphql.ProcessArgField(ctx, rawArgs, "after", ec.unmarshalOCursor2ᚖentgoᚗioᚋcontribᚋentgqlᚐCursor)
 	if err != nil {
 		return nil, err
 	}
 	args["after"] = arg0
-	arg1, err := ec.field_Query_subjects_argsFirst(ctx, rawArgs)
+	arg1, err := graphql.ProcessArgField(ctx, rawArgs, "first", ec.unmarshalOInt2ᚖint)
 	if err != nil {
 		return nil, err
 	}
 	args["first"] = arg1
-	arg2, err := ec.field_Query_subjects_argsBefore(ctx, rawArgs)
+	arg2, err := graphql.ProcessArgField(ctx, rawArgs, "before", ec.unmarshalOCursor2ᚖentgoᚗioᚋcontribᚋentgqlᚐCursor)
 	if err != nil {
 		return nil, err
 	}
 	args["before"] = arg2
-	arg3, err := ec.field_Query_subjects_argsLast(ctx, rawArgs)
+	arg3, err := graphql.ProcessArgField(ctx, rawArgs, "last", ec.unmarshalOInt2ᚖint)
 	if err != nil {
 		return nil, err
 	}
 	args["last"] = arg3
-	arg4, err := ec.field_Query_subjects_argsWhere(ctx, rawArgs)
+	arg4, err := graphql.ProcessArgField(ctx, rawArgs, "orderBy", ec.unmarshalOSubjectOrder2ᚖgithubᚗcomᚋinᚑtotoᚋarchivistaᚋentᚐSubjectOrder)
 	if err != nil {
 		return nil, err
 	}
-	args["where"] = arg4
+	args["orderBy"] = arg4
+	arg5, err := graphql.ProcessArgField(ctx, rawArgs, "where", ec.unmarshalOSubjectWhereInput2ᚖgithubᚗcomᚋinᚑtotoᚋarchivistaᚋentᚐSubjectWhereInput)
+	if err != nil {
+		return nil, err
+	}
+	args["where"] = arg5
 	return args, nil
-}
-func (ec *executionContext) field_Query_subjects_argsAfter(
-	ctx context.Context,
-	rawArgs map[string]any,
-) (*entgql.Cursor[uuid.UUID], error) {
-	if _, ok := rawArgs["after"]; !ok {
-		var zeroVal *entgql.Cursor[uuid.UUID]
-		return zeroVal, nil
-	}
-
-	ctx = graphql.WithPathContext(ctx, graphql.NewPathWithField("after"))
-	if tmp, ok := rawArgs["after"]; ok {
-		return ec.unmarshalOCursor2ᚖentgoᚗioᚋcontribᚋentgqlᚐCursor(ctx, tmp)
-	}
-
-	var zeroVal *entgql.Cursor[uuid.UUID]
-	return zeroVal, nil
-}
-
-func (ec *executionContext) field_Query_subjects_argsFirst(
-	ctx context.Context,
-	rawArgs map[string]any,
-) (*int, error) {
-	if _, ok := rawArgs["first"]; !ok {
-		var zeroVal *int
-		return zeroVal, nil
-	}
-
-	ctx = graphql.WithPathContext(ctx, graphql.NewPathWithField("first"))
-	if tmp, ok := rawArgs["first"]; ok {
-		return ec.unmarshalOInt2ᚖint(ctx, tmp)
-	}
-
-	var zeroVal *int
-	return zeroVal, nil
-}
-
-func (ec *executionContext) field_Query_subjects_argsBefore(
-	ctx context.Context,
-	rawArgs map[string]any,
-) (*entgql.Cursor[uuid.UUID], error) {
-	if _, ok := rawArgs["before"]; !ok {
-		var zeroVal *entgql.Cursor[uuid.UUID]
-		return zeroVal, nil
-	}
-
-	ctx = graphql.WithPathContext(ctx, graphql.NewPathWithField("before"))
-	if tmp, ok := rawArgs["before"]; ok {
-		return ec.unmarshalOCursor2ᚖentgoᚗioᚋcontribᚋentgqlᚐCursor(ctx, tmp)
-	}
-
-	var zeroVal *entgql.Cursor[uuid.UUID]
-	return zeroVal, nil
-}
-
-func (ec *executionContext) field_Query_subjects_argsLast(
-	ctx context.Context,
-	rawArgs map[string]any,
-) (*int, error) {
-	if _, ok := rawArgs["last"]; !ok {
-		var zeroVal *int
-		return zeroVal, nil
-	}
-
-	ctx = graphql.WithPathContext(ctx, graphql.NewPathWithField("last"))
-	if tmp, ok := rawArgs["last"]; ok {
-		return ec.unmarshalOInt2ᚖint(ctx, tmp)
-	}
-
-	var zeroVal *int
-	return zeroVal, nil
-}
-
-func (ec *executionContext) field_Query_subjects_argsWhere(
-	ctx context.Context,
-	rawArgs map[string]any,
-) (*ent.SubjectWhereInput, error) {
-	if _, ok := rawArgs["where"]; !ok {
-		var zeroVal *ent.SubjectWhereInput
-		return zeroVal, nil
-	}
-
-	ctx = graphql.WithPathContext(ctx, graphql.NewPathWithField("where"))
-	if tmp, ok := rawArgs["where"]; ok {
-		return ec.unmarshalOSubjectWhereInput2ᚖgithubᚗcomᚋinᚑtotoᚋarchivistaᚋentᚐSubjectWhereInput(ctx, tmp)
-	}
-
-	var zeroVal *ent.SubjectWhereInput
-	return zeroVal, nil
 }
 
 func (ec *executionContext) field_Statement_subjects_args(ctx context.Context, rawArgs map[string]any) (map[string]any, error) {
 	var err error
 	args := map[string]any{}
-	arg0, err := ec.field_Statement_subjects_argsAfter(ctx, rawArgs)
+	arg0, err := graphql.ProcessArgField(ctx, rawArgs, "after", ec.unmarshalOCursor2ᚖentgoᚗioᚋcontribᚋentgqlᚐCursor)
 	if err != nil {
 		return nil, err
 	}
 	args["after"] = arg0
-	arg1, err := ec.field_Statement_subjects_argsFirst(ctx, rawArgs)
+	arg1, err := graphql.ProcessArgField(ctx, rawArgs, "first", ec.unmarshalOInt2ᚖint)
 	if err != nil {
 		return nil, err
 	}
 	args["first"] = arg1
-	arg2, err := ec.field_Statement_subjects_argsBefore(ctx, rawArgs)
+	arg2, err := graphql.ProcessArgField(ctx, rawArgs, "before", ec.unmarshalOCursor2ᚖentgoᚗioᚋcontribᚋentgqlᚐCursor)
 	if err != nil {
 		return nil, err
 	}
 	args["before"] = arg2
-	arg3, err := ec.field_Statement_subjects_argsLast(ctx, rawArgs)
+	arg3, err := graphql.ProcessArgField(ctx, rawArgs, "last", ec.unmarshalOInt2ᚖint)
 	if err != nil {
 		return nil, err
 	}
 	args["last"] = arg3
-	arg4, err := ec.field_Statement_subjects_argsWhere(ctx, rawArgs)
+	arg4, err := graphql.ProcessArgField(ctx, rawArgs, "orderBy", ec.unmarshalOSubjectOrder2ᚖgithubᚗcomᚋinᚑtotoᚋarchivistaᚋentᚐSubjectOrder)
 	if err != nil {
 		return nil, err
 	}
-	args["where"] = arg4
+	args["orderBy"] = arg4
+	arg5, err := graphql.ProcessArgField(ctx, rawArgs, "where", ec.unmarshalOSubjectWhereInput2ᚖgithubᚗcomᚋinᚑtotoᚋarchivistaᚋentᚐSubjectWhereInput)
+	if err != nil {
+		return nil, err
+	}
+	args["where"] = arg5
 	return args, nil
-}
-func (ec *executionContext) field_Statement_subjects_argsAfter(
-	ctx context.Context,
-	rawArgs map[string]any,
-) (*entgql.Cursor[uuid.UUID], error) {
-	if _, ok := rawArgs["after"]; !ok {
-		var zeroVal *entgql.Cursor[uuid.UUID]
-		return zeroVal, nil
-	}
-
-	ctx = graphql.WithPathContext(ctx, graphql.NewPathWithField("after"))
-	if tmp, ok := rawArgs["after"]; ok {
-		return ec.unmarshalOCursor2ᚖentgoᚗioᚋcontribᚋentgqlᚐCursor(ctx, tmp)
-	}
-
-	var zeroVal *entgql.Cursor[uuid.UUID]
-	return zeroVal, nil
-}
-
-func (ec *executionContext) field_Statement_subjects_argsFirst(
-	ctx context.Context,
-	rawArgs map[string]any,
-) (*int, error) {
-	if _, ok := rawArgs["first"]; !ok {
-		var zeroVal *int
-		return zeroVal, nil
-	}
-
-	ctx = graphql.WithPathContext(ctx, graphql.NewPathWithField("first"))
-	if tmp, ok := rawArgs["first"]; ok {
-		return ec.unmarshalOInt2ᚖint(ctx, tmp)
-	}
-
-	var zeroVal *int
-	return zeroVal, nil
-}
-
-func (ec *executionContext) field_Statement_subjects_argsBefore(
-	ctx context.Context,
-	rawArgs map[string]any,
-) (*entgql.Cursor[uuid.UUID], error) {
-	if _, ok := rawArgs["before"]; !ok {
-		var zeroVal *entgql.Cursor[uuid.UUID]
-		return zeroVal, nil
-	}
-
-	ctx = graphql.WithPathContext(ctx, graphql.NewPathWithField("before"))
-	if tmp, ok := rawArgs["before"]; ok {
-		return ec.unmarshalOCursor2ᚖentgoᚗioᚋcontribᚋentgqlᚐCursor(ctx, tmp)
-	}
-
-	var zeroVal *entgql.Cursor[uuid.UUID]
-	return zeroVal, nil
-}
-
-func (ec *executionContext) field_Statement_subjects_argsLast(
-	ctx context.Context,
-	rawArgs map[string]any,
-) (*int, error) {
-	if _, ok := rawArgs["last"]; !ok {
-		var zeroVal *int
-		return zeroVal, nil
-	}
-
-	ctx = graphql.WithPathContext(ctx, graphql.NewPathWithField("last"))
-	if tmp, ok := rawArgs["last"]; ok {
-		return ec.unmarshalOInt2ᚖint(ctx, tmp)
-	}
-
-	var zeroVal *int
-	return zeroVal, nil
-}
-
-func (ec *executionContext) field_Statement_subjects_argsWhere(
-	ctx context.Context,
-	rawArgs map[string]any,
-) (*ent.SubjectWhereInput, error) {
-	if _, ok := rawArgs["where"]; !ok {
-		var zeroVal *ent.SubjectWhereInput
-		return zeroVal, nil
-	}
-
-	ctx = graphql.WithPathContext(ctx, graphql.NewPathWithField("where"))
-	if tmp, ok := rawArgs["where"]; ok {
-		return ec.unmarshalOSubjectWhereInput2ᚖgithubᚗcomᚋinᚑtotoᚋarchivistaᚋentᚐSubjectWhereInput(ctx, tmp)
-	}
-
-	var zeroVal *ent.SubjectWhereInput
-	return zeroVal, nil
 }
 
 func (ec *executionContext) field___Directive_args_args(ctx context.Context, rawArgs map[string]any) (map[string]any, error) {
 	var err error
 	args := map[string]any{}
-	arg0, err := ec.field___Directive_args_argsIncludeDeprecated(ctx, rawArgs)
+	arg0, err := graphql.ProcessArgField(ctx, rawArgs, "includeDeprecated", ec.unmarshalOBoolean2ᚖbool)
 	if err != nil {
 		return nil, err
 	}
 	args["includeDeprecated"] = arg0
 	return args, nil
-}
-func (ec *executionContext) field___Directive_args_argsIncludeDeprecated(
-	ctx context.Context,
-	rawArgs map[string]any,
-) (*bool, error) {
-	if _, ok := rawArgs["includeDeprecated"]; !ok {
-		var zeroVal *bool
-		return zeroVal, nil
-	}
-
-	ctx = graphql.WithPathContext(ctx, graphql.NewPathWithField("includeDeprecated"))
-	if tmp, ok := rawArgs["includeDeprecated"]; ok {
-		return ec.unmarshalOBoolean2ᚖbool(ctx, tmp)
-	}
-
-	var zeroVal *bool
-	return zeroVal, nil
 }
 
 func (ec *executionContext) field___Field_args_args(ctx context.Context, rawArgs map[string]any) (map[string]any, error) {
 	var err error
 	args := map[string]any{}
-	arg0, err := ec.field___Field_args_argsIncludeDeprecated(ctx, rawArgs)
+	arg0, err := graphql.ProcessArgField(ctx, rawArgs, "includeDeprecated", ec.unmarshalOBoolean2ᚖbool)
 	if err != nil {
 		return nil, err
 	}
 	args["includeDeprecated"] = arg0
 	return args, nil
-}
-func (ec *executionContext) field___Field_args_argsIncludeDeprecated(
-	ctx context.Context,
-	rawArgs map[string]any,
-) (*bool, error) {
-	if _, ok := rawArgs["includeDeprecated"]; !ok {
-		var zeroVal *bool
-		return zeroVal, nil
-	}
-
-	ctx = graphql.WithPathContext(ctx, graphql.NewPathWithField("includeDeprecated"))
-	if tmp, ok := rawArgs["includeDeprecated"]; ok {
-		return ec.unmarshalOBoolean2ᚖbool(ctx, tmp)
-	}
-
-	var zeroVal *bool
-	return zeroVal, nil
 }
 
 func (ec *executionContext) field___Type_enumValues_args(ctx context.Context, rawArgs map[string]any) (map[string]any, error) {
 	var err error
 	args := map[string]any{}
-	arg0, err := ec.field___Type_enumValues_argsIncludeDeprecated(ctx, rawArgs)
+	arg0, err := graphql.ProcessArgField(ctx, rawArgs, "includeDeprecated", ec.unmarshalOBoolean2bool)
 	if err != nil {
 		return nil, err
 	}
 	args["includeDeprecated"] = arg0
 	return args, nil
-}
-func (ec *executionContext) field___Type_enumValues_argsIncludeDeprecated(
-	ctx context.Context,
-	rawArgs map[string]any,
-) (bool, error) {
-	if _, ok := rawArgs["includeDeprecated"]; !ok {
-		var zeroVal bool
-		return zeroVal, nil
-	}
-
-	ctx = graphql.WithPathContext(ctx, graphql.NewPathWithField("includeDeprecated"))
-	if tmp, ok := rawArgs["includeDeprecated"]; ok {
-		return ec.unmarshalOBoolean2bool(ctx, tmp)
-	}
-
-	var zeroVal bool
-	return zeroVal, nil
 }
 
 func (ec *executionContext) field___Type_fields_args(ctx context.Context, rawArgs map[string]any) (map[string]any, error) {
 	var err error
 	args := map[string]any{}
-	arg0, err := ec.field___Type_fields_argsIncludeDeprecated(ctx, rawArgs)
+	arg0, err := graphql.ProcessArgField(ctx, rawArgs, "includeDeprecated", ec.unmarshalOBoolean2bool)
 	if err != nil {
 		return nil, err
 	}
 	args["includeDeprecated"] = arg0
 	return args, nil
-}
-func (ec *executionContext) field___Type_fields_argsIncludeDeprecated(
-	ctx context.Context,
-	rawArgs map[string]any,
-) (bool, error) {
-	if _, ok := rawArgs["includeDeprecated"]; !ok {
-		var zeroVal bool
-		return zeroVal, nil
-	}
-
-	ctx = graphql.WithPathContext(ctx, graphql.NewPathWithField("includeDeprecated"))
-	if tmp, ok := rawArgs["includeDeprecated"]; ok {
-		return ec.unmarshalOBoolean2bool(ctx, tmp)
-	}
-
-	var zeroVal bool
-	return zeroVal, nil
 }
 
 // endregion ***************************** args.gotpl *****************************
@@ -2264,6 +1822,47 @@ func (ec *executionContext) fieldContext_Dsse_id(_ context.Context, field graphq
 	return fc, nil
 }
 
+func (ec *executionContext) _Dsse_createdAt(ctx context.Context, field graphql.CollectedField, obj *ent.Dsse) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_Dsse_createdAt(ctx, field)
+	if err != nil {
+		return graphql.Null
+	}
+	ctx = graphql.WithFieldContext(ctx, fc)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (any, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.CreatedAt, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		return graphql.Null
+	}
+	res := resTmp.(*time.Time)
+	fc.Result = res
+	return ec.marshalOTime2ᚖtimeᚐTime(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) fieldContext_Dsse_createdAt(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "Dsse",
+		Field:      field,
+		IsMethod:   false,
+		IsResolver: false,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return nil, errors.New("field of type Time does not have child fields")
+		},
+	}
+	return fc, nil
+}
+
 func (ec *executionContext) _Dsse_gitoidSha256(ctx context.Context, field graphql.CollectedField, obj *ent.Dsse) (ret graphql.Marshaler) {
 	fc, err := ec.fieldContext_Dsse_gitoidSha256(ctx, field)
 	if err != nil {
@@ -2694,6 +2293,8 @@ func (ec *executionContext) fieldContext_DsseEdge_node(_ context.Context, field 
 			switch field.Name {
 			case "id":
 				return ec.fieldContext_Dsse_id(ctx, field)
+			case "createdAt":
+				return ec.fieldContext_Dsse_createdAt(ctx, field)
 			case "gitoidSha256":
 				return ec.fieldContext_Dsse_gitoidSha256(ctx, field)
 			case "payloadType":
@@ -3095,6 +2696,8 @@ func (ec *executionContext) fieldContext_PayloadDigest_dsse(_ context.Context, f
 			switch field.Name {
 			case "id":
 				return ec.fieldContext_Dsse_id(ctx, field)
+			case "createdAt":
+				return ec.fieldContext_Dsse_createdAt(ctx, field)
 			case "gitoidSha256":
 				return ec.fieldContext_Dsse_gitoidSha256(ctx, field)
 			case "payloadType":
@@ -3296,7 +2899,7 @@ func (ec *executionContext) _Query_dsses(ctx context.Context, field graphql.Coll
 	}()
 	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (any, error) {
 		ctx = rctx // use context from middleware stack in children
-		return ec.resolvers.Query().Dsses(rctx, fc.Args["after"].(*entgql.Cursor[uuid.UUID]), fc.Args["first"].(*int), fc.Args["before"].(*entgql.Cursor[uuid.UUID]), fc.Args["last"].(*int), fc.Args["where"].(*ent.DsseWhereInput))
+		return ec.resolvers.Query().Dsses(rctx, fc.Args["after"].(*entgql.Cursor[uuid.UUID]), fc.Args["first"].(*int), fc.Args["before"].(*entgql.Cursor[uuid.UUID]), fc.Args["last"].(*int), fc.Args["orderBy"].(*ent.DsseOrder), fc.Args["where"].(*ent.DsseWhereInput))
 	})
 	if err != nil {
 		ec.Error(ctx, err)
@@ -3359,7 +2962,7 @@ func (ec *executionContext) _Query_subjects(ctx context.Context, field graphql.C
 	}()
 	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (any, error) {
 		ctx = rctx // use context from middleware stack in children
-		return ec.resolvers.Query().Subjects(rctx, fc.Args["after"].(*entgql.Cursor[uuid.UUID]), fc.Args["first"].(*int), fc.Args["before"].(*entgql.Cursor[uuid.UUID]), fc.Args["last"].(*int), fc.Args["where"].(*ent.SubjectWhereInput))
+		return ec.resolvers.Query().Subjects(rctx, fc.Args["after"].(*entgql.Cursor[uuid.UUID]), fc.Args["first"].(*int), fc.Args["before"].(*entgql.Cursor[uuid.UUID]), fc.Args["last"].(*int), fc.Args["orderBy"].(*ent.SubjectOrder), fc.Args["where"].(*ent.SubjectWhereInput))
 	})
 	if err != nil {
 		ec.Error(ctx, err)
@@ -3709,6 +3312,8 @@ func (ec *executionContext) fieldContext_Signature_dsse(_ context.Context, field
 			switch field.Name {
 			case "id":
 				return ec.fieldContext_Dsse_id(ctx, field)
+			case "createdAt":
+				return ec.fieldContext_Dsse_createdAt(ctx, field)
 			case "gitoidSha256":
 				return ec.fieldContext_Dsse_gitoidSha256(ctx, field)
 			case "payloadType":
@@ -3879,7 +3484,7 @@ func (ec *executionContext) _Statement_subjects(ctx context.Context, field graph
 	}()
 	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (any, error) {
 		ctx = rctx // use context from middleware stack in children
-		return obj.Subjects(ctx, fc.Args["after"].(*entgql.Cursor[uuid.UUID]), fc.Args["first"].(*int), fc.Args["before"].(*entgql.Cursor[uuid.UUID]), fc.Args["last"].(*int), fc.Args["where"].(*ent.SubjectWhereInput))
+		return obj.Subjects(ctx, fc.Args["after"].(*entgql.Cursor[uuid.UUID]), fc.Args["first"].(*int), fc.Args["before"].(*entgql.Cursor[uuid.UUID]), fc.Args["last"].(*int), fc.Args["orderBy"].(*ent.SubjectOrder), fc.Args["where"].(*ent.SubjectWhereInput))
 	})
 	if err != nil {
 		ec.Error(ctx, err)
@@ -4066,6 +3671,8 @@ func (ec *executionContext) fieldContext_Statement_dsse(_ context.Context, field
 			switch field.Name {
 			case "id":
 				return ec.fieldContext_Dsse_id(ctx, field)
+			case "createdAt":
+				return ec.fieldContext_Dsse_createdAt(ctx, field)
 			case "gitoidSha256":
 				return ec.fieldContext_Dsse_gitoidSha256(ctx, field)
 			case "payloadType":
@@ -4122,6 +3729,47 @@ func (ec *executionContext) fieldContext_Subject_id(_ context.Context, field gra
 		IsResolver: false,
 		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
 			return nil, errors.New("field of type ID does not have child fields")
+		},
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _Subject_createdAt(ctx context.Context, field graphql.CollectedField, obj *ent.Subject) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_Subject_createdAt(ctx, field)
+	if err != nil {
+		return graphql.Null
+	}
+	ctx = graphql.WithFieldContext(ctx, fc)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (any, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.CreatedAt, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		return graphql.Null
+	}
+	res := resTmp.(*time.Time)
+	fc.Result = res
+	return ec.marshalOTime2ᚖtimeᚐTime(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) fieldContext_Subject_createdAt(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "Subject",
+		Field:      field,
+		IsMethod:   false,
+		IsResolver: false,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return nil, errors.New("field of type Time does not have child fields")
 		},
 	}
 	return fc, nil
@@ -4592,6 +4240,8 @@ func (ec *executionContext) fieldContext_SubjectDigest_subject(_ context.Context
 			switch field.Name {
 			case "id":
 				return ec.fieldContext_Subject_id(ctx, field)
+			case "createdAt":
+				return ec.fieldContext_Subject_createdAt(ctx, field)
 			case "name":
 				return ec.fieldContext_Subject_name(ctx, field)
 			case "subjectDigests":
@@ -4643,6 +4293,8 @@ func (ec *executionContext) fieldContext_SubjectEdge_node(_ context.Context, fie
 			switch field.Name {
 			case "id":
 				return ec.fieldContext_Subject_id(ctx, field)
+			case "createdAt":
+				return ec.fieldContext_Subject_createdAt(ctx, field)
 			case "name":
 				return ec.fieldContext_Subject_name(ctx, field)
 			case "subjectDigests":
@@ -7456,6 +7108,44 @@ func (ec *executionContext) unmarshalInputAttestationWhereInput(ctx context.Cont
 	return it, nil
 }
 
+func (ec *executionContext) unmarshalInputDsseOrder(ctx context.Context, obj any) (ent.DsseOrder, error) {
+	var it ent.DsseOrder
+	asMap := map[string]any{}
+	for k, v := range obj.(map[string]any) {
+		asMap[k] = v
+	}
+
+	if _, present := asMap["direction"]; !present {
+		asMap["direction"] = "ASC"
+	}
+
+	fieldsInOrder := [...]string{"direction", "field"}
+	for _, k := range fieldsInOrder {
+		v, ok := asMap[k]
+		if !ok {
+			continue
+		}
+		switch k {
+		case "direction":
+			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("direction"))
+			data, err := ec.unmarshalNOrderDirection2entgoᚗioᚋcontribᚋentgqlᚐOrderDirection(ctx, v)
+			if err != nil {
+				return it, err
+			}
+			it.Direction = data
+		case "field":
+			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("field"))
+			data, err := ec.unmarshalNDsseOrderField2ᚖgithubᚗcomᚋinᚑtotoᚋarchivistaᚋentᚐDsseOrderField(ctx, v)
+			if err != nil {
+				return it, err
+			}
+			it.Field = data
+		}
+	}
+
+	return it, nil
+}
+
 func (ec *executionContext) unmarshalInputDsseWhereInput(ctx context.Context, obj any) (ent.DsseWhereInput, error) {
 	var it ent.DsseWhereInput
 	asMap := map[string]any{}
@@ -7463,7 +7153,7 @@ func (ec *executionContext) unmarshalInputDsseWhereInput(ctx context.Context, ob
 		asMap[k] = v
 	}
 
-	fieldsInOrder := [...]string{"not", "and", "or", "id", "idNEQ", "idIn", "idNotIn", "idGT", "idGTE", "idLT", "idLTE", "gitoidSha256", "gitoidSha256NEQ", "gitoidSha256In", "gitoidSha256NotIn", "gitoidSha256GT", "gitoidSha256GTE", "gitoidSha256LT", "gitoidSha256LTE", "gitoidSha256Contains", "gitoidSha256HasPrefix", "gitoidSha256HasSuffix", "gitoidSha256EqualFold", "gitoidSha256ContainsFold", "payloadType", "payloadTypeNEQ", "payloadTypeIn", "payloadTypeNotIn", "payloadTypeGT", "payloadTypeGTE", "payloadTypeLT", "payloadTypeLTE", "payloadTypeContains", "payloadTypeHasPrefix", "payloadTypeHasSuffix", "payloadTypeEqualFold", "payloadTypeContainsFold", "hasStatement", "hasStatementWith", "hasSignatures", "hasSignaturesWith", "hasPayloadDigests", "hasPayloadDigestsWith"}
+	fieldsInOrder := [...]string{"not", "and", "or", "id", "idNEQ", "idIn", "idNotIn", "idGT", "idGTE", "idLT", "idLTE", "createdAt", "createdAtNEQ", "createdAtIn", "createdAtNotIn", "createdAtGT", "createdAtGTE", "createdAtLT", "createdAtLTE", "createdAtIsNil", "createdAtNotNil", "gitoidSha256", "gitoidSha256NEQ", "gitoidSha256In", "gitoidSha256NotIn", "gitoidSha256GT", "gitoidSha256GTE", "gitoidSha256LT", "gitoidSha256LTE", "gitoidSha256Contains", "gitoidSha256HasPrefix", "gitoidSha256HasSuffix", "gitoidSha256EqualFold", "gitoidSha256ContainsFold", "payloadType", "payloadTypeNEQ", "payloadTypeIn", "payloadTypeNotIn", "payloadTypeGT", "payloadTypeGTE", "payloadTypeLT", "payloadTypeLTE", "payloadTypeContains", "payloadTypeHasPrefix", "payloadTypeHasSuffix", "payloadTypeEqualFold", "payloadTypeContainsFold", "hasStatement", "hasStatementWith", "hasSignatures", "hasSignaturesWith", "hasPayloadDigests", "hasPayloadDigestsWith"}
 	for _, k := range fieldsInOrder {
 		v, ok := asMap[k]
 		if !ok {
@@ -7547,6 +7237,76 @@ func (ec *executionContext) unmarshalInputDsseWhereInput(ctx context.Context, ob
 				return it, err
 			}
 			it.IDLTE = data
+		case "createdAt":
+			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("createdAt"))
+			data, err := ec.unmarshalOTime2ᚖtimeᚐTime(ctx, v)
+			if err != nil {
+				return it, err
+			}
+			it.CreatedAt = data
+		case "createdAtNEQ":
+			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("createdAtNEQ"))
+			data, err := ec.unmarshalOTime2ᚖtimeᚐTime(ctx, v)
+			if err != nil {
+				return it, err
+			}
+			it.CreatedAtNEQ = data
+		case "createdAtIn":
+			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("createdAtIn"))
+			data, err := ec.unmarshalOTime2ᚕtimeᚐTimeᚄ(ctx, v)
+			if err != nil {
+				return it, err
+			}
+			it.CreatedAtIn = data
+		case "createdAtNotIn":
+			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("createdAtNotIn"))
+			data, err := ec.unmarshalOTime2ᚕtimeᚐTimeᚄ(ctx, v)
+			if err != nil {
+				return it, err
+			}
+			it.CreatedAtNotIn = data
+		case "createdAtGT":
+			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("createdAtGT"))
+			data, err := ec.unmarshalOTime2ᚖtimeᚐTime(ctx, v)
+			if err != nil {
+				return it, err
+			}
+			it.CreatedAtGT = data
+		case "createdAtGTE":
+			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("createdAtGTE"))
+			data, err := ec.unmarshalOTime2ᚖtimeᚐTime(ctx, v)
+			if err != nil {
+				return it, err
+			}
+			it.CreatedAtGTE = data
+		case "createdAtLT":
+			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("createdAtLT"))
+			data, err := ec.unmarshalOTime2ᚖtimeᚐTime(ctx, v)
+			if err != nil {
+				return it, err
+			}
+			it.CreatedAtLT = data
+		case "createdAtLTE":
+			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("createdAtLTE"))
+			data, err := ec.unmarshalOTime2ᚖtimeᚐTime(ctx, v)
+			if err != nil {
+				return it, err
+			}
+			it.CreatedAtLTE = data
+		case "createdAtIsNil":
+			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("createdAtIsNil"))
+			data, err := ec.unmarshalOBoolean2bool(ctx, v)
+			if err != nil {
+				return it, err
+			}
+			it.CreatedAtIsNil = data
+		case "createdAtNotNil":
+			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("createdAtNotNil"))
+			data, err := ec.unmarshalOBoolean2bool(ctx, v)
+			if err != nil {
+				return it, err
+			}
+			it.CreatedAtNotNil = data
 		case "gitoidSha256":
 			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("gitoidSha256"))
 			data, err := ec.unmarshalOString2ᚖstring(ctx, v)
@@ -8914,6 +8674,44 @@ func (ec *executionContext) unmarshalInputSubjectDigestWhereInput(ctx context.Co
 	return it, nil
 }
 
+func (ec *executionContext) unmarshalInputSubjectOrder(ctx context.Context, obj any) (ent.SubjectOrder, error) {
+	var it ent.SubjectOrder
+	asMap := map[string]any{}
+	for k, v := range obj.(map[string]any) {
+		asMap[k] = v
+	}
+
+	if _, present := asMap["direction"]; !present {
+		asMap["direction"] = "ASC"
+	}
+
+	fieldsInOrder := [...]string{"direction", "field"}
+	for _, k := range fieldsInOrder {
+		v, ok := asMap[k]
+		if !ok {
+			continue
+		}
+		switch k {
+		case "direction":
+			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("direction"))
+			data, err := ec.unmarshalNOrderDirection2entgoᚗioᚋcontribᚋentgqlᚐOrderDirection(ctx, v)
+			if err != nil {
+				return it, err
+			}
+			it.Direction = data
+		case "field":
+			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("field"))
+			data, err := ec.unmarshalNSubjectOrderField2ᚖgithubᚗcomᚋinᚑtotoᚋarchivistaᚋentᚐSubjectOrderField(ctx, v)
+			if err != nil {
+				return it, err
+			}
+			it.Field = data
+		}
+	}
+
+	return it, nil
+}
+
 func (ec *executionContext) unmarshalInputSubjectWhereInput(ctx context.Context, obj any) (ent.SubjectWhereInput, error) {
 	var it ent.SubjectWhereInput
 	asMap := map[string]any{}
@@ -8921,7 +8719,7 @@ func (ec *executionContext) unmarshalInputSubjectWhereInput(ctx context.Context,
 		asMap[k] = v
 	}
 
-	fieldsInOrder := [...]string{"not", "and", "or", "id", "idNEQ", "idIn", "idNotIn", "idGT", "idGTE", "idLT", "idLTE", "name", "nameNEQ", "nameIn", "nameNotIn", "nameGT", "nameGTE", "nameLT", "nameLTE", "nameContains", "nameHasPrefix", "nameHasSuffix", "nameEqualFold", "nameContainsFold", "hasSubjectDigests", "hasSubjectDigestsWith", "hasStatement", "hasStatementWith"}
+	fieldsInOrder := [...]string{"not", "and", "or", "id", "idNEQ", "idIn", "idNotIn", "idGT", "idGTE", "idLT", "idLTE", "createdAt", "createdAtNEQ", "createdAtIn", "createdAtNotIn", "createdAtGT", "createdAtGTE", "createdAtLT", "createdAtLTE", "createdAtIsNil", "createdAtNotNil", "name", "nameNEQ", "nameIn", "nameNotIn", "nameGT", "nameGTE", "nameLT", "nameLTE", "nameContains", "nameHasPrefix", "nameHasSuffix", "nameEqualFold", "nameContainsFold", "hasSubjectDigests", "hasSubjectDigestsWith", "hasStatement", "hasStatementWith"}
 	for _, k := range fieldsInOrder {
 		v, ok := asMap[k]
 		if !ok {
@@ -9005,6 +8803,76 @@ func (ec *executionContext) unmarshalInputSubjectWhereInput(ctx context.Context,
 				return it, err
 			}
 			it.IDLTE = data
+		case "createdAt":
+			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("createdAt"))
+			data, err := ec.unmarshalOTime2ᚖtimeᚐTime(ctx, v)
+			if err != nil {
+				return it, err
+			}
+			it.CreatedAt = data
+		case "createdAtNEQ":
+			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("createdAtNEQ"))
+			data, err := ec.unmarshalOTime2ᚖtimeᚐTime(ctx, v)
+			if err != nil {
+				return it, err
+			}
+			it.CreatedAtNEQ = data
+		case "createdAtIn":
+			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("createdAtIn"))
+			data, err := ec.unmarshalOTime2ᚕtimeᚐTimeᚄ(ctx, v)
+			if err != nil {
+				return it, err
+			}
+			it.CreatedAtIn = data
+		case "createdAtNotIn":
+			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("createdAtNotIn"))
+			data, err := ec.unmarshalOTime2ᚕtimeᚐTimeᚄ(ctx, v)
+			if err != nil {
+				return it, err
+			}
+			it.CreatedAtNotIn = data
+		case "createdAtGT":
+			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("createdAtGT"))
+			data, err := ec.unmarshalOTime2ᚖtimeᚐTime(ctx, v)
+			if err != nil {
+				return it, err
+			}
+			it.CreatedAtGT = data
+		case "createdAtGTE":
+			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("createdAtGTE"))
+			data, err := ec.unmarshalOTime2ᚖtimeᚐTime(ctx, v)
+			if err != nil {
+				return it, err
+			}
+			it.CreatedAtGTE = data
+		case "createdAtLT":
+			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("createdAtLT"))
+			data, err := ec.unmarshalOTime2ᚖtimeᚐTime(ctx, v)
+			if err != nil {
+				return it, err
+			}
+			it.CreatedAtLT = data
+		case "createdAtLTE":
+			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("createdAtLTE"))
+			data, err := ec.unmarshalOTime2ᚖtimeᚐTime(ctx, v)
+			if err != nil {
+				return it, err
+			}
+			it.CreatedAtLTE = data
+		case "createdAtIsNil":
+			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("createdAtIsNil"))
+			data, err := ec.unmarshalOBoolean2bool(ctx, v)
+			if err != nil {
+				return it, err
+			}
+			it.CreatedAtIsNil = data
+		case "createdAtNotNil":
+			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("createdAtNotNil"))
+			data, err := ec.unmarshalOBoolean2bool(ctx, v)
+			if err != nil {
+				return it, err
+			}
+			it.CreatedAtNotNil = data
 		case "name":
 			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("name"))
 			data, err := ec.unmarshalOString2ᚖstring(ctx, v)
@@ -9828,6 +9696,8 @@ func (ec *executionContext) _Dsse(ctx context.Context, sel ast.SelectionSet, obj
 			if out.Values[i] == graphql.Null {
 				atomic.AddUint32(&out.Invalids, 1)
 			}
+		case "createdAt":
+			out.Values[i] = ec._Dsse_createdAt(ctx, field, obj)
 		case "gitoidSha256":
 			out.Values[i] = ec._Dsse_gitoidSha256(ctx, field, obj)
 			if out.Values[i] == graphql.Null {
@@ -10644,6 +10514,8 @@ func (ec *executionContext) _Subject(ctx context.Context, sel ast.SelectionSet, 
 			if out.Values[i] == graphql.Null {
 				atomic.AddUint32(&out.Invalids, 1)
 			}
+		case "createdAt":
+			out.Values[i] = ec._Subject_createdAt(ctx, field, obj)
 		case "name":
 			out.Values[i] = ec._Subject_name(ctx, field, obj)
 			if out.Values[i] == graphql.Null {
@@ -11423,6 +11295,22 @@ func (ec *executionContext) marshalNDsseConnection2ᚖgithubᚗcomᚋinᚑtoto�
 	return ec._DsseConnection(ctx, sel, v)
 }
 
+func (ec *executionContext) unmarshalNDsseOrderField2ᚖgithubᚗcomᚋinᚑtotoᚋarchivistaᚋentᚐDsseOrderField(ctx context.Context, v any) (*ent.DsseOrderField, error) {
+	var res = new(ent.DsseOrderField)
+	err := res.UnmarshalGQL(v)
+	return res, graphql.ErrorOnPath(ctx, err)
+}
+
+func (ec *executionContext) marshalNDsseOrderField2ᚖgithubᚗcomᚋinᚑtotoᚋarchivistaᚋentᚐDsseOrderField(ctx context.Context, sel ast.SelectionSet, v *ent.DsseOrderField) graphql.Marshaler {
+	if v == nil {
+		if !graphql.HasFieldError(ctx, graphql.GetFieldContext(ctx)) {
+			ec.Errorf(ctx, "the requested element is null which the schema does not allow")
+		}
+		return graphql.Null
+	}
+	return v
+}
+
 func (ec *executionContext) unmarshalNDsseWhereInput2ᚖgithubᚗcomᚋinᚑtotoᚋarchivistaᚋentᚐDsseWhereInput(ctx context.Context, v any) (*ent.DsseWhereInput, error) {
 	res, err := ec.unmarshalInputDsseWhereInput(ctx, v)
 	return &res, graphql.ErrorOnPath(ctx, err)
@@ -11528,6 +11416,16 @@ func (ec *executionContext) marshalNNode2ᚕgithubᚗcomᚋinᚑtotoᚋarchivist
 	return ret
 }
 
+func (ec *executionContext) unmarshalNOrderDirection2entgoᚗioᚋcontribᚋentgqlᚐOrderDirection(ctx context.Context, v any) (entgql.OrderDirection, error) {
+	var res entgql.OrderDirection
+	err := res.UnmarshalGQL(v)
+	return res, graphql.ErrorOnPath(ctx, err)
+}
+
+func (ec *executionContext) marshalNOrderDirection2entgoᚗioᚋcontribᚋentgqlᚐOrderDirection(ctx context.Context, sel ast.SelectionSet, v entgql.OrderDirection) graphql.Marshaler {
+	return v
+}
+
 func (ec *executionContext) marshalNPageInfo2entgoᚗioᚋcontribᚋentgqlᚐPageInfo(ctx context.Context, sel ast.SelectionSet, v entgql.PageInfo[uuid.UUID]) graphql.Marshaler {
 	return ec._PageInfo(ctx, sel, &v)
 }
@@ -11620,6 +11518,22 @@ func (ec *executionContext) marshalNSubjectDigest2ᚖgithubᚗcomᚋinᚑtotoᚋ
 func (ec *executionContext) unmarshalNSubjectDigestWhereInput2ᚖgithubᚗcomᚋinᚑtotoᚋarchivistaᚋentᚐSubjectDigestWhereInput(ctx context.Context, v any) (*ent.SubjectDigestWhereInput, error) {
 	res, err := ec.unmarshalInputSubjectDigestWhereInput(ctx, v)
 	return &res, graphql.ErrorOnPath(ctx, err)
+}
+
+func (ec *executionContext) unmarshalNSubjectOrderField2ᚖgithubᚗcomᚋinᚑtotoᚋarchivistaᚋentᚐSubjectOrderField(ctx context.Context, v any) (*ent.SubjectOrderField, error) {
+	var res = new(ent.SubjectOrderField)
+	err := res.UnmarshalGQL(v)
+	return res, graphql.ErrorOnPath(ctx, err)
+}
+
+func (ec *executionContext) marshalNSubjectOrderField2ᚖgithubᚗcomᚋinᚑtotoᚋarchivistaᚋentᚐSubjectOrderField(ctx context.Context, sel ast.SelectionSet, v *ent.SubjectOrderField) graphql.Marshaler {
+	if v == nil {
+		if !graphql.HasFieldError(ctx, graphql.GetFieldContext(ctx)) {
+			ec.Errorf(ctx, "the requested element is null which the schema does not allow")
+		}
+		return graphql.Null
+	}
+	return v
 }
 
 func (ec *executionContext) unmarshalNSubjectWhereInput2ᚖgithubᚗcomᚋinᚑtotoᚋarchivistaᚋentᚐSubjectWhereInput(ctx context.Context, v any) (*ent.SubjectWhereInput, error) {
@@ -12246,6 +12160,14 @@ func (ec *executionContext) marshalODsseEdge2ᚖgithubᚗcomᚋinᚑtotoᚋarchi
 	return ec._DsseEdge(ctx, sel, v)
 }
 
+func (ec *executionContext) unmarshalODsseOrder2ᚖgithubᚗcomᚋinᚑtotoᚋarchivistaᚋentᚐDsseOrder(ctx context.Context, v any) (*ent.DsseOrder, error) {
+	if v == nil {
+		return nil, nil
+	}
+	res, err := ec.unmarshalInputDsseOrder(ctx, v)
+	return &res, graphql.ErrorOnPath(ctx, err)
+}
+
 func (ec *executionContext) unmarshalODsseWhereInput2ᚕᚖgithubᚗcomᚋinᚑtotoᚋarchivistaᚋentᚐDsseWhereInputᚄ(ctx context.Context, v any) ([]*ent.DsseWhereInput, error) {
 	if v == nil {
 		return nil, nil
@@ -12717,6 +12639,14 @@ func (ec *executionContext) marshalOSubjectEdge2ᚖgithubᚗcomᚋinᚑtotoᚋar
 		return graphql.Null
 	}
 	return ec._SubjectEdge(ctx, sel, v)
+}
+
+func (ec *executionContext) unmarshalOSubjectOrder2ᚖgithubᚗcomᚋinᚑtotoᚋarchivistaᚋentᚐSubjectOrder(ctx context.Context, v any) (*ent.SubjectOrder, error) {
+	if v == nil {
+		return nil, nil
+	}
+	res, err := ec.unmarshalInputSubjectOrder(ctx, v)
+	return &res, graphql.ErrorOnPath(ctx, err)
 }
 
 func (ec *executionContext) unmarshalOSubjectWhereInput2ᚕᚖgithubᚗcomᚋinᚑtotoᚋarchivistaᚋentᚐSubjectWhereInputᚄ(ctx context.Context, v any) ([]*ent.SubjectWhereInput, error) {

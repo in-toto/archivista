@@ -25,113 +25,113 @@ type SignatureUpdate struct {
 }
 
 // Where appends a list predicates to the SignatureUpdate builder.
-func (su *SignatureUpdate) Where(ps ...predicate.Signature) *SignatureUpdate {
-	su.mutation.Where(ps...)
-	return su
+func (_u *SignatureUpdate) Where(ps ...predicate.Signature) *SignatureUpdate {
+	_u.mutation.Where(ps...)
+	return _u
 }
 
 // SetKeyID sets the "key_id" field.
-func (su *SignatureUpdate) SetKeyID(s string) *SignatureUpdate {
-	su.mutation.SetKeyID(s)
-	return su
+func (_u *SignatureUpdate) SetKeyID(v string) *SignatureUpdate {
+	_u.mutation.SetKeyID(v)
+	return _u
 }
 
 // SetNillableKeyID sets the "key_id" field if the given value is not nil.
-func (su *SignatureUpdate) SetNillableKeyID(s *string) *SignatureUpdate {
-	if s != nil {
-		su.SetKeyID(*s)
+func (_u *SignatureUpdate) SetNillableKeyID(v *string) *SignatureUpdate {
+	if v != nil {
+		_u.SetKeyID(*v)
 	}
-	return su
+	return _u
 }
 
 // SetSignature sets the "signature" field.
-func (su *SignatureUpdate) SetSignature(s string) *SignatureUpdate {
-	su.mutation.SetSignature(s)
-	return su
+func (_u *SignatureUpdate) SetSignature(v string) *SignatureUpdate {
+	_u.mutation.SetSignature(v)
+	return _u
 }
 
 // SetNillableSignature sets the "signature" field if the given value is not nil.
-func (su *SignatureUpdate) SetNillableSignature(s *string) *SignatureUpdate {
-	if s != nil {
-		su.SetSignature(*s)
+func (_u *SignatureUpdate) SetNillableSignature(v *string) *SignatureUpdate {
+	if v != nil {
+		_u.SetSignature(*v)
 	}
-	return su
+	return _u
 }
 
 // SetDsseID sets the "dsse" edge to the Dsse entity by ID.
-func (su *SignatureUpdate) SetDsseID(id uuid.UUID) *SignatureUpdate {
-	su.mutation.SetDsseID(id)
-	return su
+func (_u *SignatureUpdate) SetDsseID(id uuid.UUID) *SignatureUpdate {
+	_u.mutation.SetDsseID(id)
+	return _u
 }
 
 // SetNillableDsseID sets the "dsse" edge to the Dsse entity by ID if the given value is not nil.
-func (su *SignatureUpdate) SetNillableDsseID(id *uuid.UUID) *SignatureUpdate {
+func (_u *SignatureUpdate) SetNillableDsseID(id *uuid.UUID) *SignatureUpdate {
 	if id != nil {
-		su = su.SetDsseID(*id)
+		_u = _u.SetDsseID(*id)
 	}
-	return su
+	return _u
 }
 
 // SetDsse sets the "dsse" edge to the Dsse entity.
-func (su *SignatureUpdate) SetDsse(d *Dsse) *SignatureUpdate {
-	return su.SetDsseID(d.ID)
+func (_u *SignatureUpdate) SetDsse(v *Dsse) *SignatureUpdate {
+	return _u.SetDsseID(v.ID)
 }
 
 // AddTimestampIDs adds the "timestamps" edge to the Timestamp entity by IDs.
-func (su *SignatureUpdate) AddTimestampIDs(ids ...uuid.UUID) *SignatureUpdate {
-	su.mutation.AddTimestampIDs(ids...)
-	return su
+func (_u *SignatureUpdate) AddTimestampIDs(ids ...uuid.UUID) *SignatureUpdate {
+	_u.mutation.AddTimestampIDs(ids...)
+	return _u
 }
 
 // AddTimestamps adds the "timestamps" edges to the Timestamp entity.
-func (su *SignatureUpdate) AddTimestamps(t ...*Timestamp) *SignatureUpdate {
-	ids := make([]uuid.UUID, len(t))
-	for i := range t {
-		ids[i] = t[i].ID
+func (_u *SignatureUpdate) AddTimestamps(v ...*Timestamp) *SignatureUpdate {
+	ids := make([]uuid.UUID, len(v))
+	for i := range v {
+		ids[i] = v[i].ID
 	}
-	return su.AddTimestampIDs(ids...)
+	return _u.AddTimestampIDs(ids...)
 }
 
 // Mutation returns the SignatureMutation object of the builder.
-func (su *SignatureUpdate) Mutation() *SignatureMutation {
-	return su.mutation
+func (_u *SignatureUpdate) Mutation() *SignatureMutation {
+	return _u.mutation
 }
 
 // ClearDsse clears the "dsse" edge to the Dsse entity.
-func (su *SignatureUpdate) ClearDsse() *SignatureUpdate {
-	su.mutation.ClearDsse()
-	return su
+func (_u *SignatureUpdate) ClearDsse() *SignatureUpdate {
+	_u.mutation.ClearDsse()
+	return _u
 }
 
 // ClearTimestamps clears all "timestamps" edges to the Timestamp entity.
-func (su *SignatureUpdate) ClearTimestamps() *SignatureUpdate {
-	su.mutation.ClearTimestamps()
-	return su
+func (_u *SignatureUpdate) ClearTimestamps() *SignatureUpdate {
+	_u.mutation.ClearTimestamps()
+	return _u
 }
 
 // RemoveTimestampIDs removes the "timestamps" edge to Timestamp entities by IDs.
-func (su *SignatureUpdate) RemoveTimestampIDs(ids ...uuid.UUID) *SignatureUpdate {
-	su.mutation.RemoveTimestampIDs(ids...)
-	return su
+func (_u *SignatureUpdate) RemoveTimestampIDs(ids ...uuid.UUID) *SignatureUpdate {
+	_u.mutation.RemoveTimestampIDs(ids...)
+	return _u
 }
 
 // RemoveTimestamps removes "timestamps" edges to Timestamp entities.
-func (su *SignatureUpdate) RemoveTimestamps(t ...*Timestamp) *SignatureUpdate {
-	ids := make([]uuid.UUID, len(t))
-	for i := range t {
-		ids[i] = t[i].ID
+func (_u *SignatureUpdate) RemoveTimestamps(v ...*Timestamp) *SignatureUpdate {
+	ids := make([]uuid.UUID, len(v))
+	for i := range v {
+		ids[i] = v[i].ID
 	}
-	return su.RemoveTimestampIDs(ids...)
+	return _u.RemoveTimestampIDs(ids...)
 }
 
 // Save executes the query and returns the number of nodes affected by the update operation.
-func (su *SignatureUpdate) Save(ctx context.Context) (int, error) {
-	return withHooks(ctx, su.sqlSave, su.mutation, su.hooks)
+func (_u *SignatureUpdate) Save(ctx context.Context) (int, error) {
+	return withHooks(ctx, _u.sqlSave, _u.mutation, _u.hooks)
 }
 
 // SaveX is like Save, but panics if an error occurs.
-func (su *SignatureUpdate) SaveX(ctx context.Context) int {
-	affected, err := su.Save(ctx)
+func (_u *SignatureUpdate) SaveX(ctx context.Context) int {
+	affected, err := _u.Save(ctx)
 	if err != nil {
 		panic(err)
 	}
@@ -139,21 +139,21 @@ func (su *SignatureUpdate) SaveX(ctx context.Context) int {
 }
 
 // Exec executes the query.
-func (su *SignatureUpdate) Exec(ctx context.Context) error {
-	_, err := su.Save(ctx)
+func (_u *SignatureUpdate) Exec(ctx context.Context) error {
+	_, err := _u.Save(ctx)
 	return err
 }
 
 // ExecX is like Exec, but panics if an error occurs.
-func (su *SignatureUpdate) ExecX(ctx context.Context) {
-	if err := su.Exec(ctx); err != nil {
+func (_u *SignatureUpdate) ExecX(ctx context.Context) {
+	if err := _u.Exec(ctx); err != nil {
 		panic(err)
 	}
 }
 
 // check runs all checks and user-defined validators on the builder.
-func (su *SignatureUpdate) check() error {
-	if v, ok := su.mutation.Signature(); ok {
+func (_u *SignatureUpdate) check() error {
+	if v, ok := _u.mutation.Signature(); ok {
 		if err := signature.SignatureValidator(v); err != nil {
 			return &ValidationError{Name: "signature", err: fmt.Errorf(`ent: validator failed for field "Signature.signature": %w`, err)}
 		}
@@ -161,25 +161,25 @@ func (su *SignatureUpdate) check() error {
 	return nil
 }
 
-func (su *SignatureUpdate) sqlSave(ctx context.Context) (n int, err error) {
-	if err := su.check(); err != nil {
-		return n, err
+func (_u *SignatureUpdate) sqlSave(ctx context.Context) (_node int, err error) {
+	if err := _u.check(); err != nil {
+		return _node, err
 	}
 	_spec := sqlgraph.NewUpdateSpec(signature.Table, signature.Columns, sqlgraph.NewFieldSpec(signature.FieldID, field.TypeUUID))
-	if ps := su.mutation.predicates; len(ps) > 0 {
+	if ps := _u.mutation.predicates; len(ps) > 0 {
 		_spec.Predicate = func(selector *sql.Selector) {
 			for i := range ps {
 				ps[i](selector)
 			}
 		}
 	}
-	if value, ok := su.mutation.KeyID(); ok {
+	if value, ok := _u.mutation.KeyID(); ok {
 		_spec.SetField(signature.FieldKeyID, field.TypeString, value)
 	}
-	if value, ok := su.mutation.Signature(); ok {
+	if value, ok := _u.mutation.Signature(); ok {
 		_spec.SetField(signature.FieldSignature, field.TypeString, value)
 	}
-	if su.mutation.DsseCleared() {
+	if _u.mutation.DsseCleared() {
 		edge := &sqlgraph.EdgeSpec{
 			Rel:     sqlgraph.M2O,
 			Inverse: true,
@@ -192,7 +192,7 @@ func (su *SignatureUpdate) sqlSave(ctx context.Context) (n int, err error) {
 		}
 		_spec.Edges.Clear = append(_spec.Edges.Clear, edge)
 	}
-	if nodes := su.mutation.DsseIDs(); len(nodes) > 0 {
+	if nodes := _u.mutation.DsseIDs(); len(nodes) > 0 {
 		edge := &sqlgraph.EdgeSpec{
 			Rel:     sqlgraph.M2O,
 			Inverse: true,
@@ -208,7 +208,7 @@ func (su *SignatureUpdate) sqlSave(ctx context.Context) (n int, err error) {
 		}
 		_spec.Edges.Add = append(_spec.Edges.Add, edge)
 	}
-	if su.mutation.TimestampsCleared() {
+	if _u.mutation.TimestampsCleared() {
 		edge := &sqlgraph.EdgeSpec{
 			Rel:     sqlgraph.O2M,
 			Inverse: false,
@@ -221,7 +221,7 @@ func (su *SignatureUpdate) sqlSave(ctx context.Context) (n int, err error) {
 		}
 		_spec.Edges.Clear = append(_spec.Edges.Clear, edge)
 	}
-	if nodes := su.mutation.RemovedTimestampsIDs(); len(nodes) > 0 && !su.mutation.TimestampsCleared() {
+	if nodes := _u.mutation.RemovedTimestampsIDs(); len(nodes) > 0 && !_u.mutation.TimestampsCleared() {
 		edge := &sqlgraph.EdgeSpec{
 			Rel:     sqlgraph.O2M,
 			Inverse: false,
@@ -237,7 +237,7 @@ func (su *SignatureUpdate) sqlSave(ctx context.Context) (n int, err error) {
 		}
 		_spec.Edges.Clear = append(_spec.Edges.Clear, edge)
 	}
-	if nodes := su.mutation.TimestampsIDs(); len(nodes) > 0 {
+	if nodes := _u.mutation.TimestampsIDs(); len(nodes) > 0 {
 		edge := &sqlgraph.EdgeSpec{
 			Rel:     sqlgraph.O2M,
 			Inverse: false,
@@ -253,7 +253,7 @@ func (su *SignatureUpdate) sqlSave(ctx context.Context) (n int, err error) {
 		}
 		_spec.Edges.Add = append(_spec.Edges.Add, edge)
 	}
-	if n, err = sqlgraph.UpdateNodes(ctx, su.driver, _spec); err != nil {
+	if _node, err = sqlgraph.UpdateNodes(ctx, _u.driver, _spec); err != nil {
 		if _, ok := err.(*sqlgraph.NotFoundError); ok {
 			err = &NotFoundError{signature.Label}
 		} else if sqlgraph.IsConstraintError(err) {
@@ -261,8 +261,8 @@ func (su *SignatureUpdate) sqlSave(ctx context.Context) (n int, err error) {
 		}
 		return 0, err
 	}
-	su.mutation.done = true
-	return n, nil
+	_u.mutation.done = true
+	return _node, nil
 }
 
 // SignatureUpdateOne is the builder for updating a single Signature entity.
@@ -274,120 +274,120 @@ type SignatureUpdateOne struct {
 }
 
 // SetKeyID sets the "key_id" field.
-func (suo *SignatureUpdateOne) SetKeyID(s string) *SignatureUpdateOne {
-	suo.mutation.SetKeyID(s)
-	return suo
+func (_u *SignatureUpdateOne) SetKeyID(v string) *SignatureUpdateOne {
+	_u.mutation.SetKeyID(v)
+	return _u
 }
 
 // SetNillableKeyID sets the "key_id" field if the given value is not nil.
-func (suo *SignatureUpdateOne) SetNillableKeyID(s *string) *SignatureUpdateOne {
-	if s != nil {
-		suo.SetKeyID(*s)
+func (_u *SignatureUpdateOne) SetNillableKeyID(v *string) *SignatureUpdateOne {
+	if v != nil {
+		_u.SetKeyID(*v)
 	}
-	return suo
+	return _u
 }
 
 // SetSignature sets the "signature" field.
-func (suo *SignatureUpdateOne) SetSignature(s string) *SignatureUpdateOne {
-	suo.mutation.SetSignature(s)
-	return suo
+func (_u *SignatureUpdateOne) SetSignature(v string) *SignatureUpdateOne {
+	_u.mutation.SetSignature(v)
+	return _u
 }
 
 // SetNillableSignature sets the "signature" field if the given value is not nil.
-func (suo *SignatureUpdateOne) SetNillableSignature(s *string) *SignatureUpdateOne {
-	if s != nil {
-		suo.SetSignature(*s)
+func (_u *SignatureUpdateOne) SetNillableSignature(v *string) *SignatureUpdateOne {
+	if v != nil {
+		_u.SetSignature(*v)
 	}
-	return suo
+	return _u
 }
 
 // SetDsseID sets the "dsse" edge to the Dsse entity by ID.
-func (suo *SignatureUpdateOne) SetDsseID(id uuid.UUID) *SignatureUpdateOne {
-	suo.mutation.SetDsseID(id)
-	return suo
+func (_u *SignatureUpdateOne) SetDsseID(id uuid.UUID) *SignatureUpdateOne {
+	_u.mutation.SetDsseID(id)
+	return _u
 }
 
 // SetNillableDsseID sets the "dsse" edge to the Dsse entity by ID if the given value is not nil.
-func (suo *SignatureUpdateOne) SetNillableDsseID(id *uuid.UUID) *SignatureUpdateOne {
+func (_u *SignatureUpdateOne) SetNillableDsseID(id *uuid.UUID) *SignatureUpdateOne {
 	if id != nil {
-		suo = suo.SetDsseID(*id)
+		_u = _u.SetDsseID(*id)
 	}
-	return suo
+	return _u
 }
 
 // SetDsse sets the "dsse" edge to the Dsse entity.
-func (suo *SignatureUpdateOne) SetDsse(d *Dsse) *SignatureUpdateOne {
-	return suo.SetDsseID(d.ID)
+func (_u *SignatureUpdateOne) SetDsse(v *Dsse) *SignatureUpdateOne {
+	return _u.SetDsseID(v.ID)
 }
 
 // AddTimestampIDs adds the "timestamps" edge to the Timestamp entity by IDs.
-func (suo *SignatureUpdateOne) AddTimestampIDs(ids ...uuid.UUID) *SignatureUpdateOne {
-	suo.mutation.AddTimestampIDs(ids...)
-	return suo
+func (_u *SignatureUpdateOne) AddTimestampIDs(ids ...uuid.UUID) *SignatureUpdateOne {
+	_u.mutation.AddTimestampIDs(ids...)
+	return _u
 }
 
 // AddTimestamps adds the "timestamps" edges to the Timestamp entity.
-func (suo *SignatureUpdateOne) AddTimestamps(t ...*Timestamp) *SignatureUpdateOne {
-	ids := make([]uuid.UUID, len(t))
-	for i := range t {
-		ids[i] = t[i].ID
+func (_u *SignatureUpdateOne) AddTimestamps(v ...*Timestamp) *SignatureUpdateOne {
+	ids := make([]uuid.UUID, len(v))
+	for i := range v {
+		ids[i] = v[i].ID
 	}
-	return suo.AddTimestampIDs(ids...)
+	return _u.AddTimestampIDs(ids...)
 }
 
 // Mutation returns the SignatureMutation object of the builder.
-func (suo *SignatureUpdateOne) Mutation() *SignatureMutation {
-	return suo.mutation
+func (_u *SignatureUpdateOne) Mutation() *SignatureMutation {
+	return _u.mutation
 }
 
 // ClearDsse clears the "dsse" edge to the Dsse entity.
-func (suo *SignatureUpdateOne) ClearDsse() *SignatureUpdateOne {
-	suo.mutation.ClearDsse()
-	return suo
+func (_u *SignatureUpdateOne) ClearDsse() *SignatureUpdateOne {
+	_u.mutation.ClearDsse()
+	return _u
 }
 
 // ClearTimestamps clears all "timestamps" edges to the Timestamp entity.
-func (suo *SignatureUpdateOne) ClearTimestamps() *SignatureUpdateOne {
-	suo.mutation.ClearTimestamps()
-	return suo
+func (_u *SignatureUpdateOne) ClearTimestamps() *SignatureUpdateOne {
+	_u.mutation.ClearTimestamps()
+	return _u
 }
 
 // RemoveTimestampIDs removes the "timestamps" edge to Timestamp entities by IDs.
-func (suo *SignatureUpdateOne) RemoveTimestampIDs(ids ...uuid.UUID) *SignatureUpdateOne {
-	suo.mutation.RemoveTimestampIDs(ids...)
-	return suo
+func (_u *SignatureUpdateOne) RemoveTimestampIDs(ids ...uuid.UUID) *SignatureUpdateOne {
+	_u.mutation.RemoveTimestampIDs(ids...)
+	return _u
 }
 
 // RemoveTimestamps removes "timestamps" edges to Timestamp entities.
-func (suo *SignatureUpdateOne) RemoveTimestamps(t ...*Timestamp) *SignatureUpdateOne {
-	ids := make([]uuid.UUID, len(t))
-	for i := range t {
-		ids[i] = t[i].ID
+func (_u *SignatureUpdateOne) RemoveTimestamps(v ...*Timestamp) *SignatureUpdateOne {
+	ids := make([]uuid.UUID, len(v))
+	for i := range v {
+		ids[i] = v[i].ID
 	}
-	return suo.RemoveTimestampIDs(ids...)
+	return _u.RemoveTimestampIDs(ids...)
 }
 
 // Where appends a list predicates to the SignatureUpdate builder.
-func (suo *SignatureUpdateOne) Where(ps ...predicate.Signature) *SignatureUpdateOne {
-	suo.mutation.Where(ps...)
-	return suo
+func (_u *SignatureUpdateOne) Where(ps ...predicate.Signature) *SignatureUpdateOne {
+	_u.mutation.Where(ps...)
+	return _u
 }
 
 // Select allows selecting one or more fields (columns) of the returned entity.
 // The default is selecting all fields defined in the entity schema.
-func (suo *SignatureUpdateOne) Select(field string, fields ...string) *SignatureUpdateOne {
-	suo.fields = append([]string{field}, fields...)
-	return suo
+func (_u *SignatureUpdateOne) Select(field string, fields ...string) *SignatureUpdateOne {
+	_u.fields = append([]string{field}, fields...)
+	return _u
 }
 
 // Save executes the query and returns the updated Signature entity.
-func (suo *SignatureUpdateOne) Save(ctx context.Context) (*Signature, error) {
-	return withHooks(ctx, suo.sqlSave, suo.mutation, suo.hooks)
+func (_u *SignatureUpdateOne) Save(ctx context.Context) (*Signature, error) {
+	return withHooks(ctx, _u.sqlSave, _u.mutation, _u.hooks)
 }
 
 // SaveX is like Save, but panics if an error occurs.
-func (suo *SignatureUpdateOne) SaveX(ctx context.Context) *Signature {
-	node, err := suo.Save(ctx)
+func (_u *SignatureUpdateOne) SaveX(ctx context.Context) *Signature {
+	node, err := _u.Save(ctx)
 	if err != nil {
 		panic(err)
 	}
@@ -395,21 +395,21 @@ func (suo *SignatureUpdateOne) SaveX(ctx context.Context) *Signature {
 }
 
 // Exec executes the query on the entity.
-func (suo *SignatureUpdateOne) Exec(ctx context.Context) error {
-	_, err := suo.Save(ctx)
+func (_u *SignatureUpdateOne) Exec(ctx context.Context) error {
+	_, err := _u.Save(ctx)
 	return err
 }
 
 // ExecX is like Exec, but panics if an error occurs.
-func (suo *SignatureUpdateOne) ExecX(ctx context.Context) {
-	if err := suo.Exec(ctx); err != nil {
+func (_u *SignatureUpdateOne) ExecX(ctx context.Context) {
+	if err := _u.Exec(ctx); err != nil {
 		panic(err)
 	}
 }
 
 // check runs all checks and user-defined validators on the builder.
-func (suo *SignatureUpdateOne) check() error {
-	if v, ok := suo.mutation.Signature(); ok {
+func (_u *SignatureUpdateOne) check() error {
+	if v, ok := _u.mutation.Signature(); ok {
 		if err := signature.SignatureValidator(v); err != nil {
 			return &ValidationError{Name: "signature", err: fmt.Errorf(`ent: validator failed for field "Signature.signature": %w`, err)}
 		}
@@ -417,17 +417,17 @@ func (suo *SignatureUpdateOne) check() error {
 	return nil
 }
 
-func (suo *SignatureUpdateOne) sqlSave(ctx context.Context) (_node *Signature, err error) {
-	if err := suo.check(); err != nil {
+func (_u *SignatureUpdateOne) sqlSave(ctx context.Context) (_node *Signature, err error) {
+	if err := _u.check(); err != nil {
 		return _node, err
 	}
 	_spec := sqlgraph.NewUpdateSpec(signature.Table, signature.Columns, sqlgraph.NewFieldSpec(signature.FieldID, field.TypeUUID))
-	id, ok := suo.mutation.ID()
+	id, ok := _u.mutation.ID()
 	if !ok {
 		return nil, &ValidationError{Name: "id", err: errors.New(`ent: missing "Signature.id" for update`)}
 	}
 	_spec.Node.ID.Value = id
-	if fields := suo.fields; len(fields) > 0 {
+	if fields := _u.fields; len(fields) > 0 {
 		_spec.Node.Columns = make([]string, 0, len(fields))
 		_spec.Node.Columns = append(_spec.Node.Columns, signature.FieldID)
 		for _, f := range fields {
@@ -439,20 +439,20 @@ func (suo *SignatureUpdateOne) sqlSave(ctx context.Context) (_node *Signature, e
 			}
 		}
 	}
-	if ps := suo.mutation.predicates; len(ps) > 0 {
+	if ps := _u.mutation.predicates; len(ps) > 0 {
 		_spec.Predicate = func(selector *sql.Selector) {
 			for i := range ps {
 				ps[i](selector)
 			}
 		}
 	}
-	if value, ok := suo.mutation.KeyID(); ok {
+	if value, ok := _u.mutation.KeyID(); ok {
 		_spec.SetField(signature.FieldKeyID, field.TypeString, value)
 	}
-	if value, ok := suo.mutation.Signature(); ok {
+	if value, ok := _u.mutation.Signature(); ok {
 		_spec.SetField(signature.FieldSignature, field.TypeString, value)
 	}
-	if suo.mutation.DsseCleared() {
+	if _u.mutation.DsseCleared() {
 		edge := &sqlgraph.EdgeSpec{
 			Rel:     sqlgraph.M2O,
 			Inverse: true,
@@ -465,7 +465,7 @@ func (suo *SignatureUpdateOne) sqlSave(ctx context.Context) (_node *Signature, e
 		}
 		_spec.Edges.Clear = append(_spec.Edges.Clear, edge)
 	}
-	if nodes := suo.mutation.DsseIDs(); len(nodes) > 0 {
+	if nodes := _u.mutation.DsseIDs(); len(nodes) > 0 {
 		edge := &sqlgraph.EdgeSpec{
 			Rel:     sqlgraph.M2O,
 			Inverse: true,
@@ -481,7 +481,7 @@ func (suo *SignatureUpdateOne) sqlSave(ctx context.Context) (_node *Signature, e
 		}
 		_spec.Edges.Add = append(_spec.Edges.Add, edge)
 	}
-	if suo.mutation.TimestampsCleared() {
+	if _u.mutation.TimestampsCleared() {
 		edge := &sqlgraph.EdgeSpec{
 			Rel:     sqlgraph.O2M,
 			Inverse: false,
@@ -494,7 +494,7 @@ func (suo *SignatureUpdateOne) sqlSave(ctx context.Context) (_node *Signature, e
 		}
 		_spec.Edges.Clear = append(_spec.Edges.Clear, edge)
 	}
-	if nodes := suo.mutation.RemovedTimestampsIDs(); len(nodes) > 0 && !suo.mutation.TimestampsCleared() {
+	if nodes := _u.mutation.RemovedTimestampsIDs(); len(nodes) > 0 && !_u.mutation.TimestampsCleared() {
 		edge := &sqlgraph.EdgeSpec{
 			Rel:     sqlgraph.O2M,
 			Inverse: false,
@@ -510,7 +510,7 @@ func (suo *SignatureUpdateOne) sqlSave(ctx context.Context) (_node *Signature, e
 		}
 		_spec.Edges.Clear = append(_spec.Edges.Clear, edge)
 	}
-	if nodes := suo.mutation.TimestampsIDs(); len(nodes) > 0 {
+	if nodes := _u.mutation.TimestampsIDs(); len(nodes) > 0 {
 		edge := &sqlgraph.EdgeSpec{
 			Rel:     sqlgraph.O2M,
 			Inverse: false,
@@ -526,10 +526,10 @@ func (suo *SignatureUpdateOne) sqlSave(ctx context.Context) (_node *Signature, e
 		}
 		_spec.Edges.Add = append(_spec.Edges.Add, edge)
 	}
-	_node = &Signature{config: suo.config}
+	_node = &Signature{config: _u.config}
 	_spec.Assign = _node.assignValues
 	_spec.ScanValues = _node.scanValues
-	if err = sqlgraph.UpdateNode(ctx, suo.driver, _spec); err != nil {
+	if err = sqlgraph.UpdateNode(ctx, _u.driver, _spec); err != nil {
 		if _, ok := err.(*sqlgraph.NotFoundError); ok {
 			err = &NotFoundError{signature.Label}
 		} else if sqlgraph.IsConstraintError(err) {
@@ -537,6 +537,6 @@ func (suo *SignatureUpdateOne) sqlSave(ctx context.Context) (_node *Signature, e
 		}
 		return nil, err
 	}
-	suo.mutation.done = true
+	_u.mutation.done = true
 	return _node, nil
 }

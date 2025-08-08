@@ -34,44 +34,44 @@ type TimestampQuery struct {
 }
 
 // Where adds a new predicate for the TimestampQuery builder.
-func (tq *TimestampQuery) Where(ps ...predicate.Timestamp) *TimestampQuery {
-	tq.predicates = append(tq.predicates, ps...)
-	return tq
+func (_q *TimestampQuery) Where(ps ...predicate.Timestamp) *TimestampQuery {
+	_q.predicates = append(_q.predicates, ps...)
+	return _q
 }
 
 // Limit the number of records to be returned by this query.
-func (tq *TimestampQuery) Limit(limit int) *TimestampQuery {
-	tq.ctx.Limit = &limit
-	return tq
+func (_q *TimestampQuery) Limit(limit int) *TimestampQuery {
+	_q.ctx.Limit = &limit
+	return _q
 }
 
 // Offset to start from.
-func (tq *TimestampQuery) Offset(offset int) *TimestampQuery {
-	tq.ctx.Offset = &offset
-	return tq
+func (_q *TimestampQuery) Offset(offset int) *TimestampQuery {
+	_q.ctx.Offset = &offset
+	return _q
 }
 
 // Unique configures the query builder to filter duplicate records on query.
 // By default, unique is set to true, and can be disabled using this method.
-func (tq *TimestampQuery) Unique(unique bool) *TimestampQuery {
-	tq.ctx.Unique = &unique
-	return tq
+func (_q *TimestampQuery) Unique(unique bool) *TimestampQuery {
+	_q.ctx.Unique = &unique
+	return _q
 }
 
 // Order specifies how the records should be ordered.
-func (tq *TimestampQuery) Order(o ...timestamp.OrderOption) *TimestampQuery {
-	tq.order = append(tq.order, o...)
-	return tq
+func (_q *TimestampQuery) Order(o ...timestamp.OrderOption) *TimestampQuery {
+	_q.order = append(_q.order, o...)
+	return _q
 }
 
 // QuerySignature chains the current query on the "signature" edge.
-func (tq *TimestampQuery) QuerySignature() *SignatureQuery {
-	query := (&SignatureClient{config: tq.config}).Query()
+func (_q *TimestampQuery) QuerySignature() *SignatureQuery {
+	query := (&SignatureClient{config: _q.config}).Query()
 	query.path = func(ctx context.Context) (fromU *sql.Selector, err error) {
-		if err := tq.prepareQuery(ctx); err != nil {
+		if err := _q.prepareQuery(ctx); err != nil {
 			return nil, err
 		}
-		selector := tq.sqlQuery(ctx)
+		selector := _q.sqlQuery(ctx)
 		if err := selector.Err(); err != nil {
 			return nil, err
 		}
@@ -80,7 +80,7 @@ func (tq *TimestampQuery) QuerySignature() *SignatureQuery {
 			sqlgraph.To(signature.Table, signature.FieldID),
 			sqlgraph.Edge(sqlgraph.M2O, true, timestamp.SignatureTable, timestamp.SignatureColumn),
 		)
-		fromU = sqlgraph.SetNeighbors(tq.driver.Dialect(), step)
+		fromU = sqlgraph.SetNeighbors(_q.driver.Dialect(), step)
 		return fromU, nil
 	}
 	return query
@@ -88,8 +88,8 @@ func (tq *TimestampQuery) QuerySignature() *SignatureQuery {
 
 // First returns the first Timestamp entity from the query.
 // Returns a *NotFoundError when no Timestamp was found.
-func (tq *TimestampQuery) First(ctx context.Context) (*Timestamp, error) {
-	nodes, err := tq.Limit(1).All(setContextOp(ctx, tq.ctx, ent.OpQueryFirst))
+func (_q *TimestampQuery) First(ctx context.Context) (*Timestamp, error) {
+	nodes, err := _q.Limit(1).All(setContextOp(ctx, _q.ctx, ent.OpQueryFirst))
 	if err != nil {
 		return nil, err
 	}
@@ -100,8 +100,8 @@ func (tq *TimestampQuery) First(ctx context.Context) (*Timestamp, error) {
 }
 
 // FirstX is like First, but panics if an error occurs.
-func (tq *TimestampQuery) FirstX(ctx context.Context) *Timestamp {
-	node, err := tq.First(ctx)
+func (_q *TimestampQuery) FirstX(ctx context.Context) *Timestamp {
+	node, err := _q.First(ctx)
 	if err != nil && !IsNotFound(err) {
 		panic(err)
 	}
@@ -110,9 +110,9 @@ func (tq *TimestampQuery) FirstX(ctx context.Context) *Timestamp {
 
 // FirstID returns the first Timestamp ID from the query.
 // Returns a *NotFoundError when no Timestamp ID was found.
-func (tq *TimestampQuery) FirstID(ctx context.Context) (id uuid.UUID, err error) {
+func (_q *TimestampQuery) FirstID(ctx context.Context) (id uuid.UUID, err error) {
 	var ids []uuid.UUID
-	if ids, err = tq.Limit(1).IDs(setContextOp(ctx, tq.ctx, ent.OpQueryFirstID)); err != nil {
+	if ids, err = _q.Limit(1).IDs(setContextOp(ctx, _q.ctx, ent.OpQueryFirstID)); err != nil {
 		return
 	}
 	if len(ids) == 0 {
@@ -123,8 +123,8 @@ func (tq *TimestampQuery) FirstID(ctx context.Context) (id uuid.UUID, err error)
 }
 
 // FirstIDX is like FirstID, but panics if an error occurs.
-func (tq *TimestampQuery) FirstIDX(ctx context.Context) uuid.UUID {
-	id, err := tq.FirstID(ctx)
+func (_q *TimestampQuery) FirstIDX(ctx context.Context) uuid.UUID {
+	id, err := _q.FirstID(ctx)
 	if err != nil && !IsNotFound(err) {
 		panic(err)
 	}
@@ -134,8 +134,8 @@ func (tq *TimestampQuery) FirstIDX(ctx context.Context) uuid.UUID {
 // Only returns a single Timestamp entity found by the query, ensuring it only returns one.
 // Returns a *NotSingularError when more than one Timestamp entity is found.
 // Returns a *NotFoundError when no Timestamp entities are found.
-func (tq *TimestampQuery) Only(ctx context.Context) (*Timestamp, error) {
-	nodes, err := tq.Limit(2).All(setContextOp(ctx, tq.ctx, ent.OpQueryOnly))
+func (_q *TimestampQuery) Only(ctx context.Context) (*Timestamp, error) {
+	nodes, err := _q.Limit(2).All(setContextOp(ctx, _q.ctx, ent.OpQueryOnly))
 	if err != nil {
 		return nil, err
 	}
@@ -150,8 +150,8 @@ func (tq *TimestampQuery) Only(ctx context.Context) (*Timestamp, error) {
 }
 
 // OnlyX is like Only, but panics if an error occurs.
-func (tq *TimestampQuery) OnlyX(ctx context.Context) *Timestamp {
-	node, err := tq.Only(ctx)
+func (_q *TimestampQuery) OnlyX(ctx context.Context) *Timestamp {
+	node, err := _q.Only(ctx)
 	if err != nil {
 		panic(err)
 	}
@@ -161,9 +161,9 @@ func (tq *TimestampQuery) OnlyX(ctx context.Context) *Timestamp {
 // OnlyID is like Only, but returns the only Timestamp ID in the query.
 // Returns a *NotSingularError when more than one Timestamp ID is found.
 // Returns a *NotFoundError when no entities are found.
-func (tq *TimestampQuery) OnlyID(ctx context.Context) (id uuid.UUID, err error) {
+func (_q *TimestampQuery) OnlyID(ctx context.Context) (id uuid.UUID, err error) {
 	var ids []uuid.UUID
-	if ids, err = tq.Limit(2).IDs(setContextOp(ctx, tq.ctx, ent.OpQueryOnlyID)); err != nil {
+	if ids, err = _q.Limit(2).IDs(setContextOp(ctx, _q.ctx, ent.OpQueryOnlyID)); err != nil {
 		return
 	}
 	switch len(ids) {
@@ -178,8 +178,8 @@ func (tq *TimestampQuery) OnlyID(ctx context.Context) (id uuid.UUID, err error) 
 }
 
 // OnlyIDX is like OnlyID, but panics if an error occurs.
-func (tq *TimestampQuery) OnlyIDX(ctx context.Context) uuid.UUID {
-	id, err := tq.OnlyID(ctx)
+func (_q *TimestampQuery) OnlyIDX(ctx context.Context) uuid.UUID {
+	id, err := _q.OnlyID(ctx)
 	if err != nil {
 		panic(err)
 	}
@@ -187,18 +187,18 @@ func (tq *TimestampQuery) OnlyIDX(ctx context.Context) uuid.UUID {
 }
 
 // All executes the query and returns a list of Timestamps.
-func (tq *TimestampQuery) All(ctx context.Context) ([]*Timestamp, error) {
-	ctx = setContextOp(ctx, tq.ctx, ent.OpQueryAll)
-	if err := tq.prepareQuery(ctx); err != nil {
+func (_q *TimestampQuery) All(ctx context.Context) ([]*Timestamp, error) {
+	ctx = setContextOp(ctx, _q.ctx, ent.OpQueryAll)
+	if err := _q.prepareQuery(ctx); err != nil {
 		return nil, err
 	}
 	qr := querierAll[[]*Timestamp, *TimestampQuery]()
-	return withInterceptors[[]*Timestamp](ctx, tq, qr, tq.inters)
+	return withInterceptors[[]*Timestamp](ctx, _q, qr, _q.inters)
 }
 
 // AllX is like All, but panics if an error occurs.
-func (tq *TimestampQuery) AllX(ctx context.Context) []*Timestamp {
-	nodes, err := tq.All(ctx)
+func (_q *TimestampQuery) AllX(ctx context.Context) []*Timestamp {
+	nodes, err := _q.All(ctx)
 	if err != nil {
 		panic(err)
 	}
@@ -206,20 +206,20 @@ func (tq *TimestampQuery) AllX(ctx context.Context) []*Timestamp {
 }
 
 // IDs executes the query and returns a list of Timestamp IDs.
-func (tq *TimestampQuery) IDs(ctx context.Context) (ids []uuid.UUID, err error) {
-	if tq.ctx.Unique == nil && tq.path != nil {
-		tq.Unique(true)
+func (_q *TimestampQuery) IDs(ctx context.Context) (ids []uuid.UUID, err error) {
+	if _q.ctx.Unique == nil && _q.path != nil {
+		_q.Unique(true)
 	}
-	ctx = setContextOp(ctx, tq.ctx, ent.OpQueryIDs)
-	if err = tq.Select(timestamp.FieldID).Scan(ctx, &ids); err != nil {
+	ctx = setContextOp(ctx, _q.ctx, ent.OpQueryIDs)
+	if err = _q.Select(timestamp.FieldID).Scan(ctx, &ids); err != nil {
 		return nil, err
 	}
 	return ids, nil
 }
 
 // IDsX is like IDs, but panics if an error occurs.
-func (tq *TimestampQuery) IDsX(ctx context.Context) []uuid.UUID {
-	ids, err := tq.IDs(ctx)
+func (_q *TimestampQuery) IDsX(ctx context.Context) []uuid.UUID {
+	ids, err := _q.IDs(ctx)
 	if err != nil {
 		panic(err)
 	}
@@ -227,17 +227,17 @@ func (tq *TimestampQuery) IDsX(ctx context.Context) []uuid.UUID {
 }
 
 // Count returns the count of the given query.
-func (tq *TimestampQuery) Count(ctx context.Context) (int, error) {
-	ctx = setContextOp(ctx, tq.ctx, ent.OpQueryCount)
-	if err := tq.prepareQuery(ctx); err != nil {
+func (_q *TimestampQuery) Count(ctx context.Context) (int, error) {
+	ctx = setContextOp(ctx, _q.ctx, ent.OpQueryCount)
+	if err := _q.prepareQuery(ctx); err != nil {
 		return 0, err
 	}
-	return withInterceptors[int](ctx, tq, querierCount[*TimestampQuery](), tq.inters)
+	return withInterceptors[int](ctx, _q, querierCount[*TimestampQuery](), _q.inters)
 }
 
 // CountX is like Count, but panics if an error occurs.
-func (tq *TimestampQuery) CountX(ctx context.Context) int {
-	count, err := tq.Count(ctx)
+func (_q *TimestampQuery) CountX(ctx context.Context) int {
+	count, err := _q.Count(ctx)
 	if err != nil {
 		panic(err)
 	}
@@ -245,9 +245,9 @@ func (tq *TimestampQuery) CountX(ctx context.Context) int {
 }
 
 // Exist returns true if the query has elements in the graph.
-func (tq *TimestampQuery) Exist(ctx context.Context) (bool, error) {
-	ctx = setContextOp(ctx, tq.ctx, ent.OpQueryExist)
-	switch _, err := tq.FirstID(ctx); {
+func (_q *TimestampQuery) Exist(ctx context.Context) (bool, error) {
+	ctx = setContextOp(ctx, _q.ctx, ent.OpQueryExist)
+	switch _, err := _q.FirstID(ctx); {
 	case IsNotFound(err):
 		return false, nil
 	case err != nil:
@@ -258,8 +258,8 @@ func (tq *TimestampQuery) Exist(ctx context.Context) (bool, error) {
 }
 
 // ExistX is like Exist, but panics if an error occurs.
-func (tq *TimestampQuery) ExistX(ctx context.Context) bool {
-	exist, err := tq.Exist(ctx)
+func (_q *TimestampQuery) ExistX(ctx context.Context) bool {
+	exist, err := _q.Exist(ctx)
 	if err != nil {
 		panic(err)
 	}
@@ -268,32 +268,32 @@ func (tq *TimestampQuery) ExistX(ctx context.Context) bool {
 
 // Clone returns a duplicate of the TimestampQuery builder, including all associated steps. It can be
 // used to prepare common query builders and use them differently after the clone is made.
-func (tq *TimestampQuery) Clone() *TimestampQuery {
-	if tq == nil {
+func (_q *TimestampQuery) Clone() *TimestampQuery {
+	if _q == nil {
 		return nil
 	}
 	return &TimestampQuery{
-		config:        tq.config,
-		ctx:           tq.ctx.Clone(),
-		order:         append([]timestamp.OrderOption{}, tq.order...),
-		inters:        append([]Interceptor{}, tq.inters...),
-		predicates:    append([]predicate.Timestamp{}, tq.predicates...),
-		withSignature: tq.withSignature.Clone(),
+		config:        _q.config,
+		ctx:           _q.ctx.Clone(),
+		order:         append([]timestamp.OrderOption{}, _q.order...),
+		inters:        append([]Interceptor{}, _q.inters...),
+		predicates:    append([]predicate.Timestamp{}, _q.predicates...),
+		withSignature: _q.withSignature.Clone(),
 		// clone intermediate query.
-		sql:  tq.sql.Clone(),
-		path: tq.path,
+		sql:  _q.sql.Clone(),
+		path: _q.path,
 	}
 }
 
 // WithSignature tells the query-builder to eager-load the nodes that are connected to
 // the "signature" edge. The optional arguments are used to configure the query builder of the edge.
-func (tq *TimestampQuery) WithSignature(opts ...func(*SignatureQuery)) *TimestampQuery {
-	query := (&SignatureClient{config: tq.config}).Query()
+func (_q *TimestampQuery) WithSignature(opts ...func(*SignatureQuery)) *TimestampQuery {
+	query := (&SignatureClient{config: _q.config}).Query()
 	for _, opt := range opts {
 		opt(query)
 	}
-	tq.withSignature = query
-	return tq
+	_q.withSignature = query
+	return _q
 }
 
 // GroupBy is used to group vertices by one or more fields/columns.
@@ -310,10 +310,10 @@ func (tq *TimestampQuery) WithSignature(opts ...func(*SignatureQuery)) *Timestam
 //		GroupBy(timestamp.FieldType).
 //		Aggregate(ent.Count()).
 //		Scan(ctx, &v)
-func (tq *TimestampQuery) GroupBy(field string, fields ...string) *TimestampGroupBy {
-	tq.ctx.Fields = append([]string{field}, fields...)
-	grbuild := &TimestampGroupBy{build: tq}
-	grbuild.flds = &tq.ctx.Fields
+func (_q *TimestampQuery) GroupBy(field string, fields ...string) *TimestampGroupBy {
+	_q.ctx.Fields = append([]string{field}, fields...)
+	grbuild := &TimestampGroupBy{build: _q}
+	grbuild.flds = &_q.ctx.Fields
 	grbuild.label = timestamp.Label
 	grbuild.scan = grbuild.Scan
 	return grbuild
@@ -331,55 +331,55 @@ func (tq *TimestampQuery) GroupBy(field string, fields ...string) *TimestampGrou
 //	client.Timestamp.Query().
 //		Select(timestamp.FieldType).
 //		Scan(ctx, &v)
-func (tq *TimestampQuery) Select(fields ...string) *TimestampSelect {
-	tq.ctx.Fields = append(tq.ctx.Fields, fields...)
-	sbuild := &TimestampSelect{TimestampQuery: tq}
+func (_q *TimestampQuery) Select(fields ...string) *TimestampSelect {
+	_q.ctx.Fields = append(_q.ctx.Fields, fields...)
+	sbuild := &TimestampSelect{TimestampQuery: _q}
 	sbuild.label = timestamp.Label
-	sbuild.flds, sbuild.scan = &tq.ctx.Fields, sbuild.Scan
+	sbuild.flds, sbuild.scan = &_q.ctx.Fields, sbuild.Scan
 	return sbuild
 }
 
 // Aggregate returns a TimestampSelect configured with the given aggregations.
-func (tq *TimestampQuery) Aggregate(fns ...AggregateFunc) *TimestampSelect {
-	return tq.Select().Aggregate(fns...)
+func (_q *TimestampQuery) Aggregate(fns ...AggregateFunc) *TimestampSelect {
+	return _q.Select().Aggregate(fns...)
 }
 
-func (tq *TimestampQuery) prepareQuery(ctx context.Context) error {
-	for _, inter := range tq.inters {
+func (_q *TimestampQuery) prepareQuery(ctx context.Context) error {
+	for _, inter := range _q.inters {
 		if inter == nil {
 			return fmt.Errorf("ent: uninitialized interceptor (forgotten import ent/runtime?)")
 		}
 		if trv, ok := inter.(Traverser); ok {
-			if err := trv.Traverse(ctx, tq); err != nil {
+			if err := trv.Traverse(ctx, _q); err != nil {
 				return err
 			}
 		}
 	}
-	for _, f := range tq.ctx.Fields {
+	for _, f := range _q.ctx.Fields {
 		if !timestamp.ValidColumn(f) {
 			return &ValidationError{Name: f, err: fmt.Errorf("ent: invalid field %q for query", f)}
 		}
 	}
-	if tq.path != nil {
-		prev, err := tq.path(ctx)
+	if _q.path != nil {
+		prev, err := _q.path(ctx)
 		if err != nil {
 			return err
 		}
-		tq.sql = prev
+		_q.sql = prev
 	}
 	return nil
 }
 
-func (tq *TimestampQuery) sqlAll(ctx context.Context, hooks ...queryHook) ([]*Timestamp, error) {
+func (_q *TimestampQuery) sqlAll(ctx context.Context, hooks ...queryHook) ([]*Timestamp, error) {
 	var (
 		nodes       = []*Timestamp{}
-		withFKs     = tq.withFKs
-		_spec       = tq.querySpec()
+		withFKs     = _q.withFKs
+		_spec       = _q.querySpec()
 		loadedTypes = [1]bool{
-			tq.withSignature != nil,
+			_q.withSignature != nil,
 		}
 	)
-	if tq.withSignature != nil {
+	if _q.withSignature != nil {
 		withFKs = true
 	}
 	if withFKs {
@@ -389,38 +389,38 @@ func (tq *TimestampQuery) sqlAll(ctx context.Context, hooks ...queryHook) ([]*Ti
 		return (*Timestamp).scanValues(nil, columns)
 	}
 	_spec.Assign = func(columns []string, values []any) error {
-		node := &Timestamp{config: tq.config}
+		node := &Timestamp{config: _q.config}
 		nodes = append(nodes, node)
 		node.Edges.loadedTypes = loadedTypes
 		return node.assignValues(columns, values)
 	}
-	if len(tq.modifiers) > 0 {
-		_spec.Modifiers = tq.modifiers
+	if len(_q.modifiers) > 0 {
+		_spec.Modifiers = _q.modifiers
 	}
 	for i := range hooks {
 		hooks[i](ctx, _spec)
 	}
-	if err := sqlgraph.QueryNodes(ctx, tq.driver, _spec); err != nil {
+	if err := sqlgraph.QueryNodes(ctx, _q.driver, _spec); err != nil {
 		return nil, err
 	}
 	if len(nodes) == 0 {
 		return nodes, nil
 	}
-	if query := tq.withSignature; query != nil {
-		if err := tq.loadSignature(ctx, query, nodes, nil,
+	if query := _q.withSignature; query != nil {
+		if err := _q.loadSignature(ctx, query, nodes, nil,
 			func(n *Timestamp, e *Signature) { n.Edges.Signature = e }); err != nil {
 			return nil, err
 		}
 	}
-	for i := range tq.loadTotal {
-		if err := tq.loadTotal[i](ctx, nodes); err != nil {
+	for i := range _q.loadTotal {
+		if err := _q.loadTotal[i](ctx, nodes); err != nil {
 			return nil, err
 		}
 	}
 	return nodes, nil
 }
 
-func (tq *TimestampQuery) loadSignature(ctx context.Context, query *SignatureQuery, nodes []*Timestamp, init func(*Timestamp), assign func(*Timestamp, *Signature)) error {
+func (_q *TimestampQuery) loadSignature(ctx context.Context, query *SignatureQuery, nodes []*Timestamp, init func(*Timestamp), assign func(*Timestamp, *Signature)) error {
 	ids := make([]uuid.UUID, 0, len(nodes))
 	nodeids := make(map[uuid.UUID][]*Timestamp)
 	for i := range nodes {
@@ -453,27 +453,27 @@ func (tq *TimestampQuery) loadSignature(ctx context.Context, query *SignatureQue
 	return nil
 }
 
-func (tq *TimestampQuery) sqlCount(ctx context.Context) (int, error) {
-	_spec := tq.querySpec()
-	if len(tq.modifiers) > 0 {
-		_spec.Modifiers = tq.modifiers
+func (_q *TimestampQuery) sqlCount(ctx context.Context) (int, error) {
+	_spec := _q.querySpec()
+	if len(_q.modifiers) > 0 {
+		_spec.Modifiers = _q.modifiers
 	}
-	_spec.Node.Columns = tq.ctx.Fields
-	if len(tq.ctx.Fields) > 0 {
-		_spec.Unique = tq.ctx.Unique != nil && *tq.ctx.Unique
+	_spec.Node.Columns = _q.ctx.Fields
+	if len(_q.ctx.Fields) > 0 {
+		_spec.Unique = _q.ctx.Unique != nil && *_q.ctx.Unique
 	}
-	return sqlgraph.CountNodes(ctx, tq.driver, _spec)
+	return sqlgraph.CountNodes(ctx, _q.driver, _spec)
 }
 
-func (tq *TimestampQuery) querySpec() *sqlgraph.QuerySpec {
+func (_q *TimestampQuery) querySpec() *sqlgraph.QuerySpec {
 	_spec := sqlgraph.NewQuerySpec(timestamp.Table, timestamp.Columns, sqlgraph.NewFieldSpec(timestamp.FieldID, field.TypeUUID))
-	_spec.From = tq.sql
-	if unique := tq.ctx.Unique; unique != nil {
+	_spec.From = _q.sql
+	if unique := _q.ctx.Unique; unique != nil {
 		_spec.Unique = *unique
-	} else if tq.path != nil {
+	} else if _q.path != nil {
 		_spec.Unique = true
 	}
-	if fields := tq.ctx.Fields; len(fields) > 0 {
+	if fields := _q.ctx.Fields; len(fields) > 0 {
 		_spec.Node.Columns = make([]string, 0, len(fields))
 		_spec.Node.Columns = append(_spec.Node.Columns, timestamp.FieldID)
 		for i := range fields {
@@ -482,20 +482,20 @@ func (tq *TimestampQuery) querySpec() *sqlgraph.QuerySpec {
 			}
 		}
 	}
-	if ps := tq.predicates; len(ps) > 0 {
+	if ps := _q.predicates; len(ps) > 0 {
 		_spec.Predicate = func(selector *sql.Selector) {
 			for i := range ps {
 				ps[i](selector)
 			}
 		}
 	}
-	if limit := tq.ctx.Limit; limit != nil {
+	if limit := _q.ctx.Limit; limit != nil {
 		_spec.Limit = *limit
 	}
-	if offset := tq.ctx.Offset; offset != nil {
+	if offset := _q.ctx.Offset; offset != nil {
 		_spec.Offset = *offset
 	}
-	if ps := tq.order; len(ps) > 0 {
+	if ps := _q.order; len(ps) > 0 {
 		_spec.Order = func(selector *sql.Selector) {
 			for i := range ps {
 				ps[i](selector)
@@ -505,33 +505,33 @@ func (tq *TimestampQuery) querySpec() *sqlgraph.QuerySpec {
 	return _spec
 }
 
-func (tq *TimestampQuery) sqlQuery(ctx context.Context) *sql.Selector {
-	builder := sql.Dialect(tq.driver.Dialect())
+func (_q *TimestampQuery) sqlQuery(ctx context.Context) *sql.Selector {
+	builder := sql.Dialect(_q.driver.Dialect())
 	t1 := builder.Table(timestamp.Table)
-	columns := tq.ctx.Fields
+	columns := _q.ctx.Fields
 	if len(columns) == 0 {
 		columns = timestamp.Columns
 	}
 	selector := builder.Select(t1.Columns(columns...)...).From(t1)
-	if tq.sql != nil {
-		selector = tq.sql
+	if _q.sql != nil {
+		selector = _q.sql
 		selector.Select(selector.Columns(columns...)...)
 	}
-	if tq.ctx.Unique != nil && *tq.ctx.Unique {
+	if _q.ctx.Unique != nil && *_q.ctx.Unique {
 		selector.Distinct()
 	}
-	for _, p := range tq.predicates {
+	for _, p := range _q.predicates {
 		p(selector)
 	}
-	for _, p := range tq.order {
+	for _, p := range _q.order {
 		p(selector)
 	}
-	if offset := tq.ctx.Offset; offset != nil {
+	if offset := _q.ctx.Offset; offset != nil {
 		// limit is mandatory for offset clause. We start
 		// with default value, and override it below if needed.
 		selector.Offset(*offset).Limit(math.MaxInt32)
 	}
-	if limit := tq.ctx.Limit; limit != nil {
+	if limit := _q.ctx.Limit; limit != nil {
 		selector.Limit(*limit)
 	}
 	return selector
@@ -544,41 +544,41 @@ type TimestampGroupBy struct {
 }
 
 // Aggregate adds the given aggregation functions to the group-by query.
-func (tgb *TimestampGroupBy) Aggregate(fns ...AggregateFunc) *TimestampGroupBy {
-	tgb.fns = append(tgb.fns, fns...)
-	return tgb
+func (_g *TimestampGroupBy) Aggregate(fns ...AggregateFunc) *TimestampGroupBy {
+	_g.fns = append(_g.fns, fns...)
+	return _g
 }
 
 // Scan applies the selector query and scans the result into the given value.
-func (tgb *TimestampGroupBy) Scan(ctx context.Context, v any) error {
-	ctx = setContextOp(ctx, tgb.build.ctx, ent.OpQueryGroupBy)
-	if err := tgb.build.prepareQuery(ctx); err != nil {
+func (_g *TimestampGroupBy) Scan(ctx context.Context, v any) error {
+	ctx = setContextOp(ctx, _g.build.ctx, ent.OpQueryGroupBy)
+	if err := _g.build.prepareQuery(ctx); err != nil {
 		return err
 	}
-	return scanWithInterceptors[*TimestampQuery, *TimestampGroupBy](ctx, tgb.build, tgb, tgb.build.inters, v)
+	return scanWithInterceptors[*TimestampQuery, *TimestampGroupBy](ctx, _g.build, _g, _g.build.inters, v)
 }
 
-func (tgb *TimestampGroupBy) sqlScan(ctx context.Context, root *TimestampQuery, v any) error {
+func (_g *TimestampGroupBy) sqlScan(ctx context.Context, root *TimestampQuery, v any) error {
 	selector := root.sqlQuery(ctx).Select()
-	aggregation := make([]string, 0, len(tgb.fns))
-	for _, fn := range tgb.fns {
+	aggregation := make([]string, 0, len(_g.fns))
+	for _, fn := range _g.fns {
 		aggregation = append(aggregation, fn(selector))
 	}
 	if len(selector.SelectedColumns()) == 0 {
-		columns := make([]string, 0, len(*tgb.flds)+len(tgb.fns))
-		for _, f := range *tgb.flds {
+		columns := make([]string, 0, len(*_g.flds)+len(_g.fns))
+		for _, f := range *_g.flds {
 			columns = append(columns, selector.C(f))
 		}
 		columns = append(columns, aggregation...)
 		selector.Select(columns...)
 	}
-	selector.GroupBy(selector.Columns(*tgb.flds...)...)
+	selector.GroupBy(selector.Columns(*_g.flds...)...)
 	if err := selector.Err(); err != nil {
 		return err
 	}
 	rows := &sql.Rows{}
 	query, args := selector.Query()
-	if err := tgb.build.driver.Query(ctx, query, args, rows); err != nil {
+	if err := _g.build.driver.Query(ctx, query, args, rows); err != nil {
 		return err
 	}
 	defer rows.Close()
@@ -592,27 +592,27 @@ type TimestampSelect struct {
 }
 
 // Aggregate adds the given aggregation functions to the selector query.
-func (ts *TimestampSelect) Aggregate(fns ...AggregateFunc) *TimestampSelect {
-	ts.fns = append(ts.fns, fns...)
-	return ts
+func (_s *TimestampSelect) Aggregate(fns ...AggregateFunc) *TimestampSelect {
+	_s.fns = append(_s.fns, fns...)
+	return _s
 }
 
 // Scan applies the selector query and scans the result into the given value.
-func (ts *TimestampSelect) Scan(ctx context.Context, v any) error {
-	ctx = setContextOp(ctx, ts.ctx, ent.OpQuerySelect)
-	if err := ts.prepareQuery(ctx); err != nil {
+func (_s *TimestampSelect) Scan(ctx context.Context, v any) error {
+	ctx = setContextOp(ctx, _s.ctx, ent.OpQuerySelect)
+	if err := _s.prepareQuery(ctx); err != nil {
 		return err
 	}
-	return scanWithInterceptors[*TimestampQuery, *TimestampSelect](ctx, ts.TimestampQuery, ts, ts.inters, v)
+	return scanWithInterceptors[*TimestampQuery, *TimestampSelect](ctx, _s.TimestampQuery, _s, _s.inters, v)
 }
 
-func (ts *TimestampSelect) sqlScan(ctx context.Context, root *TimestampQuery, v any) error {
+func (_s *TimestampSelect) sqlScan(ctx context.Context, root *TimestampQuery, v any) error {
 	selector := root.sqlQuery(ctx)
-	aggregation := make([]string, 0, len(ts.fns))
-	for _, fn := range ts.fns {
+	aggregation := make([]string, 0, len(_s.fns))
+	for _, fn := range _s.fns {
 		aggregation = append(aggregation, fn(selector))
 	}
-	switch n := len(*ts.selector.flds); {
+	switch n := len(*_s.selector.flds); {
 	case n == 0 && len(aggregation) > 0:
 		selector.Select(aggregation...)
 	case n != 0 && len(aggregation) > 0:
@@ -620,7 +620,7 @@ func (ts *TimestampSelect) sqlScan(ctx context.Context, root *TimestampQuery, v 
 	}
 	rows := &sql.Rows{}
 	query, args := selector.Query()
-	if err := ts.driver.Query(ctx, query, args, rows); err != nil {
+	if err := _s.driver.Query(ctx, query, args, rows); err != nil {
 		return err
 	}
 	defer rows.Close()
