@@ -5,6 +5,7 @@ package ent
 import (
 	"fmt"
 	"strings"
+	"time"
 
 	"entgo.io/ent"
 	"entgo.io/ent/dialect/sql"
@@ -18,6 +19,8 @@ type Dsse struct {
 	config `json:"-"`
 	// ID of the ent.
 	ID uuid.UUID `json:"id,omitempty"`
+	// CreatedAt holds the value of the "created_at" field.
+	CreatedAt *time.Time `json:"created_at,omitempty"`
 	// GitoidSha256 holds the value of the "gitoid_sha256" field.
 	GitoidSha256 string `json:"gitoid_sha256,omitempty"`
 	// PayloadType holds the value of the "payload_type" field.
@@ -83,6 +86,8 @@ func (*Dsse) scanValues(columns []string) ([]any, error) {
 		switch columns[i] {
 		case dsse.FieldGitoidSha256, dsse.FieldPayloadType:
 			values[i] = new(sql.NullString)
+		case dsse.FieldCreatedAt:
+			values[i] = new(sql.NullTime)
 		case dsse.FieldID:
 			values[i] = new(uuid.UUID)
 		case dsse.ForeignKeys[0]: // dsse_statement
@@ -96,7 +101,7 @@ func (*Dsse) scanValues(columns []string) ([]any, error) {
 
 // assignValues assigns the values that were returned from sql.Rows (after scanning)
 // to the Dsse fields.
-func (d *Dsse) assignValues(columns []string, values []any) error {
+func (_m *Dsse) assignValues(columns []string, values []any) error {
 	if m, n := len(values), len(columns); m < n {
 		return fmt.Errorf("mismatch number of scan values: %d != %d", m, n)
 	}
@@ -106,29 +111,36 @@ func (d *Dsse) assignValues(columns []string, values []any) error {
 			if value, ok := values[i].(*uuid.UUID); !ok {
 				return fmt.Errorf("unexpected type %T for field id", values[i])
 			} else if value != nil {
-				d.ID = *value
+				_m.ID = *value
+			}
+		case dsse.FieldCreatedAt:
+			if value, ok := values[i].(*sql.NullTime); !ok {
+				return fmt.Errorf("unexpected type %T for field created_at", values[i])
+			} else if value.Valid {
+				_m.CreatedAt = new(time.Time)
+				*_m.CreatedAt = value.Time
 			}
 		case dsse.FieldGitoidSha256:
 			if value, ok := values[i].(*sql.NullString); !ok {
 				return fmt.Errorf("unexpected type %T for field gitoid_sha256", values[i])
 			} else if value.Valid {
-				d.GitoidSha256 = value.String
+				_m.GitoidSha256 = value.String
 			}
 		case dsse.FieldPayloadType:
 			if value, ok := values[i].(*sql.NullString); !ok {
 				return fmt.Errorf("unexpected type %T for field payload_type", values[i])
 			} else if value.Valid {
-				d.PayloadType = value.String
+				_m.PayloadType = value.String
 			}
 		case dsse.ForeignKeys[0]:
 			if value, ok := values[i].(*sql.NullScanner); !ok {
 				return fmt.Errorf("unexpected type %T for field dsse_statement", values[i])
 			} else if value.Valid {
-				d.dsse_statement = new(uuid.UUID)
-				*d.dsse_statement = *value.S.(*uuid.UUID)
+				_m.dsse_statement = new(uuid.UUID)
+				*_m.dsse_statement = *value.S.(*uuid.UUID)
 			}
 		default:
-			d.selectValues.Set(columns[i], values[i])
+			_m.selectValues.Set(columns[i], values[i])
 		}
 	}
 	return nil
@@ -136,102 +148,107 @@ func (d *Dsse) assignValues(columns []string, values []any) error {
 
 // Value returns the ent.Value that was dynamically selected and assigned to the Dsse.
 // This includes values selected through modifiers, order, etc.
-func (d *Dsse) Value(name string) (ent.Value, error) {
-	return d.selectValues.Get(name)
+func (_m *Dsse) Value(name string) (ent.Value, error) {
+	return _m.selectValues.Get(name)
 }
 
 // QueryStatement queries the "statement" edge of the Dsse entity.
-func (d *Dsse) QueryStatement() *StatementQuery {
-	return NewDsseClient(d.config).QueryStatement(d)
+func (_m *Dsse) QueryStatement() *StatementQuery {
+	return NewDsseClient(_m.config).QueryStatement(_m)
 }
 
 // QuerySignatures queries the "signatures" edge of the Dsse entity.
-func (d *Dsse) QuerySignatures() *SignatureQuery {
-	return NewDsseClient(d.config).QuerySignatures(d)
+func (_m *Dsse) QuerySignatures() *SignatureQuery {
+	return NewDsseClient(_m.config).QuerySignatures(_m)
 }
 
 // QueryPayloadDigests queries the "payload_digests" edge of the Dsse entity.
-func (d *Dsse) QueryPayloadDigests() *PayloadDigestQuery {
-	return NewDsseClient(d.config).QueryPayloadDigests(d)
+func (_m *Dsse) QueryPayloadDigests() *PayloadDigestQuery {
+	return NewDsseClient(_m.config).QueryPayloadDigests(_m)
 }
 
 // Update returns a builder for updating this Dsse.
 // Note that you need to call Dsse.Unwrap() before calling this method if this Dsse
 // was returned from a transaction, and the transaction was committed or rolled back.
-func (d *Dsse) Update() *DsseUpdateOne {
-	return NewDsseClient(d.config).UpdateOne(d)
+func (_m *Dsse) Update() *DsseUpdateOne {
+	return NewDsseClient(_m.config).UpdateOne(_m)
 }
 
 // Unwrap unwraps the Dsse entity that was returned from a transaction after it was closed,
 // so that all future queries will be executed through the driver which created the transaction.
-func (d *Dsse) Unwrap() *Dsse {
-	_tx, ok := d.config.driver.(*txDriver)
+func (_m *Dsse) Unwrap() *Dsse {
+	_tx, ok := _m.config.driver.(*txDriver)
 	if !ok {
 		panic("ent: Dsse is not a transactional entity")
 	}
-	d.config.driver = _tx.drv
-	return d
+	_m.config.driver = _tx.drv
+	return _m
 }
 
 // String implements the fmt.Stringer.
-func (d *Dsse) String() string {
+func (_m *Dsse) String() string {
 	var builder strings.Builder
 	builder.WriteString("Dsse(")
-	builder.WriteString(fmt.Sprintf("id=%v, ", d.ID))
+	builder.WriteString(fmt.Sprintf("id=%v, ", _m.ID))
+	if v := _m.CreatedAt; v != nil {
+		builder.WriteString("created_at=")
+		builder.WriteString(v.Format(time.ANSIC))
+	}
+	builder.WriteString(", ")
 	builder.WriteString("gitoid_sha256=")
-	builder.WriteString(d.GitoidSha256)
+	builder.WriteString(_m.GitoidSha256)
 	builder.WriteString(", ")
 	builder.WriteString("payload_type=")
-	builder.WriteString(d.PayloadType)
+	builder.WriteString(_m.PayloadType)
 	builder.WriteByte(')')
 	return builder.String()
 }
 
 // NamedSignatures returns the Signatures named value or an error if the edge was not
 // loaded in eager-loading with this name.
-func (d *Dsse) NamedSignatures(name string) ([]*Signature, error) {
-	if d.Edges.namedSignatures == nil {
+func (_m *Dsse) NamedSignatures(name string) ([]*Signature, error) {
+	if _m.Edges.namedSignatures == nil {
 		return nil, &NotLoadedError{edge: name}
 	}
-	nodes, ok := d.Edges.namedSignatures[name]
+	nodes, ok := _m.Edges.namedSignatures[name]
 	if !ok {
 		return nil, &NotLoadedError{edge: name}
 	}
 	return nodes, nil
 }
 
-func (d *Dsse) appendNamedSignatures(name string, edges ...*Signature) {
-	if d.Edges.namedSignatures == nil {
-		d.Edges.namedSignatures = make(map[string][]*Signature)
+func (_m *Dsse) appendNamedSignatures(name string, edges ...*Signature) {
+	if _m.Edges.namedSignatures == nil {
+		_m.Edges.namedSignatures = make(map[string][]*Signature)
 	}
 	if len(edges) == 0 {
-		d.Edges.namedSignatures[name] = []*Signature{}
+		_m.Edges.namedSignatures[name] = []*Signature{}
 	} else {
-		d.Edges.namedSignatures[name] = append(d.Edges.namedSignatures[name], edges...)
+		_m.Edges.namedSignatures[name] = append(_m.Edges.namedSignatures[name], edges...)
 	}
 }
 
 // NamedPayloadDigests returns the PayloadDigests named value or an error if the edge was not
 // loaded in eager-loading with this name.
-func (d *Dsse) NamedPayloadDigests(name string) ([]*PayloadDigest, error) {
-	if d.Edges.namedPayloadDigests == nil {
+func (_m *Dsse) NamedPayloadDigests(name string) ([]*PayloadDigest, error) {
+	if _m.Edges.namedPayloadDigests == nil {
 		return nil, &NotLoadedError{edge: name}
 	}
-	nodes, ok := d.Edges.namedPayloadDigests[name]
+	nodes, ok := _m.Edges.namedPayloadDigests[name]
 	if !ok {
 		return nil, &NotLoadedError{edge: name}
 	}
 	return nodes, nil
 }
 
-func (d *Dsse) appendNamedPayloadDigests(name string, edges ...*PayloadDigest) {
-	if d.Edges.namedPayloadDigests == nil {
-		d.Edges.namedPayloadDigests = make(map[string][]*PayloadDigest)
+func (_m *Dsse) appendNamedPayloadDigests(name string, edges ...*PayloadDigest) {
+	if _m.Edges.namedPayloadDigests == nil {
+		_m.Edges.namedPayloadDigests = make(map[string][]*PayloadDigest)
 	}
 	if len(edges) == 0 {
-		d.Edges.namedPayloadDigests[name] = []*PayloadDigest{}
+		_m.Edges.namedPayloadDigests[name] = []*PayloadDigest{}
 	} else {
-		d.Edges.namedPayloadDigests[name] = append(d.Edges.namedPayloadDigests[name], edges...)
+		_m.Edges.namedPayloadDigests[name] = append(_m.Edges.namedPayloadDigests[name], edges...)
 	}
 }
 

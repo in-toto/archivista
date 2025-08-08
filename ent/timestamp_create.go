@@ -23,64 +23,64 @@ type TimestampCreate struct {
 }
 
 // SetType sets the "type" field.
-func (tc *TimestampCreate) SetType(s string) *TimestampCreate {
-	tc.mutation.SetType(s)
-	return tc
+func (_c *TimestampCreate) SetType(v string) *TimestampCreate {
+	_c.mutation.SetType(v)
+	return _c
 }
 
 // SetTimestamp sets the "timestamp" field.
-func (tc *TimestampCreate) SetTimestamp(t time.Time) *TimestampCreate {
-	tc.mutation.SetTimestamp(t)
-	return tc
+func (_c *TimestampCreate) SetTimestamp(v time.Time) *TimestampCreate {
+	_c.mutation.SetTimestamp(v)
+	return _c
 }
 
 // SetID sets the "id" field.
-func (tc *TimestampCreate) SetID(u uuid.UUID) *TimestampCreate {
-	tc.mutation.SetID(u)
-	return tc
+func (_c *TimestampCreate) SetID(v uuid.UUID) *TimestampCreate {
+	_c.mutation.SetID(v)
+	return _c
 }
 
 // SetNillableID sets the "id" field if the given value is not nil.
-func (tc *TimestampCreate) SetNillableID(u *uuid.UUID) *TimestampCreate {
-	if u != nil {
-		tc.SetID(*u)
+func (_c *TimestampCreate) SetNillableID(v *uuid.UUID) *TimestampCreate {
+	if v != nil {
+		_c.SetID(*v)
 	}
-	return tc
+	return _c
 }
 
 // SetSignatureID sets the "signature" edge to the Signature entity by ID.
-func (tc *TimestampCreate) SetSignatureID(id uuid.UUID) *TimestampCreate {
-	tc.mutation.SetSignatureID(id)
-	return tc
+func (_c *TimestampCreate) SetSignatureID(id uuid.UUID) *TimestampCreate {
+	_c.mutation.SetSignatureID(id)
+	return _c
 }
 
 // SetNillableSignatureID sets the "signature" edge to the Signature entity by ID if the given value is not nil.
-func (tc *TimestampCreate) SetNillableSignatureID(id *uuid.UUID) *TimestampCreate {
+func (_c *TimestampCreate) SetNillableSignatureID(id *uuid.UUID) *TimestampCreate {
 	if id != nil {
-		tc = tc.SetSignatureID(*id)
+		_c = _c.SetSignatureID(*id)
 	}
-	return tc
+	return _c
 }
 
 // SetSignature sets the "signature" edge to the Signature entity.
-func (tc *TimestampCreate) SetSignature(s *Signature) *TimestampCreate {
-	return tc.SetSignatureID(s.ID)
+func (_c *TimestampCreate) SetSignature(v *Signature) *TimestampCreate {
+	return _c.SetSignatureID(v.ID)
 }
 
 // Mutation returns the TimestampMutation object of the builder.
-func (tc *TimestampCreate) Mutation() *TimestampMutation {
-	return tc.mutation
+func (_c *TimestampCreate) Mutation() *TimestampMutation {
+	return _c.mutation
 }
 
 // Save creates the Timestamp in the database.
-func (tc *TimestampCreate) Save(ctx context.Context) (*Timestamp, error) {
-	tc.defaults()
-	return withHooks(ctx, tc.sqlSave, tc.mutation, tc.hooks)
+func (_c *TimestampCreate) Save(ctx context.Context) (*Timestamp, error) {
+	_c.defaults()
+	return withHooks(ctx, _c.sqlSave, _c.mutation, _c.hooks)
 }
 
 // SaveX calls Save and panics if Save returns an error.
-func (tc *TimestampCreate) SaveX(ctx context.Context) *Timestamp {
-	v, err := tc.Save(ctx)
+func (_c *TimestampCreate) SaveX(ctx context.Context) *Timestamp {
+	v, err := _c.Save(ctx)
 	if err != nil {
 		panic(err)
 	}
@@ -88,43 +88,43 @@ func (tc *TimestampCreate) SaveX(ctx context.Context) *Timestamp {
 }
 
 // Exec executes the query.
-func (tc *TimestampCreate) Exec(ctx context.Context) error {
-	_, err := tc.Save(ctx)
+func (_c *TimestampCreate) Exec(ctx context.Context) error {
+	_, err := _c.Save(ctx)
 	return err
 }
 
 // ExecX is like Exec, but panics if an error occurs.
-func (tc *TimestampCreate) ExecX(ctx context.Context) {
-	if err := tc.Exec(ctx); err != nil {
+func (_c *TimestampCreate) ExecX(ctx context.Context) {
+	if err := _c.Exec(ctx); err != nil {
 		panic(err)
 	}
 }
 
 // defaults sets the default values of the builder before save.
-func (tc *TimestampCreate) defaults() {
-	if _, ok := tc.mutation.ID(); !ok {
+func (_c *TimestampCreate) defaults() {
+	if _, ok := _c.mutation.ID(); !ok {
 		v := timestamp.DefaultID()
-		tc.mutation.SetID(v)
+		_c.mutation.SetID(v)
 	}
 }
 
 // check runs all checks and user-defined validators on the builder.
-func (tc *TimestampCreate) check() error {
-	if _, ok := tc.mutation.GetType(); !ok {
+func (_c *TimestampCreate) check() error {
+	if _, ok := _c.mutation.GetType(); !ok {
 		return &ValidationError{Name: "type", err: errors.New(`ent: missing required field "Timestamp.type"`)}
 	}
-	if _, ok := tc.mutation.Timestamp(); !ok {
+	if _, ok := _c.mutation.Timestamp(); !ok {
 		return &ValidationError{Name: "timestamp", err: errors.New(`ent: missing required field "Timestamp.timestamp"`)}
 	}
 	return nil
 }
 
-func (tc *TimestampCreate) sqlSave(ctx context.Context) (*Timestamp, error) {
-	if err := tc.check(); err != nil {
+func (_c *TimestampCreate) sqlSave(ctx context.Context) (*Timestamp, error) {
+	if err := _c.check(); err != nil {
 		return nil, err
 	}
-	_node, _spec := tc.createSpec()
-	if err := sqlgraph.CreateNode(ctx, tc.driver, _spec); err != nil {
+	_node, _spec := _c.createSpec()
+	if err := sqlgraph.CreateNode(ctx, _c.driver, _spec); err != nil {
 		if sqlgraph.IsConstraintError(err) {
 			err = &ConstraintError{msg: err.Error(), wrap: err}
 		}
@@ -137,29 +137,29 @@ func (tc *TimestampCreate) sqlSave(ctx context.Context) (*Timestamp, error) {
 			return nil, err
 		}
 	}
-	tc.mutation.id = &_node.ID
-	tc.mutation.done = true
+	_c.mutation.id = &_node.ID
+	_c.mutation.done = true
 	return _node, nil
 }
 
-func (tc *TimestampCreate) createSpec() (*Timestamp, *sqlgraph.CreateSpec) {
+func (_c *TimestampCreate) createSpec() (*Timestamp, *sqlgraph.CreateSpec) {
 	var (
-		_node = &Timestamp{config: tc.config}
+		_node = &Timestamp{config: _c.config}
 		_spec = sqlgraph.NewCreateSpec(timestamp.Table, sqlgraph.NewFieldSpec(timestamp.FieldID, field.TypeUUID))
 	)
-	if id, ok := tc.mutation.ID(); ok {
+	if id, ok := _c.mutation.ID(); ok {
 		_node.ID = id
 		_spec.ID.Value = &id
 	}
-	if value, ok := tc.mutation.GetType(); ok {
+	if value, ok := _c.mutation.GetType(); ok {
 		_spec.SetField(timestamp.FieldType, field.TypeString, value)
 		_node.Type = value
 	}
-	if value, ok := tc.mutation.Timestamp(); ok {
+	if value, ok := _c.mutation.Timestamp(); ok {
 		_spec.SetField(timestamp.FieldTimestamp, field.TypeTime, value)
 		_node.Timestamp = value
 	}
-	if nodes := tc.mutation.SignatureIDs(); len(nodes) > 0 {
+	if nodes := _c.mutation.SignatureIDs(); len(nodes) > 0 {
 		edge := &sqlgraph.EdgeSpec{
 			Rel:     sqlgraph.M2O,
 			Inverse: true,
@@ -187,16 +187,16 @@ type TimestampCreateBulk struct {
 }
 
 // Save creates the Timestamp entities in the database.
-func (tcb *TimestampCreateBulk) Save(ctx context.Context) ([]*Timestamp, error) {
-	if tcb.err != nil {
-		return nil, tcb.err
+func (_c *TimestampCreateBulk) Save(ctx context.Context) ([]*Timestamp, error) {
+	if _c.err != nil {
+		return nil, _c.err
 	}
-	specs := make([]*sqlgraph.CreateSpec, len(tcb.builders))
-	nodes := make([]*Timestamp, len(tcb.builders))
-	mutators := make([]Mutator, len(tcb.builders))
-	for i := range tcb.builders {
+	specs := make([]*sqlgraph.CreateSpec, len(_c.builders))
+	nodes := make([]*Timestamp, len(_c.builders))
+	mutators := make([]Mutator, len(_c.builders))
+	for i := range _c.builders {
 		func(i int, root context.Context) {
-			builder := tcb.builders[i]
+			builder := _c.builders[i]
 			builder.defaults()
 			var mut Mutator = MutateFunc(func(ctx context.Context, m Mutation) (Value, error) {
 				mutation, ok := m.(*TimestampMutation)
@@ -210,11 +210,11 @@ func (tcb *TimestampCreateBulk) Save(ctx context.Context) ([]*Timestamp, error) 
 				var err error
 				nodes[i], specs[i] = builder.createSpec()
 				if i < len(mutators)-1 {
-					_, err = mutators[i+1].Mutate(root, tcb.builders[i+1].mutation)
+					_, err = mutators[i+1].Mutate(root, _c.builders[i+1].mutation)
 				} else {
 					spec := &sqlgraph.BatchCreateSpec{Nodes: specs}
 					// Invoke the actual operation on the latest mutation in the chain.
-					if err = sqlgraph.BatchCreate(ctx, tcb.driver, spec); err != nil {
+					if err = sqlgraph.BatchCreate(ctx, _c.driver, spec); err != nil {
 						if sqlgraph.IsConstraintError(err) {
 							err = &ConstraintError{msg: err.Error(), wrap: err}
 						}
@@ -234,7 +234,7 @@ func (tcb *TimestampCreateBulk) Save(ctx context.Context) ([]*Timestamp, error) 
 		}(i, ctx)
 	}
 	if len(mutators) > 0 {
-		if _, err := mutators[0].Mutate(ctx, tcb.builders[0].mutation); err != nil {
+		if _, err := mutators[0].Mutate(ctx, _c.builders[0].mutation); err != nil {
 			return nil, err
 		}
 	}
@@ -242,8 +242,8 @@ func (tcb *TimestampCreateBulk) Save(ctx context.Context) ([]*Timestamp, error) 
 }
 
 // SaveX is like Save, but panics if an error occurs.
-func (tcb *TimestampCreateBulk) SaveX(ctx context.Context) []*Timestamp {
-	v, err := tcb.Save(ctx)
+func (_c *TimestampCreateBulk) SaveX(ctx context.Context) []*Timestamp {
+	v, err := _c.Save(ctx)
 	if err != nil {
 		panic(err)
 	}
@@ -251,14 +251,14 @@ func (tcb *TimestampCreateBulk) SaveX(ctx context.Context) []*Timestamp {
 }
 
 // Exec executes the query.
-func (tcb *TimestampCreateBulk) Exec(ctx context.Context) error {
-	_, err := tcb.Save(ctx)
+func (_c *TimestampCreateBulk) Exec(ctx context.Context) error {
+	_, err := _c.Save(ctx)
 	return err
 }
 
 // ExecX is like Exec, but panics if an error occurs.
-func (tcb *TimestampCreateBulk) ExecX(ctx context.Context) {
-	if err := tcb.Exec(ctx); err != nil {
+func (_c *TimestampCreateBulk) ExecX(ctx context.Context) {
+	if err := _c.Exec(ctx); err != nil {
 		panic(err)
 	}
 }

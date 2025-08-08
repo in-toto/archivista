@@ -23,79 +23,79 @@ type SignatureCreate struct {
 }
 
 // SetKeyID sets the "key_id" field.
-func (sc *SignatureCreate) SetKeyID(s string) *SignatureCreate {
-	sc.mutation.SetKeyID(s)
-	return sc
+func (_c *SignatureCreate) SetKeyID(v string) *SignatureCreate {
+	_c.mutation.SetKeyID(v)
+	return _c
 }
 
 // SetSignature sets the "signature" field.
-func (sc *SignatureCreate) SetSignature(s string) *SignatureCreate {
-	sc.mutation.SetSignature(s)
-	return sc
+func (_c *SignatureCreate) SetSignature(v string) *SignatureCreate {
+	_c.mutation.SetSignature(v)
+	return _c
 }
 
 // SetID sets the "id" field.
-func (sc *SignatureCreate) SetID(u uuid.UUID) *SignatureCreate {
-	sc.mutation.SetID(u)
-	return sc
+func (_c *SignatureCreate) SetID(v uuid.UUID) *SignatureCreate {
+	_c.mutation.SetID(v)
+	return _c
 }
 
 // SetNillableID sets the "id" field if the given value is not nil.
-func (sc *SignatureCreate) SetNillableID(u *uuid.UUID) *SignatureCreate {
-	if u != nil {
-		sc.SetID(*u)
+func (_c *SignatureCreate) SetNillableID(v *uuid.UUID) *SignatureCreate {
+	if v != nil {
+		_c.SetID(*v)
 	}
-	return sc
+	return _c
 }
 
 // SetDsseID sets the "dsse" edge to the Dsse entity by ID.
-func (sc *SignatureCreate) SetDsseID(id uuid.UUID) *SignatureCreate {
-	sc.mutation.SetDsseID(id)
-	return sc
+func (_c *SignatureCreate) SetDsseID(id uuid.UUID) *SignatureCreate {
+	_c.mutation.SetDsseID(id)
+	return _c
 }
 
 // SetNillableDsseID sets the "dsse" edge to the Dsse entity by ID if the given value is not nil.
-func (sc *SignatureCreate) SetNillableDsseID(id *uuid.UUID) *SignatureCreate {
+func (_c *SignatureCreate) SetNillableDsseID(id *uuid.UUID) *SignatureCreate {
 	if id != nil {
-		sc = sc.SetDsseID(*id)
+		_c = _c.SetDsseID(*id)
 	}
-	return sc
+	return _c
 }
 
 // SetDsse sets the "dsse" edge to the Dsse entity.
-func (sc *SignatureCreate) SetDsse(d *Dsse) *SignatureCreate {
-	return sc.SetDsseID(d.ID)
+func (_c *SignatureCreate) SetDsse(v *Dsse) *SignatureCreate {
+	return _c.SetDsseID(v.ID)
 }
 
 // AddTimestampIDs adds the "timestamps" edge to the Timestamp entity by IDs.
-func (sc *SignatureCreate) AddTimestampIDs(ids ...uuid.UUID) *SignatureCreate {
-	sc.mutation.AddTimestampIDs(ids...)
-	return sc
+func (_c *SignatureCreate) AddTimestampIDs(ids ...uuid.UUID) *SignatureCreate {
+	_c.mutation.AddTimestampIDs(ids...)
+	return _c
 }
 
 // AddTimestamps adds the "timestamps" edges to the Timestamp entity.
-func (sc *SignatureCreate) AddTimestamps(t ...*Timestamp) *SignatureCreate {
-	ids := make([]uuid.UUID, len(t))
-	for i := range t {
-		ids[i] = t[i].ID
+func (_c *SignatureCreate) AddTimestamps(v ...*Timestamp) *SignatureCreate {
+	ids := make([]uuid.UUID, len(v))
+	for i := range v {
+		ids[i] = v[i].ID
 	}
-	return sc.AddTimestampIDs(ids...)
+	return _c.AddTimestampIDs(ids...)
 }
 
 // Mutation returns the SignatureMutation object of the builder.
-func (sc *SignatureCreate) Mutation() *SignatureMutation {
-	return sc.mutation
+func (_c *SignatureCreate) Mutation() *SignatureMutation {
+	return _c.mutation
 }
 
 // Save creates the Signature in the database.
-func (sc *SignatureCreate) Save(ctx context.Context) (*Signature, error) {
-	sc.defaults()
-	return withHooks(ctx, sc.sqlSave, sc.mutation, sc.hooks)
+func (_c *SignatureCreate) Save(ctx context.Context) (*Signature, error) {
+	_c.defaults()
+	return withHooks(ctx, _c.sqlSave, _c.mutation, _c.hooks)
 }
 
 // SaveX calls Save and panics if Save returns an error.
-func (sc *SignatureCreate) SaveX(ctx context.Context) *Signature {
-	v, err := sc.Save(ctx)
+func (_c *SignatureCreate) SaveX(ctx context.Context) *Signature {
+	v, err := _c.Save(ctx)
 	if err != nil {
 		panic(err)
 	}
@@ -103,35 +103,35 @@ func (sc *SignatureCreate) SaveX(ctx context.Context) *Signature {
 }
 
 // Exec executes the query.
-func (sc *SignatureCreate) Exec(ctx context.Context) error {
-	_, err := sc.Save(ctx)
+func (_c *SignatureCreate) Exec(ctx context.Context) error {
+	_, err := _c.Save(ctx)
 	return err
 }
 
 // ExecX is like Exec, but panics if an error occurs.
-func (sc *SignatureCreate) ExecX(ctx context.Context) {
-	if err := sc.Exec(ctx); err != nil {
+func (_c *SignatureCreate) ExecX(ctx context.Context) {
+	if err := _c.Exec(ctx); err != nil {
 		panic(err)
 	}
 }
 
 // defaults sets the default values of the builder before save.
-func (sc *SignatureCreate) defaults() {
-	if _, ok := sc.mutation.ID(); !ok {
+func (_c *SignatureCreate) defaults() {
+	if _, ok := _c.mutation.ID(); !ok {
 		v := signature.DefaultID()
-		sc.mutation.SetID(v)
+		_c.mutation.SetID(v)
 	}
 }
 
 // check runs all checks and user-defined validators on the builder.
-func (sc *SignatureCreate) check() error {
-	if _, ok := sc.mutation.KeyID(); !ok {
+func (_c *SignatureCreate) check() error {
+	if _, ok := _c.mutation.KeyID(); !ok {
 		return &ValidationError{Name: "key_id", err: errors.New(`ent: missing required field "Signature.key_id"`)}
 	}
-	if _, ok := sc.mutation.Signature(); !ok {
+	if _, ok := _c.mutation.Signature(); !ok {
 		return &ValidationError{Name: "signature", err: errors.New(`ent: missing required field "Signature.signature"`)}
 	}
-	if v, ok := sc.mutation.Signature(); ok {
+	if v, ok := _c.mutation.Signature(); ok {
 		if err := signature.SignatureValidator(v); err != nil {
 			return &ValidationError{Name: "signature", err: fmt.Errorf(`ent: validator failed for field "Signature.signature": %w`, err)}
 		}
@@ -139,12 +139,12 @@ func (sc *SignatureCreate) check() error {
 	return nil
 }
 
-func (sc *SignatureCreate) sqlSave(ctx context.Context) (*Signature, error) {
-	if err := sc.check(); err != nil {
+func (_c *SignatureCreate) sqlSave(ctx context.Context) (*Signature, error) {
+	if err := _c.check(); err != nil {
 		return nil, err
 	}
-	_node, _spec := sc.createSpec()
-	if err := sqlgraph.CreateNode(ctx, sc.driver, _spec); err != nil {
+	_node, _spec := _c.createSpec()
+	if err := sqlgraph.CreateNode(ctx, _c.driver, _spec); err != nil {
 		if sqlgraph.IsConstraintError(err) {
 			err = &ConstraintError{msg: err.Error(), wrap: err}
 		}
@@ -157,29 +157,29 @@ func (sc *SignatureCreate) sqlSave(ctx context.Context) (*Signature, error) {
 			return nil, err
 		}
 	}
-	sc.mutation.id = &_node.ID
-	sc.mutation.done = true
+	_c.mutation.id = &_node.ID
+	_c.mutation.done = true
 	return _node, nil
 }
 
-func (sc *SignatureCreate) createSpec() (*Signature, *sqlgraph.CreateSpec) {
+func (_c *SignatureCreate) createSpec() (*Signature, *sqlgraph.CreateSpec) {
 	var (
-		_node = &Signature{config: sc.config}
+		_node = &Signature{config: _c.config}
 		_spec = sqlgraph.NewCreateSpec(signature.Table, sqlgraph.NewFieldSpec(signature.FieldID, field.TypeUUID))
 	)
-	if id, ok := sc.mutation.ID(); ok {
+	if id, ok := _c.mutation.ID(); ok {
 		_node.ID = id
 		_spec.ID.Value = &id
 	}
-	if value, ok := sc.mutation.KeyID(); ok {
+	if value, ok := _c.mutation.KeyID(); ok {
 		_spec.SetField(signature.FieldKeyID, field.TypeString, value)
 		_node.KeyID = value
 	}
-	if value, ok := sc.mutation.Signature(); ok {
+	if value, ok := _c.mutation.Signature(); ok {
 		_spec.SetField(signature.FieldSignature, field.TypeString, value)
 		_node.Signature = value
 	}
-	if nodes := sc.mutation.DsseIDs(); len(nodes) > 0 {
+	if nodes := _c.mutation.DsseIDs(); len(nodes) > 0 {
 		edge := &sqlgraph.EdgeSpec{
 			Rel:     sqlgraph.M2O,
 			Inverse: true,
@@ -196,7 +196,7 @@ func (sc *SignatureCreate) createSpec() (*Signature, *sqlgraph.CreateSpec) {
 		_node.dsse_signatures = &nodes[0]
 		_spec.Edges = append(_spec.Edges, edge)
 	}
-	if nodes := sc.mutation.TimestampsIDs(); len(nodes) > 0 {
+	if nodes := _c.mutation.TimestampsIDs(); len(nodes) > 0 {
 		edge := &sqlgraph.EdgeSpec{
 			Rel:     sqlgraph.O2M,
 			Inverse: false,
@@ -223,16 +223,16 @@ type SignatureCreateBulk struct {
 }
 
 // Save creates the Signature entities in the database.
-func (scb *SignatureCreateBulk) Save(ctx context.Context) ([]*Signature, error) {
-	if scb.err != nil {
-		return nil, scb.err
+func (_c *SignatureCreateBulk) Save(ctx context.Context) ([]*Signature, error) {
+	if _c.err != nil {
+		return nil, _c.err
 	}
-	specs := make([]*sqlgraph.CreateSpec, len(scb.builders))
-	nodes := make([]*Signature, len(scb.builders))
-	mutators := make([]Mutator, len(scb.builders))
-	for i := range scb.builders {
+	specs := make([]*sqlgraph.CreateSpec, len(_c.builders))
+	nodes := make([]*Signature, len(_c.builders))
+	mutators := make([]Mutator, len(_c.builders))
+	for i := range _c.builders {
 		func(i int, root context.Context) {
-			builder := scb.builders[i]
+			builder := _c.builders[i]
 			builder.defaults()
 			var mut Mutator = MutateFunc(func(ctx context.Context, m Mutation) (Value, error) {
 				mutation, ok := m.(*SignatureMutation)
@@ -246,11 +246,11 @@ func (scb *SignatureCreateBulk) Save(ctx context.Context) ([]*Signature, error) 
 				var err error
 				nodes[i], specs[i] = builder.createSpec()
 				if i < len(mutators)-1 {
-					_, err = mutators[i+1].Mutate(root, scb.builders[i+1].mutation)
+					_, err = mutators[i+1].Mutate(root, _c.builders[i+1].mutation)
 				} else {
 					spec := &sqlgraph.BatchCreateSpec{Nodes: specs}
 					// Invoke the actual operation on the latest mutation in the chain.
-					if err = sqlgraph.BatchCreate(ctx, scb.driver, spec); err != nil {
+					if err = sqlgraph.BatchCreate(ctx, _c.driver, spec); err != nil {
 						if sqlgraph.IsConstraintError(err) {
 							err = &ConstraintError{msg: err.Error(), wrap: err}
 						}
@@ -270,7 +270,7 @@ func (scb *SignatureCreateBulk) Save(ctx context.Context) ([]*Signature, error) 
 		}(i, ctx)
 	}
 	if len(mutators) > 0 {
-		if _, err := mutators[0].Mutate(ctx, scb.builders[0].mutation); err != nil {
+		if _, err := mutators[0].Mutate(ctx, _c.builders[0].mutation); err != nil {
 			return nil, err
 		}
 	}
@@ -278,8 +278,8 @@ func (scb *SignatureCreateBulk) Save(ctx context.Context) ([]*Signature, error) 
 }
 
 // SaveX is like Save, but panics if an error occurs.
-func (scb *SignatureCreateBulk) SaveX(ctx context.Context) []*Signature {
-	v, err := scb.Save(ctx)
+func (_c *SignatureCreateBulk) SaveX(ctx context.Context) []*Signature {
+	v, err := _c.Save(ctx)
 	if err != nil {
 		panic(err)
 	}
@@ -287,14 +287,14 @@ func (scb *SignatureCreateBulk) SaveX(ctx context.Context) []*Signature {
 }
 
 // Exec executes the query.
-func (scb *SignatureCreateBulk) Exec(ctx context.Context) error {
-	_, err := scb.Save(ctx)
+func (_c *SignatureCreateBulk) Exec(ctx context.Context) error {
+	_, err := _c.Save(ctx)
 	return err
 }
 
 // ExecX is like Exec, but panics if an error occurs.
-func (scb *SignatureCreateBulk) ExecX(ctx context.Context) {
-	if err := scb.Exec(ctx); err != nil {
+func (_c *SignatureCreateBulk) ExecX(ctx context.Context) {
+	if err := _c.Exec(ctx); err != nil {
 		panic(err)
 	}
 }

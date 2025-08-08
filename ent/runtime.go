@@ -3,6 +3,8 @@
 package ent
 
 import (
+	"time"
+
 	"github.com/google/uuid"
 	"github.com/in-toto/archivista/ent/attestation"
 	"github.com/in-toto/archivista/ent/attestationcollection"
@@ -53,12 +55,16 @@ func init() {
 	attestationpolicy.DefaultID = attestationpolicyDescID.Default.(func() uuid.UUID)
 	dsseFields := schema.Dsse{}.Fields()
 	_ = dsseFields
+	// dsseDescCreatedAt is the schema descriptor for created_at field.
+	dsseDescCreatedAt := dsseFields[1].Descriptor()
+	// dsse.DefaultCreatedAt holds the default value on creation for the created_at field.
+	dsse.DefaultCreatedAt = dsseDescCreatedAt.Default.(func() time.Time)
 	// dsseDescGitoidSha256 is the schema descriptor for gitoid_sha256 field.
-	dsseDescGitoidSha256 := dsseFields[1].Descriptor()
+	dsseDescGitoidSha256 := dsseFields[2].Descriptor()
 	// dsse.GitoidSha256Validator is a validator for the "gitoid_sha256" field. It is called by the builders before save.
 	dsse.GitoidSha256Validator = dsseDescGitoidSha256.Validators[0].(func(string) error)
 	// dsseDescPayloadType is the schema descriptor for payload_type field.
-	dsseDescPayloadType := dsseFields[2].Descriptor()
+	dsseDescPayloadType := dsseFields[3].Descriptor()
 	// dsse.PayloadTypeValidator is a validator for the "payload_type" field. It is called by the builders before save.
 	dsse.PayloadTypeValidator = dsseDescPayloadType.Validators[0].(func(string) error)
 	// dsseDescID is the schema descriptor for id field.
@@ -101,8 +107,12 @@ func init() {
 	statement.DefaultID = statementDescID.Default.(func() uuid.UUID)
 	subjectFields := schema.Subject{}.Fields()
 	_ = subjectFields
+	// subjectDescCreatedAt is the schema descriptor for created_at field.
+	subjectDescCreatedAt := subjectFields[1].Descriptor()
+	// subject.DefaultCreatedAt holds the default value on creation for the created_at field.
+	subject.DefaultCreatedAt = subjectDescCreatedAt.Default.(func() time.Time)
 	// subjectDescName is the schema descriptor for name field.
-	subjectDescName := subjectFields[1].Descriptor()
+	subjectDescName := subjectFields[2].Descriptor()
 	// subject.NameValidator is a validator for the "name" field. It is called by the builders before save.
 	subject.NameValidator = subjectDescName.Validators[0].(func(string) error)
 	// subjectDescID is the schema descriptor for id field.
