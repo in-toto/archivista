@@ -82,7 +82,7 @@ func (*AttestationCollection) scanValues(columns []string) ([]any, error) {
 
 // assignValues assigns the values that were returned from sql.Rows (after scanning)
 // to the AttestationCollection fields.
-func (ac *AttestationCollection) assignValues(columns []string, values []any) error {
+func (_m *AttestationCollection) assignValues(columns []string, values []any) error {
 	if m, n := len(values), len(columns); m < n {
 		return fmt.Errorf("mismatch number of scan values: %d != %d", m, n)
 	}
@@ -92,23 +92,23 @@ func (ac *AttestationCollection) assignValues(columns []string, values []any) er
 			if value, ok := values[i].(*uuid.UUID); !ok {
 				return fmt.Errorf("unexpected type %T for field id", values[i])
 			} else if value != nil {
-				ac.ID = *value
+				_m.ID = *value
 			}
 		case attestationcollection.FieldName:
 			if value, ok := values[i].(*sql.NullString); !ok {
 				return fmt.Errorf("unexpected type %T for field name", values[i])
 			} else if value.Valid {
-				ac.Name = value.String
+				_m.Name = value.String
 			}
 		case attestationcollection.ForeignKeys[0]:
 			if value, ok := values[i].(*sql.NullScanner); !ok {
 				return fmt.Errorf("unexpected type %T for field statement_attestation_collections", values[i])
 			} else if value.Valid {
-				ac.statement_attestation_collections = new(uuid.UUID)
-				*ac.statement_attestation_collections = *value.S.(*uuid.UUID)
+				_m.statement_attestation_collections = new(uuid.UUID)
+				*_m.statement_attestation_collections = *value.S.(*uuid.UUID)
 			}
 		default:
-			ac.selectValues.Set(columns[i], values[i])
+			_m.selectValues.Set(columns[i], values[i])
 		}
 	}
 	return nil
@@ -116,70 +116,70 @@ func (ac *AttestationCollection) assignValues(columns []string, values []any) er
 
 // Value returns the ent.Value that was dynamically selected and assigned to the AttestationCollection.
 // This includes values selected through modifiers, order, etc.
-func (ac *AttestationCollection) Value(name string) (ent.Value, error) {
-	return ac.selectValues.Get(name)
+func (_m *AttestationCollection) Value(name string) (ent.Value, error) {
+	return _m.selectValues.Get(name)
 }
 
 // QueryAttestations queries the "attestations" edge of the AttestationCollection entity.
-func (ac *AttestationCollection) QueryAttestations() *AttestationQuery {
-	return NewAttestationCollectionClient(ac.config).QueryAttestations(ac)
+func (_m *AttestationCollection) QueryAttestations() *AttestationQuery {
+	return NewAttestationCollectionClient(_m.config).QueryAttestations(_m)
 }
 
 // QueryStatement queries the "statement" edge of the AttestationCollection entity.
-func (ac *AttestationCollection) QueryStatement() *StatementQuery {
-	return NewAttestationCollectionClient(ac.config).QueryStatement(ac)
+func (_m *AttestationCollection) QueryStatement() *StatementQuery {
+	return NewAttestationCollectionClient(_m.config).QueryStatement(_m)
 }
 
 // Update returns a builder for updating this AttestationCollection.
 // Note that you need to call AttestationCollection.Unwrap() before calling this method if this AttestationCollection
 // was returned from a transaction, and the transaction was committed or rolled back.
-func (ac *AttestationCollection) Update() *AttestationCollectionUpdateOne {
-	return NewAttestationCollectionClient(ac.config).UpdateOne(ac)
+func (_m *AttestationCollection) Update() *AttestationCollectionUpdateOne {
+	return NewAttestationCollectionClient(_m.config).UpdateOne(_m)
 }
 
 // Unwrap unwraps the AttestationCollection entity that was returned from a transaction after it was closed,
 // so that all future queries will be executed through the driver which created the transaction.
-func (ac *AttestationCollection) Unwrap() *AttestationCollection {
-	_tx, ok := ac.config.driver.(*txDriver)
+func (_m *AttestationCollection) Unwrap() *AttestationCollection {
+	_tx, ok := _m.config.driver.(*txDriver)
 	if !ok {
 		panic("ent: AttestationCollection is not a transactional entity")
 	}
-	ac.config.driver = _tx.drv
-	return ac
+	_m.config.driver = _tx.drv
+	return _m
 }
 
 // String implements the fmt.Stringer.
-func (ac *AttestationCollection) String() string {
+func (_m *AttestationCollection) String() string {
 	var builder strings.Builder
 	builder.WriteString("AttestationCollection(")
-	builder.WriteString(fmt.Sprintf("id=%v, ", ac.ID))
+	builder.WriteString(fmt.Sprintf("id=%v, ", _m.ID))
 	builder.WriteString("name=")
-	builder.WriteString(ac.Name)
+	builder.WriteString(_m.Name)
 	builder.WriteByte(')')
 	return builder.String()
 }
 
 // NamedAttestations returns the Attestations named value or an error if the edge was not
 // loaded in eager-loading with this name.
-func (ac *AttestationCollection) NamedAttestations(name string) ([]*Attestation, error) {
-	if ac.Edges.namedAttestations == nil {
+func (_m *AttestationCollection) NamedAttestations(name string) ([]*Attestation, error) {
+	if _m.Edges.namedAttestations == nil {
 		return nil, &NotLoadedError{edge: name}
 	}
-	nodes, ok := ac.Edges.namedAttestations[name]
+	nodes, ok := _m.Edges.namedAttestations[name]
 	if !ok {
 		return nil, &NotLoadedError{edge: name}
 	}
 	return nodes, nil
 }
 
-func (ac *AttestationCollection) appendNamedAttestations(name string, edges ...*Attestation) {
-	if ac.Edges.namedAttestations == nil {
-		ac.Edges.namedAttestations = make(map[string][]*Attestation)
+func (_m *AttestationCollection) appendNamedAttestations(name string, edges ...*Attestation) {
+	if _m.Edges.namedAttestations == nil {
+		_m.Edges.namedAttestations = make(map[string][]*Attestation)
 	}
 	if len(edges) == 0 {
-		ac.Edges.namedAttestations[name] = []*Attestation{}
+		_m.Edges.namedAttestations[name] = []*Attestation{}
 	} else {
-		ac.Edges.namedAttestations[name] = append(ac.Edges.namedAttestations[name], edges...)
+		_m.Edges.namedAttestations[name] = append(_m.Edges.namedAttestations[name], edges...)
 	}
 }
 

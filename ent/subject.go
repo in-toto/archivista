@@ -5,6 +5,7 @@ package ent
 import (
 	"fmt"
 	"strings"
+	"time"
 
 	"entgo.io/ent"
 	"entgo.io/ent/dialect/sql"
@@ -18,6 +19,8 @@ type Subject struct {
 	config `json:"-"`
 	// ID of the ent.
 	ID uuid.UUID `json:"id,omitempty"`
+	// CreatedAt holds the value of the "created_at" field.
+	CreatedAt *time.Time `json:"created_at,omitempty"`
 	// Name holds the value of the "name" field.
 	Name string `json:"name,omitempty"`
 	// Edges holds the relations/edges for other nodes in the graph.
@@ -69,6 +72,8 @@ func (*Subject) scanValues(columns []string) ([]any, error) {
 		switch columns[i] {
 		case subject.FieldName:
 			values[i] = new(sql.NullString)
+		case subject.FieldCreatedAt:
+			values[i] = new(sql.NullTime)
 		case subject.FieldID:
 			values[i] = new(uuid.UUID)
 		case subject.ForeignKeys[0]: // statement_subjects
@@ -82,7 +87,7 @@ func (*Subject) scanValues(columns []string) ([]any, error) {
 
 // assignValues assigns the values that were returned from sql.Rows (after scanning)
 // to the Subject fields.
-func (s *Subject) assignValues(columns []string, values []any) error {
+func (_m *Subject) assignValues(columns []string, values []any) error {
 	if m, n := len(values), len(columns); m < n {
 		return fmt.Errorf("mismatch number of scan values: %d != %d", m, n)
 	}
@@ -92,23 +97,30 @@ func (s *Subject) assignValues(columns []string, values []any) error {
 			if value, ok := values[i].(*uuid.UUID); !ok {
 				return fmt.Errorf("unexpected type %T for field id", values[i])
 			} else if value != nil {
-				s.ID = *value
+				_m.ID = *value
+			}
+		case subject.FieldCreatedAt:
+			if value, ok := values[i].(*sql.NullTime); !ok {
+				return fmt.Errorf("unexpected type %T for field created_at", values[i])
+			} else if value.Valid {
+				_m.CreatedAt = new(time.Time)
+				*_m.CreatedAt = value.Time
 			}
 		case subject.FieldName:
 			if value, ok := values[i].(*sql.NullString); !ok {
 				return fmt.Errorf("unexpected type %T for field name", values[i])
 			} else if value.Valid {
-				s.Name = value.String
+				_m.Name = value.String
 			}
 		case subject.ForeignKeys[0]:
 			if value, ok := values[i].(*sql.NullScanner); !ok {
 				return fmt.Errorf("unexpected type %T for field statement_subjects", values[i])
 			} else if value.Valid {
-				s.statement_subjects = new(uuid.UUID)
-				*s.statement_subjects = *value.S.(*uuid.UUID)
+				_m.statement_subjects = new(uuid.UUID)
+				*_m.statement_subjects = *value.S.(*uuid.UUID)
 			}
 		default:
-			s.selectValues.Set(columns[i], values[i])
+			_m.selectValues.Set(columns[i], values[i])
 		}
 	}
 	return nil
@@ -116,70 +128,75 @@ func (s *Subject) assignValues(columns []string, values []any) error {
 
 // Value returns the ent.Value that was dynamically selected and assigned to the Subject.
 // This includes values selected through modifiers, order, etc.
-func (s *Subject) Value(name string) (ent.Value, error) {
-	return s.selectValues.Get(name)
+func (_m *Subject) Value(name string) (ent.Value, error) {
+	return _m.selectValues.Get(name)
 }
 
 // QuerySubjectDigests queries the "subject_digests" edge of the Subject entity.
-func (s *Subject) QuerySubjectDigests() *SubjectDigestQuery {
-	return NewSubjectClient(s.config).QuerySubjectDigests(s)
+func (_m *Subject) QuerySubjectDigests() *SubjectDigestQuery {
+	return NewSubjectClient(_m.config).QuerySubjectDigests(_m)
 }
 
 // QueryStatement queries the "statement" edge of the Subject entity.
-func (s *Subject) QueryStatement() *StatementQuery {
-	return NewSubjectClient(s.config).QueryStatement(s)
+func (_m *Subject) QueryStatement() *StatementQuery {
+	return NewSubjectClient(_m.config).QueryStatement(_m)
 }
 
 // Update returns a builder for updating this Subject.
 // Note that you need to call Subject.Unwrap() before calling this method if this Subject
 // was returned from a transaction, and the transaction was committed or rolled back.
-func (s *Subject) Update() *SubjectUpdateOne {
-	return NewSubjectClient(s.config).UpdateOne(s)
+func (_m *Subject) Update() *SubjectUpdateOne {
+	return NewSubjectClient(_m.config).UpdateOne(_m)
 }
 
 // Unwrap unwraps the Subject entity that was returned from a transaction after it was closed,
 // so that all future queries will be executed through the driver which created the transaction.
-func (s *Subject) Unwrap() *Subject {
-	_tx, ok := s.config.driver.(*txDriver)
+func (_m *Subject) Unwrap() *Subject {
+	_tx, ok := _m.config.driver.(*txDriver)
 	if !ok {
 		panic("ent: Subject is not a transactional entity")
 	}
-	s.config.driver = _tx.drv
-	return s
+	_m.config.driver = _tx.drv
+	return _m
 }
 
 // String implements the fmt.Stringer.
-func (s *Subject) String() string {
+func (_m *Subject) String() string {
 	var builder strings.Builder
 	builder.WriteString("Subject(")
-	builder.WriteString(fmt.Sprintf("id=%v, ", s.ID))
+	builder.WriteString(fmt.Sprintf("id=%v, ", _m.ID))
+	if v := _m.CreatedAt; v != nil {
+		builder.WriteString("created_at=")
+		builder.WriteString(v.Format(time.ANSIC))
+	}
+	builder.WriteString(", ")
 	builder.WriteString("name=")
-	builder.WriteString(s.Name)
+	builder.WriteString(_m.Name)
 	builder.WriteByte(')')
 	return builder.String()
 }
 
 // NamedSubjectDigests returns the SubjectDigests named value or an error if the edge was not
 // loaded in eager-loading with this name.
-func (s *Subject) NamedSubjectDigests(name string) ([]*SubjectDigest, error) {
-	if s.Edges.namedSubjectDigests == nil {
+func (_m *Subject) NamedSubjectDigests(name string) ([]*SubjectDigest, error) {
+	if _m.Edges.namedSubjectDigests == nil {
 		return nil, &NotLoadedError{edge: name}
 	}
-	nodes, ok := s.Edges.namedSubjectDigests[name]
+	nodes, ok := _m.Edges.namedSubjectDigests[name]
 	if !ok {
 		return nil, &NotLoadedError{edge: name}
 	}
 	return nodes, nil
 }
 
-func (s *Subject) appendNamedSubjectDigests(name string, edges ...*SubjectDigest) {
-	if s.Edges.namedSubjectDigests == nil {
-		s.Edges.namedSubjectDigests = make(map[string][]*SubjectDigest)
+func (_m *Subject) appendNamedSubjectDigests(name string, edges ...*SubjectDigest) {
+	if _m.Edges.namedSubjectDigests == nil {
+		_m.Edges.namedSubjectDigests = make(map[string][]*SubjectDigest)
 	}
 	if len(edges) == 0 {
-		s.Edges.namedSubjectDigests[name] = []*SubjectDigest{}
+		_m.Edges.namedSubjectDigests[name] = []*SubjectDigest{}
 	} else {
-		s.Edges.namedSubjectDigests[name] = append(s.Edges.namedSubjectDigests[name], edges...)
+		_m.Edges.namedSubjectDigests[name] = append(_m.Edges.namedSubjectDigests[name], edges...)
 	}
 }
 

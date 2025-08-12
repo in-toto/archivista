@@ -1334,6 +1334,7 @@ type DsseMutation struct {
 	op                     Op
 	typ                    string
 	id                     *uuid.UUID
+	created_at             *time.Time
 	gitoid_sha256          *string
 	payload_type           *string
 	clearedFields          map[string]struct{}
@@ -1452,6 +1453,55 @@ func (m *DsseMutation) IDs(ctx context.Context) ([]uuid.UUID, error) {
 	default:
 		return nil, fmt.Errorf("IDs is not allowed on %s operations", m.op)
 	}
+}
+
+// SetCreatedAt sets the "created_at" field.
+func (m *DsseMutation) SetCreatedAt(t time.Time) {
+	m.created_at = &t
+}
+
+// CreatedAt returns the value of the "created_at" field in the mutation.
+func (m *DsseMutation) CreatedAt() (r time.Time, exists bool) {
+	v := m.created_at
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// OldCreatedAt returns the old "created_at" field's value of the Dsse entity.
+// If the Dsse object wasn't provided to the builder, the object is fetched from the database.
+// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
+func (m *DsseMutation) OldCreatedAt(ctx context.Context) (v *time.Time, err error) {
+	if !m.op.Is(OpUpdateOne) {
+		return v, errors.New("OldCreatedAt is only allowed on UpdateOne operations")
+	}
+	if m.id == nil || m.oldValue == nil {
+		return v, errors.New("OldCreatedAt requires an ID field in the mutation")
+	}
+	oldValue, err := m.oldValue(ctx)
+	if err != nil {
+		return v, fmt.Errorf("querying old value for OldCreatedAt: %w", err)
+	}
+	return oldValue.CreatedAt, nil
+}
+
+// ClearCreatedAt clears the value of the "created_at" field.
+func (m *DsseMutation) ClearCreatedAt() {
+	m.created_at = nil
+	m.clearedFields[dsse.FieldCreatedAt] = struct{}{}
+}
+
+// CreatedAtCleared returns if the "created_at" field was cleared in this mutation.
+func (m *DsseMutation) CreatedAtCleared() bool {
+	_, ok := m.clearedFields[dsse.FieldCreatedAt]
+	return ok
+}
+
+// ResetCreatedAt resets all changes to the "created_at" field.
+func (m *DsseMutation) ResetCreatedAt() {
+	m.created_at = nil
+	delete(m.clearedFields, dsse.FieldCreatedAt)
 }
 
 // SetGitoidSha256 sets the "gitoid_sha256" field.
@@ -1707,7 +1757,10 @@ func (m *DsseMutation) Type() string {
 // order to get all numeric fields that were incremented/decremented, call
 // AddedFields().
 func (m *DsseMutation) Fields() []string {
-	fields := make([]string, 0, 2)
+	fields := make([]string, 0, 3)
+	if m.created_at != nil {
+		fields = append(fields, dsse.FieldCreatedAt)
+	}
 	if m.gitoid_sha256 != nil {
 		fields = append(fields, dsse.FieldGitoidSha256)
 	}
@@ -1722,6 +1775,8 @@ func (m *DsseMutation) Fields() []string {
 // schema.
 func (m *DsseMutation) Field(name string) (ent.Value, bool) {
 	switch name {
+	case dsse.FieldCreatedAt:
+		return m.CreatedAt()
 	case dsse.FieldGitoidSha256:
 		return m.GitoidSha256()
 	case dsse.FieldPayloadType:
@@ -1735,6 +1790,8 @@ func (m *DsseMutation) Field(name string) (ent.Value, bool) {
 // database failed.
 func (m *DsseMutation) OldField(ctx context.Context, name string) (ent.Value, error) {
 	switch name {
+	case dsse.FieldCreatedAt:
+		return m.OldCreatedAt(ctx)
 	case dsse.FieldGitoidSha256:
 		return m.OldGitoidSha256(ctx)
 	case dsse.FieldPayloadType:
@@ -1748,6 +1805,13 @@ func (m *DsseMutation) OldField(ctx context.Context, name string) (ent.Value, er
 // type.
 func (m *DsseMutation) SetField(name string, value ent.Value) error {
 	switch name {
+	case dsse.FieldCreatedAt:
+		v, ok := value.(time.Time)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.SetCreatedAt(v)
+		return nil
 	case dsse.FieldGitoidSha256:
 		v, ok := value.(string)
 		if !ok {
@@ -1791,7 +1855,11 @@ func (m *DsseMutation) AddField(name string, value ent.Value) error {
 // ClearedFields returns all nullable fields that were cleared during this
 // mutation.
 func (m *DsseMutation) ClearedFields() []string {
-	return nil
+	var fields []string
+	if m.FieldCleared(dsse.FieldCreatedAt) {
+		fields = append(fields, dsse.FieldCreatedAt)
+	}
+	return fields
 }
 
 // FieldCleared returns a boolean indicating if a field with the given name was
@@ -1804,6 +1872,11 @@ func (m *DsseMutation) FieldCleared(name string) bool {
 // ClearField clears the value of the field with the given name. It returns an
 // error if the field is not defined in the schema.
 func (m *DsseMutation) ClearField(name string) error {
+	switch name {
+	case dsse.FieldCreatedAt:
+		m.ClearCreatedAt()
+		return nil
+	}
 	return fmt.Errorf("unknown Dsse nullable field %s", name)
 }
 
@@ -1811,6 +1884,9 @@ func (m *DsseMutation) ClearField(name string) error {
 // It returns an error if the field is not defined in the schema.
 func (m *DsseMutation) ResetField(name string) error {
 	switch name {
+	case dsse.FieldCreatedAt:
+		m.ResetCreatedAt()
+		return nil
 	case dsse.FieldGitoidSha256:
 		m.ResetGitoidSha256()
 		return nil
@@ -3572,6 +3648,7 @@ type SubjectMutation struct {
 	op                     Op
 	typ                    string
 	id                     *uuid.UUID
+	created_at             *time.Time
 	name                   *string
 	clearedFields          map[string]struct{}
 	subject_digests        map[uuid.UUID]struct{}
@@ -3686,6 +3763,55 @@ func (m *SubjectMutation) IDs(ctx context.Context) ([]uuid.UUID, error) {
 	default:
 		return nil, fmt.Errorf("IDs is not allowed on %s operations", m.op)
 	}
+}
+
+// SetCreatedAt sets the "created_at" field.
+func (m *SubjectMutation) SetCreatedAt(t time.Time) {
+	m.created_at = &t
+}
+
+// CreatedAt returns the value of the "created_at" field in the mutation.
+func (m *SubjectMutation) CreatedAt() (r time.Time, exists bool) {
+	v := m.created_at
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// OldCreatedAt returns the old "created_at" field's value of the Subject entity.
+// If the Subject object wasn't provided to the builder, the object is fetched from the database.
+// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
+func (m *SubjectMutation) OldCreatedAt(ctx context.Context) (v *time.Time, err error) {
+	if !m.op.Is(OpUpdateOne) {
+		return v, errors.New("OldCreatedAt is only allowed on UpdateOne operations")
+	}
+	if m.id == nil || m.oldValue == nil {
+		return v, errors.New("OldCreatedAt requires an ID field in the mutation")
+	}
+	oldValue, err := m.oldValue(ctx)
+	if err != nil {
+		return v, fmt.Errorf("querying old value for OldCreatedAt: %w", err)
+	}
+	return oldValue.CreatedAt, nil
+}
+
+// ClearCreatedAt clears the value of the "created_at" field.
+func (m *SubjectMutation) ClearCreatedAt() {
+	m.created_at = nil
+	m.clearedFields[subject.FieldCreatedAt] = struct{}{}
+}
+
+// CreatedAtCleared returns if the "created_at" field was cleared in this mutation.
+func (m *SubjectMutation) CreatedAtCleared() bool {
+	_, ok := m.clearedFields[subject.FieldCreatedAt]
+	return ok
+}
+
+// ResetCreatedAt resets all changes to the "created_at" field.
+func (m *SubjectMutation) ResetCreatedAt() {
+	m.created_at = nil
+	delete(m.clearedFields, subject.FieldCreatedAt)
 }
 
 // SetName sets the "name" field.
@@ -3851,7 +3977,10 @@ func (m *SubjectMutation) Type() string {
 // order to get all numeric fields that were incremented/decremented, call
 // AddedFields().
 func (m *SubjectMutation) Fields() []string {
-	fields := make([]string, 0, 1)
+	fields := make([]string, 0, 2)
+	if m.created_at != nil {
+		fields = append(fields, subject.FieldCreatedAt)
+	}
 	if m.name != nil {
 		fields = append(fields, subject.FieldName)
 	}
@@ -3863,6 +3992,8 @@ func (m *SubjectMutation) Fields() []string {
 // schema.
 func (m *SubjectMutation) Field(name string) (ent.Value, bool) {
 	switch name {
+	case subject.FieldCreatedAt:
+		return m.CreatedAt()
 	case subject.FieldName:
 		return m.Name()
 	}
@@ -3874,6 +4005,8 @@ func (m *SubjectMutation) Field(name string) (ent.Value, bool) {
 // database failed.
 func (m *SubjectMutation) OldField(ctx context.Context, name string) (ent.Value, error) {
 	switch name {
+	case subject.FieldCreatedAt:
+		return m.OldCreatedAt(ctx)
 	case subject.FieldName:
 		return m.OldName(ctx)
 	}
@@ -3885,6 +4018,13 @@ func (m *SubjectMutation) OldField(ctx context.Context, name string) (ent.Value,
 // type.
 func (m *SubjectMutation) SetField(name string, value ent.Value) error {
 	switch name {
+	case subject.FieldCreatedAt:
+		v, ok := value.(time.Time)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.SetCreatedAt(v)
+		return nil
 	case subject.FieldName:
 		v, ok := value.(string)
 		if !ok {
@@ -3921,7 +4061,11 @@ func (m *SubjectMutation) AddField(name string, value ent.Value) error {
 // ClearedFields returns all nullable fields that were cleared during this
 // mutation.
 func (m *SubjectMutation) ClearedFields() []string {
-	return nil
+	var fields []string
+	if m.FieldCleared(subject.FieldCreatedAt) {
+		fields = append(fields, subject.FieldCreatedAt)
+	}
+	return fields
 }
 
 // FieldCleared returns a boolean indicating if a field with the given name was
@@ -3934,6 +4078,11 @@ func (m *SubjectMutation) FieldCleared(name string) bool {
 // ClearField clears the value of the field with the given name. It returns an
 // error if the field is not defined in the schema.
 func (m *SubjectMutation) ClearField(name string) error {
+	switch name {
+	case subject.FieldCreatedAt:
+		m.ClearCreatedAt()
+		return nil
+	}
 	return fmt.Errorf("unknown Subject nullable field %s", name)
 }
 
@@ -3941,6 +4090,9 @@ func (m *SubjectMutation) ClearField(name string) error {
 // It returns an error if the field is not defined in the schema.
 func (m *SubjectMutation) ResetField(name string) error {
 	switch name {
+	case subject.FieldCreatedAt:
+		m.ResetCreatedAt()
+		return nil
 	case subject.FieldName:
 		m.ResetName()
 		return nil

@@ -42,44 +42,44 @@ type StatementQuery struct {
 }
 
 // Where adds a new predicate for the StatementQuery builder.
-func (sq *StatementQuery) Where(ps ...predicate.Statement) *StatementQuery {
-	sq.predicates = append(sq.predicates, ps...)
-	return sq
+func (_q *StatementQuery) Where(ps ...predicate.Statement) *StatementQuery {
+	_q.predicates = append(_q.predicates, ps...)
+	return _q
 }
 
 // Limit the number of records to be returned by this query.
-func (sq *StatementQuery) Limit(limit int) *StatementQuery {
-	sq.ctx.Limit = &limit
-	return sq
+func (_q *StatementQuery) Limit(limit int) *StatementQuery {
+	_q.ctx.Limit = &limit
+	return _q
 }
 
 // Offset to start from.
-func (sq *StatementQuery) Offset(offset int) *StatementQuery {
-	sq.ctx.Offset = &offset
-	return sq
+func (_q *StatementQuery) Offset(offset int) *StatementQuery {
+	_q.ctx.Offset = &offset
+	return _q
 }
 
 // Unique configures the query builder to filter duplicate records on query.
 // By default, unique is set to true, and can be disabled using this method.
-func (sq *StatementQuery) Unique(unique bool) *StatementQuery {
-	sq.ctx.Unique = &unique
-	return sq
+func (_q *StatementQuery) Unique(unique bool) *StatementQuery {
+	_q.ctx.Unique = &unique
+	return _q
 }
 
 // Order specifies how the records should be ordered.
-func (sq *StatementQuery) Order(o ...statement.OrderOption) *StatementQuery {
-	sq.order = append(sq.order, o...)
-	return sq
+func (_q *StatementQuery) Order(o ...statement.OrderOption) *StatementQuery {
+	_q.order = append(_q.order, o...)
+	return _q
 }
 
 // QuerySubjects chains the current query on the "subjects" edge.
-func (sq *StatementQuery) QuerySubjects() *SubjectQuery {
-	query := (&SubjectClient{config: sq.config}).Query()
+func (_q *StatementQuery) QuerySubjects() *SubjectQuery {
+	query := (&SubjectClient{config: _q.config}).Query()
 	query.path = func(ctx context.Context) (fromU *sql.Selector, err error) {
-		if err := sq.prepareQuery(ctx); err != nil {
+		if err := _q.prepareQuery(ctx); err != nil {
 			return nil, err
 		}
-		selector := sq.sqlQuery(ctx)
+		selector := _q.sqlQuery(ctx)
 		if err := selector.Err(); err != nil {
 			return nil, err
 		}
@@ -88,20 +88,20 @@ func (sq *StatementQuery) QuerySubjects() *SubjectQuery {
 			sqlgraph.To(subject.Table, subject.FieldID),
 			sqlgraph.Edge(sqlgraph.O2M, false, statement.SubjectsTable, statement.SubjectsColumn),
 		)
-		fromU = sqlgraph.SetNeighbors(sq.driver.Dialect(), step)
+		fromU = sqlgraph.SetNeighbors(_q.driver.Dialect(), step)
 		return fromU, nil
 	}
 	return query
 }
 
 // QueryPolicy chains the current query on the "policy" edge.
-func (sq *StatementQuery) QueryPolicy() *AttestationPolicyQuery {
-	query := (&AttestationPolicyClient{config: sq.config}).Query()
+func (_q *StatementQuery) QueryPolicy() *AttestationPolicyQuery {
+	query := (&AttestationPolicyClient{config: _q.config}).Query()
 	query.path = func(ctx context.Context) (fromU *sql.Selector, err error) {
-		if err := sq.prepareQuery(ctx); err != nil {
+		if err := _q.prepareQuery(ctx); err != nil {
 			return nil, err
 		}
-		selector := sq.sqlQuery(ctx)
+		selector := _q.sqlQuery(ctx)
 		if err := selector.Err(); err != nil {
 			return nil, err
 		}
@@ -110,20 +110,20 @@ func (sq *StatementQuery) QueryPolicy() *AttestationPolicyQuery {
 			sqlgraph.To(attestationpolicy.Table, attestationpolicy.FieldID),
 			sqlgraph.Edge(sqlgraph.O2O, false, statement.PolicyTable, statement.PolicyColumn),
 		)
-		fromU = sqlgraph.SetNeighbors(sq.driver.Dialect(), step)
+		fromU = sqlgraph.SetNeighbors(_q.driver.Dialect(), step)
 		return fromU, nil
 	}
 	return query
 }
 
 // QueryAttestationCollections chains the current query on the "attestation_collections" edge.
-func (sq *StatementQuery) QueryAttestationCollections() *AttestationCollectionQuery {
-	query := (&AttestationCollectionClient{config: sq.config}).Query()
+func (_q *StatementQuery) QueryAttestationCollections() *AttestationCollectionQuery {
+	query := (&AttestationCollectionClient{config: _q.config}).Query()
 	query.path = func(ctx context.Context) (fromU *sql.Selector, err error) {
-		if err := sq.prepareQuery(ctx); err != nil {
+		if err := _q.prepareQuery(ctx); err != nil {
 			return nil, err
 		}
-		selector := sq.sqlQuery(ctx)
+		selector := _q.sqlQuery(ctx)
 		if err := selector.Err(); err != nil {
 			return nil, err
 		}
@@ -132,20 +132,20 @@ func (sq *StatementQuery) QueryAttestationCollections() *AttestationCollectionQu
 			sqlgraph.To(attestationcollection.Table, attestationcollection.FieldID),
 			sqlgraph.Edge(sqlgraph.O2O, false, statement.AttestationCollectionsTable, statement.AttestationCollectionsColumn),
 		)
-		fromU = sqlgraph.SetNeighbors(sq.driver.Dialect(), step)
+		fromU = sqlgraph.SetNeighbors(_q.driver.Dialect(), step)
 		return fromU, nil
 	}
 	return query
 }
 
 // QueryDsse chains the current query on the "dsse" edge.
-func (sq *StatementQuery) QueryDsse() *DsseQuery {
-	query := (&DsseClient{config: sq.config}).Query()
+func (_q *StatementQuery) QueryDsse() *DsseQuery {
+	query := (&DsseClient{config: _q.config}).Query()
 	query.path = func(ctx context.Context) (fromU *sql.Selector, err error) {
-		if err := sq.prepareQuery(ctx); err != nil {
+		if err := _q.prepareQuery(ctx); err != nil {
 			return nil, err
 		}
-		selector := sq.sqlQuery(ctx)
+		selector := _q.sqlQuery(ctx)
 		if err := selector.Err(); err != nil {
 			return nil, err
 		}
@@ -154,7 +154,7 @@ func (sq *StatementQuery) QueryDsse() *DsseQuery {
 			sqlgraph.To(dsse.Table, dsse.FieldID),
 			sqlgraph.Edge(sqlgraph.O2M, true, statement.DsseTable, statement.DsseColumn),
 		)
-		fromU = sqlgraph.SetNeighbors(sq.driver.Dialect(), step)
+		fromU = sqlgraph.SetNeighbors(_q.driver.Dialect(), step)
 		return fromU, nil
 	}
 	return query
@@ -162,8 +162,8 @@ func (sq *StatementQuery) QueryDsse() *DsseQuery {
 
 // First returns the first Statement entity from the query.
 // Returns a *NotFoundError when no Statement was found.
-func (sq *StatementQuery) First(ctx context.Context) (*Statement, error) {
-	nodes, err := sq.Limit(1).All(setContextOp(ctx, sq.ctx, ent.OpQueryFirst))
+func (_q *StatementQuery) First(ctx context.Context) (*Statement, error) {
+	nodes, err := _q.Limit(1).All(setContextOp(ctx, _q.ctx, ent.OpQueryFirst))
 	if err != nil {
 		return nil, err
 	}
@@ -174,8 +174,8 @@ func (sq *StatementQuery) First(ctx context.Context) (*Statement, error) {
 }
 
 // FirstX is like First, but panics if an error occurs.
-func (sq *StatementQuery) FirstX(ctx context.Context) *Statement {
-	node, err := sq.First(ctx)
+func (_q *StatementQuery) FirstX(ctx context.Context) *Statement {
+	node, err := _q.First(ctx)
 	if err != nil && !IsNotFound(err) {
 		panic(err)
 	}
@@ -184,9 +184,9 @@ func (sq *StatementQuery) FirstX(ctx context.Context) *Statement {
 
 // FirstID returns the first Statement ID from the query.
 // Returns a *NotFoundError when no Statement ID was found.
-func (sq *StatementQuery) FirstID(ctx context.Context) (id uuid.UUID, err error) {
+func (_q *StatementQuery) FirstID(ctx context.Context) (id uuid.UUID, err error) {
 	var ids []uuid.UUID
-	if ids, err = sq.Limit(1).IDs(setContextOp(ctx, sq.ctx, ent.OpQueryFirstID)); err != nil {
+	if ids, err = _q.Limit(1).IDs(setContextOp(ctx, _q.ctx, ent.OpQueryFirstID)); err != nil {
 		return
 	}
 	if len(ids) == 0 {
@@ -197,8 +197,8 @@ func (sq *StatementQuery) FirstID(ctx context.Context) (id uuid.UUID, err error)
 }
 
 // FirstIDX is like FirstID, but panics if an error occurs.
-func (sq *StatementQuery) FirstIDX(ctx context.Context) uuid.UUID {
-	id, err := sq.FirstID(ctx)
+func (_q *StatementQuery) FirstIDX(ctx context.Context) uuid.UUID {
+	id, err := _q.FirstID(ctx)
 	if err != nil && !IsNotFound(err) {
 		panic(err)
 	}
@@ -208,8 +208,8 @@ func (sq *StatementQuery) FirstIDX(ctx context.Context) uuid.UUID {
 // Only returns a single Statement entity found by the query, ensuring it only returns one.
 // Returns a *NotSingularError when more than one Statement entity is found.
 // Returns a *NotFoundError when no Statement entities are found.
-func (sq *StatementQuery) Only(ctx context.Context) (*Statement, error) {
-	nodes, err := sq.Limit(2).All(setContextOp(ctx, sq.ctx, ent.OpQueryOnly))
+func (_q *StatementQuery) Only(ctx context.Context) (*Statement, error) {
+	nodes, err := _q.Limit(2).All(setContextOp(ctx, _q.ctx, ent.OpQueryOnly))
 	if err != nil {
 		return nil, err
 	}
@@ -224,8 +224,8 @@ func (sq *StatementQuery) Only(ctx context.Context) (*Statement, error) {
 }
 
 // OnlyX is like Only, but panics if an error occurs.
-func (sq *StatementQuery) OnlyX(ctx context.Context) *Statement {
-	node, err := sq.Only(ctx)
+func (_q *StatementQuery) OnlyX(ctx context.Context) *Statement {
+	node, err := _q.Only(ctx)
 	if err != nil {
 		panic(err)
 	}
@@ -235,9 +235,9 @@ func (sq *StatementQuery) OnlyX(ctx context.Context) *Statement {
 // OnlyID is like Only, but returns the only Statement ID in the query.
 // Returns a *NotSingularError when more than one Statement ID is found.
 // Returns a *NotFoundError when no entities are found.
-func (sq *StatementQuery) OnlyID(ctx context.Context) (id uuid.UUID, err error) {
+func (_q *StatementQuery) OnlyID(ctx context.Context) (id uuid.UUID, err error) {
 	var ids []uuid.UUID
-	if ids, err = sq.Limit(2).IDs(setContextOp(ctx, sq.ctx, ent.OpQueryOnlyID)); err != nil {
+	if ids, err = _q.Limit(2).IDs(setContextOp(ctx, _q.ctx, ent.OpQueryOnlyID)); err != nil {
 		return
 	}
 	switch len(ids) {
@@ -252,8 +252,8 @@ func (sq *StatementQuery) OnlyID(ctx context.Context) (id uuid.UUID, err error) 
 }
 
 // OnlyIDX is like OnlyID, but panics if an error occurs.
-func (sq *StatementQuery) OnlyIDX(ctx context.Context) uuid.UUID {
-	id, err := sq.OnlyID(ctx)
+func (_q *StatementQuery) OnlyIDX(ctx context.Context) uuid.UUID {
+	id, err := _q.OnlyID(ctx)
 	if err != nil {
 		panic(err)
 	}
@@ -261,18 +261,18 @@ func (sq *StatementQuery) OnlyIDX(ctx context.Context) uuid.UUID {
 }
 
 // All executes the query and returns a list of Statements.
-func (sq *StatementQuery) All(ctx context.Context) ([]*Statement, error) {
-	ctx = setContextOp(ctx, sq.ctx, ent.OpQueryAll)
-	if err := sq.prepareQuery(ctx); err != nil {
+func (_q *StatementQuery) All(ctx context.Context) ([]*Statement, error) {
+	ctx = setContextOp(ctx, _q.ctx, ent.OpQueryAll)
+	if err := _q.prepareQuery(ctx); err != nil {
 		return nil, err
 	}
 	qr := querierAll[[]*Statement, *StatementQuery]()
-	return withInterceptors[[]*Statement](ctx, sq, qr, sq.inters)
+	return withInterceptors[[]*Statement](ctx, _q, qr, _q.inters)
 }
 
 // AllX is like All, but panics if an error occurs.
-func (sq *StatementQuery) AllX(ctx context.Context) []*Statement {
-	nodes, err := sq.All(ctx)
+func (_q *StatementQuery) AllX(ctx context.Context) []*Statement {
+	nodes, err := _q.All(ctx)
 	if err != nil {
 		panic(err)
 	}
@@ -280,20 +280,20 @@ func (sq *StatementQuery) AllX(ctx context.Context) []*Statement {
 }
 
 // IDs executes the query and returns a list of Statement IDs.
-func (sq *StatementQuery) IDs(ctx context.Context) (ids []uuid.UUID, err error) {
-	if sq.ctx.Unique == nil && sq.path != nil {
-		sq.Unique(true)
+func (_q *StatementQuery) IDs(ctx context.Context) (ids []uuid.UUID, err error) {
+	if _q.ctx.Unique == nil && _q.path != nil {
+		_q.Unique(true)
 	}
-	ctx = setContextOp(ctx, sq.ctx, ent.OpQueryIDs)
-	if err = sq.Select(statement.FieldID).Scan(ctx, &ids); err != nil {
+	ctx = setContextOp(ctx, _q.ctx, ent.OpQueryIDs)
+	if err = _q.Select(statement.FieldID).Scan(ctx, &ids); err != nil {
 		return nil, err
 	}
 	return ids, nil
 }
 
 // IDsX is like IDs, but panics if an error occurs.
-func (sq *StatementQuery) IDsX(ctx context.Context) []uuid.UUID {
-	ids, err := sq.IDs(ctx)
+func (_q *StatementQuery) IDsX(ctx context.Context) []uuid.UUID {
+	ids, err := _q.IDs(ctx)
 	if err != nil {
 		panic(err)
 	}
@@ -301,17 +301,17 @@ func (sq *StatementQuery) IDsX(ctx context.Context) []uuid.UUID {
 }
 
 // Count returns the count of the given query.
-func (sq *StatementQuery) Count(ctx context.Context) (int, error) {
-	ctx = setContextOp(ctx, sq.ctx, ent.OpQueryCount)
-	if err := sq.prepareQuery(ctx); err != nil {
+func (_q *StatementQuery) Count(ctx context.Context) (int, error) {
+	ctx = setContextOp(ctx, _q.ctx, ent.OpQueryCount)
+	if err := _q.prepareQuery(ctx); err != nil {
 		return 0, err
 	}
-	return withInterceptors[int](ctx, sq, querierCount[*StatementQuery](), sq.inters)
+	return withInterceptors[int](ctx, _q, querierCount[*StatementQuery](), _q.inters)
 }
 
 // CountX is like Count, but panics if an error occurs.
-func (sq *StatementQuery) CountX(ctx context.Context) int {
-	count, err := sq.Count(ctx)
+func (_q *StatementQuery) CountX(ctx context.Context) int {
+	count, err := _q.Count(ctx)
 	if err != nil {
 		panic(err)
 	}
@@ -319,9 +319,9 @@ func (sq *StatementQuery) CountX(ctx context.Context) int {
 }
 
 // Exist returns true if the query has elements in the graph.
-func (sq *StatementQuery) Exist(ctx context.Context) (bool, error) {
-	ctx = setContextOp(ctx, sq.ctx, ent.OpQueryExist)
-	switch _, err := sq.FirstID(ctx); {
+func (_q *StatementQuery) Exist(ctx context.Context) (bool, error) {
+	ctx = setContextOp(ctx, _q.ctx, ent.OpQueryExist)
+	switch _, err := _q.FirstID(ctx); {
 	case IsNotFound(err):
 		return false, nil
 	case err != nil:
@@ -332,8 +332,8 @@ func (sq *StatementQuery) Exist(ctx context.Context) (bool, error) {
 }
 
 // ExistX is like Exist, but panics if an error occurs.
-func (sq *StatementQuery) ExistX(ctx context.Context) bool {
-	exist, err := sq.Exist(ctx)
+func (_q *StatementQuery) ExistX(ctx context.Context) bool {
+	exist, err := _q.Exist(ctx)
 	if err != nil {
 		panic(err)
 	}
@@ -342,68 +342,68 @@ func (sq *StatementQuery) ExistX(ctx context.Context) bool {
 
 // Clone returns a duplicate of the StatementQuery builder, including all associated steps. It can be
 // used to prepare common query builders and use them differently after the clone is made.
-func (sq *StatementQuery) Clone() *StatementQuery {
-	if sq == nil {
+func (_q *StatementQuery) Clone() *StatementQuery {
+	if _q == nil {
 		return nil
 	}
 	return &StatementQuery{
-		config:                     sq.config,
-		ctx:                        sq.ctx.Clone(),
-		order:                      append([]statement.OrderOption{}, sq.order...),
-		inters:                     append([]Interceptor{}, sq.inters...),
-		predicates:                 append([]predicate.Statement{}, sq.predicates...),
-		withSubjects:               sq.withSubjects.Clone(),
-		withPolicy:                 sq.withPolicy.Clone(),
-		withAttestationCollections: sq.withAttestationCollections.Clone(),
-		withDsse:                   sq.withDsse.Clone(),
+		config:                     _q.config,
+		ctx:                        _q.ctx.Clone(),
+		order:                      append([]statement.OrderOption{}, _q.order...),
+		inters:                     append([]Interceptor{}, _q.inters...),
+		predicates:                 append([]predicate.Statement{}, _q.predicates...),
+		withSubjects:               _q.withSubjects.Clone(),
+		withPolicy:                 _q.withPolicy.Clone(),
+		withAttestationCollections: _q.withAttestationCollections.Clone(),
+		withDsse:                   _q.withDsse.Clone(),
 		// clone intermediate query.
-		sql:  sq.sql.Clone(),
-		path: sq.path,
+		sql:  _q.sql.Clone(),
+		path: _q.path,
 	}
 }
 
 // WithSubjects tells the query-builder to eager-load the nodes that are connected to
 // the "subjects" edge. The optional arguments are used to configure the query builder of the edge.
-func (sq *StatementQuery) WithSubjects(opts ...func(*SubjectQuery)) *StatementQuery {
-	query := (&SubjectClient{config: sq.config}).Query()
+func (_q *StatementQuery) WithSubjects(opts ...func(*SubjectQuery)) *StatementQuery {
+	query := (&SubjectClient{config: _q.config}).Query()
 	for _, opt := range opts {
 		opt(query)
 	}
-	sq.withSubjects = query
-	return sq
+	_q.withSubjects = query
+	return _q
 }
 
 // WithPolicy tells the query-builder to eager-load the nodes that are connected to
 // the "policy" edge. The optional arguments are used to configure the query builder of the edge.
-func (sq *StatementQuery) WithPolicy(opts ...func(*AttestationPolicyQuery)) *StatementQuery {
-	query := (&AttestationPolicyClient{config: sq.config}).Query()
+func (_q *StatementQuery) WithPolicy(opts ...func(*AttestationPolicyQuery)) *StatementQuery {
+	query := (&AttestationPolicyClient{config: _q.config}).Query()
 	for _, opt := range opts {
 		opt(query)
 	}
-	sq.withPolicy = query
-	return sq
+	_q.withPolicy = query
+	return _q
 }
 
 // WithAttestationCollections tells the query-builder to eager-load the nodes that are connected to
 // the "attestation_collections" edge. The optional arguments are used to configure the query builder of the edge.
-func (sq *StatementQuery) WithAttestationCollections(opts ...func(*AttestationCollectionQuery)) *StatementQuery {
-	query := (&AttestationCollectionClient{config: sq.config}).Query()
+func (_q *StatementQuery) WithAttestationCollections(opts ...func(*AttestationCollectionQuery)) *StatementQuery {
+	query := (&AttestationCollectionClient{config: _q.config}).Query()
 	for _, opt := range opts {
 		opt(query)
 	}
-	sq.withAttestationCollections = query
-	return sq
+	_q.withAttestationCollections = query
+	return _q
 }
 
 // WithDsse tells the query-builder to eager-load the nodes that are connected to
 // the "dsse" edge. The optional arguments are used to configure the query builder of the edge.
-func (sq *StatementQuery) WithDsse(opts ...func(*DsseQuery)) *StatementQuery {
-	query := (&DsseClient{config: sq.config}).Query()
+func (_q *StatementQuery) WithDsse(opts ...func(*DsseQuery)) *StatementQuery {
+	query := (&DsseClient{config: _q.config}).Query()
 	for _, opt := range opts {
 		opt(query)
 	}
-	sq.withDsse = query
-	return sq
+	_q.withDsse = query
+	return _q
 }
 
 // GroupBy is used to group vertices by one or more fields/columns.
@@ -420,10 +420,10 @@ func (sq *StatementQuery) WithDsse(opts ...func(*DsseQuery)) *StatementQuery {
 //		GroupBy(statement.FieldPredicate).
 //		Aggregate(ent.Count()).
 //		Scan(ctx, &v)
-func (sq *StatementQuery) GroupBy(field string, fields ...string) *StatementGroupBy {
-	sq.ctx.Fields = append([]string{field}, fields...)
-	grbuild := &StatementGroupBy{build: sq}
-	grbuild.flds = &sq.ctx.Fields
+func (_q *StatementQuery) GroupBy(field string, fields ...string) *StatementGroupBy {
+	_q.ctx.Fields = append([]string{field}, fields...)
+	grbuild := &StatementGroupBy{build: _q}
+	grbuild.flds = &_q.ctx.Fields
 	grbuild.label = statement.Label
 	grbuild.scan = grbuild.Scan
 	return grbuild
@@ -441,126 +441,126 @@ func (sq *StatementQuery) GroupBy(field string, fields ...string) *StatementGrou
 //	client.Statement.Query().
 //		Select(statement.FieldPredicate).
 //		Scan(ctx, &v)
-func (sq *StatementQuery) Select(fields ...string) *StatementSelect {
-	sq.ctx.Fields = append(sq.ctx.Fields, fields...)
-	sbuild := &StatementSelect{StatementQuery: sq}
+func (_q *StatementQuery) Select(fields ...string) *StatementSelect {
+	_q.ctx.Fields = append(_q.ctx.Fields, fields...)
+	sbuild := &StatementSelect{StatementQuery: _q}
 	sbuild.label = statement.Label
-	sbuild.flds, sbuild.scan = &sq.ctx.Fields, sbuild.Scan
+	sbuild.flds, sbuild.scan = &_q.ctx.Fields, sbuild.Scan
 	return sbuild
 }
 
 // Aggregate returns a StatementSelect configured with the given aggregations.
-func (sq *StatementQuery) Aggregate(fns ...AggregateFunc) *StatementSelect {
-	return sq.Select().Aggregate(fns...)
+func (_q *StatementQuery) Aggregate(fns ...AggregateFunc) *StatementSelect {
+	return _q.Select().Aggregate(fns...)
 }
 
-func (sq *StatementQuery) prepareQuery(ctx context.Context) error {
-	for _, inter := range sq.inters {
+func (_q *StatementQuery) prepareQuery(ctx context.Context) error {
+	for _, inter := range _q.inters {
 		if inter == nil {
 			return fmt.Errorf("ent: uninitialized interceptor (forgotten import ent/runtime?)")
 		}
 		if trv, ok := inter.(Traverser); ok {
-			if err := trv.Traverse(ctx, sq); err != nil {
+			if err := trv.Traverse(ctx, _q); err != nil {
 				return err
 			}
 		}
 	}
-	for _, f := range sq.ctx.Fields {
+	for _, f := range _q.ctx.Fields {
 		if !statement.ValidColumn(f) {
 			return &ValidationError{Name: f, err: fmt.Errorf("ent: invalid field %q for query", f)}
 		}
 	}
-	if sq.path != nil {
-		prev, err := sq.path(ctx)
+	if _q.path != nil {
+		prev, err := _q.path(ctx)
 		if err != nil {
 			return err
 		}
-		sq.sql = prev
+		_q.sql = prev
 	}
 	return nil
 }
 
-func (sq *StatementQuery) sqlAll(ctx context.Context, hooks ...queryHook) ([]*Statement, error) {
+func (_q *StatementQuery) sqlAll(ctx context.Context, hooks ...queryHook) ([]*Statement, error) {
 	var (
 		nodes       = []*Statement{}
-		_spec       = sq.querySpec()
+		_spec       = _q.querySpec()
 		loadedTypes = [4]bool{
-			sq.withSubjects != nil,
-			sq.withPolicy != nil,
-			sq.withAttestationCollections != nil,
-			sq.withDsse != nil,
+			_q.withSubjects != nil,
+			_q.withPolicy != nil,
+			_q.withAttestationCollections != nil,
+			_q.withDsse != nil,
 		}
 	)
 	_spec.ScanValues = func(columns []string) ([]any, error) {
 		return (*Statement).scanValues(nil, columns)
 	}
 	_spec.Assign = func(columns []string, values []any) error {
-		node := &Statement{config: sq.config}
+		node := &Statement{config: _q.config}
 		nodes = append(nodes, node)
 		node.Edges.loadedTypes = loadedTypes
 		return node.assignValues(columns, values)
 	}
-	if len(sq.modifiers) > 0 {
-		_spec.Modifiers = sq.modifiers
+	if len(_q.modifiers) > 0 {
+		_spec.Modifiers = _q.modifiers
 	}
 	for i := range hooks {
 		hooks[i](ctx, _spec)
 	}
-	if err := sqlgraph.QueryNodes(ctx, sq.driver, _spec); err != nil {
+	if err := sqlgraph.QueryNodes(ctx, _q.driver, _spec); err != nil {
 		return nil, err
 	}
 	if len(nodes) == 0 {
 		return nodes, nil
 	}
-	if query := sq.withSubjects; query != nil {
-		if err := sq.loadSubjects(ctx, query, nodes,
+	if query := _q.withSubjects; query != nil {
+		if err := _q.loadSubjects(ctx, query, nodes,
 			func(n *Statement) { n.Edges.Subjects = []*Subject{} },
 			func(n *Statement, e *Subject) { n.Edges.Subjects = append(n.Edges.Subjects, e) }); err != nil {
 			return nil, err
 		}
 	}
-	if query := sq.withPolicy; query != nil {
-		if err := sq.loadPolicy(ctx, query, nodes, nil,
+	if query := _q.withPolicy; query != nil {
+		if err := _q.loadPolicy(ctx, query, nodes, nil,
 			func(n *Statement, e *AttestationPolicy) { n.Edges.Policy = e }); err != nil {
 			return nil, err
 		}
 	}
-	if query := sq.withAttestationCollections; query != nil {
-		if err := sq.loadAttestationCollections(ctx, query, nodes, nil,
+	if query := _q.withAttestationCollections; query != nil {
+		if err := _q.loadAttestationCollections(ctx, query, nodes, nil,
 			func(n *Statement, e *AttestationCollection) { n.Edges.AttestationCollections = e }); err != nil {
 			return nil, err
 		}
 	}
-	if query := sq.withDsse; query != nil {
-		if err := sq.loadDsse(ctx, query, nodes,
+	if query := _q.withDsse; query != nil {
+		if err := _q.loadDsse(ctx, query, nodes,
 			func(n *Statement) { n.Edges.Dsse = []*Dsse{} },
 			func(n *Statement, e *Dsse) { n.Edges.Dsse = append(n.Edges.Dsse, e) }); err != nil {
 			return nil, err
 		}
 	}
-	for name, query := range sq.withNamedSubjects {
-		if err := sq.loadSubjects(ctx, query, nodes,
+	for name, query := range _q.withNamedSubjects {
+		if err := _q.loadSubjects(ctx, query, nodes,
 			func(n *Statement) { n.appendNamedSubjects(name) },
 			func(n *Statement, e *Subject) { n.appendNamedSubjects(name, e) }); err != nil {
 			return nil, err
 		}
 	}
-	for name, query := range sq.withNamedDsse {
-		if err := sq.loadDsse(ctx, query, nodes,
+	for name, query := range _q.withNamedDsse {
+		if err := _q.loadDsse(ctx, query, nodes,
 			func(n *Statement) { n.appendNamedDsse(name) },
 			func(n *Statement, e *Dsse) { n.appendNamedDsse(name, e) }); err != nil {
 			return nil, err
 		}
 	}
-	for i := range sq.loadTotal {
-		if err := sq.loadTotal[i](ctx, nodes); err != nil {
+	for i := range _q.loadTotal {
+		if err := _q.loadTotal[i](ctx, nodes); err != nil {
 			return nil, err
 		}
 	}
 	return nodes, nil
 }
 
-func (sq *StatementQuery) loadSubjects(ctx context.Context, query *SubjectQuery, nodes []*Statement, init func(*Statement), assign func(*Statement, *Subject)) error {
+func (_q *StatementQuery) loadSubjects(ctx context.Context, query *SubjectQuery, nodes []*Statement, init func(*Statement), assign func(*Statement, *Subject)) error {
 	fks := make([]driver.Value, 0, len(nodes))
 	nodeids := make(map[uuid.UUID]*Statement)
 	for i := range nodes {
@@ -591,7 +591,7 @@ func (sq *StatementQuery) loadSubjects(ctx context.Context, query *SubjectQuery,
 	}
 	return nil
 }
-func (sq *StatementQuery) loadPolicy(ctx context.Context, query *AttestationPolicyQuery, nodes []*Statement, init func(*Statement), assign func(*Statement, *AttestationPolicy)) error {
+func (_q *StatementQuery) loadPolicy(ctx context.Context, query *AttestationPolicyQuery, nodes []*Statement, init func(*Statement), assign func(*Statement, *AttestationPolicy)) error {
 	fks := make([]driver.Value, 0, len(nodes))
 	nodeids := make(map[uuid.UUID]*Statement)
 	for i := range nodes {
@@ -619,7 +619,7 @@ func (sq *StatementQuery) loadPolicy(ctx context.Context, query *AttestationPoli
 	}
 	return nil
 }
-func (sq *StatementQuery) loadAttestationCollections(ctx context.Context, query *AttestationCollectionQuery, nodes []*Statement, init func(*Statement), assign func(*Statement, *AttestationCollection)) error {
+func (_q *StatementQuery) loadAttestationCollections(ctx context.Context, query *AttestationCollectionQuery, nodes []*Statement, init func(*Statement), assign func(*Statement, *AttestationCollection)) error {
 	fks := make([]driver.Value, 0, len(nodes))
 	nodeids := make(map[uuid.UUID]*Statement)
 	for i := range nodes {
@@ -647,7 +647,7 @@ func (sq *StatementQuery) loadAttestationCollections(ctx context.Context, query 
 	}
 	return nil
 }
-func (sq *StatementQuery) loadDsse(ctx context.Context, query *DsseQuery, nodes []*Statement, init func(*Statement), assign func(*Statement, *Dsse)) error {
+func (_q *StatementQuery) loadDsse(ctx context.Context, query *DsseQuery, nodes []*Statement, init func(*Statement), assign func(*Statement, *Dsse)) error {
 	fks := make([]driver.Value, 0, len(nodes))
 	nodeids := make(map[uuid.UUID]*Statement)
 	for i := range nodes {
@@ -679,27 +679,27 @@ func (sq *StatementQuery) loadDsse(ctx context.Context, query *DsseQuery, nodes 
 	return nil
 }
 
-func (sq *StatementQuery) sqlCount(ctx context.Context) (int, error) {
-	_spec := sq.querySpec()
-	if len(sq.modifiers) > 0 {
-		_spec.Modifiers = sq.modifiers
+func (_q *StatementQuery) sqlCount(ctx context.Context) (int, error) {
+	_spec := _q.querySpec()
+	if len(_q.modifiers) > 0 {
+		_spec.Modifiers = _q.modifiers
 	}
-	_spec.Node.Columns = sq.ctx.Fields
-	if len(sq.ctx.Fields) > 0 {
-		_spec.Unique = sq.ctx.Unique != nil && *sq.ctx.Unique
+	_spec.Node.Columns = _q.ctx.Fields
+	if len(_q.ctx.Fields) > 0 {
+		_spec.Unique = _q.ctx.Unique != nil && *_q.ctx.Unique
 	}
-	return sqlgraph.CountNodes(ctx, sq.driver, _spec)
+	return sqlgraph.CountNodes(ctx, _q.driver, _spec)
 }
 
-func (sq *StatementQuery) querySpec() *sqlgraph.QuerySpec {
+func (_q *StatementQuery) querySpec() *sqlgraph.QuerySpec {
 	_spec := sqlgraph.NewQuerySpec(statement.Table, statement.Columns, sqlgraph.NewFieldSpec(statement.FieldID, field.TypeUUID))
-	_spec.From = sq.sql
-	if unique := sq.ctx.Unique; unique != nil {
+	_spec.From = _q.sql
+	if unique := _q.ctx.Unique; unique != nil {
 		_spec.Unique = *unique
-	} else if sq.path != nil {
+	} else if _q.path != nil {
 		_spec.Unique = true
 	}
-	if fields := sq.ctx.Fields; len(fields) > 0 {
+	if fields := _q.ctx.Fields; len(fields) > 0 {
 		_spec.Node.Columns = make([]string, 0, len(fields))
 		_spec.Node.Columns = append(_spec.Node.Columns, statement.FieldID)
 		for i := range fields {
@@ -708,20 +708,20 @@ func (sq *StatementQuery) querySpec() *sqlgraph.QuerySpec {
 			}
 		}
 	}
-	if ps := sq.predicates; len(ps) > 0 {
+	if ps := _q.predicates; len(ps) > 0 {
 		_spec.Predicate = func(selector *sql.Selector) {
 			for i := range ps {
 				ps[i](selector)
 			}
 		}
 	}
-	if limit := sq.ctx.Limit; limit != nil {
+	if limit := _q.ctx.Limit; limit != nil {
 		_spec.Limit = *limit
 	}
-	if offset := sq.ctx.Offset; offset != nil {
+	if offset := _q.ctx.Offset; offset != nil {
 		_spec.Offset = *offset
 	}
-	if ps := sq.order; len(ps) > 0 {
+	if ps := _q.order; len(ps) > 0 {
 		_spec.Order = func(selector *sql.Selector) {
 			for i := range ps {
 				ps[i](selector)
@@ -731,33 +731,33 @@ func (sq *StatementQuery) querySpec() *sqlgraph.QuerySpec {
 	return _spec
 }
 
-func (sq *StatementQuery) sqlQuery(ctx context.Context) *sql.Selector {
-	builder := sql.Dialect(sq.driver.Dialect())
+func (_q *StatementQuery) sqlQuery(ctx context.Context) *sql.Selector {
+	builder := sql.Dialect(_q.driver.Dialect())
 	t1 := builder.Table(statement.Table)
-	columns := sq.ctx.Fields
+	columns := _q.ctx.Fields
 	if len(columns) == 0 {
 		columns = statement.Columns
 	}
 	selector := builder.Select(t1.Columns(columns...)...).From(t1)
-	if sq.sql != nil {
-		selector = sq.sql
+	if _q.sql != nil {
+		selector = _q.sql
 		selector.Select(selector.Columns(columns...)...)
 	}
-	if sq.ctx.Unique != nil && *sq.ctx.Unique {
+	if _q.ctx.Unique != nil && *_q.ctx.Unique {
 		selector.Distinct()
 	}
-	for _, p := range sq.predicates {
+	for _, p := range _q.predicates {
 		p(selector)
 	}
-	for _, p := range sq.order {
+	for _, p := range _q.order {
 		p(selector)
 	}
-	if offset := sq.ctx.Offset; offset != nil {
+	if offset := _q.ctx.Offset; offset != nil {
 		// limit is mandatory for offset clause. We start
 		// with default value, and override it below if needed.
 		selector.Offset(*offset).Limit(math.MaxInt32)
 	}
-	if limit := sq.ctx.Limit; limit != nil {
+	if limit := _q.ctx.Limit; limit != nil {
 		selector.Limit(*limit)
 	}
 	return selector
@@ -765,30 +765,30 @@ func (sq *StatementQuery) sqlQuery(ctx context.Context) *sql.Selector {
 
 // WithNamedSubjects tells the query-builder to eager-load the nodes that are connected to the "subjects"
 // edge with the given name. The optional arguments are used to configure the query builder of the edge.
-func (sq *StatementQuery) WithNamedSubjects(name string, opts ...func(*SubjectQuery)) *StatementQuery {
-	query := (&SubjectClient{config: sq.config}).Query()
+func (_q *StatementQuery) WithNamedSubjects(name string, opts ...func(*SubjectQuery)) *StatementQuery {
+	query := (&SubjectClient{config: _q.config}).Query()
 	for _, opt := range opts {
 		opt(query)
 	}
-	if sq.withNamedSubjects == nil {
-		sq.withNamedSubjects = make(map[string]*SubjectQuery)
+	if _q.withNamedSubjects == nil {
+		_q.withNamedSubjects = make(map[string]*SubjectQuery)
 	}
-	sq.withNamedSubjects[name] = query
-	return sq
+	_q.withNamedSubjects[name] = query
+	return _q
 }
 
 // WithNamedDsse tells the query-builder to eager-load the nodes that are connected to the "dsse"
 // edge with the given name. The optional arguments are used to configure the query builder of the edge.
-func (sq *StatementQuery) WithNamedDsse(name string, opts ...func(*DsseQuery)) *StatementQuery {
-	query := (&DsseClient{config: sq.config}).Query()
+func (_q *StatementQuery) WithNamedDsse(name string, opts ...func(*DsseQuery)) *StatementQuery {
+	query := (&DsseClient{config: _q.config}).Query()
 	for _, opt := range opts {
 		opt(query)
 	}
-	if sq.withNamedDsse == nil {
-		sq.withNamedDsse = make(map[string]*DsseQuery)
+	if _q.withNamedDsse == nil {
+		_q.withNamedDsse = make(map[string]*DsseQuery)
 	}
-	sq.withNamedDsse[name] = query
-	return sq
+	_q.withNamedDsse[name] = query
+	return _q
 }
 
 // StatementGroupBy is the group-by builder for Statement entities.
@@ -798,41 +798,41 @@ type StatementGroupBy struct {
 }
 
 // Aggregate adds the given aggregation functions to the group-by query.
-func (sgb *StatementGroupBy) Aggregate(fns ...AggregateFunc) *StatementGroupBy {
-	sgb.fns = append(sgb.fns, fns...)
-	return sgb
+func (_g *StatementGroupBy) Aggregate(fns ...AggregateFunc) *StatementGroupBy {
+	_g.fns = append(_g.fns, fns...)
+	return _g
 }
 
 // Scan applies the selector query and scans the result into the given value.
-func (sgb *StatementGroupBy) Scan(ctx context.Context, v any) error {
-	ctx = setContextOp(ctx, sgb.build.ctx, ent.OpQueryGroupBy)
-	if err := sgb.build.prepareQuery(ctx); err != nil {
+func (_g *StatementGroupBy) Scan(ctx context.Context, v any) error {
+	ctx = setContextOp(ctx, _g.build.ctx, ent.OpQueryGroupBy)
+	if err := _g.build.prepareQuery(ctx); err != nil {
 		return err
 	}
-	return scanWithInterceptors[*StatementQuery, *StatementGroupBy](ctx, sgb.build, sgb, sgb.build.inters, v)
+	return scanWithInterceptors[*StatementQuery, *StatementGroupBy](ctx, _g.build, _g, _g.build.inters, v)
 }
 
-func (sgb *StatementGroupBy) sqlScan(ctx context.Context, root *StatementQuery, v any) error {
+func (_g *StatementGroupBy) sqlScan(ctx context.Context, root *StatementQuery, v any) error {
 	selector := root.sqlQuery(ctx).Select()
-	aggregation := make([]string, 0, len(sgb.fns))
-	for _, fn := range sgb.fns {
+	aggregation := make([]string, 0, len(_g.fns))
+	for _, fn := range _g.fns {
 		aggregation = append(aggregation, fn(selector))
 	}
 	if len(selector.SelectedColumns()) == 0 {
-		columns := make([]string, 0, len(*sgb.flds)+len(sgb.fns))
-		for _, f := range *sgb.flds {
+		columns := make([]string, 0, len(*_g.flds)+len(_g.fns))
+		for _, f := range *_g.flds {
 			columns = append(columns, selector.C(f))
 		}
 		columns = append(columns, aggregation...)
 		selector.Select(columns...)
 	}
-	selector.GroupBy(selector.Columns(*sgb.flds...)...)
+	selector.GroupBy(selector.Columns(*_g.flds...)...)
 	if err := selector.Err(); err != nil {
 		return err
 	}
 	rows := &sql.Rows{}
 	query, args := selector.Query()
-	if err := sgb.build.driver.Query(ctx, query, args, rows); err != nil {
+	if err := _g.build.driver.Query(ctx, query, args, rows); err != nil {
 		return err
 	}
 	defer rows.Close()
@@ -846,27 +846,27 @@ type StatementSelect struct {
 }
 
 // Aggregate adds the given aggregation functions to the selector query.
-func (ss *StatementSelect) Aggregate(fns ...AggregateFunc) *StatementSelect {
-	ss.fns = append(ss.fns, fns...)
-	return ss
+func (_s *StatementSelect) Aggregate(fns ...AggregateFunc) *StatementSelect {
+	_s.fns = append(_s.fns, fns...)
+	return _s
 }
 
 // Scan applies the selector query and scans the result into the given value.
-func (ss *StatementSelect) Scan(ctx context.Context, v any) error {
-	ctx = setContextOp(ctx, ss.ctx, ent.OpQuerySelect)
-	if err := ss.prepareQuery(ctx); err != nil {
+func (_s *StatementSelect) Scan(ctx context.Context, v any) error {
+	ctx = setContextOp(ctx, _s.ctx, ent.OpQuerySelect)
+	if err := _s.prepareQuery(ctx); err != nil {
 		return err
 	}
-	return scanWithInterceptors[*StatementQuery, *StatementSelect](ctx, ss.StatementQuery, ss, ss.inters, v)
+	return scanWithInterceptors[*StatementQuery, *StatementSelect](ctx, _s.StatementQuery, _s, _s.inters, v)
 }
 
-func (ss *StatementSelect) sqlScan(ctx context.Context, root *StatementQuery, v any) error {
+func (_s *StatementSelect) sqlScan(ctx context.Context, root *StatementQuery, v any) error {
 	selector := root.sqlQuery(ctx)
-	aggregation := make([]string, 0, len(ss.fns))
-	for _, fn := range ss.fns {
+	aggregation := make([]string, 0, len(_s.fns))
+	for _, fn := range _s.fns {
 		aggregation = append(aggregation, fn(selector))
 	}
-	switch n := len(*ss.selector.flds); {
+	switch n := len(*_s.selector.flds); {
 	case n == 0 && len(aggregation) > 0:
 		selector.Select(aggregation...)
 	case n != 0 && len(aggregation) > 0:
@@ -874,7 +874,7 @@ func (ss *StatementSelect) sqlScan(ctx context.Context, root *StatementQuery, v 
 	}
 	rows := &sql.Rows{}
 	query, args := selector.Query()
-	if err := ss.driver.Query(ctx, query, args, rows); err != nil {
+	if err := _s.driver.Query(ctx, query, args, rows); err != nil {
 		return err
 	}
 	defer rows.Close()

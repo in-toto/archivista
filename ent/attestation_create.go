@@ -22,50 +22,50 @@ type AttestationCreate struct {
 }
 
 // SetType sets the "type" field.
-func (ac *AttestationCreate) SetType(s string) *AttestationCreate {
-	ac.mutation.SetType(s)
-	return ac
+func (_c *AttestationCreate) SetType(v string) *AttestationCreate {
+	_c.mutation.SetType(v)
+	return _c
 }
 
 // SetID sets the "id" field.
-func (ac *AttestationCreate) SetID(u uuid.UUID) *AttestationCreate {
-	ac.mutation.SetID(u)
-	return ac
+func (_c *AttestationCreate) SetID(v uuid.UUID) *AttestationCreate {
+	_c.mutation.SetID(v)
+	return _c
 }
 
 // SetNillableID sets the "id" field if the given value is not nil.
-func (ac *AttestationCreate) SetNillableID(u *uuid.UUID) *AttestationCreate {
-	if u != nil {
-		ac.SetID(*u)
+func (_c *AttestationCreate) SetNillableID(v *uuid.UUID) *AttestationCreate {
+	if v != nil {
+		_c.SetID(*v)
 	}
-	return ac
+	return _c
 }
 
 // SetAttestationCollectionID sets the "attestation_collection" edge to the AttestationCollection entity by ID.
-func (ac *AttestationCreate) SetAttestationCollectionID(id uuid.UUID) *AttestationCreate {
-	ac.mutation.SetAttestationCollectionID(id)
-	return ac
+func (_c *AttestationCreate) SetAttestationCollectionID(id uuid.UUID) *AttestationCreate {
+	_c.mutation.SetAttestationCollectionID(id)
+	return _c
 }
 
 // SetAttestationCollection sets the "attestation_collection" edge to the AttestationCollection entity.
-func (ac *AttestationCreate) SetAttestationCollection(a *AttestationCollection) *AttestationCreate {
-	return ac.SetAttestationCollectionID(a.ID)
+func (_c *AttestationCreate) SetAttestationCollection(v *AttestationCollection) *AttestationCreate {
+	return _c.SetAttestationCollectionID(v.ID)
 }
 
 // Mutation returns the AttestationMutation object of the builder.
-func (ac *AttestationCreate) Mutation() *AttestationMutation {
-	return ac.mutation
+func (_c *AttestationCreate) Mutation() *AttestationMutation {
+	return _c.mutation
 }
 
 // Save creates the Attestation in the database.
-func (ac *AttestationCreate) Save(ctx context.Context) (*Attestation, error) {
-	ac.defaults()
-	return withHooks(ctx, ac.sqlSave, ac.mutation, ac.hooks)
+func (_c *AttestationCreate) Save(ctx context.Context) (*Attestation, error) {
+	_c.defaults()
+	return withHooks(ctx, _c.sqlSave, _c.mutation, _c.hooks)
 }
 
 // SaveX calls Save and panics if Save returns an error.
-func (ac *AttestationCreate) SaveX(ctx context.Context) *Attestation {
-	v, err := ac.Save(ctx)
+func (_c *AttestationCreate) SaveX(ctx context.Context) *Attestation {
+	v, err := _c.Save(ctx)
 	if err != nil {
 		panic(err)
 	}
@@ -73,48 +73,48 @@ func (ac *AttestationCreate) SaveX(ctx context.Context) *Attestation {
 }
 
 // Exec executes the query.
-func (ac *AttestationCreate) Exec(ctx context.Context) error {
-	_, err := ac.Save(ctx)
+func (_c *AttestationCreate) Exec(ctx context.Context) error {
+	_, err := _c.Save(ctx)
 	return err
 }
 
 // ExecX is like Exec, but panics if an error occurs.
-func (ac *AttestationCreate) ExecX(ctx context.Context) {
-	if err := ac.Exec(ctx); err != nil {
+func (_c *AttestationCreate) ExecX(ctx context.Context) {
+	if err := _c.Exec(ctx); err != nil {
 		panic(err)
 	}
 }
 
 // defaults sets the default values of the builder before save.
-func (ac *AttestationCreate) defaults() {
-	if _, ok := ac.mutation.ID(); !ok {
+func (_c *AttestationCreate) defaults() {
+	if _, ok := _c.mutation.ID(); !ok {
 		v := attestation.DefaultID()
-		ac.mutation.SetID(v)
+		_c.mutation.SetID(v)
 	}
 }
 
 // check runs all checks and user-defined validators on the builder.
-func (ac *AttestationCreate) check() error {
-	if _, ok := ac.mutation.GetType(); !ok {
+func (_c *AttestationCreate) check() error {
+	if _, ok := _c.mutation.GetType(); !ok {
 		return &ValidationError{Name: "type", err: errors.New(`ent: missing required field "Attestation.type"`)}
 	}
-	if v, ok := ac.mutation.GetType(); ok {
+	if v, ok := _c.mutation.GetType(); ok {
 		if err := attestation.TypeValidator(v); err != nil {
 			return &ValidationError{Name: "type", err: fmt.Errorf(`ent: validator failed for field "Attestation.type": %w`, err)}
 		}
 	}
-	if len(ac.mutation.AttestationCollectionIDs()) == 0 {
+	if len(_c.mutation.AttestationCollectionIDs()) == 0 {
 		return &ValidationError{Name: "attestation_collection", err: errors.New(`ent: missing required edge "Attestation.attestation_collection"`)}
 	}
 	return nil
 }
 
-func (ac *AttestationCreate) sqlSave(ctx context.Context) (*Attestation, error) {
-	if err := ac.check(); err != nil {
+func (_c *AttestationCreate) sqlSave(ctx context.Context) (*Attestation, error) {
+	if err := _c.check(); err != nil {
 		return nil, err
 	}
-	_node, _spec := ac.createSpec()
-	if err := sqlgraph.CreateNode(ctx, ac.driver, _spec); err != nil {
+	_node, _spec := _c.createSpec()
+	if err := sqlgraph.CreateNode(ctx, _c.driver, _spec); err != nil {
 		if sqlgraph.IsConstraintError(err) {
 			err = &ConstraintError{msg: err.Error(), wrap: err}
 		}
@@ -127,25 +127,25 @@ func (ac *AttestationCreate) sqlSave(ctx context.Context) (*Attestation, error) 
 			return nil, err
 		}
 	}
-	ac.mutation.id = &_node.ID
-	ac.mutation.done = true
+	_c.mutation.id = &_node.ID
+	_c.mutation.done = true
 	return _node, nil
 }
 
-func (ac *AttestationCreate) createSpec() (*Attestation, *sqlgraph.CreateSpec) {
+func (_c *AttestationCreate) createSpec() (*Attestation, *sqlgraph.CreateSpec) {
 	var (
-		_node = &Attestation{config: ac.config}
+		_node = &Attestation{config: _c.config}
 		_spec = sqlgraph.NewCreateSpec(attestation.Table, sqlgraph.NewFieldSpec(attestation.FieldID, field.TypeUUID))
 	)
-	if id, ok := ac.mutation.ID(); ok {
+	if id, ok := _c.mutation.ID(); ok {
 		_node.ID = id
 		_spec.ID.Value = &id
 	}
-	if value, ok := ac.mutation.GetType(); ok {
+	if value, ok := _c.mutation.GetType(); ok {
 		_spec.SetField(attestation.FieldType, field.TypeString, value)
 		_node.Type = value
 	}
-	if nodes := ac.mutation.AttestationCollectionIDs(); len(nodes) > 0 {
+	if nodes := _c.mutation.AttestationCollectionIDs(); len(nodes) > 0 {
 		edge := &sqlgraph.EdgeSpec{
 			Rel:     sqlgraph.M2O,
 			Inverse: true,
@@ -173,16 +173,16 @@ type AttestationCreateBulk struct {
 }
 
 // Save creates the Attestation entities in the database.
-func (acb *AttestationCreateBulk) Save(ctx context.Context) ([]*Attestation, error) {
-	if acb.err != nil {
-		return nil, acb.err
+func (_c *AttestationCreateBulk) Save(ctx context.Context) ([]*Attestation, error) {
+	if _c.err != nil {
+		return nil, _c.err
 	}
-	specs := make([]*sqlgraph.CreateSpec, len(acb.builders))
-	nodes := make([]*Attestation, len(acb.builders))
-	mutators := make([]Mutator, len(acb.builders))
-	for i := range acb.builders {
+	specs := make([]*sqlgraph.CreateSpec, len(_c.builders))
+	nodes := make([]*Attestation, len(_c.builders))
+	mutators := make([]Mutator, len(_c.builders))
+	for i := range _c.builders {
 		func(i int, root context.Context) {
-			builder := acb.builders[i]
+			builder := _c.builders[i]
 			builder.defaults()
 			var mut Mutator = MutateFunc(func(ctx context.Context, m Mutation) (Value, error) {
 				mutation, ok := m.(*AttestationMutation)
@@ -196,11 +196,11 @@ func (acb *AttestationCreateBulk) Save(ctx context.Context) ([]*Attestation, err
 				var err error
 				nodes[i], specs[i] = builder.createSpec()
 				if i < len(mutators)-1 {
-					_, err = mutators[i+1].Mutate(root, acb.builders[i+1].mutation)
+					_, err = mutators[i+1].Mutate(root, _c.builders[i+1].mutation)
 				} else {
 					spec := &sqlgraph.BatchCreateSpec{Nodes: specs}
 					// Invoke the actual operation on the latest mutation in the chain.
-					if err = sqlgraph.BatchCreate(ctx, acb.driver, spec); err != nil {
+					if err = sqlgraph.BatchCreate(ctx, _c.driver, spec); err != nil {
 						if sqlgraph.IsConstraintError(err) {
 							err = &ConstraintError{msg: err.Error(), wrap: err}
 						}
@@ -220,7 +220,7 @@ func (acb *AttestationCreateBulk) Save(ctx context.Context) ([]*Attestation, err
 		}(i, ctx)
 	}
 	if len(mutators) > 0 {
-		if _, err := mutators[0].Mutate(ctx, acb.builders[0].mutation); err != nil {
+		if _, err := mutators[0].Mutate(ctx, _c.builders[0].mutation); err != nil {
 			return nil, err
 		}
 	}
@@ -228,8 +228,8 @@ func (acb *AttestationCreateBulk) Save(ctx context.Context) ([]*Attestation, err
 }
 
 // SaveX is like Save, but panics if an error occurs.
-func (acb *AttestationCreateBulk) SaveX(ctx context.Context) []*Attestation {
-	v, err := acb.Save(ctx)
+func (_c *AttestationCreateBulk) SaveX(ctx context.Context) []*Attestation {
+	v, err := _c.Save(ctx)
 	if err != nil {
 		panic(err)
 	}
@@ -237,14 +237,14 @@ func (acb *AttestationCreateBulk) SaveX(ctx context.Context) []*Attestation {
 }
 
 // Exec executes the query.
-func (acb *AttestationCreateBulk) Exec(ctx context.Context) error {
-	_, err := acb.Save(ctx)
+func (_c *AttestationCreateBulk) Exec(ctx context.Context) error {
+	_, err := _c.Save(ctx)
 	return err
 }
 
 // ExecX is like Exec, but panics if an error occurs.
-func (acb *AttestationCreateBulk) ExecX(ctx context.Context) {
-	if err := acb.Exec(ctx); err != nil {
+func (_c *AttestationCreateBulk) ExecX(ctx context.Context) {
+	if err := _c.Exec(ctx); err != nil {
 		panic(err)
 	}
 }

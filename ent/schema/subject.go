@@ -15,6 +15,8 @@
 package schema
 
 import (
+	"time"
+
 	"entgo.io/contrib/entgql"
 	"entgo.io/ent"
 	"entgo.io/ent/schema"
@@ -33,6 +35,7 @@ type Subject struct {
 func (Subject) Fields() []ent.Field {
 	return []ent.Field{
 		field.UUID("id", uuid.UUID{}).Default(uuid.New).Immutable().Unique(),
+		field.Time("created_at").Default(time.Now).Immutable().Optional().Nillable().Annotations(entgql.OrderField("CREATED_AT")),
 		field.String("name").NotEmpty(),
 	}
 }
