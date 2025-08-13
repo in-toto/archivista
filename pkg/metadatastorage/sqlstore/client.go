@@ -15,13 +15,17 @@
 package sqlstore
 
 import (
+	"context"
 	"fmt"
+	"net/url"
 	"strings"
 	"time"
 
 	"ariga.io/sqlcomment"
 	"entgo.io/ent/dialect"
 	"entgo.io/ent/dialect/sql"
+	"github.com/aws/aws-sdk-go-v2/config"
+	"github.com/aws/aws-sdk-go-v2/feature/rds/auth"
 	"github.com/go-sql-driver/mysql"
 	"github.com/in-toto/archivista/ent"
 
@@ -71,8 +75,8 @@ func NewEntClient(sqlBackend string, connectionString string, opts ...ClientOpti
 	}
 
 	var entDialect string
-	switch strings.ToUpper(sqlBackend) {
-	case "MYSQL":
+	upperSqlBackend := strings.ToUpper(sqlBackend)
+	if strings.HasPrefix(upperSqlBackend, "MYSQL") {
 		dbConfig, err := mysql.ParseDSN(connectionString)
 		if err != nil {
 			return nil, fmt.Errorf("could not parse mysql connection string: %w", err)
@@ -83,10 +87,20 @@ func NewEntClient(sqlBackend string, connectionString string, opts ...ClientOpti
 		dbConfig.ParseTime = true
 		entDialect = dialect.MySQL
 		connectionString = dbConfig.FormatDSN()
-	case "PSQL":
+	} else if strings.HasPrefix(upperSqlBackend, "PSQL") {
 		entDialect = dialect.Postgres
-	default:
-		return nil, fmt.Errorf("unknown sql backend: %s", sqlBackend)
+	} else {
+		return nil, fmt.Errorf("unknown sql backend: %s", upperSqlBackend)
+	}
+
+	// if upperSqlBackend ends with _RDS_IAM, then rewrite the connection string to use
+	// AWS RDS IAM authentication
+	if strings.HasSuffix(upperSqlBackend, "_RDS_IAM") {
+		var err error
+		connectionString, err = rewriteConnectionStringForIAM(sqlBackend, connectionString)
+		if err != nil {
+			return nil, fmt.Errorf("could not rewrite connection string for IAM: %w", err)
+		}
 	}
 
 	drv, err := sql.Open(entDialect, connectionString)
@@ -108,4 +122,33 @@ func NewEntClient(sqlBackend string, connectionString string, opts ...ClientOpti
 
 	client := ent.NewClient(ent.Driver(sqlcommentDrv))
 	return client, nil
+}
+
+// rewriteConnectionStringForIAM rewrites the connection string to use AWS RDS IAM authentication
+// It supports both MYSQL_RDS_IAM and PSQL_RDS_IAM backends
+func rewriteConnectionStringForIAM(sqlBackend string, connectionString string) (string, error) {
+	upperSqlBackend := strings.ToUpper(sqlBackend)
+	nURL, err := url.Parse(connectionString)
+	if err != nil {
+		return "", fmt.Errorf("parsing connection string: %w", err)
+	}
+	cfg, err := config.LoadDefaultConfig(context.Background())
+	if err != nil {
+		return "", fmt.Errorf("loading AWS config: %w", err)
+	}
+	// generate a new rds session auth tokenized connection string
+	rdsEndpoint := fmt.Sprintf("%s:%s", nURL.Hostname(), nURL.Port())
+	token, err := auth.BuildAuthToken(context.Background(), rdsEndpoint, cfg.Region, nURL.User.Username(), cfg.Credentials)
+	if err != nil {
+		return "", fmt.Errorf("building auth token: %w", err)
+	}
+	nURL.User = url.UserPassword(nURL.User.Username(), token)
+	// for mysql, we need to add some query parameters
+	if strings.HasPrefix(upperSqlBackend, "MYSQL") {
+		q := nURL.Query()
+		q.Set("tls", "true")
+		q.Set("allowCleartextPasswords", "true")
+		nURL.RawQuery = q.Encode()
+	}
+	return nURL.String(), nil
 }
