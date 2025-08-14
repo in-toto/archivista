@@ -15,17 +15,13 @@
 package sqlstore
 
 import (
-	"context"
 	"fmt"
-	"net/url"
 	"strings"
 	"time"
 
 	"ariga.io/sqlcomment"
 	"entgo.io/ent/dialect"
 	"entgo.io/ent/dialect/sql"
-	"github.com/aws/aws-sdk-go-v2/config"
-	"github.com/aws/aws-sdk-go-v2/feature/rds/auth"
 	"github.com/go-sql-driver/mysql"
 	"github.com/in-toto/archivista/ent"
 
@@ -90,7 +86,7 @@ func NewEntClient(sqlBackend string, connectionString string, opts ...ClientOpti
 	} else if strings.HasPrefix(upperSqlBackend, "PSQL") {
 		entDialect = dialect.Postgres
 	} else {
-		return nil, fmt.Errorf("unknown sql backend: %s", upperSqlBackend)
+		return nil, fmt.Errorf("unknown sql backend: %s", sqlBackend)
 	}
 
 	// if upperSqlBackend ends with _RDS_IAM, then rewrite the connection string to use
@@ -122,33 +118,4 @@ func NewEntClient(sqlBackend string, connectionString string, opts ...ClientOpti
 
 	client := ent.NewClient(ent.Driver(sqlcommentDrv))
 	return client, nil
-}
-
-// rewriteConnectionStringForIAM rewrites the connection string to use AWS RDS IAM authentication
-// It supports both MYSQL_RDS_IAM and PSQL_RDS_IAM backends
-func rewriteConnectionStringForIAM(sqlBackend string, connectionString string) (string, error) {
-	upperSqlBackend := strings.ToUpper(sqlBackend)
-	nURL, err := url.Parse(connectionString)
-	if err != nil {
-		return "", fmt.Errorf("parsing connection string: %w", err)
-	}
-	cfg, err := config.LoadDefaultConfig(context.Background())
-	if err != nil {
-		return "", fmt.Errorf("loading AWS config: %w", err)
-	}
-	// generate a new rds session auth tokenized connection string
-	rdsEndpoint := fmt.Sprintf("%s:%s", nURL.Hostname(), nURL.Port())
-	token, err := auth.BuildAuthToken(context.Background(), rdsEndpoint, cfg.Region, nURL.User.Username(), cfg.Credentials)
-	if err != nil {
-		return "", fmt.Errorf("building auth token: %w", err)
-	}
-	nURL.User = url.UserPassword(nURL.User.Username(), token)
-	// for mysql, we need to add some query parameters
-	if strings.HasPrefix(upperSqlBackend, "MYSQL") {
-		q := nURL.Query()
-		q.Set("tls", "true")
-		q.Set("allowCleartextPasswords", "true")
-		nURL.RawQuery = q.Encode()
-	}
-	return nURL.String(), nil
 }
