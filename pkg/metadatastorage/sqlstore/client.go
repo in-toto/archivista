@@ -93,7 +93,7 @@ func NewEntClient(sqlBackend string, connectionString string, opts ...ClientOpti
 	// AWS RDS IAM authentication
 	if strings.HasSuffix(upperSqlBackend, "_RDS_IAM") {
 		var err error
-		connectionString, err = rewriteConnectionStringForIAM(sqlBackend, connectionString)
+		connectionString, err = RewriteConnectionStringForIAM(sqlBackend, connectionString)
 		if err != nil {
 			return nil, fmt.Errorf("could not rewrite connection string for IAM: %w", err)
 		}

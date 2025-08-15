@@ -38,7 +38,7 @@ func (c *AWSConfig) LoadDefaultConfig(ctx context.Context, opts ...func(*config.
 	return config.LoadDefaultConfig(ctx, opts...)
 }
 
-var awsConfigAPI AWSConfigAPI = &AWSConfig{}
+var AwsConfigAPI AWSConfigAPI = &AWSConfig{}
 
 type AWSAuthAPI interface {
 	// BuildAuthToken builds an authentication token for AWS RDS IAM authentication.
@@ -51,12 +51,12 @@ func (a *AWSAuth) BuildAuthToken(ctx context.Context, endpoint, region, dbUser s
 	return auth.BuildAuthToken(ctx, endpoint, region, dbUser, creds, optFns...)
 }
 
-var awsAuthAPI AWSAuthAPI = &AWSAuth{}
+var AwsAuthAPI AWSAuthAPI = &AWSAuth{}
 
-// rewriteConnectionStringForIAM rewrites the connection string to use AWS RDS IAM authentication
+// RewriteConnectionStringForIAM rewrites the connection string to use AWS RDS IAM authentication
 // It supports both MYSQL_RDS_IAM and PSQL_RDS_IAM backends
-func rewriteConnectionStringForIAM(sqlBackend string, connectionString string) (string, error) {
-	if awsConfigAPI == nil || awsAuthAPI == nil {
+func RewriteConnectionStringForIAM(sqlBackend string, connectionString string) (string, error) {
+	if AwsConfigAPI == nil || AwsAuthAPI == nil {
 		return "", fmt.Errorf("AWSConfigAPI and AWSAuthAPI must not be nil")
 	}
 	upperSqlBackend := strings.ToUpper(sqlBackend)
@@ -70,13 +70,13 @@ func rewriteConnectionStringForIAM(sqlBackend string, connectionString string) (
 	if nURL.User == nil || nURL.User.Username() == "" {
 		return "", fmt.Errorf("connection string is missing a user")
 	}
-	cfg, err := awsConfigAPI.LoadDefaultConfig(context.Background())
+	cfg, err := AwsConfigAPI.LoadDefaultConfig(context.Background())
 	if err != nil {
 		return "", fmt.Errorf("loading AWS config: %w", err)
 	}
 	// generate a new rds session auth tokenized connection string
 	rdsEndpoint := fmt.Sprintf("%s:%s", nURL.Hostname(), nURL.Port())
-	token, err := awsAuthAPI.BuildAuthToken(context.Background(), rdsEndpoint, cfg.Region, nURL.User.Username(), cfg.Credentials)
+	token, err := AwsAuthAPI.BuildAuthToken(context.Background(), rdsEndpoint, cfg.Region, nURL.User.Username(), cfg.Credentials)
 	if err != nil {
 		return "", fmt.Errorf("building auth token: %w", err)
 	}
