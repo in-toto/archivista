@@ -71,8 +71,8 @@ func NewEntClient(sqlBackend string, connectionString string, opts ...ClientOpti
 	}
 
 	var entDialect string
-	switch strings.ToUpper(sqlBackend) {
-	case "MYSQL":
+	upperSqlBackend := strings.ToUpper(sqlBackend)
+	if strings.HasPrefix(upperSqlBackend, "MYSQL") {
 		dbConfig, err := mysql.ParseDSN(connectionString)
 		if err != nil {
 			return nil, fmt.Errorf("could not parse mysql connection string: %w", err)
@@ -83,10 +83,20 @@ func NewEntClient(sqlBackend string, connectionString string, opts ...ClientOpti
 		dbConfig.ParseTime = true
 		entDialect = dialect.MySQL
 		connectionString = dbConfig.FormatDSN()
-	case "PSQL":
+	} else if strings.HasPrefix(upperSqlBackend, "PSQL") {
 		entDialect = dialect.Postgres
-	default:
+	} else {
 		return nil, fmt.Errorf("unknown sql backend: %s", sqlBackend)
+	}
+
+	// if upperSqlBackend ends with _RDS_IAM, then rewrite the connection string to use
+	// AWS RDS IAM authentication
+	if strings.HasSuffix(upperSqlBackend, "_RDS_IAM") {
+		var err error
+		connectionString, err = RewriteConnectionStringForIAM(sqlBackend, connectionString)
+		if err != nil {
+			return nil, fmt.Errorf("could not rewrite connection string for IAM: %w", err)
+		}
 	}
 
 	drv, err := sql.Open(entDialect, connectionString)
