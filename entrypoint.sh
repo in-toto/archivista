@@ -29,12 +29,14 @@ else
       ARCHIVISTA_SQL_STORE_CONNECTION_STRING="root:example@db/testify"
     fi
     echo "Running migrations for MySQL"
-    atlas migrate apply --dir "file:///archivista/migrations/mysql" --url "mysql://$ARCHIVISTA_SQL_STORE_CONNECTION_STRING"
+    DB_URL=$(/bin/archivistactl iam "${SQL_TYPE}" "mysql://${ARCHIVISTA_SQL_STORE_CONNECTION_STRING}")
+    atlas migrate apply --dir "file:///archivista/migrations/mysql" --url "${DB_URL}"
     atlas_rc=$?
     ;;
   PSQL*)
     echo "Running migrations for Postgres"
-    atlas migrate apply --dir "file:///archivista/migrations/pgsql" --url "$ARCHIVISTA_SQL_STORE_CONNECTION_STRING"
+    DB_URL=$(/bin/archivistactl iam "${SQL_TYPE}" "${ARCHIVISTA_SQL_STORE_CONNECTION_STRING}")
+    atlas migrate apply --dir "file:///archivista/migrations/pgsql" --url "${DB_URL}"
     atlas_rc=$?
     ;;
   *)

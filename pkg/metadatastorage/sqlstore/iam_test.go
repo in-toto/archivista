@@ -58,176 +58,176 @@ func (m *mockAWSAuthAPI) BuildAuthToken(ctx context.Context, endpoint, region, d
 }
 
 func (s *RewriteConnectionStringForIAMSuite) TestUnsupportedSqlBackend() {
-	awsConfigAPI = nil
-	awsAuthAPI = nil
-	_, err := rewriteConnectionStringForIAM("unsupported", "connstr")
+	AwsConfigAPI = nil
+	AwsAuthAPI = nil
+	_, err := RewriteConnectionStringForIAM("unsupported", "connstr")
 	s.Require().Error(err)
 }
 
 func (s *RewriteConnectionStringForIAMSuite) TestMySqlSuccess() {
-	awsConfigAPI = &mockAWSConfigAPI{
+	AwsConfigAPI = &mockAWSConfigAPI{
 		cfg: aws.Config{Region: "us-east-1"},
 	}
-	awsAuthAPI = &mockAWSAuthAPI{
+	AwsAuthAPI = &mockAWSAuthAPI{
 		token: "authtoken",
 	}
-	connStr, err := rewriteConnectionStringForIAM("mysql_rds_iam", mysqlConnStr)
+	connStr, err := RewriteConnectionStringForIAM("mysql_rds_iam", mysqlConnStr)
 	s.Require().NoError(err)
 	s.Equal("mysql://user:authtoken@host:3306/dbname?allowCleartextPasswords=true&tls=true", connStr)
 }
 
 func (s *RewriteConnectionStringForIAMSuite) TestMySqlNoPasswordSuccess() {
-	awsConfigAPI = &mockAWSConfigAPI{
+	AwsConfigAPI = &mockAWSConfigAPI{
 		cfg: aws.Config{Region: "us-east-1"},
 	}
-	awsAuthAPI = &mockAWSAuthAPI{
+	AwsAuthAPI = &mockAWSAuthAPI{
 		token: "authtoken",
 	}
-	connStr, err := rewriteConnectionStringForIAM("mysql_rds_iam", "mysql://user@host:3306/dbname")
+	connStr, err := RewriteConnectionStringForIAM("mysql_rds_iam", "mysql://user@host:3306/dbname")
 	s.Require().NoError(err)
 	s.Equal("mysql://user:authtoken@host:3306/dbname?allowCleartextPasswords=true&tls=true", connStr)
 }
 
 func (s *RewriteConnectionStringForIAMSuite) TestMySqlWithParamsSuccess() {
-	awsConfigAPI = &mockAWSConfigAPI{
+	AwsConfigAPI = &mockAWSConfigAPI{
 		cfg: aws.Config{Region: "us-east-1"},
 	}
-	awsAuthAPI = &mockAWSAuthAPI{
+	AwsAuthAPI = &mockAWSAuthAPI{
 		token: "authtoken",
 	}
-	connStr, err := rewriteConnectionStringForIAM("mysql_rds_iam", fmt.Sprintf("%s?foo=bar", mysqlConnStr))
+	connStr, err := RewriteConnectionStringForIAM("mysql_rds_iam", fmt.Sprintf("%s?foo=bar", mysqlConnStr))
 	s.Require().NoError(err)
 	s.Equal("mysql://user:authtoken@host:3306/dbname?allowCleartextPasswords=true&foo=bar&tls=true", connStr)
 }
 
 func (s *RewriteConnectionStringForIAMSuite) TestMySqlOverrideParamsSuccess() {
-	awsConfigAPI = &mockAWSConfigAPI{
+	AwsConfigAPI = &mockAWSConfigAPI{
 		cfg: aws.Config{Region: "us-east-1"},
 	}
-	awsAuthAPI = &mockAWSAuthAPI{
+	AwsAuthAPI = &mockAWSAuthAPI{
 		token: "authtoken",
 	}
-	connStr, err := rewriteConnectionStringForIAM("mysql_rds_iam", fmt.Sprintf("%s?allowCleartextPasswords=false&foo=baz&tls=false", mysqlConnStr))
+	connStr, err := RewriteConnectionStringForIAM("mysql_rds_iam", fmt.Sprintf("%s?allowCleartextPasswords=false&foo=baz&tls=false", mysqlConnStr))
 	s.Require().NoError(err)
 	s.Equal("mysql://user:authtoken@host:3306/dbname?allowCleartextPasswords=true&foo=baz&tls=true", connStr)
 }
 
 func (s *RewriteConnectionStringForIAMSuite) TestPostgresSuccess() {
-	awsConfigAPI = &mockAWSConfigAPI{
+	AwsConfigAPI = &mockAWSConfigAPI{
 		cfg: aws.Config{Region: "us-east-1"},
 	}
-	awsAuthAPI = &mockAWSAuthAPI{
+	AwsAuthAPI = &mockAWSAuthAPI{
 		token: "authtoken",
 	}
-	connStr, err := rewriteConnectionStringForIAM("psql_rds_iam", postgresConnStr)
+	connStr, err := RewriteConnectionStringForIAM("psql_rds_iam", postgresConnStr)
 	s.Require().NoError(err)
 	s.Equal("postgresql://user:authtoken@host:5432/dbname", connStr)
 }
 
 func (s *RewriteConnectionStringForIAMSuite) TestPostgresNoPasswordSuccess() {
-	awsConfigAPI = &mockAWSConfigAPI{
+	AwsConfigAPI = &mockAWSConfigAPI{
 		cfg: aws.Config{Region: "us-east-1"},
 	}
-	awsAuthAPI = &mockAWSAuthAPI{
+	AwsAuthAPI = &mockAWSAuthAPI{
 		token: "authtoken",
 	}
-	connStr, err := rewriteConnectionStringForIAM("psql_rds_iam", "postgresql://user@host:5432/dbname")
+	connStr, err := RewriteConnectionStringForIAM("psql_rds_iam", "postgresql://user@host:5432/dbname")
 	s.Require().NoError(err)
 	s.Equal("postgresql://user:authtoken@host:5432/dbname", connStr)
 }
 
 func (s *RewriteConnectionStringForIAMSuite) TestPostgresWithParamsSuccess() {
-	awsConfigAPI = &mockAWSConfigAPI{
+	AwsConfigAPI = &mockAWSConfigAPI{
 		cfg: aws.Config{Region: "us-east-1"},
 	}
-	awsAuthAPI = &mockAWSAuthAPI{
+	AwsAuthAPI = &mockAWSAuthAPI{
 		token: "authtoken",
 	}
-	connStr, err := rewriteConnectionStringForIAM("psql_rds_iam", fmt.Sprintf("%s?foo=bar", postgresConnStr))
+	connStr, err := RewriteConnectionStringForIAM("psql_rds_iam", fmt.Sprintf("%s?foo=bar", postgresConnStr))
 	s.Require().NoError(err)
 	s.Equal("postgresql://user:authtoken@host:5432/dbname?foo=bar", connStr)
 }
 
 func (s *RewriteConnectionStringForIAMSuite) TestLoadConfigError() {
-	awsConfigAPI = &mockAWSConfigAPI{
+	AwsConfigAPI = &mockAWSConfigAPI{
 		err: errors.New("some error"),
 	}
-	awsAuthAPI = &mockAWSAuthAPI{
+	AwsAuthAPI = &mockAWSAuthAPI{
 		token: "authtoken",
 	}
-	_, err := rewriteConnectionStringForIAM("mysql_rds_iam", mysqlConnStr)
+	_, err := RewriteConnectionStringForIAM("mysql_rds_iam", mysqlConnStr)
 	s.Require().Error(err)
 	s.Contains(err.Error(), "loading AWS config")
 }
 
 func (s *RewriteConnectionStringForIAMSuite) TestBuildAuthTokenError() {
-	awsConfigAPI = &mockAWSConfigAPI{
+	AwsConfigAPI = &mockAWSConfigAPI{
 		cfg: aws.Config{Region: "us-east-1"},
 	}
-	awsAuthAPI = &mockAWSAuthAPI{
+	AwsAuthAPI = &mockAWSAuthAPI{
 		err: errors.New("some error"),
 	}
-	_, err := rewriteConnectionStringForIAM("mysql_rds_iam", mysqlConnStr)
+	_, err := RewriteConnectionStringForIAM("mysql_rds_iam", mysqlConnStr)
 	s.Require().Error(err)
 	s.Contains(err.Error(), "building auth token")
 }
 
 func (s *RewriteConnectionStringForIAMSuite) TestMySqlNoHost() {
-	awsConfigAPI = &mockAWSConfigAPI{
+	AwsConfigAPI = &mockAWSConfigAPI{
 		cfg: aws.Config{Region: "us-east-1"},
 	}
-	awsAuthAPI = &mockAWSAuthAPI{
+	AwsAuthAPI = &mockAWSAuthAPI{
 		token: "authtoken",
 	}
-	_, err := rewriteConnectionStringForIAM("mysql_rds_iam", "mysql://user:password@/dbname")
+	_, err := RewriteConnectionStringForIAM("mysql_rds_iam", "mysql://user:password@/dbname")
 	s.Require().Error(err)
 	s.Contains(err.Error(), "onnection string is missing a host")
 }
 
 func (s *RewriteConnectionStringForIAMSuite) TestMySqlNoUser() {
-	awsConfigAPI = &mockAWSConfigAPI{
+	AwsConfigAPI = &mockAWSConfigAPI{
 		cfg: aws.Config{Region: "us-east-1"},
 	}
-	awsAuthAPI = &mockAWSAuthAPI{
+	AwsAuthAPI = &mockAWSAuthAPI{
 		token: "authtoken",
 	}
-	_, err := rewriteConnectionStringForIAM("mysql_rds_iam", "mysql://:password@host:3306/dbname")
+	_, err := RewriteConnectionStringForIAM("mysql_rds_iam", "mysql://:password@host:3306/dbname")
 	s.Require().Error(err)
 	s.Contains(err.Error(), "onnection string is missing a user")
 }
 
 func (s *RewriteConnectionStringForIAMSuite) TestPostgresNoHost() {
-	awsConfigAPI = &mockAWSConfigAPI{
+	AwsConfigAPI = &mockAWSConfigAPI{
 		cfg: aws.Config{Region: "us-east-1"},
 	}
-	awsAuthAPI = &mockAWSAuthAPI{
+	AwsAuthAPI = &mockAWSAuthAPI{
 		token: "authtoken",
 	}
-	_, err := rewriteConnectionStringForIAM("psql_rds_iam", "postgresql://user:password@/dbname")
+	_, err := RewriteConnectionStringForIAM("psql_rds_iam", "postgresql://user:password@/dbname")
 	s.Require().Error(err)
 	s.Contains(err.Error(), "onnection string is missing a host")
 }
 
 func (s *RewriteConnectionStringForIAMSuite) TestPostgresNoUser() {
-	awsConfigAPI = &mockAWSConfigAPI{
+	AwsConfigAPI = &mockAWSConfigAPI{
 		cfg: aws.Config{Region: "us-east-1"},
 	}
-	awsAuthAPI = &mockAWSAuthAPI{
+	AwsAuthAPI = &mockAWSAuthAPI{
 		token: "authtoken",
 	}
-	_, err := rewriteConnectionStringForIAM("psql_rds_iam", "postgresql://:password@host:5432/dbname")
+	_, err := RewriteConnectionStringForIAM("psql_rds_iam", "postgresql://:password@host:5432/dbname")
 	s.Require().Error(err)
 	s.Contains(err.Error(), "onnection string is missing a user")
 }
 
 func (s *RewriteConnectionStringForIAMSuite) TestUrlParseError() {
-	awsConfigAPI = &mockAWSConfigAPI{
+	AwsConfigAPI = &mockAWSConfigAPI{
 		cfg: aws.Config{Region: "us-east-1"},
 	}
-	awsAuthAPI = &mockAWSAuthAPI{
+	AwsAuthAPI = &mockAWSAuthAPI{
 		err: errors.New("some error"),
 	}
-	_, err := rewriteConnectionStringForIAM("mysql_rds_iam", "://invalid-url")
+	_, err := RewriteConnectionStringForIAM("mysql_rds_iam", "://invalid-url")
 	s.Require().Error(err)
 	s.Contains(err.Error(), "parsing connection string")
 }
