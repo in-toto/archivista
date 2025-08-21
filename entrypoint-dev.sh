@@ -20,7 +20,7 @@ else
 fi
 
 case $SQL_TYPE in
-    MYSQL)
+    MYSQL*)
         if [[ -z $ARCHIVISTA_SQL_STORE_CONNECTION_STRING ]]; then
             ARCHIVISTA_SQL_STORE_CONNECTION_STRING="root:example@db/testify"
         fi
@@ -28,7 +28,7 @@ case $SQL_TYPE in
         atlas migrate apply --dir "file:///src/ent/migrate/migrations/mysql" --url "mysql://$ARCHIVISTA_SQL_STORE_CONNECTION_STRING"
         atlas_rc=$?
         ;;
-    PSQL)
+    PSQL*)
         echo "Running migrations for Postgres"
         atlas migrate apply --dir "file:///src/ent/migrate/migrations/pgsql" --url "$ARCHIVISTA_SQL_STORE_CONNECTION_STRING"
         atlas_rc=$?
