@@ -29,6 +29,7 @@ import (
 
 	"entgo.io/contrib/entgql"
 	"github.com/99designs/gqlgen/graphql/handler"
+	"github.com/99designs/gqlgen/graphql/handler/extension"
 	"github.com/99designs/gqlgen/graphql/handler/transport"
 	"github.com/99designs/gqlgen/graphql/playground"
 	"github.com/edwarnicke/gitoid"
@@ -296,6 +297,7 @@ func (s *Server) Query(sqlclient *ent.Client) *handler.Server {
 	srv.AddTransport(transport.GET{})
 	srv.AddTransport(transport.POST{})
 	srv.Use(entgql.Transactioner{TxOpener: sqlclient})
+	srv.Use(extension.Introspection{})
 	return srv
 }
 
