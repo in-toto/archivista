@@ -15,17 +15,18 @@
 package sqlstore
 
 import (
+	"database/sql"
 	"fmt"
 	"strings"
 	"time"
 
 	"ariga.io/sqlcomment"
 	"entgo.io/ent/dialect"
-	"entgo.io/ent/dialect/sql"
+	entsql "entgo.io/ent/dialect/sql"
 	"github.com/go-sql-driver/mysql"
 	"github.com/in-toto/archivista/ent"
 
-	_ "github.com/lib/pq"
+	_ "github.com/jackc/pgx/v5/stdlib"
 )
 
 type ClientOption func(*clientOptions)
@@ -99,15 +100,18 @@ func NewEntClient(sqlBackend string, connectionString string, opts ...ClientOpti
 		}
 	}
 
-	drv, err := sql.Open(entDialect, connectionString)
+	c, err := CreateAWSRDSConnector(sqlBackend, connectionString)
 	if err != nil {
-		return nil, fmt.Errorf("could not open sql connection: %w", err)
+		return nil, fmt.Errorf("could not create AWS RDS connector: %w", err)
 	}
 
-	db := drv.DB()
+	// Use the built in database/sql package to work with the connector
+	db := sql.OpenDB(c)
 	db.SetMaxIdleConns(clientOpts.maxIdleConns)
 	db.SetMaxOpenConns(clientOpts.maxOpenConns)
 	db.SetConnMaxLifetime(clientOpts.connMaxLifetime)
+
+	drv := entsql.OpenDB(entDialect, db)
 	sqlcommentDrv := sqlcomment.NewDriver(drv,
 		sqlcomment.WithDriverVerTag(),
 		sqlcomment.WithTags(sqlcomment.Tags{

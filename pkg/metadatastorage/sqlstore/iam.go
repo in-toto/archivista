@@ -18,11 +18,14 @@ import (
 	"context"
 	"fmt"
 	"net/url"
+	"strconv"
 	"strings"
 
 	"github.com/aws/aws-sdk-go-v2/aws"
 	"github.com/aws/aws-sdk-go-v2/config"
 	"github.com/aws/aws-sdk-go-v2/feature/rds/auth"
+	"github.com/davepgreene/go-db-credential-refresh/driver"
+	"github.com/davepgreene/go-db-credential-refresh/store/awsrds"
 
 	_ "github.com/lib/pq"
 )
@@ -89,4 +92,52 @@ func RewriteConnectionStringForIAM(sqlBackend string, connectionString string) (
 		nURL.RawQuery = q.Encode()
 	}
 	return nURL.String(), nil
+}
+
+func CreateAWSRDSConnector(sqlBackend, connectionString string) (*driver.Connector, error) {
+	// TODO: Make parse connection string function
+	url, err := url.Parse(connectionString)
+	if err != nil {
+		return nil, fmt.Errorf("parsing connection string: %w", err)
+	}
+
+	awsConfig, err := AwsConfigAPI.LoadDefaultConfig(context.Background())
+	if err != nil {
+		return nil, fmt.Errorf("could not load AWS config: %w", err)
+	}
+
+	rdsEndpoint := fmt.Sprintf("%s:%s", url.Hostname(), url.Port())
+
+	config := awsrds.Config{
+		Credentials: awsConfig.Credentials,
+		Endpoint:    rdsEndpoint,
+		User:        url.User.Username(),
+		Region:      awsConfig.Region,
+	}
+
+	store, err := awsrds.NewStore(&config)
+	if err != nil {
+		return nil, fmt.Errorf("could not create credentials refresh store: %w", err)
+	}
+
+	port, err := strconv.Atoi(url.Port())
+	if err != nil {
+		return nil, fmt.Errorf("could not parse port: %w", err)
+	}
+
+	opts := make(map[string]string)
+	for k, v := range url.Query() {
+		opts[k] = v[0]
+	}
+
+	driverConfig := &driver.Config{
+		Opts:    opts,
+		Host:    url.Hostname(),
+		Port:    port,
+		DB:      strings.Split(strings.TrimPrefix(url.Path, "/"), "/")[0],
+		Retries: 3,
+	}
+
+	// Create the connector which implements database/sql/driver.Connector
+	return driver.NewConnector(store, "pgx", driverConfig)
 }
