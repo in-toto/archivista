@@ -15,17 +15,17 @@
 package sqlstore
 
 import (
+	"database/sql"
 	"fmt"
 	"strings"
 	"time"
 
 	"ariga.io/sqlcomment"
 	"entgo.io/ent/dialect"
-	"entgo.io/ent/dialect/sql"
-	"github.com/go-sql-driver/mysql"
+	entsql "entgo.io/ent/dialect/sql"
 	"github.com/in-toto/archivista/ent"
-
-	_ "github.com/lib/pq"
+	"github.com/jkjell/go-db-credential-refresh/driver"
+	"github.com/jkjell/go-db-credential-refresh/store/static"
 )
 
 type ClientOption func(*clientOptions)
@@ -70,44 +70,56 @@ func NewEntClient(sqlBackend string, connectionString string, opts ...ClientOpti
 		opt(clientOpts)
 	}
 
-	var entDialect string
+	var s driver.Store
+	var dc *driver.Config
+	var entDialect, driverName, user, password string
+
 	upperSqlBackend := strings.ToUpper(sqlBackend)
 	if strings.HasPrefix(upperSqlBackend, "MYSQL") {
-		dbConfig, err := mysql.ParseDSN(connectionString)
+		var err error
+		dc, user, password, err = ConfigFromMySQL(connectionString)
 		if err != nil {
-			return nil, fmt.Errorf("could not parse mysql connection string: %w", err)
+			return nil, fmt.Errorf("could not get driver config from mysql connection string: %w", err)
 		}
 
-		// this tells the go-sql-driver to parse times from mysql to go's time.Time
-		// see https://github.com/go-sql-driver/mysql#timetime-support for details
-		dbConfig.ParseTime = true
 		entDialect = dialect.MySQL
-		connectionString = dbConfig.FormatDSN()
+		driverName = "mysql"
 	} else if strings.HasPrefix(upperSqlBackend, "PSQL") {
+		var err error
+		dc, user, password, err = ConfigFromPostgres(connectionString)
+		if err != nil {
+			return nil, fmt.Errorf("could not get driver config from postgres connection string: %w", err)
+		}
+
 		entDialect = dialect.Postgres
+		driverName = "pgx"
 	} else {
 		return nil, fmt.Errorf("unknown sql backend: %s", sqlBackend)
 	}
 
-	// if upperSqlBackend ends with _RDS_IAM, then rewrite the connection string to use
-	// AWS RDS IAM authentication
+	// if upperSqlBackend ends with _RDS_IAM, then use awsrds store
 	if strings.HasSuffix(upperSqlBackend, "_RDS_IAM") {
 		var err error
-		connectionString, err = RewriteConnectionStringForIAM(sqlBackend, connectionString)
+		s, err = AWSRDSStoreFromDriverConfig(dc, user)
 		if err != nil {
-			return nil, fmt.Errorf("could not rewrite connection string for IAM: %w", err)
+			return nil, fmt.Errorf("could not create credentials refresh store: %w", err)
 		}
+	} else {
+		s = static.NewStaticStore(user, password)
+		dc.Retries = 0 // no retries for static credentials
 	}
 
-	drv, err := sql.Open(entDialect, connectionString)
+	c, err := driver.NewConnector(s, driverName, dc)
 	if err != nil {
-		return nil, fmt.Errorf("could not open sql connection: %w", err)
+		return nil, fmt.Errorf("could not create connector: %w", err)
 	}
 
-	db := drv.DB()
+	db := sql.OpenDB(c)
 	db.SetMaxIdleConns(clientOpts.maxIdleConns)
 	db.SetMaxOpenConns(clientOpts.maxOpenConns)
 	db.SetConnMaxLifetime(clientOpts.connMaxLifetime)
+
+	drv := entsql.OpenDB(entDialect, db)
 	sqlcommentDrv := sqlcomment.NewDriver(drv,
 		sqlcomment.WithDriverVerTag(),
 		sqlcomment.WithTags(sqlcomment.Tags{
