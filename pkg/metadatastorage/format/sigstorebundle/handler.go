@@ -77,9 +77,9 @@ func (h *Handler) Store(ctx context.Context, store format.Store, gitoid string, 
 
 // storeBundle stores a Sigstore bundle by first storing the DSSE envelope,
 // then creating a SigstoreBundle record linking to the DSSE
-func (h *Handler) storeBundle(ctx context.Context, store format.Store, bundle *sigstorebundle.Bundle, envelope interface{}, gitoid string) error {
+func (h *Handler) storeBundle(ctx context.Context, store format.Store, bundle *sigstorebundle.Bundle, envelope *dsse.Envelope, gitoid string) error {
 	// First, store the DSSE attestation and get its ID
-	dsseID, err := store.StoreAttestation(ctx, envelope.(*dsse.Envelope), gitoid)
+	dsseID, err := store.StoreAttestation(ctx, envelope, gitoid)
 	if err != nil {
 		return err
 	}
