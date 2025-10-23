@@ -69,6 +69,9 @@ type Config struct {
 	PublisherDaprComponentName string   `default:"archivista" desc:"Dapr pubsub component name" split_words:"true"`
 	PublisherDaprTopic         string   `default:"attestations" desc:"Dapr pubsub topic" split_words:"true"`
 	PublisherRstufHost         string   `default:"http://127.0.0.1" desc:"Host for RSTUF" split_words:"true"`
+
+	MaxPayloadSizeMB       int `default:"100" desc:"Maximum payload size in megabytes for Sigstore bundles" split_words:"true"`
+	MaxSignaturesPerBundle int `default:"100" desc:"Maximum number of signatures per Sigstore bundle" split_words:"true"`
 }
 
 // Process reads config from env

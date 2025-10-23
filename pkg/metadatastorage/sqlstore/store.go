@@ -47,10 +47,18 @@ const subjectDigestBatchSize = 20000
 const policyPayloadType = "https://witness.testifysec.com/policy/"
 
 type Store struct {
-	client *ent.Client
+	client       *ent.Client
+	bundleLimits *sigstorebundle.BundleLimits
 }
 
-func New(ctx context.Context, client *ent.Client) (*Store, <-chan error, error) {
+func New(ctx context.Context, client *ent.Client, bundleLimits ...*sigstorebundle.BundleLimits) (*Store, <-chan error, error) {
+	// Use default limits if not provided
+	var limits *sigstorebundle.BundleLimits
+	if len(bundleLimits) > 0 && bundleLimits[0] != nil {
+		limits = bundleLimits[0]
+	} else {
+		limits = sigstorebundle.DefaultBundleLimits()
+	}
 	errCh := make(chan error)
 
 	go func() {
@@ -67,7 +75,8 @@ func New(ctx context.Context, client *ent.Client) (*Store, <-chan error, error) 
 	}
 
 	return &Store{
-		client: client,
+		client:       client,
+		bundleLimits: limits,
 	}, errCh, nil
 }
 
@@ -374,7 +383,7 @@ func (s *Store) Store(ctx context.Context, gitoid string, obj []byte) error {
 		// Handle DSSE bundles (convert to DSSE envelope for storage)
 		if bundle.DsseEnvelope != nil {
 			logrus.Infof("processing DSSE bundle: %s", gitoid)
-			envelope, err := sigstorebundle.MapBundleToDSSE(bundle)
+			envelope, err := sigstorebundle.MapBundleToDSSE(bundle, s.bundleLimits)
 			if err != nil {
 				return fmt.Errorf("failed to convert bundle to DSSE: %w", err)
 			}

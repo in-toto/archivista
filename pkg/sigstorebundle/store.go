@@ -27,12 +27,25 @@ import (
 	"github.com/in-toto/go-witness/dsse"
 )
 
+// Default limits for bundle validation
 const (
-	// maxPayloadSize is the maximum size of a decoded payload in bytes (100MB)
-	maxPayloadSize = 100 * 1024 * 1024
-	// maxSignaturesPerBundle is the maximum number of signatures allowed per bundle
-	maxSignaturesPerBundle = 100
+	DefaultMaxPayloadSizeMB       = 100
+	DefaultMaxSignaturesPerBundle = 100
 )
+
+// BundleLimits defines resource limits for bundle processing
+type BundleLimits struct {
+	MaxPayloadSizeMB       int
+	MaxSignaturesPerBundle int
+}
+
+// DefaultBundleLimits returns the default resource limits
+func DefaultBundleLimits() *BundleLimits {
+	return &BundleLimits{
+		MaxPayloadSizeMB:       DefaultMaxPayloadSizeMB,
+		MaxSignaturesPerBundle: DefaultMaxSignaturesPerBundle,
+	}
+}
 
 // gitoidSHA256 computes gitoid v1 SHA256 hash (blob header + content)
 // Note: Currently unused but kept for future gitoid calculation needs
@@ -54,7 +67,15 @@ func ParseBundle(raw []byte) (*Bundle, error) {
 }
 
 // MapBundleToDSSE converts a Sigstore bundle to a go-witness DSSE envelope
-func MapBundleToDSSE(bundle *Bundle) (*dsse.Envelope, error) {
+// Optional limits parameter can be provided to customize resource limits
+func MapBundleToDSSE(bundle *Bundle, limits ...*BundleLimits) (*dsse.Envelope, error) {
+	// Use default limits if not provided
+	var bundleLimits *BundleLimits
+	if len(limits) > 0 && limits[0] != nil {
+		bundleLimits = limits[0]
+	} else {
+		bundleLimits = DefaultBundleLimits()
+	}
 	if bundle == nil {
 		return nil, fmt.Errorf("bundle is nil")
 	}
@@ -69,8 +90,9 @@ func MapBundleToDSSE(bundle *Bundle) (*dsse.Envelope, error) {
 
 	// Check payload size before decoding (base64 encoded size * 3/4 ≈ decoded size)
 	estimatedSize := len(bundle.DsseEnvelope.Payload) * 3 / 4
-	if estimatedSize > maxPayloadSize {
-		return nil, fmt.Errorf("payload size (%d bytes) exceeds maximum allowed size (%d bytes)", estimatedSize, maxPayloadSize)
+	maxPayloadSizeBytes := bundleLimits.MaxPayloadSizeMB * 1024 * 1024
+	if estimatedSize > maxPayloadSizeBytes {
+		return nil, fmt.Errorf("payload size (%d bytes) exceeds maximum allowed size (%d MB)", estimatedSize, bundleLimits.MaxPayloadSizeMB)
 	}
 
 	// Decode payload
@@ -93,8 +115,8 @@ func MapBundleToDSSE(bundle *Bundle) (*dsse.Envelope, error) {
 	}
 
 	// Check signature count limit to prevent resource exhaustion
-	if len(bundle.DsseEnvelope.Signatures) > maxSignaturesPerBundle {
-		return nil, fmt.Errorf("bundle has %d signatures, exceeds maximum allowed (%d)", len(bundle.DsseEnvelope.Signatures), maxSignaturesPerBundle)
+	if len(bundle.DsseEnvelope.Signatures) > bundleLimits.MaxSignaturesPerBundle {
+		return nil, fmt.Errorf("bundle has %d signatures, exceeds maximum allowed (%d)", len(bundle.DsseEnvelope.Signatures), bundleLimits.MaxSignaturesPerBundle)
 	}
 
 	// Map signatures with VerificationMaterial
