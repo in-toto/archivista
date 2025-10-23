@@ -14,19 +14,29 @@
 
 package format
 
+import "sync"
+
 var (
 	// handlers is a slice of registered format handlers
 	// Handlers are checked in order, first match wins
-	handlers []Handler
+	handlers   []Handler
+	handlersMu sync.RWMutex
 )
 
 // RegisterHandler adds a handler to the registry
+// It is safe to call from multiple goroutines, typically from init() functions
 func RegisterHandler(h Handler) {
+	handlersMu.Lock()
+	defer handlersMu.Unlock()
 	handlers = append(handlers, h)
 }
 
 // GetHandler finds the first handler that can process the given data
+// It is safe to call from multiple goroutines
 func GetHandler(obj []byte) (Handler, bool) {
+	handlersMu.RLock()
+	defer handlersMu.RUnlock()
+
 	for _, h := range handlers {
 		if h.Detect(obj) {
 			return h, true
