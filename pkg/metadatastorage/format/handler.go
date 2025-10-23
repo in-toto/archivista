@@ -13,3 +13,19 @@
 // limitations under the License.
 
 package format
+
+import (
+	"context"
+
+	"github.com/google/uuid"
+	"github.com/in-toto/archivista/ent"
+	"github.com/in-toto/archivista/pkg/sigstorebundle"
+	"github.com/in-toto/go-witness/dsse"
+)
+
+// Store defines what format handlers need from the storage layer
+type Store interface {
+	StoreAttestation(ctx context.Context, envelope *dsse.Envelope, gitoid string) (uuid.UUID, error)
+	WithTx(ctx context.Context, fn func(tx *ent.Tx) error) error
+	GetBundleLimits() *sigstorebundle.BundleLimits
+}

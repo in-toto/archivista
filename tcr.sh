@@ -3,6 +3,7 @@
 # Optimized for fast refactoring iterations
 
 set -e
+set -o pipefail  # Catch build failures in pipeline
 
 # Test only format-related packages for fast feedback
 TEST_CMD="go test ./pkg/metadatastorage/format/... ./pkg/sigstorebundle/... -v"
