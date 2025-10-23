@@ -412,7 +412,7 @@ func (s *Store) WithTx(ctx context.Context, fn func(tx *ent.Tx) error) error {
 }
 
 // GetBundleLimits returns the Sigstore bundle limits configuration
-func (s *Store) GetBundleLimits() *sigstorebundle.BundleLimits {
+func (s *Store) GetBundleLimits() any {
 	return s.bundleLimits
 }
 

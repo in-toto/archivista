@@ -54,7 +54,14 @@ func (h *Handler) Store(ctx context.Context, store format.Store, gitoid string, 
 	// Handle DSSE bundles (convert to DSSE envelope for storage)
 	if bundle.DsseEnvelope != nil {
 		logrus.Infof("processing DSSE bundle: %s", gitoid)
-		envelope, err := sigstorebundle.MapBundleToDSSE(bundle, store.GetBundleLimits())
+
+		// Get bundle limits with type assertion
+		limits, ok := store.GetBundleLimits().(*sigstorebundle.BundleLimits)
+		if !ok {
+			return fmt.Errorf("invalid bundle limits type")
+		}
+
+		envelope, err := sigstorebundle.MapBundleToDSSE(bundle, limits)
 		if err != nil {
 			return fmt.Errorf("failed to convert bundle to DSSE: %w", err)
 		}

@@ -19,7 +19,6 @@ import (
 
 	"github.com/google/uuid"
 	"github.com/in-toto/archivista/ent"
-	"github.com/in-toto/archivista/pkg/sigstorebundle"
 	"github.com/in-toto/go-witness/dsse"
 )
 
@@ -27,7 +26,9 @@ import (
 type Store interface {
 	StoreAttestation(ctx context.Context, envelope *dsse.Envelope, gitoid string) (uuid.UUID, error)
 	WithTx(ctx context.Context, fn func(tx *ent.Tx) error) error
-	GetBundleLimits() *sigstorebundle.BundleLimits
+	// GetBundleLimits returns format-specific configuration limits
+	// Handlers should type-assert to their expected type
+	GetBundleLimits() any
 }
 
 // Handler processes specific attestation formats (e.g., Sigstore bundles)
