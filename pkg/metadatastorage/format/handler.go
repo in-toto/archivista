@@ -29,3 +29,12 @@ type Store interface {
 	WithTx(ctx context.Context, fn func(tx *ent.Tx) error) error
 	GetBundleLimits() *sigstorebundle.BundleLimits
 }
+
+// Handler processes specific attestation formats (e.g., Sigstore bundles)
+type Handler interface {
+	// Detect returns true if this handler can process the raw data
+	Detect(obj []byte) bool
+
+	// Store processes and stores the data using the provided Store
+	Store(ctx context.Context, store Store, gitoid string, obj []byte) error
+}
