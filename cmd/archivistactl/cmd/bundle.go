@@ -16,11 +16,13 @@ package cmd
 
 import (
 	"context"
+	"encoding/base64"
 	"encoding/json"
 	"fmt"
 	"os"
 
 	"github.com/in-toto/archivista/pkg/api"
+	"github.com/in-toto/archivista/pkg/sigstorebundle"
 	"github.com/spf13/cobra"
 )
 
@@ -97,16 +99,75 @@ func importBundleByPath(ctx context.Context, baseUrl, path string) (string, erro
 }
 
 func exportBundleByID(ctx context.Context, baseUrl, dsseID string) ([]byte, error) {
-	// Use the existing download endpoint with format=bundle query parameter
-	// to retrieve the reconstructed Sigstore bundle
+	// Download the DSSE envelope from the API
 	envelope, err := api.Download(ctx, baseUrl, dsseID, requestOptions()...)
 	if err != nil {
 		return nil, fmt.Errorf("failed to download DSSE envelope: %w", err)
 	}
 
-	// For now, marshal the DSSE envelope as JSON
-	// TODO: Implement bundle reconstruction from DSSE metadata
-	bundleJSON, err := json.Marshal(envelope)
+	// Reconstruct a minimal Sigstore bundle from the DSSE envelope
+	bundle := &sigstorebundle.Bundle{
+		MediaType: "application/vnd.dev.sigstore.bundle.v0.3+json",
+		DsseEnvelope: &sigstorebundle.DsseEnvelope{
+			Payload:     base64.StdEncoding.EncodeToString(envelope.Payload),
+			PayloadType: envelope.PayloadType,
+		},
+	}
+
+	// Map signatures
+	for _, sig := range envelope.Signatures {
+		dsseSig := sigstorebundle.DsseSig{
+			KeyID: sig.KeyID,
+			Sig:   base64.StdEncoding.EncodeToString(sig.Signature),
+		}
+		bundle.DsseEnvelope.Signatures = append(bundle.DsseEnvelope.Signatures, dsseSig)
+	}
+
+	// Add verification material from first signature
+	if len(envelope.Signatures) > 0 {
+		sig := envelope.Signatures[0]
+		vm := &sigstorebundle.VerificationMaterial{}
+
+		// Certificate chain
+		if len(sig.Certificate) > 0 {
+			if len(sig.Intermediates) > 0 {
+				// Build chain
+				chain := &sigstorebundle.X509CertificateChain{
+					Certificates: []sigstorebundle.Certificate{{
+						RawBytes: base64.StdEncoding.EncodeToString(sig.Certificate),
+					}},
+				}
+				for _, intermediate := range sig.Intermediates {
+					chain.Certificates = append(chain.Certificates, sigstorebundle.Certificate{
+						RawBytes: base64.StdEncoding.EncodeToString(intermediate),
+					})
+				}
+				vm.X509CertificateChain = chain
+			} else {
+				// Standalone cert
+				vm.Certificate = &sigstorebundle.Certificate{
+					RawBytes: base64.StdEncoding.EncodeToString(sig.Certificate),
+				}
+			}
+		}
+
+		// RFC3161 timestamps
+		if len(sig.Timestamps) > 0 {
+			vm.TimestampVerificationData = &sigstorebundle.TimestampVerificationData{}
+			for _, ts := range sig.Timestamps {
+				vm.TimestampVerificationData.RFC3161Timestamps = append(
+					vm.TimestampVerificationData.RFC3161Timestamps,
+					sigstorebundle.RFC3161Timestamp{
+						SignedTimestamp: base64.StdEncoding.EncodeToString(ts.Data),
+					},
+				)
+			}
+		}
+
+		bundle.VerificationMaterial = vm
+	}
+
+	bundleJSON, err := json.Marshal(bundle)
 	if err != nil {
 		return nil, fmt.Errorf("failed to marshal bundle: %w", err)
 	}

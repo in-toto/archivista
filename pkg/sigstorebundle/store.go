@@ -27,6 +27,13 @@ import (
 	"github.com/in-toto/go-witness/dsse"
 )
 
+const (
+	// maxPayloadSize is the maximum size of a decoded payload in bytes (100MB)
+	maxPayloadSize = 100 * 1024 * 1024
+	// maxSignaturesPerBundle is the maximum number of signatures allowed per bundle
+	maxSignaturesPerBundle = 100
+)
+
 // gitoidSHA256 computes gitoid v1 SHA256 hash (blob header + content)
 // Note: Currently unused but kept for future gitoid calculation needs
 // nolint:unused
@@ -60,6 +67,12 @@ func MapBundleToDSSE(bundle *Bundle) (*dsse.Envelope, error) {
 		return nil, fmt.Errorf("dsseEnvelope.payload is empty")
 	}
 
+	// Check payload size before decoding (base64 encoded size * 3/4 ≈ decoded size)
+	estimatedSize := len(bundle.DsseEnvelope.Payload) * 3 / 4
+	if estimatedSize > maxPayloadSize {
+		return nil, fmt.Errorf("payload size (%d bytes) exceeds maximum allowed size (%d bytes)", estimatedSize, maxPayloadSize)
+	}
+
 	// Decode payload
 	payload, err := base64.StdEncoding.DecodeString(bundle.DsseEnvelope.Payload)
 	if err != nil {
@@ -77,6 +90,11 @@ func MapBundleToDSSE(bundle *Bundle) (*dsse.Envelope, error) {
 
 	if len(bundle.DsseEnvelope.Signatures) == 0 {
 		return nil, fmt.Errorf("bundle has no signatures")
+	}
+
+	// Check signature count limit to prevent resource exhaustion
+	if len(bundle.DsseEnvelope.Signatures) > maxSignaturesPerBundle {
+		return nil, fmt.Errorf("bundle has %d signatures, exceeds maximum allowed (%d)", len(bundle.DsseEnvelope.Signatures), maxSignaturesPerBundle)
 	}
 
 	// Map signatures with VerificationMaterial

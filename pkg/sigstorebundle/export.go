@@ -55,7 +55,14 @@ func ReconstructBundleFromDSSE(ctx context.Context, client *ent.Client, dsseID u
 	if len(dsseEnt.Edges.Signatures) > 0 {
 		sig := dsseEnt.Edges.Signatures[0]
 
-		sigBytes, _ := base64.StdEncoding.DecodeString(sig.Signature)
+		sigBytes, err := base64.StdEncoding.DecodeString(sig.Signature)
+		if err != nil {
+			return nil, fmt.Errorf("corrupted signature data in database: %w", err)
+		}
+		if len(sigBytes) == 0 {
+			return nil, fmt.Errorf("signature data is empty")
+		}
+
 		bundle.DsseEnvelope.Signatures = []DsseSig{{
 			KeyID: sig.KeyID,
 			Sig:   base64.StdEncoding.EncodeToString(sigBytes),
@@ -137,7 +144,14 @@ func ExportGoWitnessDSSE(ctx context.Context, client *ent.Client, dsseID uuid.UU
 
 	// Include ALL signatures (go-witness supports multiple)
 	for _, sig := range dsseEnt.Edges.Signatures {
-		sigBytes, _ := base64.StdEncoding.DecodeString(sig.Signature)
+		sigBytes, err := base64.StdEncoding.DecodeString(sig.Signature)
+		if err != nil {
+			return nil, fmt.Errorf("corrupted signature data in database: %w", err)
+		}
+		if len(sigBytes) == 0 {
+			return nil, fmt.Errorf("signature data is empty")
+		}
+
 		witnessSig := witnessdsse.Signature{
 			KeyID:         sig.KeyID,
 			Signature:     sigBytes,
