@@ -114,5 +114,13 @@ func (c *Config) Process() error {
 		}
 	}
 
+	// Validate bundle limits
+	if c.MaxPayloadSizeMB <= 0 || c.MaxPayloadSizeMB > 1000 {
+		return errors.New("MaxPayloadSizeMB must be between 1 and 1000")
+	}
+	if c.MaxSignaturesPerBundle <= 0 || c.MaxSignaturesPerBundle > 1000 {
+		return errors.New("MaxSignaturesPerBundle must be between 1 and 1000")
+	}
+
 	return nil
 }

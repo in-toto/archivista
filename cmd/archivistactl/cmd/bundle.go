@@ -16,7 +16,6 @@ package cmd
 
 import (
 	"context"
-	"encoding/base64"
 	"encoding/json"
 	"fmt"
 	"os"
@@ -105,66 +104,10 @@ func exportBundleByID(ctx context.Context, baseUrl, dsseID string) ([]byte, erro
 		return nil, fmt.Errorf("failed to download DSSE envelope: %w", err)
 	}
 
-	// Reconstruct a minimal Sigstore bundle from the DSSE envelope
-	bundle := &sigstorebundle.Bundle{
-		MediaType: "application/vnd.dev.sigstore.bundle.v0.3+json",
-		DsseEnvelope: &sigstorebundle.DsseEnvelope{
-			Payload:     base64.StdEncoding.EncodeToString(envelope.Payload),
-			PayloadType: envelope.PayloadType,
-		},
-	}
-
-	// Map signatures
-	for _, sig := range envelope.Signatures {
-		dsseSig := sigstorebundle.DsseSig{
-			KeyID: sig.KeyID,
-			Sig:   base64.StdEncoding.EncodeToString(sig.Signature),
-		}
-		bundle.DsseEnvelope.Signatures = append(bundle.DsseEnvelope.Signatures, dsseSig)
-	}
-
-	// Add verification material from first signature
-	if len(envelope.Signatures) > 0 {
-		sig := envelope.Signatures[0]
-		vm := &sigstorebundle.VerificationMaterial{}
-
-		// Certificate chain
-		if len(sig.Certificate) > 0 {
-			if len(sig.Intermediates) > 0 {
-				// Build chain
-				chain := &sigstorebundle.X509CertificateChain{
-					Certificates: []sigstorebundle.Certificate{{
-						RawBytes: base64.StdEncoding.EncodeToString(sig.Certificate),
-					}},
-				}
-				for _, intermediate := range sig.Intermediates {
-					chain.Certificates = append(chain.Certificates, sigstorebundle.Certificate{
-						RawBytes: base64.StdEncoding.EncodeToString(intermediate),
-					})
-				}
-				vm.X509CertificateChain = chain
-			} else {
-				// Standalone cert
-				vm.Certificate = &sigstorebundle.Certificate{
-					RawBytes: base64.StdEncoding.EncodeToString(sig.Certificate),
-				}
-			}
-		}
-
-		// RFC3161 timestamps
-		if len(sig.Timestamps) > 0 {
-			vm.TimestampVerificationData = &sigstorebundle.TimestampVerificationData{}
-			for _, ts := range sig.Timestamps {
-				vm.TimestampVerificationData.RFC3161Timestamps = append(
-					vm.TimestampVerificationData.RFC3161Timestamps,
-					sigstorebundle.RFC3161Timestamp{
-						SignedTimestamp: base64.StdEncoding.EncodeToString(ts.Data),
-					},
-				)
-			}
-		}
-
-		bundle.VerificationMaterial = vm
+	// Reconstruct a Sigstore bundle from the DSSE envelope
+	bundle, err := sigstorebundle.ReconstructBundleFromEnvelope(&envelope)
+	if err != nil {
+		return nil, fmt.Errorf("failed to reconstruct bundle: %w", err)
 	}
 
 	bundleJSON, err := json.Marshal(bundle)

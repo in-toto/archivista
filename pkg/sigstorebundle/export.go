@@ -25,7 +25,85 @@ import (
 	"github.com/in-toto/archivista/ent/dsse"
 	"github.com/in-toto/archivista/ent/sigstorebundle"
 	witnessdsse "github.com/in-toto/go-witness/dsse"
+	"github.com/sirupsen/logrus"
 )
+
+// ReconstructBundleFromEnvelope builds a Sigstore bundle from a go-witness DSSE envelope
+func ReconstructBundleFromEnvelope(envelope *witnessdsse.Envelope) (*Bundle, error) {
+	if envelope == nil {
+		return nil, fmt.Errorf("envelope is nil")
+	}
+
+	bundle := &Bundle{
+		MediaType: "application/vnd.dev.sigstore.bundle.v0.3+json",
+		DsseEnvelope: &DsseEnvelope{
+			Payload:     base64.StdEncoding.EncodeToString(envelope.Payload),
+			PayloadType: envelope.PayloadType,
+		},
+	}
+
+	// Map signatures
+	for _, sig := range envelope.Signatures {
+		dsseSig := DsseSig{
+			KeyID: sig.KeyID,
+			Sig:   base64.StdEncoding.EncodeToString(sig.Signature),
+		}
+		bundle.DsseEnvelope.Signatures = append(bundle.DsseEnvelope.Signatures, dsseSig)
+	}
+
+	// Add verification material from first signature (Sigstore bundles prefer single sig)
+	if len(envelope.Signatures) > 0 {
+		// Warn if multiple signatures exist - Sigstore bundles support only one signature
+		if len(envelope.Signatures) > 1 {
+			logrus.Warnf("DSSE envelope has %d signatures, but Sigstore bundles support only one. Only the first signature's verification material will be exported.", len(envelope.Signatures))
+		}
+
+		sig := envelope.Signatures[0]
+		vm := &VerificationMaterial{}
+
+		// Certificate chain
+		if len(sig.Certificate) > 0 {
+			if len(sig.Intermediates) > 0 {
+				// Build chain: leaf + intermediates
+				chain := &X509CertificateChain{
+					Certificates: []Certificate{{
+						RawBytes: base64.StdEncoding.EncodeToString(sig.Certificate),
+					}},
+				}
+				for _, intermediate := range sig.Intermediates {
+					chain.Certificates = append(chain.Certificates, Certificate{
+						RawBytes: base64.StdEncoding.EncodeToString(intermediate),
+					})
+				}
+				vm.X509CertificateChain = chain
+			} else {
+				// Standalone cert
+				vm.Certificate = &Certificate{
+					RawBytes: base64.StdEncoding.EncodeToString(sig.Certificate),
+				}
+			}
+		}
+
+		// RFC3161 timestamps
+		if len(sig.Timestamps) > 0 {
+			vm.TimestampVerificationData = &TimestampVerificationData{}
+			for _, ts := range sig.Timestamps {
+				if ts.Type == witnessdsse.TimestampRFC3161 {
+					vm.TimestampVerificationData.RFC3161Timestamps = append(
+						vm.TimestampVerificationData.RFC3161Timestamps,
+						RFC3161Timestamp{
+							SignedTimestamp: base64.StdEncoding.EncodeToString(ts.Data),
+						},
+					)
+				}
+			}
+		}
+
+		bundle.VerificationMaterial = vm
+	}
+
+	return bundle, nil
+}
 
 // ReconstructBundleFromDSSE builds a minimal Sigstore bundle from stored DSSE data with provided payload
 func ReconstructBundleFromDSSE(ctx context.Context, client *ent.Client, dsseID uuid.UUID, payload []byte) ([]byte, error) {

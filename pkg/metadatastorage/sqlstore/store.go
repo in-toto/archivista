@@ -24,6 +24,7 @@ import (
 	"time"
 
 	"github.com/digitorus/timestamp"
+	"github.com/google/uuid"
 	"github.com/in-toto/archivista/ent"
 	"github.com/in-toto/archivista/pkg/metadatastorage"
 	"github.com/in-toto/archivista/pkg/metadatastorage/parserregistry"
@@ -101,15 +102,15 @@ func (s *Store) withTx(ctx context.Context, fn func(tx *ent.Tx) error) error {
 	return nil
 }
 
-func (s *Store) storeAttestation(ctx context.Context, envelope *dsse.Envelope, gitoid string) error {
+func (s *Store) storeAttestation(ctx context.Context, envelope *dsse.Envelope, gitoid string) (uuid.UUID, error) {
 	payloadDigestSet, err := cryptoutil.CalculateDigestSetFromBytes(envelope.Payload, []cryptoutil.DigestValue{{Hash: crypto.SHA256}})
 	if err != nil {
-		return err
+		return uuid.Nil, err
 	}
 
 	payload := &intoto.Statement{}
 	if err := json.Unmarshal(envelope.Payload, payload); err != nil {
-		return err
+		return uuid.Nil, err
 	}
 
 	predicateParser, ok := parserregistry.ParserForPredicate(payload.PredicateType)
@@ -117,10 +118,11 @@ func (s *Store) storeAttestation(ctx context.Context, envelope *dsse.Envelope, g
 	if ok {
 		predicateStorer, err = predicateParser(payload.Predicate)
 		if err != nil {
-			return fmt.Errorf("unable to parse intoto statements predicate: %w", err)
+			return uuid.Nil, fmt.Errorf("unable to parse intoto statements predicate: %w", err)
 		}
 	}
 
+	var dsseID uuid.UUID
 	err = s.withTx(ctx, func(tx *ent.Tx) error {
 		dsse, err := tx.Dsse.Create().
 			SetPayloadType(envelope.PayloadType).
@@ -129,6 +131,7 @@ func (s *Store) storeAttestation(ctx context.Context, envelope *dsse.Envelope, g
 		if err != nil {
 			return err
 		}
+		dsseID = dsse.ID
 
 		for _, sig := range envelope.Signatures {
 			sigCreate := tx.Signature.Create().
@@ -242,10 +245,10 @@ func (s *Store) storeAttestation(ctx context.Context, envelope *dsse.Envelope, g
 
 	if err != nil {
 		logrus.Errorf("unable to store metadata: %+v", err)
-		return err
+		return uuid.Nil, err
 	}
 
-	return nil
+	return dsseID, nil
 }
 
 func (s *Store) storePolicy(ctx context.Context, envelope *dsse.Envelope, gitoid string) error {
@@ -419,7 +422,7 @@ func (s *Store) Store(ctx context.Context, gitoid string, obj []byte) error {
 			return err
 		}
 	} else {
-		if err := s.storeAttestation(ctx, envelope, gitoid); err != nil {
+		if _, err := s.storeAttestation(ctx, envelope, gitoid); err != nil {
 			return err
 		}
 	}
@@ -431,17 +434,24 @@ func (s *Store) Store(ctx context.Context, gitoid string, obj []byte) error {
 // storeBundle stores a Sigstore bundle by first storing the DSSE envelope,
 // then creating a SigstoreBundle record linking to the DSSE
 func (s *Store) storeBundle(ctx context.Context, bundle *sigstorebundle.Bundle, envelope *dsse.Envelope, gitoid string) error {
-	// First, store the DSSE attestation as normal
-	if err := s.storeAttestation(ctx, envelope, gitoid); err != nil {
+	// First, store the DSSE attestation and get its ID
+	dsseID, err := s.storeAttestation(ctx, envelope, gitoid)
+	if err != nil {
 		return err
 	}
 
-	// Then store bundle metadata
-	// Note: The SigstoreBundle linking is handled in a follow-up transaction
-	// since we need the DSSE ID which is already committed at this point
-	// For now, just log that we've stored a bundle
-	logrus.Debugf("Stored Sigstore bundle %s with mediaType %s", gitoid, bundle.MediaType)
+	// Then store bundle metadata in a separate transaction
+	err = s.withTx(ctx, func(tx *ent.Tx) error {
+		_, err := sigstorebundle.StoreBundleMetadata(ctx, tx, gitoid, bundle.MediaType, dsseID)
+		return err
+	})
 
+	if err != nil {
+		logrus.Errorf("unable to store bundle metadata: %+v", err)
+		return err
+	}
+
+	logrus.Debugf("Stored Sigstore bundle %s with mediaType %s", gitoid, bundle.MediaType)
 	return nil
 }
 
