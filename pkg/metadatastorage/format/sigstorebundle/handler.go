@@ -13,3 +13,15 @@
 // limitations under the License.
 
 package sigstorebundle
+
+import (
+	"github.com/in-toto/archivista/pkg/sigstorebundle"
+)
+
+// Handler processes Sigstore bundle format
+type Handler struct{}
+
+// Detect returns true if obj is a valid Sigstore bundle
+func (h *Handler) Detect(obj []byte) bool {
+	return sigstorebundle.IsBundleJSON(obj)
+}
