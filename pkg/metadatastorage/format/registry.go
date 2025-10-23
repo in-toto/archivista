@@ -13,3 +13,19 @@
 // limitations under the License.
 
 package format
+
+var (
+	// handlers is a slice of registered format handlers
+	// Handlers are checked in order, first match wins
+	handlers []Handler
+)
+
+// GetHandler finds the first handler that can process the given data
+func GetHandler(obj []byte) (Handler, bool) {
+	for _, h := range handlers {
+		if h.Detect(obj) {
+			return h, true
+		}
+	}
+	return nil, false
+}
