@@ -20,6 +20,11 @@ var (
 	handlers []Handler
 )
 
+// RegisterHandler adds a handler to the registry
+func RegisterHandler(h Handler) {
+	handlers = append(handlers, h)
+}
+
 // GetHandler finds the first handler that can process the given data
 func GetHandler(obj []byte) (Handler, bool) {
 	for _, h := range handlers {

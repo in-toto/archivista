@@ -29,6 +29,10 @@ import (
 // Handler processes Sigstore bundle format
 type Handler struct{}
 
+func init() {
+	format.RegisterHandler(&Handler{})
+}
+
 // Detect returns true if obj is a valid Sigstore bundle
 func (h *Handler) Detect(obj []byte) bool {
 	return sigstorebundle.IsBundleJSON(obj)
