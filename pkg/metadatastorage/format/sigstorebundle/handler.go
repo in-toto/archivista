@@ -34,6 +34,9 @@ func init() {
 }
 
 // Detect returns true if obj is a valid Sigstore bundle
+// TODO(performance): This causes duplicate JSON parsing - IsBundleJSON parses to validate,
+// then Store() parses again. Consider memoization or cheap heuristic detection.
+// See PR discussion for implementation options and trade-offs.
 func (h *Handler) Detect(obj []byte) bool {
 	return sigstorebundle.IsBundleJSON(obj)
 }
