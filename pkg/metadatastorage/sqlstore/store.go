@@ -459,6 +459,21 @@ func (s *Store) GetClient() *ent.Client {
 	return s.client
 }
 
+// StoreAttestation stores a DSSE attestation (public interface for format handlers)
+func (s *Store) StoreAttestation(ctx context.Context, envelope *dsse.Envelope, gitoid string) (uuid.UUID, error) {
+	return s.storeAttestation(ctx, envelope, gitoid)
+}
+
+// WithTx executes a function within a database transaction (public interface for format handlers)
+func (s *Store) WithTx(ctx context.Context, fn func(tx *ent.Tx) error) error {
+	return s.withTx(ctx, fn)
+}
+
+// GetBundleLimits returns the Sigstore bundle limits configuration
+func (s *Store) GetBundleLimits() *sigstorebundle.BundleLimits {
+	return s.bundleLimits
+}
+
 type saver[T any] interface {
 	Save(context.Context) ([]T, error)
 }
