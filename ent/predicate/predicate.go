@@ -24,6 +24,9 @@ type PayloadDigest func(*sql.Selector)
 // Signature is the predicate function for signature builders.
 type Signature func(*sql.Selector)
 
+// SigstoreBundle is the predicate function for sigstorebundle builders.
+type SigstoreBundle func(*sql.Selector)
+
 // Statement is the predicate function for statement builders.
 type Statement func(*sql.Selector)
 

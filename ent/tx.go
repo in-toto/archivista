@@ -24,6 +24,8 @@ type Tx struct {
 	PayloadDigest *PayloadDigestClient
 	// Signature is the client for interacting with the Signature builders.
 	Signature *SignatureClient
+	// SigstoreBundle is the client for interacting with the SigstoreBundle builders.
+	SigstoreBundle *SigstoreBundleClient
 	// Statement is the client for interacting with the Statement builders.
 	Statement *StatementClient
 	// Subject is the client for interacting with the Subject builders.
@@ -169,6 +171,7 @@ func (tx *Tx) init() {
 	tx.Dsse = NewDsseClient(tx.config)
 	tx.PayloadDigest = NewPayloadDigestClient(tx.config)
 	tx.Signature = NewSignatureClient(tx.config)
+	tx.SigstoreBundle = NewSigstoreBundleClient(tx.config)
 	tx.Statement = NewStatementClient(tx.config)
 	tx.Subject = NewSubjectClient(tx.config)
 	tx.SubjectDigest = NewSubjectDigestClient(tx.config)

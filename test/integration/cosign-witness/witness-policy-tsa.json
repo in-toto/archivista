@@ -1,0 +1,38 @@
+{
+  "expires": "2030-12-31T23:59:59Z",
+  "roots": {
+    "ZTZkODI4NmRmOTcxYzRkMGZiZTdkODc4OWQyMjAxYWI2YmVmNDE0OGU3N2E3Y2UyMWVjMTlmZTg0MzM1Y2UxMAo=": {
+      "certificate": "LS0tLS1CRUdJTiBQVUJMSUMgS0VZLS0tLS0KTUZrd0V3WUhLb1pJemowQ0FRWUlLb1pJemowREFRY0RRZ0FFMGY5c2Z3SFczbFV0WGdaTkxBcHFGVTY0SGc4ZgpHSzVhWjVMMEVBZE1BM05wWkJXNklkMFNrU3JlbjNEMEIzU016TGdGNnN5UFM4ck44b3VpWW56V1VnPT0KLS0tLS1FTkQgUFVCTElDIEtFWS0tLS0tCg==",
+      "intermediates": []
+    }
+  },
+  "publickeys": {
+    "ZTZkODI4NmRmOTcxYzRkMGZiZTdkODc4OWQyMjAxYWI2YmVmNDE0OGU3N2E3Y2UyMWVjMTlmZTg0MzM1Y2UxMAo=": {
+      "keyid": "ZTZkODI4NmRmOTcxYzRkMGZiZTdkODc4OWQyMjAxYWI2YmVmNDE0OGU3N2E3Y2UyMWVjMTlmZTg0MzM1Y2UxMAo=",
+      "key": "LS0tLS1CRUdJTiBQVUJMSUMgS0VZLS0tLS0KTUZrd0V3WUhLb1pJemowQ0FRWUlLb1pJemowREFRY0RRZ0FFMGY5c2Z3SFczbFV0WGdaTkxBcHFGVTY0SGc4ZgpHSzVhWjVMMEVBZE1BM05wWkJXNklkMFNrU3JlbjNEMEIzU016TGdGNnN5UFM4ck44b3VpWW56V1VnPT0KLS0tLS1FTkQgUFVCTElDIEtFWS0tLS0tCg=="
+    }
+  },
+  "steps": {
+    "cosign-sign": {
+      "name": "cosign-sign",
+      "attestations": [
+        {
+          "type": "https://in-toto.io/attestation/v0.1",
+          "regopolicies": []
+        }
+      ],
+      "functionaries": [
+        {
+          "type": "publickey",
+          "publickeyid": "ZTZkODI4NmRmOTcxYzRkMGZiZTdkODc4OWQyMjAxYWI2YmVmNDE0OGU3N2E3Y2UyMWVjMTlmZTg0MzM1Y2UxMAo="
+        }
+      ]
+    }
+  },
+  "tsa": {
+    "enabled": true,
+    "verification": "RFC3161",
+    "provider": "sigstore",
+    "description": "RFC3161 Time Stamp Authority verification enabled for timestamp integrity"
+  }
+}

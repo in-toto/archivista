@@ -81,6 +81,18 @@ func (f SignatureFunc) Mutate(ctx context.Context, m ent.Mutation) (ent.Value, e
 	return nil, fmt.Errorf("unexpected mutation type %T. expect *ent.SignatureMutation", m)
 }
 
+// The SigstoreBundleFunc type is an adapter to allow the use of ordinary
+// function as SigstoreBundle mutator.
+type SigstoreBundleFunc func(context.Context, *ent.SigstoreBundleMutation) (ent.Value, error)
+
+// Mutate calls f(ctx, m).
+func (f SigstoreBundleFunc) Mutate(ctx context.Context, m ent.Mutation) (ent.Value, error) {
+	if mv, ok := m.(*ent.SigstoreBundleMutation); ok {
+		return f(ctx, mv)
+	}
+	return nil, fmt.Errorf("unexpected mutation type %T. expect *ent.SigstoreBundleMutation", m)
+}
+
 // The StatementFunc type is an adapter to allow the use of ordinary
 // function as Statement mutator.
 type StatementFunc func(context.Context, *ent.StatementMutation) (ent.Value, error)

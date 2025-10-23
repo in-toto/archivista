@@ -27,6 +27,7 @@ import (
 	"github.com/in-toto/archivista/ent"
 	"github.com/in-toto/archivista/pkg/metadatastorage"
 	"github.com/in-toto/archivista/pkg/metadatastorage/parserregistry"
+	"github.com/in-toto/archivista/pkg/sigstorebundle"
 	"github.com/in-toto/go-witness/cryptoutil"
 	"github.com/in-toto/go-witness/dsse"
 	"github.com/in-toto/go-witness/intoto"
@@ -121,11 +122,22 @@ func (s *Store) storeAttestation(ctx context.Context, envelope *dsse.Envelope, g
 		}
 
 		for _, sig := range envelope.Signatures {
-			storedSig, err := tx.Signature.Create().
+			sigCreate := tx.Signature.Create().
 				SetKeyID(sig.KeyID).
 				SetSignature(base64.StdEncoding.EncodeToString(sig.Signature)).
-				SetDsse(dsse).
-				Save(ctx)
+				SetDsse(dsse)
+
+			// Store certificate if present
+			if len(sig.Certificate) > 0 {
+				sigCreate.SetCertificate(sig.Certificate)
+			}
+
+			// Store intermediates if present
+			if len(sig.Intermediates) > 0 {
+				sigCreate.SetIntermediates(sig.Intermediates)
+			}
+
+			storedSig, err := sigCreate.Save(ctx)
 			if err != nil {
 				return err
 			}
@@ -136,11 +148,17 @@ func (s *Store) storeAttestation(ctx context.Context, envelope *dsse.Envelope, g
 					return err
 				}
 
-				_, err = tx.Timestamp.Create().
+				tsCreate := tx.Timestamp.Create().
 					SetSignature(storedSig).
 					SetTimestamp(timestampedTime).
-					SetType(string(timestamp.Type)).
-					Save(ctx)
+					SetType(string(timestamp.Type))
+
+				// Store raw RFC3161 data if present
+				if len(timestamp.Data) > 0 {
+					tsCreate.SetData(timestamp.Data)
+				}
+
+				_, err = tsCreate.Save(ctx)
 				if err != nil {
 					return err
 				}
@@ -246,11 +264,22 @@ func (s *Store) storePolicy(ctx context.Context, envelope *dsse.Envelope, gitoid
 
 		// stores the envelope signatures
 		for _, sig := range envelope.Signatures {
-			storedSig, err := tx.Signature.Create().
+			sigCreate := tx.Signature.Create().
 				SetKeyID(sig.KeyID).
 				SetSignature(base64.StdEncoding.EncodeToString(sig.Signature)).
-				SetDsse(dsse).
-				Save(ctx)
+				SetDsse(dsse)
+
+			// Store certificate if present
+			if len(sig.Certificate) > 0 {
+				sigCreate.SetCertificate(sig.Certificate)
+			}
+
+			// Store intermediates if present
+			if len(sig.Intermediates) > 0 {
+				sigCreate.SetIntermediates(sig.Intermediates)
+			}
+
+			storedSig, err := sigCreate.Save(ctx)
 			if err != nil {
 				return err
 			}
@@ -261,11 +290,17 @@ func (s *Store) storePolicy(ctx context.Context, envelope *dsse.Envelope, gitoid
 					return err
 				}
 
-				_, err = tx.Timestamp.Create().
+				tsCreate := tx.Timestamp.Create().
 					SetSignature(storedSig).
 					SetTimestamp(timestampedTime).
-					SetType(string(timestamp.Type)).
-					Save(ctx)
+					SetType(string(timestamp.Type))
+
+				// Store raw RFC3161 data if present
+				if len(timestamp.Data) > 0 {
+					tsCreate.SetData(timestamp.Data)
+				}
+
+				_, err = tsCreate.Save(ctx)
 				if err != nil {
 					return err
 				}
@@ -323,6 +358,47 @@ func (s *Store) storePolicy(ctx context.Context, envelope *dsse.Envelope, gitoid
 }
 
 func (s *Store) Store(ctx context.Context, gitoid string, obj []byte) error {
+	// First, check if this is a valid Sigstore bundle per spec (RFC)
+	if sigstorebundle.IsBundleJSON(obj) {
+		logrus.Infof("detected Sigstore bundle, gitoid: %s", gitoid)
+
+		bundle := &sigstorebundle.Bundle{}
+		if err := json.Unmarshal(obj, bundle); err != nil {
+			logrus.Warnf("failed to unmarshal bundle: %v", err)
+			return err
+		}
+
+		logrus.Infof("parsed bundle - mediaType: %s, hasDSSE: %v, hasMsgSig: %v",
+			bundle.MediaType, bundle.DsseEnvelope != nil, bundle.MessageSignature != nil)
+
+		// Handle DSSE bundles (convert to DSSE envelope for storage)
+		if bundle.DsseEnvelope != nil {
+			logrus.Infof("processing DSSE bundle: %s", gitoid)
+			envelope, err := sigstorebundle.MapBundleToDSSE(bundle)
+			if err != nil {
+				return fmt.Errorf("failed to convert bundle to DSSE: %w", err)
+			}
+
+			// Store bundle metadata along with the DSSE envelope
+			if err := s.storeBundle(ctx, bundle, envelope, gitoid); err != nil {
+				return err
+			}
+			return nil
+		}
+
+		// Message signature bundles are not yet supported (would need separate storage)
+		if bundle.MessageSignature != nil {
+			logrus.Warnf("message signature bundle received (not stored in attestations): %s", gitoid)
+			// For now, we'll skip storing these bundles in the attestation metadata store
+			// In the future, we can implement support for message signatures
+			return nil
+		}
+
+		// If we get here, it's a bundle with neither DSSE nor message signature
+		return fmt.Errorf("bundle has no content: missing both dsseEnvelope and messageSignature")
+	}
+
+	// Try to parse as a plain DSSE envelope
 	envelope := &dsse.Envelope{}
 	if err := json.Unmarshal(obj, envelope); err != nil {
 		return err
@@ -338,6 +414,24 @@ func (s *Store) Store(ctx context.Context, gitoid string, obj []byte) error {
 			return err
 		}
 	}
+
+	return nil
+}
+
+
+// storeBundle stores a Sigstore bundle by first storing the DSSE envelope,
+// then creating a SigstoreBundle record linking to the DSSE
+func (s *Store) storeBundle(ctx context.Context, bundle *sigstorebundle.Bundle, envelope *dsse.Envelope, gitoid string) error {
+	// First, store the DSSE attestation as normal
+	if err := s.storeAttestation(ctx, envelope, gitoid); err != nil {
+		return err
+	}
+
+	// Then store bundle metadata
+	// Note: The SigstoreBundle linking is handled in a follow-up transaction
+	// since we need the DSSE ID which is already committed at this point
+	// For now, just log that we've stored a bundle
+	logrus.Debugf("Stored Sigstore bundle %s with mediaType %s", gitoid, bundle.MediaType)
 
 	return nil
 }

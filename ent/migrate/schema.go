@@ -144,6 +144,8 @@ var (
 		{Name: "id", Type: field.TypeUUID, Unique: true},
 		{Name: "key_id", Type: field.TypeString},
 		{Name: "signature", Type: field.TypeString, SchemaType: map[string]string{"mysql": "text"}},
+		{Name: "certificate", Type: field.TypeBytes, Nullable: true},
+		{Name: "intermediates", Type: field.TypeJSON, Nullable: true},
 		{Name: "dsse_signatures", Type: field.TypeUUID, Nullable: true},
 	}
 	// SignaturesTable holds the schema information for the "signatures" table.
@@ -154,7 +156,7 @@ var (
 		ForeignKeys: []*schema.ForeignKey{
 			{
 				Symbol:     "signatures_dsses_signatures",
-				Columns:    []*schema.Column{SignaturesColumns[3]},
+				Columns:    []*schema.Column{SignaturesColumns[5]},
 				RefColumns: []*schema.Column{DssesColumns[0]},
 				OnDelete:   schema.SetNull,
 			},
@@ -164,6 +166,36 @@ var (
 				Name:    "signature_key_id",
 				Unique:  false,
 				Columns: []*schema.Column{SignaturesColumns[1]},
+			},
+		},
+	}
+	// SigstoreBundlesColumns holds the columns for the "sigstore_bundles" table.
+	SigstoreBundlesColumns = []*schema.Column{
+		{Name: "id", Type: field.TypeUUID, Unique: true},
+		{Name: "gitoid_sha256", Type: field.TypeString, Unique: true},
+		{Name: "media_type", Type: field.TypeString},
+		{Name: "version", Type: field.TypeString, Nullable: true},
+		{Name: "created_at", Type: field.TypeTime},
+		{Name: "dsse_bundle", Type: field.TypeUUID, Unique: true, Nullable: true},
+	}
+	// SigstoreBundlesTable holds the schema information for the "sigstore_bundles" table.
+	SigstoreBundlesTable = &schema.Table{
+		Name:       "sigstore_bundles",
+		Columns:    SigstoreBundlesColumns,
+		PrimaryKey: []*schema.Column{SigstoreBundlesColumns[0]},
+		ForeignKeys: []*schema.ForeignKey{
+			{
+				Symbol:     "sigstore_bundles_dsses_bundle",
+				Columns:    []*schema.Column{SigstoreBundlesColumns[5]},
+				RefColumns: []*schema.Column{DssesColumns[0]},
+				OnDelete:   schema.SetNull,
+			},
+		},
+		Indexes: []*schema.Index{
+			{
+				Name:    "sigstorebundle_gitoid_sha256",
+				Unique:  false,
+				Columns: []*schema.Column{SigstoreBundlesColumns[1]},
 			},
 		},
 	}
@@ -246,6 +278,7 @@ var (
 		{Name: "id", Type: field.TypeUUID, Unique: true},
 		{Name: "type", Type: field.TypeString},
 		{Name: "timestamp", Type: field.TypeTime},
+		{Name: "data", Type: field.TypeBytes, Nullable: true},
 		{Name: "signature_timestamps", Type: field.TypeUUID, Nullable: true},
 	}
 	// TimestampsTable holds the schema information for the "timestamps" table.
@@ -256,7 +289,7 @@ var (
 		ForeignKeys: []*schema.ForeignKey{
 			{
 				Symbol:     "timestamps_signatures_timestamps",
-				Columns:    []*schema.Column{TimestampsColumns[3]},
+				Columns:    []*schema.Column{TimestampsColumns[4]},
 				RefColumns: []*schema.Column{SignaturesColumns[0]},
 				OnDelete:   schema.SetNull,
 			},
@@ -270,6 +303,7 @@ var (
 		DssesTable,
 		PayloadDigestsTable,
 		SignaturesTable,
+		SigstoreBundlesTable,
 		StatementsTable,
 		SubjectsTable,
 		SubjectDigestsTable,
@@ -284,6 +318,7 @@ func init() {
 	DssesTable.ForeignKeys[0].RefTable = StatementsTable
 	PayloadDigestsTable.ForeignKeys[0].RefTable = DssesTable
 	SignaturesTable.ForeignKeys[0].RefTable = DssesTable
+	SigstoreBundlesTable.ForeignKeys[0].RefTable = DssesTable
 	SubjectsTable.ForeignKeys[0].RefTable = StatementsTable
 	SubjectDigestsTable.ForeignKeys[0].RefTable = SubjectsTable
 	TimestampsTable.ForeignKeys[0].RefTable = SignaturesTable

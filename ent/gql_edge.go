@@ -76,6 +76,14 @@ func (_m *Dsse) PayloadDigests(ctx context.Context) (result []*PayloadDigest, er
 	return result, err
 }
 
+func (_m *Dsse) Bundle(ctx context.Context) (*SigstoreBundle, error) {
+	result, err := _m.Edges.BundleOrErr()
+	if IsNotLoaded(err) {
+		result, err = _m.QueryBundle().Only(ctx)
+	}
+	return result, MaskNotFound(err)
+}
+
 func (_m *PayloadDigest) Dsse(ctx context.Context) (*Dsse, error) {
 	result, err := _m.Edges.DsseOrErr()
 	if IsNotLoaded(err) {
@@ -102,6 +110,14 @@ func (_m *Signature) Timestamps(ctx context.Context) (result []*Timestamp, err e
 		result, err = _m.QueryTimestamps().All(ctx)
 	}
 	return result, err
+}
+
+func (_m *SigstoreBundle) Dsse(ctx context.Context) (*Dsse, error) {
+	result, err := _m.Edges.DsseOrErr()
+	if IsNotLoaded(err) {
+		result, err = _m.QueryDsse().Only(ctx)
+	}
+	return result, MaskNotFound(err)
 }
 
 func (_m *Statement) Subjects(

@@ -64,6 +64,11 @@ func Signature(v string) predicate.Signature {
 	return predicate.Signature(sql.FieldEQ(FieldSignature, v))
 }
 
+// Certificate applies equality check predicate on the "certificate" field. It's identical to CertificateEQ.
+func Certificate(v []byte) predicate.Signature {
+	return predicate.Signature(sql.FieldEQ(FieldCertificate, v))
+}
+
 // KeyIDEQ applies the EQ predicate on the "key_id" field.
 func KeyIDEQ(v string) predicate.Signature {
 	return predicate.Signature(sql.FieldEQ(FieldKeyID, v))
@@ -192,6 +197,66 @@ func SignatureEqualFold(v string) predicate.Signature {
 // SignatureContainsFold applies the ContainsFold predicate on the "signature" field.
 func SignatureContainsFold(v string) predicate.Signature {
 	return predicate.Signature(sql.FieldContainsFold(FieldSignature, v))
+}
+
+// CertificateEQ applies the EQ predicate on the "certificate" field.
+func CertificateEQ(v []byte) predicate.Signature {
+	return predicate.Signature(sql.FieldEQ(FieldCertificate, v))
+}
+
+// CertificateNEQ applies the NEQ predicate on the "certificate" field.
+func CertificateNEQ(v []byte) predicate.Signature {
+	return predicate.Signature(sql.FieldNEQ(FieldCertificate, v))
+}
+
+// CertificateIn applies the In predicate on the "certificate" field.
+func CertificateIn(vs ...[]byte) predicate.Signature {
+	return predicate.Signature(sql.FieldIn(FieldCertificate, vs...))
+}
+
+// CertificateNotIn applies the NotIn predicate on the "certificate" field.
+func CertificateNotIn(vs ...[]byte) predicate.Signature {
+	return predicate.Signature(sql.FieldNotIn(FieldCertificate, vs...))
+}
+
+// CertificateGT applies the GT predicate on the "certificate" field.
+func CertificateGT(v []byte) predicate.Signature {
+	return predicate.Signature(sql.FieldGT(FieldCertificate, v))
+}
+
+// CertificateGTE applies the GTE predicate on the "certificate" field.
+func CertificateGTE(v []byte) predicate.Signature {
+	return predicate.Signature(sql.FieldGTE(FieldCertificate, v))
+}
+
+// CertificateLT applies the LT predicate on the "certificate" field.
+func CertificateLT(v []byte) predicate.Signature {
+	return predicate.Signature(sql.FieldLT(FieldCertificate, v))
+}
+
+// CertificateLTE applies the LTE predicate on the "certificate" field.
+func CertificateLTE(v []byte) predicate.Signature {
+	return predicate.Signature(sql.FieldLTE(FieldCertificate, v))
+}
+
+// CertificateIsNil applies the IsNil predicate on the "certificate" field.
+func CertificateIsNil() predicate.Signature {
+	return predicate.Signature(sql.FieldIsNull(FieldCertificate))
+}
+
+// CertificateNotNil applies the NotNil predicate on the "certificate" field.
+func CertificateNotNil() predicate.Signature {
+	return predicate.Signature(sql.FieldNotNull(FieldCertificate))
+}
+
+// IntermediatesIsNil applies the IsNil predicate on the "intermediates" field.
+func IntermediatesIsNil() predicate.Signature {
+	return predicate.Signature(sql.FieldIsNull(FieldIntermediates))
+}
+
+// IntermediatesNotNil applies the NotNil predicate on the "intermediates" field.
+func IntermediatesNotNil() predicate.Signature {
+	return predicate.Signature(sql.FieldNotNull(FieldIntermediates))
 }
 
 // HasDsse applies the HasEdge predicate on the "dsse" edge.

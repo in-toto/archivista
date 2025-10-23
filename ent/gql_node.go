@@ -16,6 +16,7 @@ import (
 	"github.com/in-toto/archivista/ent/dsse"
 	"github.com/in-toto/archivista/ent/payloaddigest"
 	"github.com/in-toto/archivista/ent/signature"
+	"github.com/in-toto/archivista/ent/sigstorebundle"
 	"github.com/in-toto/archivista/ent/statement"
 	"github.com/in-toto/archivista/ent/subject"
 	"github.com/in-toto/archivista/ent/subjectdigest"
@@ -56,6 +57,11 @@ var signatureImplementors = []string{"Signature", "Node"}
 
 // IsNode implements the Node interface check for GQLGen.
 func (*Signature) IsNode() {}
+
+var sigstorebundleImplementors = []string{"SigstoreBundle", "Node"}
+
+// IsNode implements the Node interface check for GQLGen.
+func (*SigstoreBundle) IsNode() {}
 
 var statementImplementors = []string{"Statement", "Node"}
 
@@ -185,6 +191,15 @@ func (c *Client) noder(ctx context.Context, table string, id uuid.UUID) (Noder, 
 			Where(signature.ID(id))
 		if fc := graphql.GetFieldContext(ctx); fc != nil {
 			if err := query.collectField(ctx, true, graphql.GetOperationContext(ctx), fc.Field, nil, signatureImplementors...); err != nil {
+				return nil, err
+			}
+		}
+		return query.Only(ctx)
+	case sigstorebundle.Table:
+		query := c.SigstoreBundle.Query().
+			Where(sigstorebundle.ID(id))
+		if fc := graphql.GetFieldContext(ctx); fc != nil {
+			if err := query.collectField(ctx, true, graphql.GetOperationContext(ctx), fc.Field, nil, sigstorebundleImplementors...); err != nil {
 				return nil, err
 			}
 		}
@@ -382,6 +397,22 @@ func (c *Client) noders(ctx context.Context, table string, ids []uuid.UUID) ([]N
 		query := c.Signature.Query().
 			Where(signature.IDIn(ids...))
 		query, err := query.CollectFields(ctx, signatureImplementors...)
+		if err != nil {
+			return nil, err
+		}
+		nodes, err := query.All(ctx)
+		if err != nil {
+			return nil, err
+		}
+		for _, node := range nodes {
+			for _, noder := range idmap[node.ID] {
+				*noder = node
+			}
+		}
+	case sigstorebundle.Table:
+		query := c.SigstoreBundle.Query().
+			Where(sigstorebundle.IDIn(ids...))
+		query, err := query.CollectFields(ctx, sigstorebundleImplementors...)
 		if err != nil {
 			return nil, err
 		}

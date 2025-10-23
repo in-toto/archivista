@@ -58,6 +58,18 @@ func (_u *TimestampUpdate) SetNillableTimestamp(v *time.Time) *TimestampUpdate {
 	return _u
 }
 
+// SetData sets the "data" field.
+func (_u *TimestampUpdate) SetData(v []byte) *TimestampUpdate {
+	_u.mutation.SetData(v)
+	return _u
+}
+
+// ClearData clears the value of the "data" field.
+func (_u *TimestampUpdate) ClearData() *TimestampUpdate {
+	_u.mutation.ClearData()
+	return _u
+}
+
 // SetSignatureID sets the "signature" edge to the Signature entity by ID.
 func (_u *TimestampUpdate) SetSignatureID(id uuid.UUID) *TimestampUpdate {
 	_u.mutation.SetSignatureID(id)
@@ -129,6 +141,12 @@ func (_u *TimestampUpdate) sqlSave(ctx context.Context) (_node int, err error) {
 	}
 	if value, ok := _u.mutation.Timestamp(); ok {
 		_spec.SetField(timestamp.FieldTimestamp, field.TypeTime, value)
+	}
+	if value, ok := _u.mutation.Data(); ok {
+		_spec.SetField(timestamp.FieldData, field.TypeBytes, value)
+	}
+	if _u.mutation.DataCleared() {
+		_spec.ClearField(timestamp.FieldData, field.TypeBytes)
 	}
 	if _u.mutation.SignatureCleared() {
 		edge := &sqlgraph.EdgeSpec{
@@ -204,6 +222,18 @@ func (_u *TimestampUpdateOne) SetNillableTimestamp(v *time.Time) *TimestampUpdat
 	if v != nil {
 		_u.SetTimestamp(*v)
 	}
+	return _u
+}
+
+// SetData sets the "data" field.
+func (_u *TimestampUpdateOne) SetData(v []byte) *TimestampUpdateOne {
+	_u.mutation.SetData(v)
+	return _u
+}
+
+// ClearData clears the value of the "data" field.
+func (_u *TimestampUpdateOne) ClearData() *TimestampUpdateOne {
+	_u.mutation.ClearData()
 	return _u
 }
 
@@ -308,6 +338,12 @@ func (_u *TimestampUpdateOne) sqlSave(ctx context.Context) (_node *Timestamp, er
 	}
 	if value, ok := _u.mutation.Timestamp(); ok {
 		_spec.SetField(timestamp.FieldTimestamp, field.TypeTime, value)
+	}
+	if value, ok := _u.mutation.Data(); ok {
+		_spec.SetField(timestamp.FieldData, field.TypeBytes, value)
+	}
+	if _u.mutation.DataCleared() {
+		_spec.ClearField(timestamp.FieldData, field.TypeBytes)
 	}
 	if _u.mutation.SignatureCleared() {
 		edge := &sqlgraph.EdgeSpec{

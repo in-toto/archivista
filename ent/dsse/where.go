@@ -320,6 +320,29 @@ func HasPayloadDigestsWith(preds ...predicate.PayloadDigest) predicate.Dsse {
 	})
 }
 
+// HasBundle applies the HasEdge predicate on the "bundle" edge.
+func HasBundle() predicate.Dsse {
+	return predicate.Dsse(func(s *sql.Selector) {
+		step := sqlgraph.NewStep(
+			sqlgraph.From(Table, FieldID),
+			sqlgraph.Edge(sqlgraph.O2O, false, BundleTable, BundleColumn),
+		)
+		sqlgraph.HasNeighbors(s, step)
+	})
+}
+
+// HasBundleWith applies the HasEdge predicate on the "bundle" edge with a given conditions (other predicates).
+func HasBundleWith(preds ...predicate.SigstoreBundle) predicate.Dsse {
+	return predicate.Dsse(func(s *sql.Selector) {
+		step := newBundleStep()
+		sqlgraph.HasNeighborsWith(s, step, func(s *sql.Selector) {
+			for _, p := range preds {
+				p(s)
+			}
+		})
+	})
+}
+
 // And groups predicates with the AND operator between them.
 func And(predicates ...predicate.Dsse) predicate.Dsse {
 	return predicate.Dsse(sql.AndPredicates(predicates...))

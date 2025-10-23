@@ -14,6 +14,7 @@ import (
 	"github.com/in-toto/archivista/ent/dsse"
 	"github.com/in-toto/archivista/ent/payloaddigest"
 	"github.com/in-toto/archivista/ent/signature"
+	"github.com/in-toto/archivista/ent/sigstorebundle"
 	"github.com/in-toto/archivista/ent/statement"
 )
 
@@ -111,6 +112,25 @@ func (_c *DsseCreate) AddPayloadDigests(v ...*PayloadDigest) *DsseCreate {
 		ids[i] = v[i].ID
 	}
 	return _c.AddPayloadDigestIDs(ids...)
+}
+
+// SetBundleID sets the "bundle" edge to the SigstoreBundle entity by ID.
+func (_c *DsseCreate) SetBundleID(id uuid.UUID) *DsseCreate {
+	_c.mutation.SetBundleID(id)
+	return _c
+}
+
+// SetNillableBundleID sets the "bundle" edge to the SigstoreBundle entity by ID if the given value is not nil.
+func (_c *DsseCreate) SetNillableBundleID(id *uuid.UUID) *DsseCreate {
+	if id != nil {
+		_c = _c.SetBundleID(*id)
+	}
+	return _c
+}
+
+// SetBundle sets the "bundle" edge to the SigstoreBundle entity.
+func (_c *DsseCreate) SetBundle(v *SigstoreBundle) *DsseCreate {
+	return _c.SetBundleID(v.ID)
 }
 
 // Mutation returns the DsseMutation object of the builder.
@@ -265,6 +285,22 @@ func (_c *DsseCreate) createSpec() (*Dsse, *sqlgraph.CreateSpec) {
 			Bidi:    false,
 			Target: &sqlgraph.EdgeTarget{
 				IDSpec: sqlgraph.NewFieldSpec(payloaddigest.FieldID, field.TypeUUID),
+			},
+		}
+		for _, k := range nodes {
+			edge.Target.Nodes = append(edge.Target.Nodes, k)
+		}
+		_spec.Edges = append(_spec.Edges, edge)
+	}
+	if nodes := _c.mutation.BundleIDs(); len(nodes) > 0 {
+		edge := &sqlgraph.EdgeSpec{
+			Rel:     sqlgraph.O2O,
+			Inverse: false,
+			Table:   dsse.BundleTable,
+			Columns: []string{dsse.BundleColumn},
+			Bidi:    false,
+			Target: &sqlgraph.EdgeTarget{
+				IDSpec: sqlgraph.NewFieldSpec(sigstorebundle.FieldID, field.TypeUUID),
 			},
 		}
 		for _, k := range nodes {

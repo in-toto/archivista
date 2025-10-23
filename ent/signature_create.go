@@ -34,6 +34,18 @@ func (_c *SignatureCreate) SetSignature(v string) *SignatureCreate {
 	return _c
 }
 
+// SetCertificate sets the "certificate" field.
+func (_c *SignatureCreate) SetCertificate(v []byte) *SignatureCreate {
+	_c.mutation.SetCertificate(v)
+	return _c
+}
+
+// SetIntermediates sets the "intermediates" field.
+func (_c *SignatureCreate) SetIntermediates(v [][]uint8) *SignatureCreate {
+	_c.mutation.SetIntermediates(v)
+	return _c
+}
+
 // SetID sets the "id" field.
 func (_c *SignatureCreate) SetID(v uuid.UUID) *SignatureCreate {
 	_c.mutation.SetID(v)
@@ -178,6 +190,14 @@ func (_c *SignatureCreate) createSpec() (*Signature, *sqlgraph.CreateSpec) {
 	if value, ok := _c.mutation.Signature(); ok {
 		_spec.SetField(signature.FieldSignature, field.TypeString, value)
 		_node.Signature = value
+	}
+	if value, ok := _c.mutation.Certificate(); ok {
+		_spec.SetField(signature.FieldCertificate, field.TypeBytes, value)
+		_node.Certificate = value
+	}
+	if value, ok := _c.mutation.Intermediates(); ok {
+		_spec.SetField(signature.FieldIntermediates, field.TypeJSON, value)
+		_node.Intermediates = value
 	}
 	if nodes := _c.mutation.DsseIDs(); len(nodes) > 0 {
 		edge := &sqlgraph.EdgeSpec{

@@ -22,6 +22,7 @@ import (
 	"github.com/in-toto/archivista/ent/dsse"
 	"github.com/in-toto/archivista/ent/payloaddigest"
 	"github.com/in-toto/archivista/ent/signature"
+	"github.com/in-toto/archivista/ent/sigstorebundle"
 	"github.com/in-toto/archivista/ent/statement"
 	"github.com/in-toto/archivista/ent/subject"
 	"github.com/in-toto/archivista/ent/subjectdigest"
@@ -45,6 +46,8 @@ type Client struct {
 	PayloadDigest *PayloadDigestClient
 	// Signature is the client for interacting with the Signature builders.
 	Signature *SignatureClient
+	// SigstoreBundle is the client for interacting with the SigstoreBundle builders.
+	SigstoreBundle *SigstoreBundleClient
 	// Statement is the client for interacting with the Statement builders.
 	Statement *StatementClient
 	// Subject is the client for interacting with the Subject builders.
@@ -70,6 +73,7 @@ func (c *Client) init() {
 	c.Dsse = NewDsseClient(c.config)
 	c.PayloadDigest = NewPayloadDigestClient(c.config)
 	c.Signature = NewSignatureClient(c.config)
+	c.SigstoreBundle = NewSigstoreBundleClient(c.config)
 	c.Statement = NewStatementClient(c.config)
 	c.Subject = NewSubjectClient(c.config)
 	c.SubjectDigest = NewSubjectDigestClient(c.config)
@@ -172,6 +176,7 @@ func (c *Client) Tx(ctx context.Context) (*Tx, error) {
 		Dsse:                  NewDsseClient(cfg),
 		PayloadDigest:         NewPayloadDigestClient(cfg),
 		Signature:             NewSignatureClient(cfg),
+		SigstoreBundle:        NewSigstoreBundleClient(cfg),
 		Statement:             NewStatementClient(cfg),
 		Subject:               NewSubjectClient(cfg),
 		SubjectDigest:         NewSubjectDigestClient(cfg),
@@ -201,6 +206,7 @@ func (c *Client) BeginTx(ctx context.Context, opts *sql.TxOptions) (*Tx, error) 
 		Dsse:                  NewDsseClient(cfg),
 		PayloadDigest:         NewPayloadDigestClient(cfg),
 		Signature:             NewSignatureClient(cfg),
+		SigstoreBundle:        NewSigstoreBundleClient(cfg),
 		Statement:             NewStatementClient(cfg),
 		Subject:               NewSubjectClient(cfg),
 		SubjectDigest:         NewSubjectDigestClient(cfg),
@@ -235,8 +241,8 @@ func (c *Client) Close() error {
 func (c *Client) Use(hooks ...Hook) {
 	for _, n := range []interface{ Use(...Hook) }{
 		c.Attestation, c.AttestationCollection, c.AttestationPolicy, c.Dsse,
-		c.PayloadDigest, c.Signature, c.Statement, c.Subject, c.SubjectDigest,
-		c.Timestamp,
+		c.PayloadDigest, c.Signature, c.SigstoreBundle, c.Statement, c.Subject,
+		c.SubjectDigest, c.Timestamp,
 	} {
 		n.Use(hooks...)
 	}
@@ -247,8 +253,8 @@ func (c *Client) Use(hooks ...Hook) {
 func (c *Client) Intercept(interceptors ...Interceptor) {
 	for _, n := range []interface{ Intercept(...Interceptor) }{
 		c.Attestation, c.AttestationCollection, c.AttestationPolicy, c.Dsse,
-		c.PayloadDigest, c.Signature, c.Statement, c.Subject, c.SubjectDigest,
-		c.Timestamp,
+		c.PayloadDigest, c.Signature, c.SigstoreBundle, c.Statement, c.Subject,
+		c.SubjectDigest, c.Timestamp,
 	} {
 		n.Intercept(interceptors...)
 	}
@@ -269,6 +275,8 @@ func (c *Client) Mutate(ctx context.Context, m Mutation) (Value, error) {
 		return c.PayloadDigest.mutate(ctx, m)
 	case *SignatureMutation:
 		return c.Signature.mutate(ctx, m)
+	case *SigstoreBundleMutation:
+		return c.SigstoreBundle.mutate(ctx, m)
 	case *StatementMutation:
 		return c.Statement.mutate(ctx, m)
 	case *SubjectMutation:
@@ -901,6 +909,22 @@ func (c *DsseClient) QueryPayloadDigests(_m *Dsse) *PayloadDigestQuery {
 	return query
 }
 
+// QueryBundle queries the bundle edge of a Dsse.
+func (c *DsseClient) QueryBundle(_m *Dsse) *SigstoreBundleQuery {
+	query := (&SigstoreBundleClient{config: c.config}).Query()
+	query.path = func(context.Context) (fromV *sql.Selector, _ error) {
+		id := _m.ID
+		step := sqlgraph.NewStep(
+			sqlgraph.From(dsse.Table, dsse.FieldID, id),
+			sqlgraph.To(sigstorebundle.Table, sigstorebundle.FieldID),
+			sqlgraph.Edge(sqlgraph.O2O, false, dsse.BundleTable, dsse.BundleColumn),
+		)
+		fromV = sqlgraph.Neighbors(_m.driver.Dialect(), step)
+		return fromV, nil
+	}
+	return query
+}
+
 // Hooks returns the client hooks.
 func (c *DsseClient) Hooks() []Hook {
 	return c.hooks.Dsse
@@ -1237,6 +1261,155 @@ func (c *SignatureClient) mutate(ctx context.Context, m *SignatureMutation) (Val
 		return (&SignatureDelete{config: c.config, hooks: c.Hooks(), mutation: m}).Exec(ctx)
 	default:
 		return nil, fmt.Errorf("ent: unknown Signature mutation op: %q", m.Op())
+	}
+}
+
+// SigstoreBundleClient is a client for the SigstoreBundle schema.
+type SigstoreBundleClient struct {
+	config
+}
+
+// NewSigstoreBundleClient returns a client for the SigstoreBundle from the given config.
+func NewSigstoreBundleClient(c config) *SigstoreBundleClient {
+	return &SigstoreBundleClient{config: c}
+}
+
+// Use adds a list of mutation hooks to the hooks stack.
+// A call to `Use(f, g, h)` equals to `sigstorebundle.Hooks(f(g(h())))`.
+func (c *SigstoreBundleClient) Use(hooks ...Hook) {
+	c.hooks.SigstoreBundle = append(c.hooks.SigstoreBundle, hooks...)
+}
+
+// Intercept adds a list of query interceptors to the interceptors stack.
+// A call to `Intercept(f, g, h)` equals to `sigstorebundle.Intercept(f(g(h())))`.
+func (c *SigstoreBundleClient) Intercept(interceptors ...Interceptor) {
+	c.inters.SigstoreBundle = append(c.inters.SigstoreBundle, interceptors...)
+}
+
+// Create returns a builder for creating a SigstoreBundle entity.
+func (c *SigstoreBundleClient) Create() *SigstoreBundleCreate {
+	mutation := newSigstoreBundleMutation(c.config, OpCreate)
+	return &SigstoreBundleCreate{config: c.config, hooks: c.Hooks(), mutation: mutation}
+}
+
+// CreateBulk returns a builder for creating a bulk of SigstoreBundle entities.
+func (c *SigstoreBundleClient) CreateBulk(builders ...*SigstoreBundleCreate) *SigstoreBundleCreateBulk {
+	return &SigstoreBundleCreateBulk{config: c.config, builders: builders}
+}
+
+// MapCreateBulk creates a bulk creation builder from the given slice. For each item in the slice, the function creates
+// a builder and applies setFunc on it.
+func (c *SigstoreBundleClient) MapCreateBulk(slice any, setFunc func(*SigstoreBundleCreate, int)) *SigstoreBundleCreateBulk {
+	rv := reflect.ValueOf(slice)
+	if rv.Kind() != reflect.Slice {
+		return &SigstoreBundleCreateBulk{err: fmt.Errorf("calling to SigstoreBundleClient.MapCreateBulk with wrong type %T, need slice", slice)}
+	}
+	builders := make([]*SigstoreBundleCreate, rv.Len())
+	for i := 0; i < rv.Len(); i++ {
+		builders[i] = c.Create()
+		setFunc(builders[i], i)
+	}
+	return &SigstoreBundleCreateBulk{config: c.config, builders: builders}
+}
+
+// Update returns an update builder for SigstoreBundle.
+func (c *SigstoreBundleClient) Update() *SigstoreBundleUpdate {
+	mutation := newSigstoreBundleMutation(c.config, OpUpdate)
+	return &SigstoreBundleUpdate{config: c.config, hooks: c.Hooks(), mutation: mutation}
+}
+
+// UpdateOne returns an update builder for the given entity.
+func (c *SigstoreBundleClient) UpdateOne(_m *SigstoreBundle) *SigstoreBundleUpdateOne {
+	mutation := newSigstoreBundleMutation(c.config, OpUpdateOne, withSigstoreBundle(_m))
+	return &SigstoreBundleUpdateOne{config: c.config, hooks: c.Hooks(), mutation: mutation}
+}
+
+// UpdateOneID returns an update builder for the given id.
+func (c *SigstoreBundleClient) UpdateOneID(id uuid.UUID) *SigstoreBundleUpdateOne {
+	mutation := newSigstoreBundleMutation(c.config, OpUpdateOne, withSigstoreBundleID(id))
+	return &SigstoreBundleUpdateOne{config: c.config, hooks: c.Hooks(), mutation: mutation}
+}
+
+// Delete returns a delete builder for SigstoreBundle.
+func (c *SigstoreBundleClient) Delete() *SigstoreBundleDelete {
+	mutation := newSigstoreBundleMutation(c.config, OpDelete)
+	return &SigstoreBundleDelete{config: c.config, hooks: c.Hooks(), mutation: mutation}
+}
+
+// DeleteOne returns a builder for deleting the given entity.
+func (c *SigstoreBundleClient) DeleteOne(_m *SigstoreBundle) *SigstoreBundleDeleteOne {
+	return c.DeleteOneID(_m.ID)
+}
+
+// DeleteOneID returns a builder for deleting the given entity by its id.
+func (c *SigstoreBundleClient) DeleteOneID(id uuid.UUID) *SigstoreBundleDeleteOne {
+	builder := c.Delete().Where(sigstorebundle.ID(id))
+	builder.mutation.id = &id
+	builder.mutation.op = OpDeleteOne
+	return &SigstoreBundleDeleteOne{builder}
+}
+
+// Query returns a query builder for SigstoreBundle.
+func (c *SigstoreBundleClient) Query() *SigstoreBundleQuery {
+	return &SigstoreBundleQuery{
+		config: c.config,
+		ctx:    &QueryContext{Type: TypeSigstoreBundle},
+		inters: c.Interceptors(),
+	}
+}
+
+// Get returns a SigstoreBundle entity by its id.
+func (c *SigstoreBundleClient) Get(ctx context.Context, id uuid.UUID) (*SigstoreBundle, error) {
+	return c.Query().Where(sigstorebundle.ID(id)).Only(ctx)
+}
+
+// GetX is like Get, but panics if an error occurs.
+func (c *SigstoreBundleClient) GetX(ctx context.Context, id uuid.UUID) *SigstoreBundle {
+	obj, err := c.Get(ctx, id)
+	if err != nil {
+		panic(err)
+	}
+	return obj
+}
+
+// QueryDsse queries the dsse edge of a SigstoreBundle.
+func (c *SigstoreBundleClient) QueryDsse(_m *SigstoreBundle) *DsseQuery {
+	query := (&DsseClient{config: c.config}).Query()
+	query.path = func(context.Context) (fromV *sql.Selector, _ error) {
+		id := _m.ID
+		step := sqlgraph.NewStep(
+			sqlgraph.From(sigstorebundle.Table, sigstorebundle.FieldID, id),
+			sqlgraph.To(dsse.Table, dsse.FieldID),
+			sqlgraph.Edge(sqlgraph.O2O, true, sigstorebundle.DsseTable, sigstorebundle.DsseColumn),
+		)
+		fromV = sqlgraph.Neighbors(_m.driver.Dialect(), step)
+		return fromV, nil
+	}
+	return query
+}
+
+// Hooks returns the client hooks.
+func (c *SigstoreBundleClient) Hooks() []Hook {
+	return c.hooks.SigstoreBundle
+}
+
+// Interceptors returns the client interceptors.
+func (c *SigstoreBundleClient) Interceptors() []Interceptor {
+	return c.inters.SigstoreBundle
+}
+
+func (c *SigstoreBundleClient) mutate(ctx context.Context, m *SigstoreBundleMutation) (Value, error) {
+	switch m.Op() {
+	case OpCreate:
+		return (&SigstoreBundleCreate{config: c.config, hooks: c.Hooks(), mutation: m}).Save(ctx)
+	case OpUpdate:
+		return (&SigstoreBundleUpdate{config: c.config, hooks: c.Hooks(), mutation: m}).Save(ctx)
+	case OpUpdateOne:
+		return (&SigstoreBundleUpdateOne{config: c.config, hooks: c.Hooks(), mutation: m}).Save(ctx)
+	case OpDelete, OpDeleteOne:
+		return (&SigstoreBundleDelete{config: c.config, hooks: c.Hooks(), mutation: m}).Exec(ctx)
+	default:
+		return nil, fmt.Errorf("ent: unknown SigstoreBundle mutation op: %q", m.Op())
 	}
 }
 
@@ -1904,10 +2077,12 @@ func (c *TimestampClient) mutate(ctx context.Context, m *TimestampMutation) (Val
 type (
 	hooks struct {
 		Attestation, AttestationCollection, AttestationPolicy, Dsse, PayloadDigest,
-		Signature, Statement, Subject, SubjectDigest, Timestamp []ent.Hook
+		Signature, SigstoreBundle, Statement, Subject, SubjectDigest,
+		Timestamp []ent.Hook
 	}
 	inters struct {
 		Attestation, AttestationCollection, AttestationPolicy, Dsse, PayloadDigest,
-		Signature, Statement, Subject, SubjectDigest, Timestamp []ent.Interceptor
+		Signature, SigstoreBundle, Statement, Subject, SubjectDigest,
+		Timestamp []ent.Interceptor
 	}
 )
