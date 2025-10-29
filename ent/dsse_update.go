@@ -15,6 +15,7 @@ import (
 	"github.com/in-toto/archivista/ent/payloaddigest"
 	"github.com/in-toto/archivista/ent/predicate"
 	"github.com/in-toto/archivista/ent/signature"
+	"github.com/in-toto/archivista/ent/sigstorebundle"
 	"github.com/in-toto/archivista/ent/statement"
 )
 
@@ -108,6 +109,25 @@ func (_u *DsseUpdate) AddPayloadDigests(v ...*PayloadDigest) *DsseUpdate {
 	return _u.AddPayloadDigestIDs(ids...)
 }
 
+// SetBundleID sets the "bundle" edge to the SigstoreBundle entity by ID.
+func (_u *DsseUpdate) SetBundleID(id uuid.UUID) *DsseUpdate {
+	_u.mutation.SetBundleID(id)
+	return _u
+}
+
+// SetNillableBundleID sets the "bundle" edge to the SigstoreBundle entity by ID if the given value is not nil.
+func (_u *DsseUpdate) SetNillableBundleID(id *uuid.UUID) *DsseUpdate {
+	if id != nil {
+		_u = _u.SetBundleID(*id)
+	}
+	return _u
+}
+
+// SetBundle sets the "bundle" edge to the SigstoreBundle entity.
+func (_u *DsseUpdate) SetBundle(v *SigstoreBundle) *DsseUpdate {
+	return _u.SetBundleID(v.ID)
+}
+
 // Mutation returns the DsseMutation object of the builder.
 func (_u *DsseUpdate) Mutation() *DsseMutation {
 	return _u.mutation
@@ -159,6 +179,12 @@ func (_u *DsseUpdate) RemovePayloadDigests(v ...*PayloadDigest) *DsseUpdate {
 		ids[i] = v[i].ID
 	}
 	return _u.RemovePayloadDigestIDs(ids...)
+}
+
+// ClearBundle clears the "bundle" edge to the SigstoreBundle entity.
+func (_u *DsseUpdate) ClearBundle() *DsseUpdate {
+	_u.mutation.ClearBundle()
+	return _u
 }
 
 // Save executes the query and returns the number of nodes affected by the update operation.
@@ -343,6 +369,35 @@ func (_u *DsseUpdate) sqlSave(ctx context.Context) (_node int, err error) {
 		}
 		_spec.Edges.Add = append(_spec.Edges.Add, edge)
 	}
+	if _u.mutation.BundleCleared() {
+		edge := &sqlgraph.EdgeSpec{
+			Rel:     sqlgraph.O2O,
+			Inverse: false,
+			Table:   dsse.BundleTable,
+			Columns: []string{dsse.BundleColumn},
+			Bidi:    false,
+			Target: &sqlgraph.EdgeTarget{
+				IDSpec: sqlgraph.NewFieldSpec(sigstorebundle.FieldID, field.TypeUUID),
+			},
+		}
+		_spec.Edges.Clear = append(_spec.Edges.Clear, edge)
+	}
+	if nodes := _u.mutation.BundleIDs(); len(nodes) > 0 {
+		edge := &sqlgraph.EdgeSpec{
+			Rel:     sqlgraph.O2O,
+			Inverse: false,
+			Table:   dsse.BundleTable,
+			Columns: []string{dsse.BundleColumn},
+			Bidi:    false,
+			Target: &sqlgraph.EdgeTarget{
+				IDSpec: sqlgraph.NewFieldSpec(sigstorebundle.FieldID, field.TypeUUID),
+			},
+		}
+		for _, k := range nodes {
+			edge.Target.Nodes = append(edge.Target.Nodes, k)
+		}
+		_spec.Edges.Add = append(_spec.Edges.Add, edge)
+	}
 	if _node, err = sqlgraph.UpdateNodes(ctx, _u.driver, _spec); err != nil {
 		if _, ok := err.(*sqlgraph.NotFoundError); ok {
 			err = &NotFoundError{dsse.Label}
@@ -440,6 +495,25 @@ func (_u *DsseUpdateOne) AddPayloadDigests(v ...*PayloadDigest) *DsseUpdateOne {
 	return _u.AddPayloadDigestIDs(ids...)
 }
 
+// SetBundleID sets the "bundle" edge to the SigstoreBundle entity by ID.
+func (_u *DsseUpdateOne) SetBundleID(id uuid.UUID) *DsseUpdateOne {
+	_u.mutation.SetBundleID(id)
+	return _u
+}
+
+// SetNillableBundleID sets the "bundle" edge to the SigstoreBundle entity by ID if the given value is not nil.
+func (_u *DsseUpdateOne) SetNillableBundleID(id *uuid.UUID) *DsseUpdateOne {
+	if id != nil {
+		_u = _u.SetBundleID(*id)
+	}
+	return _u
+}
+
+// SetBundle sets the "bundle" edge to the SigstoreBundle entity.
+func (_u *DsseUpdateOne) SetBundle(v *SigstoreBundle) *DsseUpdateOne {
+	return _u.SetBundleID(v.ID)
+}
+
 // Mutation returns the DsseMutation object of the builder.
 func (_u *DsseUpdateOne) Mutation() *DsseMutation {
 	return _u.mutation
@@ -491,6 +565,12 @@ func (_u *DsseUpdateOne) RemovePayloadDigests(v ...*PayloadDigest) *DsseUpdateOn
 		ids[i] = v[i].ID
 	}
 	return _u.RemovePayloadDigestIDs(ids...)
+}
+
+// ClearBundle clears the "bundle" edge to the SigstoreBundle entity.
+func (_u *DsseUpdateOne) ClearBundle() *DsseUpdateOne {
+	_u.mutation.ClearBundle()
+	return _u
 }
 
 // Where appends a list predicates to the DsseUpdate builder.
@@ -698,6 +778,35 @@ func (_u *DsseUpdateOne) sqlSave(ctx context.Context) (_node *Dsse, err error) {
 			Bidi:    false,
 			Target: &sqlgraph.EdgeTarget{
 				IDSpec: sqlgraph.NewFieldSpec(payloaddigest.FieldID, field.TypeUUID),
+			},
+		}
+		for _, k := range nodes {
+			edge.Target.Nodes = append(edge.Target.Nodes, k)
+		}
+		_spec.Edges.Add = append(_spec.Edges.Add, edge)
+	}
+	if _u.mutation.BundleCleared() {
+		edge := &sqlgraph.EdgeSpec{
+			Rel:     sqlgraph.O2O,
+			Inverse: false,
+			Table:   dsse.BundleTable,
+			Columns: []string{dsse.BundleColumn},
+			Bidi:    false,
+			Target: &sqlgraph.EdgeTarget{
+				IDSpec: sqlgraph.NewFieldSpec(sigstorebundle.FieldID, field.TypeUUID),
+			},
+		}
+		_spec.Edges.Clear = append(_spec.Edges.Clear, edge)
+	}
+	if nodes := _u.mutation.BundleIDs(); len(nodes) > 0 {
+		edge := &sqlgraph.EdgeSpec{
+			Rel:     sqlgraph.O2O,
+			Inverse: false,
+			Table:   dsse.BundleTable,
+			Columns: []string{dsse.BundleColumn},
+			Bidi:    false,
+			Target: &sqlgraph.EdgeTarget{
+				IDSpec: sqlgraph.NewFieldSpec(sigstorebundle.FieldID, field.TypeUUID),
 			},
 		}
 		for _, k := range nodes {

@@ -9,6 +9,7 @@ import (
 
 	"entgo.io/ent/dialect/sql"
 	"entgo.io/ent/dialect/sql/sqlgraph"
+	"entgo.io/ent/dialect/sql/sqljson"
 	"entgo.io/ent/schema/field"
 	"github.com/google/uuid"
 	"github.com/in-toto/archivista/ent/dsse"
@@ -55,6 +56,36 @@ func (_u *SignatureUpdate) SetNillableSignature(v *string) *SignatureUpdate {
 	if v != nil {
 		_u.SetSignature(*v)
 	}
+	return _u
+}
+
+// SetCertificate sets the "certificate" field.
+func (_u *SignatureUpdate) SetCertificate(v []byte) *SignatureUpdate {
+	_u.mutation.SetCertificate(v)
+	return _u
+}
+
+// ClearCertificate clears the value of the "certificate" field.
+func (_u *SignatureUpdate) ClearCertificate() *SignatureUpdate {
+	_u.mutation.ClearCertificate()
+	return _u
+}
+
+// SetIntermediates sets the "intermediates" field.
+func (_u *SignatureUpdate) SetIntermediates(v [][]uint8) *SignatureUpdate {
+	_u.mutation.SetIntermediates(v)
+	return _u
+}
+
+// AppendIntermediates appends value to the "intermediates" field.
+func (_u *SignatureUpdate) AppendIntermediates(v [][]uint8) *SignatureUpdate {
+	_u.mutation.AppendIntermediates(v)
+	return _u
+}
+
+// ClearIntermediates clears the value of the "intermediates" field.
+func (_u *SignatureUpdate) ClearIntermediates() *SignatureUpdate {
+	_u.mutation.ClearIntermediates()
 	return _u
 }
 
@@ -179,6 +210,23 @@ func (_u *SignatureUpdate) sqlSave(ctx context.Context) (_node int, err error) {
 	if value, ok := _u.mutation.Signature(); ok {
 		_spec.SetField(signature.FieldSignature, field.TypeString, value)
 	}
+	if value, ok := _u.mutation.Certificate(); ok {
+		_spec.SetField(signature.FieldCertificate, field.TypeBytes, value)
+	}
+	if _u.mutation.CertificateCleared() {
+		_spec.ClearField(signature.FieldCertificate, field.TypeBytes)
+	}
+	if value, ok := _u.mutation.Intermediates(); ok {
+		_spec.SetField(signature.FieldIntermediates, field.TypeJSON, value)
+	}
+	if value, ok := _u.mutation.AppendedIntermediates(); ok {
+		_spec.AddModifier(func(u *sql.UpdateBuilder) {
+			sqljson.Append(u, signature.FieldIntermediates, value)
+		})
+	}
+	if _u.mutation.IntermediatesCleared() {
+		_spec.ClearField(signature.FieldIntermediates, field.TypeJSON)
+	}
 	if _u.mutation.DsseCleared() {
 		edge := &sqlgraph.EdgeSpec{
 			Rel:     sqlgraph.M2O,
@@ -298,6 +346,36 @@ func (_u *SignatureUpdateOne) SetNillableSignature(v *string) *SignatureUpdateOn
 	if v != nil {
 		_u.SetSignature(*v)
 	}
+	return _u
+}
+
+// SetCertificate sets the "certificate" field.
+func (_u *SignatureUpdateOne) SetCertificate(v []byte) *SignatureUpdateOne {
+	_u.mutation.SetCertificate(v)
+	return _u
+}
+
+// ClearCertificate clears the value of the "certificate" field.
+func (_u *SignatureUpdateOne) ClearCertificate() *SignatureUpdateOne {
+	_u.mutation.ClearCertificate()
+	return _u
+}
+
+// SetIntermediates sets the "intermediates" field.
+func (_u *SignatureUpdateOne) SetIntermediates(v [][]uint8) *SignatureUpdateOne {
+	_u.mutation.SetIntermediates(v)
+	return _u
+}
+
+// AppendIntermediates appends value to the "intermediates" field.
+func (_u *SignatureUpdateOne) AppendIntermediates(v [][]uint8) *SignatureUpdateOne {
+	_u.mutation.AppendIntermediates(v)
+	return _u
+}
+
+// ClearIntermediates clears the value of the "intermediates" field.
+func (_u *SignatureUpdateOne) ClearIntermediates() *SignatureUpdateOne {
+	_u.mutation.ClearIntermediates()
 	return _u
 }
 
@@ -451,6 +529,23 @@ func (_u *SignatureUpdateOne) sqlSave(ctx context.Context) (_node *Signature, er
 	}
 	if value, ok := _u.mutation.Signature(); ok {
 		_spec.SetField(signature.FieldSignature, field.TypeString, value)
+	}
+	if value, ok := _u.mutation.Certificate(); ok {
+		_spec.SetField(signature.FieldCertificate, field.TypeBytes, value)
+	}
+	if _u.mutation.CertificateCleared() {
+		_spec.ClearField(signature.FieldCertificate, field.TypeBytes)
+	}
+	if value, ok := _u.mutation.Intermediates(); ok {
+		_spec.SetField(signature.FieldIntermediates, field.TypeJSON, value)
+	}
+	if value, ok := _u.mutation.AppendedIntermediates(); ok {
+		_spec.AddModifier(func(u *sql.UpdateBuilder) {
+			sqljson.Append(u, signature.FieldIntermediates, value)
+		})
+	}
+	if _u.mutation.IntermediatesCleared() {
+		_spec.ClearField(signature.FieldIntermediates, field.TypeJSON)
 	}
 	if _u.mutation.DsseCleared() {
 		edge := &sqlgraph.EdgeSpec{

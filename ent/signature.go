@@ -3,6 +3,7 @@
 package ent
 
 import (
+	"encoding/json"
 	"fmt"
 	"strings"
 
@@ -22,6 +23,10 @@ type Signature struct {
 	KeyID string `json:"key_id,omitempty"`
 	// Signature holds the value of the "signature" field.
 	Signature string `json:"signature,omitempty"`
+	// Certificate holds the value of the "certificate" field.
+	Certificate []byte `json:"certificate,omitempty"`
+	// Intermediates holds the value of the "intermediates" field.
+	Intermediates [][]uint8 `json:"intermediates,omitempty"`
 	// Edges holds the relations/edges for other nodes in the graph.
 	// The values are being populated by the SignatureQuery when eager-loading is set.
 	Edges           SignatureEdges `json:"edges"`
@@ -69,6 +74,8 @@ func (*Signature) scanValues(columns []string) ([]any, error) {
 	values := make([]any, len(columns))
 	for i := range columns {
 		switch columns[i] {
+		case signature.FieldCertificate, signature.FieldIntermediates:
+			values[i] = new([]byte)
 		case signature.FieldKeyID, signature.FieldSignature:
 			values[i] = new(sql.NullString)
 		case signature.FieldID:
@@ -107,6 +114,20 @@ func (_m *Signature) assignValues(columns []string, values []any) error {
 				return fmt.Errorf("unexpected type %T for field signature", values[i])
 			} else if value.Valid {
 				_m.Signature = value.String
+			}
+		case signature.FieldCertificate:
+			if value, ok := values[i].(*[]byte); !ok {
+				return fmt.Errorf("unexpected type %T for field certificate", values[i])
+			} else if value != nil {
+				_m.Certificate = *value
+			}
+		case signature.FieldIntermediates:
+			if value, ok := values[i].(*[]byte); !ok {
+				return fmt.Errorf("unexpected type %T for field intermediates", values[i])
+			} else if value != nil && len(*value) > 0 {
+				if err := json.Unmarshal(*value, &_m.Intermediates); err != nil {
+					return fmt.Errorf("unmarshal field intermediates: %w", err)
+				}
 			}
 		case signature.ForeignKeys[0]:
 			if value, ok := values[i].(*sql.NullScanner); !ok {
@@ -166,6 +187,12 @@ func (_m *Signature) String() string {
 	builder.WriteString(", ")
 	builder.WriteString("signature=")
 	builder.WriteString(_m.Signature)
+	builder.WriteString(", ")
+	builder.WriteString("certificate=")
+	builder.WriteString(fmt.Sprintf("%v", _m.Certificate))
+	builder.WriteString(", ")
+	builder.WriteString("intermediates=")
+	builder.WriteString(fmt.Sprintf("%v", _m.Intermediates))
 	builder.WriteByte(')')
 	return builder.String()
 }

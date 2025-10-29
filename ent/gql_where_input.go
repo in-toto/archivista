@@ -15,6 +15,7 @@ import (
 	"github.com/in-toto/archivista/ent/payloaddigest"
 	"github.com/in-toto/archivista/ent/predicate"
 	"github.com/in-toto/archivista/ent/signature"
+	"github.com/in-toto/archivista/ent/sigstorebundle"
 	"github.com/in-toto/archivista/ent/statement"
 	"github.com/in-toto/archivista/ent/subject"
 	"github.com/in-toto/archivista/ent/subjectdigest"
@@ -713,6 +714,10 @@ type DsseWhereInput struct {
 	// "payload_digests" edge predicates.
 	HasPayloadDigests     *bool                      `json:"hasPayloadDigests,omitempty"`
 	HasPayloadDigestsWith []*PayloadDigestWhereInput `json:"hasPayloadDigestsWith,omitempty"`
+
+	// "bundle" edge predicates.
+	HasBundle     *bool                       `json:"hasBundle,omitempty"`
+	HasBundleWith []*SigstoreBundleWhereInput `json:"hasBundleWith,omitempty"`
 }
 
 // AddPredicates adds custom predicates to the where input to be used during the filtering phase.
@@ -972,6 +977,24 @@ func (i *DsseWhereInput) P() (predicate.Dsse, error) {
 			with = append(with, p)
 		}
 		predicates = append(predicates, dsse.HasPayloadDigestsWith(with...))
+	}
+	if i.HasBundle != nil {
+		p := dsse.HasBundle()
+		if !*i.HasBundle {
+			p = dsse.Not(p)
+		}
+		predicates = append(predicates, p)
+	}
+	if len(i.HasBundleWith) > 0 {
+		with := make([]predicate.SigstoreBundle, 0, len(i.HasBundleWith))
+		for _, w := range i.HasBundleWith {
+			p, err := w.P()
+			if err != nil {
+				return nil, fmt.Errorf("%w: field 'HasBundleWith'", err)
+			}
+			with = append(with, p)
+		}
+		predicates = append(predicates, dsse.HasBundleWith(with...))
 	}
 	switch len(predicates) {
 	case 0:
@@ -1510,6 +1533,356 @@ func (i *SignatureWhereInput) P() (predicate.Signature, error) {
 		return predicates[0], nil
 	default:
 		return signature.And(predicates...), nil
+	}
+}
+
+// SigstoreBundleWhereInput represents a where input for filtering SigstoreBundle queries.
+type SigstoreBundleWhereInput struct {
+	Predicates []predicate.SigstoreBundle  `json:"-"`
+	Not        *SigstoreBundleWhereInput   `json:"not,omitempty"`
+	Or         []*SigstoreBundleWhereInput `json:"or,omitempty"`
+	And        []*SigstoreBundleWhereInput `json:"and,omitempty"`
+
+	// "id" field predicates.
+	ID      *uuid.UUID  `json:"id,omitempty"`
+	IDNEQ   *uuid.UUID  `json:"idNEQ,omitempty"`
+	IDIn    []uuid.UUID `json:"idIn,omitempty"`
+	IDNotIn []uuid.UUID `json:"idNotIn,omitempty"`
+	IDGT    *uuid.UUID  `json:"idGT,omitempty"`
+	IDGTE   *uuid.UUID  `json:"idGTE,omitempty"`
+	IDLT    *uuid.UUID  `json:"idLT,omitempty"`
+	IDLTE   *uuid.UUID  `json:"idLTE,omitempty"`
+
+	// "gitoid_sha256" field predicates.
+	GitoidSha256             *string  `json:"gitoidSha256,omitempty"`
+	GitoidSha256NEQ          *string  `json:"gitoidSha256NEQ,omitempty"`
+	GitoidSha256In           []string `json:"gitoidSha256In,omitempty"`
+	GitoidSha256NotIn        []string `json:"gitoidSha256NotIn,omitempty"`
+	GitoidSha256GT           *string  `json:"gitoidSha256GT,omitempty"`
+	GitoidSha256GTE          *string  `json:"gitoidSha256GTE,omitempty"`
+	GitoidSha256LT           *string  `json:"gitoidSha256LT,omitempty"`
+	GitoidSha256LTE          *string  `json:"gitoidSha256LTE,omitempty"`
+	GitoidSha256Contains     *string  `json:"gitoidSha256Contains,omitempty"`
+	GitoidSha256HasPrefix    *string  `json:"gitoidSha256HasPrefix,omitempty"`
+	GitoidSha256HasSuffix    *string  `json:"gitoidSha256HasSuffix,omitempty"`
+	GitoidSha256EqualFold    *string  `json:"gitoidSha256EqualFold,omitempty"`
+	GitoidSha256ContainsFold *string  `json:"gitoidSha256ContainsFold,omitempty"`
+
+	// "media_type" field predicates.
+	MediaType             *string  `json:"mediaType,omitempty"`
+	MediaTypeNEQ          *string  `json:"mediaTypeNEQ,omitempty"`
+	MediaTypeIn           []string `json:"mediaTypeIn,omitempty"`
+	MediaTypeNotIn        []string `json:"mediaTypeNotIn,omitempty"`
+	MediaTypeGT           *string  `json:"mediaTypeGT,omitempty"`
+	MediaTypeGTE          *string  `json:"mediaTypeGTE,omitempty"`
+	MediaTypeLT           *string  `json:"mediaTypeLT,omitempty"`
+	MediaTypeLTE          *string  `json:"mediaTypeLTE,omitempty"`
+	MediaTypeContains     *string  `json:"mediaTypeContains,omitempty"`
+	MediaTypeHasPrefix    *string  `json:"mediaTypeHasPrefix,omitempty"`
+	MediaTypeHasSuffix    *string  `json:"mediaTypeHasSuffix,omitempty"`
+	MediaTypeEqualFold    *string  `json:"mediaTypeEqualFold,omitempty"`
+	MediaTypeContainsFold *string  `json:"mediaTypeContainsFold,omitempty"`
+
+	// "version" field predicates.
+	Version             *string  `json:"version,omitempty"`
+	VersionNEQ          *string  `json:"versionNEQ,omitempty"`
+	VersionIn           []string `json:"versionIn,omitempty"`
+	VersionNotIn        []string `json:"versionNotIn,omitempty"`
+	VersionGT           *string  `json:"versionGT,omitempty"`
+	VersionGTE          *string  `json:"versionGTE,omitempty"`
+	VersionLT           *string  `json:"versionLT,omitempty"`
+	VersionLTE          *string  `json:"versionLTE,omitempty"`
+	VersionContains     *string  `json:"versionContains,omitempty"`
+	VersionHasPrefix    *string  `json:"versionHasPrefix,omitempty"`
+	VersionHasSuffix    *string  `json:"versionHasSuffix,omitempty"`
+	VersionIsNil        bool     `json:"versionIsNil,omitempty"`
+	VersionNotNil       bool     `json:"versionNotNil,omitempty"`
+	VersionEqualFold    *string  `json:"versionEqualFold,omitempty"`
+	VersionContainsFold *string  `json:"versionContainsFold,omitempty"`
+
+	// "created_at" field predicates.
+	CreatedAt      *time.Time  `json:"createdAt,omitempty"`
+	CreatedAtNEQ   *time.Time  `json:"createdAtNEQ,omitempty"`
+	CreatedAtIn    []time.Time `json:"createdAtIn,omitempty"`
+	CreatedAtNotIn []time.Time `json:"createdAtNotIn,omitempty"`
+	CreatedAtGT    *time.Time  `json:"createdAtGT,omitempty"`
+	CreatedAtGTE   *time.Time  `json:"createdAtGTE,omitempty"`
+	CreatedAtLT    *time.Time  `json:"createdAtLT,omitempty"`
+	CreatedAtLTE   *time.Time  `json:"createdAtLTE,omitempty"`
+
+	// "dsse" edge predicates.
+	HasDsse     *bool             `json:"hasDsse,omitempty"`
+	HasDsseWith []*DsseWhereInput `json:"hasDsseWith,omitempty"`
+}
+
+// AddPredicates adds custom predicates to the where input to be used during the filtering phase.
+func (i *SigstoreBundleWhereInput) AddPredicates(predicates ...predicate.SigstoreBundle) {
+	i.Predicates = append(i.Predicates, predicates...)
+}
+
+// Filter applies the SigstoreBundleWhereInput filter on the SigstoreBundleQuery builder.
+func (i *SigstoreBundleWhereInput) Filter(q *SigstoreBundleQuery) (*SigstoreBundleQuery, error) {
+	if i == nil {
+		return q, nil
+	}
+	p, err := i.P()
+	if err != nil {
+		if err == ErrEmptySigstoreBundleWhereInput {
+			return q, nil
+		}
+		return nil, err
+	}
+	return q.Where(p), nil
+}
+
+// ErrEmptySigstoreBundleWhereInput is returned in case the SigstoreBundleWhereInput is empty.
+var ErrEmptySigstoreBundleWhereInput = errors.New("ent: empty predicate SigstoreBundleWhereInput")
+
+// P returns a predicate for filtering sigstorebundles.
+// An error is returned if the input is empty or invalid.
+func (i *SigstoreBundleWhereInput) P() (predicate.SigstoreBundle, error) {
+	var predicates []predicate.SigstoreBundle
+	if i.Not != nil {
+		p, err := i.Not.P()
+		if err != nil {
+			return nil, fmt.Errorf("%w: field 'not'", err)
+		}
+		predicates = append(predicates, sigstorebundle.Not(p))
+	}
+	switch n := len(i.Or); {
+	case n == 1:
+		p, err := i.Or[0].P()
+		if err != nil {
+			return nil, fmt.Errorf("%w: field 'or'", err)
+		}
+		predicates = append(predicates, p)
+	case n > 1:
+		or := make([]predicate.SigstoreBundle, 0, n)
+		for _, w := range i.Or {
+			p, err := w.P()
+			if err != nil {
+				return nil, fmt.Errorf("%w: field 'or'", err)
+			}
+			or = append(or, p)
+		}
+		predicates = append(predicates, sigstorebundle.Or(or...))
+	}
+	switch n := len(i.And); {
+	case n == 1:
+		p, err := i.And[0].P()
+		if err != nil {
+			return nil, fmt.Errorf("%w: field 'and'", err)
+		}
+		predicates = append(predicates, p)
+	case n > 1:
+		and := make([]predicate.SigstoreBundle, 0, n)
+		for _, w := range i.And {
+			p, err := w.P()
+			if err != nil {
+				return nil, fmt.Errorf("%w: field 'and'", err)
+			}
+			and = append(and, p)
+		}
+		predicates = append(predicates, sigstorebundle.And(and...))
+	}
+	predicates = append(predicates, i.Predicates...)
+	if i.ID != nil {
+		predicates = append(predicates, sigstorebundle.IDEQ(*i.ID))
+	}
+	if i.IDNEQ != nil {
+		predicates = append(predicates, sigstorebundle.IDNEQ(*i.IDNEQ))
+	}
+	if len(i.IDIn) > 0 {
+		predicates = append(predicates, sigstorebundle.IDIn(i.IDIn...))
+	}
+	if len(i.IDNotIn) > 0 {
+		predicates = append(predicates, sigstorebundle.IDNotIn(i.IDNotIn...))
+	}
+	if i.IDGT != nil {
+		predicates = append(predicates, sigstorebundle.IDGT(*i.IDGT))
+	}
+	if i.IDGTE != nil {
+		predicates = append(predicates, sigstorebundle.IDGTE(*i.IDGTE))
+	}
+	if i.IDLT != nil {
+		predicates = append(predicates, sigstorebundle.IDLT(*i.IDLT))
+	}
+	if i.IDLTE != nil {
+		predicates = append(predicates, sigstorebundle.IDLTE(*i.IDLTE))
+	}
+	if i.GitoidSha256 != nil {
+		predicates = append(predicates, sigstorebundle.GitoidSha256EQ(*i.GitoidSha256))
+	}
+	if i.GitoidSha256NEQ != nil {
+		predicates = append(predicates, sigstorebundle.GitoidSha256NEQ(*i.GitoidSha256NEQ))
+	}
+	if len(i.GitoidSha256In) > 0 {
+		predicates = append(predicates, sigstorebundle.GitoidSha256In(i.GitoidSha256In...))
+	}
+	if len(i.GitoidSha256NotIn) > 0 {
+		predicates = append(predicates, sigstorebundle.GitoidSha256NotIn(i.GitoidSha256NotIn...))
+	}
+	if i.GitoidSha256GT != nil {
+		predicates = append(predicates, sigstorebundle.GitoidSha256GT(*i.GitoidSha256GT))
+	}
+	if i.GitoidSha256GTE != nil {
+		predicates = append(predicates, sigstorebundle.GitoidSha256GTE(*i.GitoidSha256GTE))
+	}
+	if i.GitoidSha256LT != nil {
+		predicates = append(predicates, sigstorebundle.GitoidSha256LT(*i.GitoidSha256LT))
+	}
+	if i.GitoidSha256LTE != nil {
+		predicates = append(predicates, sigstorebundle.GitoidSha256LTE(*i.GitoidSha256LTE))
+	}
+	if i.GitoidSha256Contains != nil {
+		predicates = append(predicates, sigstorebundle.GitoidSha256Contains(*i.GitoidSha256Contains))
+	}
+	if i.GitoidSha256HasPrefix != nil {
+		predicates = append(predicates, sigstorebundle.GitoidSha256HasPrefix(*i.GitoidSha256HasPrefix))
+	}
+	if i.GitoidSha256HasSuffix != nil {
+		predicates = append(predicates, sigstorebundle.GitoidSha256HasSuffix(*i.GitoidSha256HasSuffix))
+	}
+	if i.GitoidSha256EqualFold != nil {
+		predicates = append(predicates, sigstorebundle.GitoidSha256EqualFold(*i.GitoidSha256EqualFold))
+	}
+	if i.GitoidSha256ContainsFold != nil {
+		predicates = append(predicates, sigstorebundle.GitoidSha256ContainsFold(*i.GitoidSha256ContainsFold))
+	}
+	if i.MediaType != nil {
+		predicates = append(predicates, sigstorebundle.MediaTypeEQ(*i.MediaType))
+	}
+	if i.MediaTypeNEQ != nil {
+		predicates = append(predicates, sigstorebundle.MediaTypeNEQ(*i.MediaTypeNEQ))
+	}
+	if len(i.MediaTypeIn) > 0 {
+		predicates = append(predicates, sigstorebundle.MediaTypeIn(i.MediaTypeIn...))
+	}
+	if len(i.MediaTypeNotIn) > 0 {
+		predicates = append(predicates, sigstorebundle.MediaTypeNotIn(i.MediaTypeNotIn...))
+	}
+	if i.MediaTypeGT != nil {
+		predicates = append(predicates, sigstorebundle.MediaTypeGT(*i.MediaTypeGT))
+	}
+	if i.MediaTypeGTE != nil {
+		predicates = append(predicates, sigstorebundle.MediaTypeGTE(*i.MediaTypeGTE))
+	}
+	if i.MediaTypeLT != nil {
+		predicates = append(predicates, sigstorebundle.MediaTypeLT(*i.MediaTypeLT))
+	}
+	if i.MediaTypeLTE != nil {
+		predicates = append(predicates, sigstorebundle.MediaTypeLTE(*i.MediaTypeLTE))
+	}
+	if i.MediaTypeContains != nil {
+		predicates = append(predicates, sigstorebundle.MediaTypeContains(*i.MediaTypeContains))
+	}
+	if i.MediaTypeHasPrefix != nil {
+		predicates = append(predicates, sigstorebundle.MediaTypeHasPrefix(*i.MediaTypeHasPrefix))
+	}
+	if i.MediaTypeHasSuffix != nil {
+		predicates = append(predicates, sigstorebundle.MediaTypeHasSuffix(*i.MediaTypeHasSuffix))
+	}
+	if i.MediaTypeEqualFold != nil {
+		predicates = append(predicates, sigstorebundle.MediaTypeEqualFold(*i.MediaTypeEqualFold))
+	}
+	if i.MediaTypeContainsFold != nil {
+		predicates = append(predicates, sigstorebundle.MediaTypeContainsFold(*i.MediaTypeContainsFold))
+	}
+	if i.Version != nil {
+		predicates = append(predicates, sigstorebundle.VersionEQ(*i.Version))
+	}
+	if i.VersionNEQ != nil {
+		predicates = append(predicates, sigstorebundle.VersionNEQ(*i.VersionNEQ))
+	}
+	if len(i.VersionIn) > 0 {
+		predicates = append(predicates, sigstorebundle.VersionIn(i.VersionIn...))
+	}
+	if len(i.VersionNotIn) > 0 {
+		predicates = append(predicates, sigstorebundle.VersionNotIn(i.VersionNotIn...))
+	}
+	if i.VersionGT != nil {
+		predicates = append(predicates, sigstorebundle.VersionGT(*i.VersionGT))
+	}
+	if i.VersionGTE != nil {
+		predicates = append(predicates, sigstorebundle.VersionGTE(*i.VersionGTE))
+	}
+	if i.VersionLT != nil {
+		predicates = append(predicates, sigstorebundle.VersionLT(*i.VersionLT))
+	}
+	if i.VersionLTE != nil {
+		predicates = append(predicates, sigstorebundle.VersionLTE(*i.VersionLTE))
+	}
+	if i.VersionContains != nil {
+		predicates = append(predicates, sigstorebundle.VersionContains(*i.VersionContains))
+	}
+	if i.VersionHasPrefix != nil {
+		predicates = append(predicates, sigstorebundle.VersionHasPrefix(*i.VersionHasPrefix))
+	}
+	if i.VersionHasSuffix != nil {
+		predicates = append(predicates, sigstorebundle.VersionHasSuffix(*i.VersionHasSuffix))
+	}
+	if i.VersionIsNil {
+		predicates = append(predicates, sigstorebundle.VersionIsNil())
+	}
+	if i.VersionNotNil {
+		predicates = append(predicates, sigstorebundle.VersionNotNil())
+	}
+	if i.VersionEqualFold != nil {
+		predicates = append(predicates, sigstorebundle.VersionEqualFold(*i.VersionEqualFold))
+	}
+	if i.VersionContainsFold != nil {
+		predicates = append(predicates, sigstorebundle.VersionContainsFold(*i.VersionContainsFold))
+	}
+	if i.CreatedAt != nil {
+		predicates = append(predicates, sigstorebundle.CreatedAtEQ(*i.CreatedAt))
+	}
+	if i.CreatedAtNEQ != nil {
+		predicates = append(predicates, sigstorebundle.CreatedAtNEQ(*i.CreatedAtNEQ))
+	}
+	if len(i.CreatedAtIn) > 0 {
+		predicates = append(predicates, sigstorebundle.CreatedAtIn(i.CreatedAtIn...))
+	}
+	if len(i.CreatedAtNotIn) > 0 {
+		predicates = append(predicates, sigstorebundle.CreatedAtNotIn(i.CreatedAtNotIn...))
+	}
+	if i.CreatedAtGT != nil {
+		predicates = append(predicates, sigstorebundle.CreatedAtGT(*i.CreatedAtGT))
+	}
+	if i.CreatedAtGTE != nil {
+		predicates = append(predicates, sigstorebundle.CreatedAtGTE(*i.CreatedAtGTE))
+	}
+	if i.CreatedAtLT != nil {
+		predicates = append(predicates, sigstorebundle.CreatedAtLT(*i.CreatedAtLT))
+	}
+	if i.CreatedAtLTE != nil {
+		predicates = append(predicates, sigstorebundle.CreatedAtLTE(*i.CreatedAtLTE))
+	}
+
+	if i.HasDsse != nil {
+		p := sigstorebundle.HasDsse()
+		if !*i.HasDsse {
+			p = sigstorebundle.Not(p)
+		}
+		predicates = append(predicates, p)
+	}
+	if len(i.HasDsseWith) > 0 {
+		with := make([]predicate.Dsse, 0, len(i.HasDsseWith))
+		for _, w := range i.HasDsseWith {
+			p, err := w.P()
+			if err != nil {
+				return nil, fmt.Errorf("%w: field 'HasDsseWith'", err)
+			}
+			with = append(with, p)
+		}
+		predicates = append(predicates, sigstorebundle.HasDsseWith(with...))
+	}
+	switch len(predicates) {
+	case 0:
+		return nil, ErrEmptySigstoreBundleWhereInput
+	case 1:
+		return predicates[0], nil
+	default:
+		return sigstorebundle.And(predicates...), nil
 	}
 }
 

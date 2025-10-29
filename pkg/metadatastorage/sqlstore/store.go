@@ -24,9 +24,13 @@ import (
 	"time"
 
 	"github.com/digitorus/timestamp"
+	"github.com/google/uuid"
 	"github.com/in-toto/archivista/ent"
 	"github.com/in-toto/archivista/pkg/metadatastorage"
+	"github.com/in-toto/archivista/pkg/metadatastorage/format"
+	_ "github.com/in-toto/archivista/pkg/metadatastorage/format/sigstorebundle" // Register bundle handler
 	"github.com/in-toto/archivista/pkg/metadatastorage/parserregistry"
+	"github.com/in-toto/archivista/pkg/sigstorebundle"
 	"github.com/in-toto/go-witness/cryptoutil"
 	"github.com/in-toto/go-witness/dsse"
 	"github.com/in-toto/go-witness/intoto"
@@ -46,10 +50,18 @@ const subjectDigestBatchSize = 20000
 const policyPayloadType = "https://witness.testifysec.com/policy/"
 
 type Store struct {
-	client *ent.Client
+	client       *ent.Client
+	bundleLimits *sigstorebundle.BundleLimits
 }
 
-func New(ctx context.Context, client *ent.Client) (*Store, <-chan error, error) {
+func New(ctx context.Context, client *ent.Client, bundleLimits ...*sigstorebundle.BundleLimits) (*Store, <-chan error, error) {
+	// Use default limits if not provided
+	var limits *sigstorebundle.BundleLimits
+	if len(bundleLimits) > 0 && bundleLimits[0] != nil {
+		limits = bundleLimits[0]
+	} else {
+		limits = sigstorebundle.DefaultBundleLimits()
+	}
 	errCh := make(chan error)
 
 	go func() {
@@ -66,7 +78,8 @@ func New(ctx context.Context, client *ent.Client) (*Store, <-chan error, error) 
 	}
 
 	return &Store{
-		client: client,
+		client:       client,
+		bundleLimits: limits,
 	}, errCh, nil
 }
 
@@ -91,15 +104,15 @@ func (s *Store) withTx(ctx context.Context, fn func(tx *ent.Tx) error) error {
 	return nil
 }
 
-func (s *Store) storeAttestation(ctx context.Context, envelope *dsse.Envelope, gitoid string) error {
+func (s *Store) storeAttestation(ctx context.Context, envelope *dsse.Envelope, gitoid string) (uuid.UUID, error) {
 	payloadDigestSet, err := cryptoutil.CalculateDigestSetFromBytes(envelope.Payload, []cryptoutil.DigestValue{{Hash: crypto.SHA256}})
 	if err != nil {
-		return err
+		return uuid.Nil, err
 	}
 
 	payload := &intoto.Statement{}
 	if err := json.Unmarshal(envelope.Payload, payload); err != nil {
-		return err
+		return uuid.Nil, err
 	}
 
 	predicateParser, ok := parserregistry.ParserForPredicate(payload.PredicateType)
@@ -107,10 +120,11 @@ func (s *Store) storeAttestation(ctx context.Context, envelope *dsse.Envelope, g
 	if ok {
 		predicateStorer, err = predicateParser(payload.Predicate)
 		if err != nil {
-			return fmt.Errorf("unable to parse intoto statements predicate: %w", err)
+			return uuid.Nil, fmt.Errorf("unable to parse intoto statements predicate: %w", err)
 		}
 	}
 
+	var dsseID uuid.UUID
 	err = s.withTx(ctx, func(tx *ent.Tx) error {
 		dsse, err := tx.Dsse.Create().
 			SetPayloadType(envelope.PayloadType).
@@ -119,13 +133,25 @@ func (s *Store) storeAttestation(ctx context.Context, envelope *dsse.Envelope, g
 		if err != nil {
 			return err
 		}
+		dsseID = dsse.ID
 
 		for _, sig := range envelope.Signatures {
-			storedSig, err := tx.Signature.Create().
+			sigCreate := tx.Signature.Create().
 				SetKeyID(sig.KeyID).
 				SetSignature(base64.StdEncoding.EncodeToString(sig.Signature)).
-				SetDsse(dsse).
-				Save(ctx)
+				SetDsse(dsse)
+
+			// Store certificate if present
+			if len(sig.Certificate) > 0 {
+				sigCreate.SetCertificate(sig.Certificate)
+			}
+
+			// Store intermediates if present
+			if len(sig.Intermediates) > 0 {
+				sigCreate.SetIntermediates(sig.Intermediates)
+			}
+
+			storedSig, err := sigCreate.Save(ctx)
 			if err != nil {
 				return err
 			}
@@ -136,11 +162,17 @@ func (s *Store) storeAttestation(ctx context.Context, envelope *dsse.Envelope, g
 					return err
 				}
 
-				_, err = tx.Timestamp.Create().
+				tsCreate := tx.Timestamp.Create().
 					SetSignature(storedSig).
 					SetTimestamp(timestampedTime).
-					SetType(string(timestamp.Type)).
-					Save(ctx)
+					SetType(string(timestamp.Type))
+
+				// Store raw RFC3161 data if present
+				if len(timestamp.Data) > 0 {
+					tsCreate.SetData(timestamp.Data)
+				}
+
+				_, err = tsCreate.Save(ctx)
 				if err != nil {
 					return err
 				}
@@ -215,10 +247,10 @@ func (s *Store) storeAttestation(ctx context.Context, envelope *dsse.Envelope, g
 
 	if err != nil {
 		logrus.Errorf("unable to store metadata: %+v", err)
-		return err
+		return uuid.Nil, err
 	}
 
-	return nil
+	return dsseID, nil
 }
 
 func (s *Store) storePolicy(ctx context.Context, envelope *dsse.Envelope, gitoid string) error {
@@ -246,11 +278,22 @@ func (s *Store) storePolicy(ctx context.Context, envelope *dsse.Envelope, gitoid
 
 		// stores the envelope signatures
 		for _, sig := range envelope.Signatures {
-			storedSig, err := tx.Signature.Create().
+			sigCreate := tx.Signature.Create().
 				SetKeyID(sig.KeyID).
 				SetSignature(base64.StdEncoding.EncodeToString(sig.Signature)).
-				SetDsse(dsse).
-				Save(ctx)
+				SetDsse(dsse)
+
+			// Store certificate if present
+			if len(sig.Certificate) > 0 {
+				sigCreate.SetCertificate(sig.Certificate)
+			}
+
+			// Store intermediates if present
+			if len(sig.Intermediates) > 0 {
+				sigCreate.SetIntermediates(sig.Intermediates)
+			}
+
+			storedSig, err := sigCreate.Save(ctx)
 			if err != nil {
 				return err
 			}
@@ -261,11 +304,17 @@ func (s *Store) storePolicy(ctx context.Context, envelope *dsse.Envelope, gitoid
 					return err
 				}
 
-				_, err = tx.Timestamp.Create().
+				tsCreate := tx.Timestamp.Create().
 					SetSignature(storedSig).
 					SetTimestamp(timestampedTime).
-					SetType(string(timestamp.Type)).
-					Save(ctx)
+					SetType(string(timestamp.Type))
+
+				// Store raw RFC3161 data if present
+				if len(timestamp.Data) > 0 {
+					tsCreate.SetData(timestamp.Data)
+				}
+
+				_, err = tsCreate.Save(ctx)
 				if err != nil {
 					return err
 				}
@@ -323,6 +372,12 @@ func (s *Store) storePolicy(ctx context.Context, envelope *dsse.Envelope, gitoid
 }
 
 func (s *Store) Store(ctx context.Context, gitoid string, obj []byte) error {
+	// Check if any format handler can process this data
+	if handler, ok := format.GetHandler(obj); ok {
+		return handler.Store(ctx, s, gitoid, obj)
+	}
+
+	// No format handler found, try to parse as a plain DSSE envelope
 	envelope := &dsse.Envelope{}
 	if err := json.Unmarshal(obj, envelope); err != nil {
 		return err
@@ -334,7 +389,7 @@ func (s *Store) Store(ctx context.Context, gitoid string, obj []byte) error {
 			return err
 		}
 	} else {
-		if err := s.storeAttestation(ctx, envelope, gitoid); err != nil {
+		if _, err := s.storeAttestation(ctx, envelope, gitoid); err != nil {
 			return err
 		}
 	}
@@ -344,6 +399,21 @@ func (s *Store) Store(ctx context.Context, gitoid string, obj []byte) error {
 
 func (s *Store) GetClient() *ent.Client {
 	return s.client
+}
+
+// StoreAttestation stores a DSSE attestation (public interface for format handlers)
+func (s *Store) StoreAttestation(ctx context.Context, envelope *dsse.Envelope, gitoid string) (uuid.UUID, error) {
+	return s.storeAttestation(ctx, envelope, gitoid)
+}
+
+// WithTx executes a function within a database transaction (public interface for format handlers)
+func (s *Store) WithTx(ctx context.Context, fn func(tx *ent.Tx) error) error {
+	return s.withTx(ctx, fn)
+}
+
+// GetBundleLimits returns the Sigstore bundle limits configuration
+func (s *Store) GetBundleLimits() any {
+	return s.bundleLimits
 }
 
 type saver[T any] interface {

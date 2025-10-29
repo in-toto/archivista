@@ -17,6 +17,8 @@ const (
 	FieldType = "type"
 	// FieldTimestamp holds the string denoting the timestamp field in the database.
 	FieldTimestamp = "timestamp"
+	// FieldData holds the string denoting the data field in the database.
+	FieldData = "data"
 	// EdgeSignature holds the string denoting the signature edge name in mutations.
 	EdgeSignature = "signature"
 	// Table holds the table name of the timestamp in the database.
@@ -35,6 +37,7 @@ var Columns = []string{
 	FieldID,
 	FieldType,
 	FieldTimestamp,
+	FieldData,
 }
 
 // ForeignKeys holds the SQL foreign-keys that are owned by the "timestamps"

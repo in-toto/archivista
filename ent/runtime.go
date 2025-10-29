@@ -13,6 +13,7 @@ import (
 	"github.com/in-toto/archivista/ent/payloaddigest"
 	"github.com/in-toto/archivista/ent/schema"
 	"github.com/in-toto/archivista/ent/signature"
+	"github.com/in-toto/archivista/ent/sigstorebundle"
 	"github.com/in-toto/archivista/ent/statement"
 	"github.com/in-toto/archivista/ent/subject"
 	"github.com/in-toto/archivista/ent/subjectdigest"
@@ -95,6 +96,16 @@ func init() {
 	signatureDescID := signatureFields[0].Descriptor()
 	// signature.DefaultID holds the default value on creation for the id field.
 	signature.DefaultID = signatureDescID.Default.(func() uuid.UUID)
+	sigstorebundleFields := schema.SigstoreBundle{}.Fields()
+	_ = sigstorebundleFields
+	// sigstorebundleDescCreatedAt is the schema descriptor for created_at field.
+	sigstorebundleDescCreatedAt := sigstorebundleFields[4].Descriptor()
+	// sigstorebundle.DefaultCreatedAt holds the default value on creation for the created_at field.
+	sigstorebundle.DefaultCreatedAt = sigstorebundleDescCreatedAt.Default.(func() time.Time)
+	// sigstorebundleDescID is the schema descriptor for id field.
+	sigstorebundleDescID := sigstorebundleFields[0].Descriptor()
+	// sigstorebundle.DefaultID holds the default value on creation for the id field.
+	sigstorebundle.DefaultID = sigstorebundleDescID.Default.(func() uuid.UUID)
 	statementFields := schema.Statement{}.Fields()
 	_ = statementFields
 	// statementDescPredicate is the schema descriptor for predicate field.

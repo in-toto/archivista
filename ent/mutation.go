@@ -19,6 +19,7 @@ import (
 	"github.com/in-toto/archivista/ent/payloaddigest"
 	"github.com/in-toto/archivista/ent/predicate"
 	"github.com/in-toto/archivista/ent/signature"
+	"github.com/in-toto/archivista/ent/sigstorebundle"
 	"github.com/in-toto/archivista/ent/statement"
 	"github.com/in-toto/archivista/ent/subject"
 	"github.com/in-toto/archivista/ent/subjectdigest"
@@ -40,6 +41,7 @@ const (
 	TypeDsse                  = "Dsse"
 	TypePayloadDigest         = "PayloadDigest"
 	TypeSignature             = "Signature"
+	TypeSigstoreBundle        = "SigstoreBundle"
 	TypeStatement             = "Statement"
 	TypeSubject               = "Subject"
 	TypeSubjectDigest         = "SubjectDigest"
@@ -1346,6 +1348,8 @@ type DsseMutation struct {
 	payload_digests        map[uuid.UUID]struct{}
 	removedpayload_digests map[uuid.UUID]struct{}
 	clearedpayload_digests bool
+	bundle                 *uuid.UUID
+	clearedbundle          bool
 	done                   bool
 	oldValue               func(context.Context) (*Dsse, error)
 	predicates             []predicate.Dsse
@@ -1723,6 +1727,45 @@ func (m *DsseMutation) ResetPayloadDigests() {
 	m.removedpayload_digests = nil
 }
 
+// SetBundleID sets the "bundle" edge to the SigstoreBundle entity by id.
+func (m *DsseMutation) SetBundleID(id uuid.UUID) {
+	m.bundle = &id
+}
+
+// ClearBundle clears the "bundle" edge to the SigstoreBundle entity.
+func (m *DsseMutation) ClearBundle() {
+	m.clearedbundle = true
+}
+
+// BundleCleared reports if the "bundle" edge to the SigstoreBundle entity was cleared.
+func (m *DsseMutation) BundleCleared() bool {
+	return m.clearedbundle
+}
+
+// BundleID returns the "bundle" edge ID in the mutation.
+func (m *DsseMutation) BundleID() (id uuid.UUID, exists bool) {
+	if m.bundle != nil {
+		return *m.bundle, true
+	}
+	return
+}
+
+// BundleIDs returns the "bundle" edge IDs in the mutation.
+// Note that IDs always returns len(IDs) <= 1 for unique edges, and you should use
+// BundleID instead. It exists only for internal usage by the builders.
+func (m *DsseMutation) BundleIDs() (ids []uuid.UUID) {
+	if id := m.bundle; id != nil {
+		ids = append(ids, *id)
+	}
+	return
+}
+
+// ResetBundle resets all changes to the "bundle" edge.
+func (m *DsseMutation) ResetBundle() {
+	m.bundle = nil
+	m.clearedbundle = false
+}
+
 // Where appends a list predicates to the DsseMutation builder.
 func (m *DsseMutation) Where(ps ...predicate.Dsse) {
 	m.predicates = append(m.predicates, ps...)
@@ -1899,7 +1942,7 @@ func (m *DsseMutation) ResetField(name string) error {
 
 // AddedEdges returns all edge names that were set/added in this mutation.
 func (m *DsseMutation) AddedEdges() []string {
-	edges := make([]string, 0, 3)
+	edges := make([]string, 0, 4)
 	if m.statement != nil {
 		edges = append(edges, dsse.EdgeStatement)
 	}
@@ -1908,6 +1951,9 @@ func (m *DsseMutation) AddedEdges() []string {
 	}
 	if m.payload_digests != nil {
 		edges = append(edges, dsse.EdgePayloadDigests)
+	}
+	if m.bundle != nil {
+		edges = append(edges, dsse.EdgeBundle)
 	}
 	return edges
 }
@@ -1932,13 +1978,17 @@ func (m *DsseMutation) AddedIDs(name string) []ent.Value {
 			ids = append(ids, id)
 		}
 		return ids
+	case dsse.EdgeBundle:
+		if id := m.bundle; id != nil {
+			return []ent.Value{*id}
+		}
 	}
 	return nil
 }
 
 // RemovedEdges returns all edge names that were removed in this mutation.
 func (m *DsseMutation) RemovedEdges() []string {
-	edges := make([]string, 0, 3)
+	edges := make([]string, 0, 4)
 	if m.removedsignatures != nil {
 		edges = append(edges, dsse.EdgeSignatures)
 	}
@@ -1970,7 +2020,7 @@ func (m *DsseMutation) RemovedIDs(name string) []ent.Value {
 
 // ClearedEdges returns all edge names that were cleared in this mutation.
 func (m *DsseMutation) ClearedEdges() []string {
-	edges := make([]string, 0, 3)
+	edges := make([]string, 0, 4)
 	if m.clearedstatement {
 		edges = append(edges, dsse.EdgeStatement)
 	}
@@ -1979,6 +2029,9 @@ func (m *DsseMutation) ClearedEdges() []string {
 	}
 	if m.clearedpayload_digests {
 		edges = append(edges, dsse.EdgePayloadDigests)
+	}
+	if m.clearedbundle {
+		edges = append(edges, dsse.EdgeBundle)
 	}
 	return edges
 }
@@ -1993,6 +2046,8 @@ func (m *DsseMutation) EdgeCleared(name string) bool {
 		return m.clearedsignatures
 	case dsse.EdgePayloadDigests:
 		return m.clearedpayload_digests
+	case dsse.EdgeBundle:
+		return m.clearedbundle
 	}
 	return false
 }
@@ -2003,6 +2058,9 @@ func (m *DsseMutation) ClearEdge(name string) error {
 	switch name {
 	case dsse.EdgeStatement:
 		m.ClearStatement()
+		return nil
+	case dsse.EdgeBundle:
+		m.ClearBundle()
 		return nil
 	}
 	return fmt.Errorf("unknown Dsse unique edge %s", name)
@@ -2020,6 +2078,9 @@ func (m *DsseMutation) ResetEdge(name string) error {
 		return nil
 	case dsse.EdgePayloadDigests:
 		m.ResetPayloadDigests()
+		return nil
+	case dsse.EdgeBundle:
+		m.ResetBundle()
 		return nil
 	}
 	return fmt.Errorf("unknown Dsse edge %s", name)
@@ -2481,20 +2542,23 @@ func (m *PayloadDigestMutation) ResetEdge(name string) error {
 // SignatureMutation represents an operation that mutates the Signature nodes in the graph.
 type SignatureMutation struct {
 	config
-	op                Op
-	typ               string
-	id                *uuid.UUID
-	key_id            *string
-	signature         *string
-	clearedFields     map[string]struct{}
-	dsse              *uuid.UUID
-	cleareddsse       bool
-	timestamps        map[uuid.UUID]struct{}
-	removedtimestamps map[uuid.UUID]struct{}
-	clearedtimestamps bool
-	done              bool
-	oldValue          func(context.Context) (*Signature, error)
-	predicates        []predicate.Signature
+	op                  Op
+	typ                 string
+	id                  *uuid.UUID
+	key_id              *string
+	signature           *string
+	certificate         *[]byte
+	intermediates       *[][]uint8
+	appendintermediates [][]uint8
+	clearedFields       map[string]struct{}
+	dsse                *uuid.UUID
+	cleareddsse         bool
+	timestamps          map[uuid.UUID]struct{}
+	removedtimestamps   map[uuid.UUID]struct{}
+	clearedtimestamps   bool
+	done                bool
+	oldValue            func(context.Context) (*Signature, error)
+	predicates          []predicate.Signature
 }
 
 var _ ent.Mutation = (*SignatureMutation)(nil)
@@ -2673,6 +2737,120 @@ func (m *SignatureMutation) ResetSignature() {
 	m.signature = nil
 }
 
+// SetCertificate sets the "certificate" field.
+func (m *SignatureMutation) SetCertificate(b []byte) {
+	m.certificate = &b
+}
+
+// Certificate returns the value of the "certificate" field in the mutation.
+func (m *SignatureMutation) Certificate() (r []byte, exists bool) {
+	v := m.certificate
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// OldCertificate returns the old "certificate" field's value of the Signature entity.
+// If the Signature object wasn't provided to the builder, the object is fetched from the database.
+// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
+func (m *SignatureMutation) OldCertificate(ctx context.Context) (v []byte, err error) {
+	if !m.op.Is(OpUpdateOne) {
+		return v, errors.New("OldCertificate is only allowed on UpdateOne operations")
+	}
+	if m.id == nil || m.oldValue == nil {
+		return v, errors.New("OldCertificate requires an ID field in the mutation")
+	}
+	oldValue, err := m.oldValue(ctx)
+	if err != nil {
+		return v, fmt.Errorf("querying old value for OldCertificate: %w", err)
+	}
+	return oldValue.Certificate, nil
+}
+
+// ClearCertificate clears the value of the "certificate" field.
+func (m *SignatureMutation) ClearCertificate() {
+	m.certificate = nil
+	m.clearedFields[signature.FieldCertificate] = struct{}{}
+}
+
+// CertificateCleared returns if the "certificate" field was cleared in this mutation.
+func (m *SignatureMutation) CertificateCleared() bool {
+	_, ok := m.clearedFields[signature.FieldCertificate]
+	return ok
+}
+
+// ResetCertificate resets all changes to the "certificate" field.
+func (m *SignatureMutation) ResetCertificate() {
+	m.certificate = nil
+	delete(m.clearedFields, signature.FieldCertificate)
+}
+
+// SetIntermediates sets the "intermediates" field.
+func (m *SignatureMutation) SetIntermediates(u [][]uint8) {
+	m.intermediates = &u
+	m.appendintermediates = nil
+}
+
+// Intermediates returns the value of the "intermediates" field in the mutation.
+func (m *SignatureMutation) Intermediates() (r [][]uint8, exists bool) {
+	v := m.intermediates
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// OldIntermediates returns the old "intermediates" field's value of the Signature entity.
+// If the Signature object wasn't provided to the builder, the object is fetched from the database.
+// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
+func (m *SignatureMutation) OldIntermediates(ctx context.Context) (v [][]uint8, err error) {
+	if !m.op.Is(OpUpdateOne) {
+		return v, errors.New("OldIntermediates is only allowed on UpdateOne operations")
+	}
+	if m.id == nil || m.oldValue == nil {
+		return v, errors.New("OldIntermediates requires an ID field in the mutation")
+	}
+	oldValue, err := m.oldValue(ctx)
+	if err != nil {
+		return v, fmt.Errorf("querying old value for OldIntermediates: %w", err)
+	}
+	return oldValue.Intermediates, nil
+}
+
+// AppendIntermediates adds u to the "intermediates" field.
+func (m *SignatureMutation) AppendIntermediates(u [][]uint8) {
+	m.appendintermediates = append(m.appendintermediates, u...)
+}
+
+// AppendedIntermediates returns the list of values that were appended to the "intermediates" field in this mutation.
+func (m *SignatureMutation) AppendedIntermediates() ([][]uint8, bool) {
+	if len(m.appendintermediates) == 0 {
+		return nil, false
+	}
+	return m.appendintermediates, true
+}
+
+// ClearIntermediates clears the value of the "intermediates" field.
+func (m *SignatureMutation) ClearIntermediates() {
+	m.intermediates = nil
+	m.appendintermediates = nil
+	m.clearedFields[signature.FieldIntermediates] = struct{}{}
+}
+
+// IntermediatesCleared returns if the "intermediates" field was cleared in this mutation.
+func (m *SignatureMutation) IntermediatesCleared() bool {
+	_, ok := m.clearedFields[signature.FieldIntermediates]
+	return ok
+}
+
+// ResetIntermediates resets all changes to the "intermediates" field.
+func (m *SignatureMutation) ResetIntermediates() {
+	m.intermediates = nil
+	m.appendintermediates = nil
+	delete(m.clearedFields, signature.FieldIntermediates)
+}
+
 // SetDsseID sets the "dsse" edge to the Dsse entity by id.
 func (m *SignatureMutation) SetDsseID(id uuid.UUID) {
 	m.dsse = &id
@@ -2800,12 +2978,18 @@ func (m *SignatureMutation) Type() string {
 // order to get all numeric fields that were incremented/decremented, call
 // AddedFields().
 func (m *SignatureMutation) Fields() []string {
-	fields := make([]string, 0, 2)
+	fields := make([]string, 0, 4)
 	if m.key_id != nil {
 		fields = append(fields, signature.FieldKeyID)
 	}
 	if m.signature != nil {
 		fields = append(fields, signature.FieldSignature)
+	}
+	if m.certificate != nil {
+		fields = append(fields, signature.FieldCertificate)
+	}
+	if m.intermediates != nil {
+		fields = append(fields, signature.FieldIntermediates)
 	}
 	return fields
 }
@@ -2819,6 +3003,10 @@ func (m *SignatureMutation) Field(name string) (ent.Value, bool) {
 		return m.KeyID()
 	case signature.FieldSignature:
 		return m.Signature()
+	case signature.FieldCertificate:
+		return m.Certificate()
+	case signature.FieldIntermediates:
+		return m.Intermediates()
 	}
 	return nil, false
 }
@@ -2832,6 +3020,10 @@ func (m *SignatureMutation) OldField(ctx context.Context, name string) (ent.Valu
 		return m.OldKeyID(ctx)
 	case signature.FieldSignature:
 		return m.OldSignature(ctx)
+	case signature.FieldCertificate:
+		return m.OldCertificate(ctx)
+	case signature.FieldIntermediates:
+		return m.OldIntermediates(ctx)
 	}
 	return nil, fmt.Errorf("unknown Signature field %s", name)
 }
@@ -2854,6 +3046,20 @@ func (m *SignatureMutation) SetField(name string, value ent.Value) error {
 			return fmt.Errorf("unexpected type %T for field %s", value, name)
 		}
 		m.SetSignature(v)
+		return nil
+	case signature.FieldCertificate:
+		v, ok := value.([]byte)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.SetCertificate(v)
+		return nil
+	case signature.FieldIntermediates:
+		v, ok := value.([][]uint8)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.SetIntermediates(v)
 		return nil
 	}
 	return fmt.Errorf("unknown Signature field %s", name)
@@ -2884,7 +3090,14 @@ func (m *SignatureMutation) AddField(name string, value ent.Value) error {
 // ClearedFields returns all nullable fields that were cleared during this
 // mutation.
 func (m *SignatureMutation) ClearedFields() []string {
-	return nil
+	var fields []string
+	if m.FieldCleared(signature.FieldCertificate) {
+		fields = append(fields, signature.FieldCertificate)
+	}
+	if m.FieldCleared(signature.FieldIntermediates) {
+		fields = append(fields, signature.FieldIntermediates)
+	}
+	return fields
 }
 
 // FieldCleared returns a boolean indicating if a field with the given name was
@@ -2897,6 +3110,14 @@ func (m *SignatureMutation) FieldCleared(name string) bool {
 // ClearField clears the value of the field with the given name. It returns an
 // error if the field is not defined in the schema.
 func (m *SignatureMutation) ClearField(name string) error {
+	switch name {
+	case signature.FieldCertificate:
+		m.ClearCertificate()
+		return nil
+	case signature.FieldIntermediates:
+		m.ClearIntermediates()
+		return nil
+	}
 	return fmt.Errorf("unknown Signature nullable field %s", name)
 }
 
@@ -2909,6 +3130,12 @@ func (m *SignatureMutation) ResetField(name string) error {
 		return nil
 	case signature.FieldSignature:
 		m.ResetSignature()
+		return nil
+	case signature.FieldCertificate:
+		m.ResetCertificate()
+		return nil
+	case signature.FieldIntermediates:
+		m.ResetIntermediates()
 		return nil
 	}
 	return fmt.Errorf("unknown Signature field %s", name)
@@ -3014,6 +3241,589 @@ func (m *SignatureMutation) ResetEdge(name string) error {
 		return nil
 	}
 	return fmt.Errorf("unknown Signature edge %s", name)
+}
+
+// SigstoreBundleMutation represents an operation that mutates the SigstoreBundle nodes in the graph.
+type SigstoreBundleMutation struct {
+	config
+	op            Op
+	typ           string
+	id            *uuid.UUID
+	gitoid_sha256 *string
+	media_type    *string
+	version       *string
+	created_at    *time.Time
+	clearedFields map[string]struct{}
+	dsse          *uuid.UUID
+	cleareddsse   bool
+	done          bool
+	oldValue      func(context.Context) (*SigstoreBundle, error)
+	predicates    []predicate.SigstoreBundle
+}
+
+var _ ent.Mutation = (*SigstoreBundleMutation)(nil)
+
+// sigstorebundleOption allows management of the mutation configuration using functional options.
+type sigstorebundleOption func(*SigstoreBundleMutation)
+
+// newSigstoreBundleMutation creates new mutation for the SigstoreBundle entity.
+func newSigstoreBundleMutation(c config, op Op, opts ...sigstorebundleOption) *SigstoreBundleMutation {
+	m := &SigstoreBundleMutation{
+		config:        c,
+		op:            op,
+		typ:           TypeSigstoreBundle,
+		clearedFields: make(map[string]struct{}),
+	}
+	for _, opt := range opts {
+		opt(m)
+	}
+	return m
+}
+
+// withSigstoreBundleID sets the ID field of the mutation.
+func withSigstoreBundleID(id uuid.UUID) sigstorebundleOption {
+	return func(m *SigstoreBundleMutation) {
+		var (
+			err   error
+			once  sync.Once
+			value *SigstoreBundle
+		)
+		m.oldValue = func(ctx context.Context) (*SigstoreBundle, error) {
+			once.Do(func() {
+				if m.done {
+					err = errors.New("querying old values post mutation is not allowed")
+				} else {
+					value, err = m.Client().SigstoreBundle.Get(ctx, id)
+				}
+			})
+			return value, err
+		}
+		m.id = &id
+	}
+}
+
+// withSigstoreBundle sets the old SigstoreBundle of the mutation.
+func withSigstoreBundle(node *SigstoreBundle) sigstorebundleOption {
+	return func(m *SigstoreBundleMutation) {
+		m.oldValue = func(context.Context) (*SigstoreBundle, error) {
+			return node, nil
+		}
+		m.id = &node.ID
+	}
+}
+
+// Client returns a new `ent.Client` from the mutation. If the mutation was
+// executed in a transaction (ent.Tx), a transactional client is returned.
+func (m SigstoreBundleMutation) Client() *Client {
+	client := &Client{config: m.config}
+	client.init()
+	return client
+}
+
+// Tx returns an `ent.Tx` for mutations that were executed in transactions;
+// it returns an error otherwise.
+func (m SigstoreBundleMutation) Tx() (*Tx, error) {
+	if _, ok := m.driver.(*txDriver); !ok {
+		return nil, errors.New("ent: mutation is not running in a transaction")
+	}
+	tx := &Tx{config: m.config}
+	tx.init()
+	return tx, nil
+}
+
+// SetID sets the value of the id field. Note that this
+// operation is only accepted on creation of SigstoreBundle entities.
+func (m *SigstoreBundleMutation) SetID(id uuid.UUID) {
+	m.id = &id
+}
+
+// ID returns the ID value in the mutation. Note that the ID is only available
+// if it was provided to the builder or after it was returned from the database.
+func (m *SigstoreBundleMutation) ID() (id uuid.UUID, exists bool) {
+	if m.id == nil {
+		return
+	}
+	return *m.id, true
+}
+
+// IDs queries the database and returns the entity ids that match the mutation's predicate.
+// That means, if the mutation is applied within a transaction with an isolation level such
+// as sql.LevelSerializable, the returned ids match the ids of the rows that will be updated
+// or updated by the mutation.
+func (m *SigstoreBundleMutation) IDs(ctx context.Context) ([]uuid.UUID, error) {
+	switch {
+	case m.op.Is(OpUpdateOne | OpDeleteOne):
+		id, exists := m.ID()
+		if exists {
+			return []uuid.UUID{id}, nil
+		}
+		fallthrough
+	case m.op.Is(OpUpdate | OpDelete):
+		return m.Client().SigstoreBundle.Query().Where(m.predicates...).IDs(ctx)
+	default:
+		return nil, fmt.Errorf("IDs is not allowed on %s operations", m.op)
+	}
+}
+
+// SetGitoidSha256 sets the "gitoid_sha256" field.
+func (m *SigstoreBundleMutation) SetGitoidSha256(s string) {
+	m.gitoid_sha256 = &s
+}
+
+// GitoidSha256 returns the value of the "gitoid_sha256" field in the mutation.
+func (m *SigstoreBundleMutation) GitoidSha256() (r string, exists bool) {
+	v := m.gitoid_sha256
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// OldGitoidSha256 returns the old "gitoid_sha256" field's value of the SigstoreBundle entity.
+// If the SigstoreBundle object wasn't provided to the builder, the object is fetched from the database.
+// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
+func (m *SigstoreBundleMutation) OldGitoidSha256(ctx context.Context) (v string, err error) {
+	if !m.op.Is(OpUpdateOne) {
+		return v, errors.New("OldGitoidSha256 is only allowed on UpdateOne operations")
+	}
+	if m.id == nil || m.oldValue == nil {
+		return v, errors.New("OldGitoidSha256 requires an ID field in the mutation")
+	}
+	oldValue, err := m.oldValue(ctx)
+	if err != nil {
+		return v, fmt.Errorf("querying old value for OldGitoidSha256: %w", err)
+	}
+	return oldValue.GitoidSha256, nil
+}
+
+// ResetGitoidSha256 resets all changes to the "gitoid_sha256" field.
+func (m *SigstoreBundleMutation) ResetGitoidSha256() {
+	m.gitoid_sha256 = nil
+}
+
+// SetMediaType sets the "media_type" field.
+func (m *SigstoreBundleMutation) SetMediaType(s string) {
+	m.media_type = &s
+}
+
+// MediaType returns the value of the "media_type" field in the mutation.
+func (m *SigstoreBundleMutation) MediaType() (r string, exists bool) {
+	v := m.media_type
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// OldMediaType returns the old "media_type" field's value of the SigstoreBundle entity.
+// If the SigstoreBundle object wasn't provided to the builder, the object is fetched from the database.
+// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
+func (m *SigstoreBundleMutation) OldMediaType(ctx context.Context) (v string, err error) {
+	if !m.op.Is(OpUpdateOne) {
+		return v, errors.New("OldMediaType is only allowed on UpdateOne operations")
+	}
+	if m.id == nil || m.oldValue == nil {
+		return v, errors.New("OldMediaType requires an ID field in the mutation")
+	}
+	oldValue, err := m.oldValue(ctx)
+	if err != nil {
+		return v, fmt.Errorf("querying old value for OldMediaType: %w", err)
+	}
+	return oldValue.MediaType, nil
+}
+
+// ResetMediaType resets all changes to the "media_type" field.
+func (m *SigstoreBundleMutation) ResetMediaType() {
+	m.media_type = nil
+}
+
+// SetVersion sets the "version" field.
+func (m *SigstoreBundleMutation) SetVersion(s string) {
+	m.version = &s
+}
+
+// Version returns the value of the "version" field in the mutation.
+func (m *SigstoreBundleMutation) Version() (r string, exists bool) {
+	v := m.version
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// OldVersion returns the old "version" field's value of the SigstoreBundle entity.
+// If the SigstoreBundle object wasn't provided to the builder, the object is fetched from the database.
+// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
+func (m *SigstoreBundleMutation) OldVersion(ctx context.Context) (v string, err error) {
+	if !m.op.Is(OpUpdateOne) {
+		return v, errors.New("OldVersion is only allowed on UpdateOne operations")
+	}
+	if m.id == nil || m.oldValue == nil {
+		return v, errors.New("OldVersion requires an ID field in the mutation")
+	}
+	oldValue, err := m.oldValue(ctx)
+	if err != nil {
+		return v, fmt.Errorf("querying old value for OldVersion: %w", err)
+	}
+	return oldValue.Version, nil
+}
+
+// ClearVersion clears the value of the "version" field.
+func (m *SigstoreBundleMutation) ClearVersion() {
+	m.version = nil
+	m.clearedFields[sigstorebundle.FieldVersion] = struct{}{}
+}
+
+// VersionCleared returns if the "version" field was cleared in this mutation.
+func (m *SigstoreBundleMutation) VersionCleared() bool {
+	_, ok := m.clearedFields[sigstorebundle.FieldVersion]
+	return ok
+}
+
+// ResetVersion resets all changes to the "version" field.
+func (m *SigstoreBundleMutation) ResetVersion() {
+	m.version = nil
+	delete(m.clearedFields, sigstorebundle.FieldVersion)
+}
+
+// SetCreatedAt sets the "created_at" field.
+func (m *SigstoreBundleMutation) SetCreatedAt(t time.Time) {
+	m.created_at = &t
+}
+
+// CreatedAt returns the value of the "created_at" field in the mutation.
+func (m *SigstoreBundleMutation) CreatedAt() (r time.Time, exists bool) {
+	v := m.created_at
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// OldCreatedAt returns the old "created_at" field's value of the SigstoreBundle entity.
+// If the SigstoreBundle object wasn't provided to the builder, the object is fetched from the database.
+// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
+func (m *SigstoreBundleMutation) OldCreatedAt(ctx context.Context) (v time.Time, err error) {
+	if !m.op.Is(OpUpdateOne) {
+		return v, errors.New("OldCreatedAt is only allowed on UpdateOne operations")
+	}
+	if m.id == nil || m.oldValue == nil {
+		return v, errors.New("OldCreatedAt requires an ID field in the mutation")
+	}
+	oldValue, err := m.oldValue(ctx)
+	if err != nil {
+		return v, fmt.Errorf("querying old value for OldCreatedAt: %w", err)
+	}
+	return oldValue.CreatedAt, nil
+}
+
+// ResetCreatedAt resets all changes to the "created_at" field.
+func (m *SigstoreBundleMutation) ResetCreatedAt() {
+	m.created_at = nil
+}
+
+// SetDsseID sets the "dsse" edge to the Dsse entity by id.
+func (m *SigstoreBundleMutation) SetDsseID(id uuid.UUID) {
+	m.dsse = &id
+}
+
+// ClearDsse clears the "dsse" edge to the Dsse entity.
+func (m *SigstoreBundleMutation) ClearDsse() {
+	m.cleareddsse = true
+}
+
+// DsseCleared reports if the "dsse" edge to the Dsse entity was cleared.
+func (m *SigstoreBundleMutation) DsseCleared() bool {
+	return m.cleareddsse
+}
+
+// DsseID returns the "dsse" edge ID in the mutation.
+func (m *SigstoreBundleMutation) DsseID() (id uuid.UUID, exists bool) {
+	if m.dsse != nil {
+		return *m.dsse, true
+	}
+	return
+}
+
+// DsseIDs returns the "dsse" edge IDs in the mutation.
+// Note that IDs always returns len(IDs) <= 1 for unique edges, and you should use
+// DsseID instead. It exists only for internal usage by the builders.
+func (m *SigstoreBundleMutation) DsseIDs() (ids []uuid.UUID) {
+	if id := m.dsse; id != nil {
+		ids = append(ids, *id)
+	}
+	return
+}
+
+// ResetDsse resets all changes to the "dsse" edge.
+func (m *SigstoreBundleMutation) ResetDsse() {
+	m.dsse = nil
+	m.cleareddsse = false
+}
+
+// Where appends a list predicates to the SigstoreBundleMutation builder.
+func (m *SigstoreBundleMutation) Where(ps ...predicate.SigstoreBundle) {
+	m.predicates = append(m.predicates, ps...)
+}
+
+// WhereP appends storage-level predicates to the SigstoreBundleMutation builder. Using this method,
+// users can use type-assertion to append predicates that do not depend on any generated package.
+func (m *SigstoreBundleMutation) WhereP(ps ...func(*sql.Selector)) {
+	p := make([]predicate.SigstoreBundle, len(ps))
+	for i := range ps {
+		p[i] = ps[i]
+	}
+	m.Where(p...)
+}
+
+// Op returns the operation name.
+func (m *SigstoreBundleMutation) Op() Op {
+	return m.op
+}
+
+// SetOp allows setting the mutation operation.
+func (m *SigstoreBundleMutation) SetOp(op Op) {
+	m.op = op
+}
+
+// Type returns the node type of this mutation (SigstoreBundle).
+func (m *SigstoreBundleMutation) Type() string {
+	return m.typ
+}
+
+// Fields returns all fields that were changed during this mutation. Note that in
+// order to get all numeric fields that were incremented/decremented, call
+// AddedFields().
+func (m *SigstoreBundleMutation) Fields() []string {
+	fields := make([]string, 0, 4)
+	if m.gitoid_sha256 != nil {
+		fields = append(fields, sigstorebundle.FieldGitoidSha256)
+	}
+	if m.media_type != nil {
+		fields = append(fields, sigstorebundle.FieldMediaType)
+	}
+	if m.version != nil {
+		fields = append(fields, sigstorebundle.FieldVersion)
+	}
+	if m.created_at != nil {
+		fields = append(fields, sigstorebundle.FieldCreatedAt)
+	}
+	return fields
+}
+
+// Field returns the value of a field with the given name. The second boolean
+// return value indicates that this field was not set, or was not defined in the
+// schema.
+func (m *SigstoreBundleMutation) Field(name string) (ent.Value, bool) {
+	switch name {
+	case sigstorebundle.FieldGitoidSha256:
+		return m.GitoidSha256()
+	case sigstorebundle.FieldMediaType:
+		return m.MediaType()
+	case sigstorebundle.FieldVersion:
+		return m.Version()
+	case sigstorebundle.FieldCreatedAt:
+		return m.CreatedAt()
+	}
+	return nil, false
+}
+
+// OldField returns the old value of the field from the database. An error is
+// returned if the mutation operation is not UpdateOne, or the query to the
+// database failed.
+func (m *SigstoreBundleMutation) OldField(ctx context.Context, name string) (ent.Value, error) {
+	switch name {
+	case sigstorebundle.FieldGitoidSha256:
+		return m.OldGitoidSha256(ctx)
+	case sigstorebundle.FieldMediaType:
+		return m.OldMediaType(ctx)
+	case sigstorebundle.FieldVersion:
+		return m.OldVersion(ctx)
+	case sigstorebundle.FieldCreatedAt:
+		return m.OldCreatedAt(ctx)
+	}
+	return nil, fmt.Errorf("unknown SigstoreBundle field %s", name)
+}
+
+// SetField sets the value of a field with the given name. It returns an error if
+// the field is not defined in the schema, or if the type mismatched the field
+// type.
+func (m *SigstoreBundleMutation) SetField(name string, value ent.Value) error {
+	switch name {
+	case sigstorebundle.FieldGitoidSha256:
+		v, ok := value.(string)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.SetGitoidSha256(v)
+		return nil
+	case sigstorebundle.FieldMediaType:
+		v, ok := value.(string)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.SetMediaType(v)
+		return nil
+	case sigstorebundle.FieldVersion:
+		v, ok := value.(string)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.SetVersion(v)
+		return nil
+	case sigstorebundle.FieldCreatedAt:
+		v, ok := value.(time.Time)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.SetCreatedAt(v)
+		return nil
+	}
+	return fmt.Errorf("unknown SigstoreBundle field %s", name)
+}
+
+// AddedFields returns all numeric fields that were incremented/decremented during
+// this mutation.
+func (m *SigstoreBundleMutation) AddedFields() []string {
+	return nil
+}
+
+// AddedField returns the numeric value that was incremented/decremented on a field
+// with the given name. The second boolean return value indicates that this field
+// was not set, or was not defined in the schema.
+func (m *SigstoreBundleMutation) AddedField(name string) (ent.Value, bool) {
+	return nil, false
+}
+
+// AddField adds the value to the field with the given name. It returns an error if
+// the field is not defined in the schema, or if the type mismatched the field
+// type.
+func (m *SigstoreBundleMutation) AddField(name string, value ent.Value) error {
+	switch name {
+	}
+	return fmt.Errorf("unknown SigstoreBundle numeric field %s", name)
+}
+
+// ClearedFields returns all nullable fields that were cleared during this
+// mutation.
+func (m *SigstoreBundleMutation) ClearedFields() []string {
+	var fields []string
+	if m.FieldCleared(sigstorebundle.FieldVersion) {
+		fields = append(fields, sigstorebundle.FieldVersion)
+	}
+	return fields
+}
+
+// FieldCleared returns a boolean indicating if a field with the given name was
+// cleared in this mutation.
+func (m *SigstoreBundleMutation) FieldCleared(name string) bool {
+	_, ok := m.clearedFields[name]
+	return ok
+}
+
+// ClearField clears the value of the field with the given name. It returns an
+// error if the field is not defined in the schema.
+func (m *SigstoreBundleMutation) ClearField(name string) error {
+	switch name {
+	case sigstorebundle.FieldVersion:
+		m.ClearVersion()
+		return nil
+	}
+	return fmt.Errorf("unknown SigstoreBundle nullable field %s", name)
+}
+
+// ResetField resets all changes in the mutation for the field with the given name.
+// It returns an error if the field is not defined in the schema.
+func (m *SigstoreBundleMutation) ResetField(name string) error {
+	switch name {
+	case sigstorebundle.FieldGitoidSha256:
+		m.ResetGitoidSha256()
+		return nil
+	case sigstorebundle.FieldMediaType:
+		m.ResetMediaType()
+		return nil
+	case sigstorebundle.FieldVersion:
+		m.ResetVersion()
+		return nil
+	case sigstorebundle.FieldCreatedAt:
+		m.ResetCreatedAt()
+		return nil
+	}
+	return fmt.Errorf("unknown SigstoreBundle field %s", name)
+}
+
+// AddedEdges returns all edge names that were set/added in this mutation.
+func (m *SigstoreBundleMutation) AddedEdges() []string {
+	edges := make([]string, 0, 1)
+	if m.dsse != nil {
+		edges = append(edges, sigstorebundle.EdgeDsse)
+	}
+	return edges
+}
+
+// AddedIDs returns all IDs (to other nodes) that were added for the given edge
+// name in this mutation.
+func (m *SigstoreBundleMutation) AddedIDs(name string) []ent.Value {
+	switch name {
+	case sigstorebundle.EdgeDsse:
+		if id := m.dsse; id != nil {
+			return []ent.Value{*id}
+		}
+	}
+	return nil
+}
+
+// RemovedEdges returns all edge names that were removed in this mutation.
+func (m *SigstoreBundleMutation) RemovedEdges() []string {
+	edges := make([]string, 0, 1)
+	return edges
+}
+
+// RemovedIDs returns all IDs (to other nodes) that were removed for the edge with
+// the given name in this mutation.
+func (m *SigstoreBundleMutation) RemovedIDs(name string) []ent.Value {
+	return nil
+}
+
+// ClearedEdges returns all edge names that were cleared in this mutation.
+func (m *SigstoreBundleMutation) ClearedEdges() []string {
+	edges := make([]string, 0, 1)
+	if m.cleareddsse {
+		edges = append(edges, sigstorebundle.EdgeDsse)
+	}
+	return edges
+}
+
+// EdgeCleared returns a boolean which indicates if the edge with the given name
+// was cleared in this mutation.
+func (m *SigstoreBundleMutation) EdgeCleared(name string) bool {
+	switch name {
+	case sigstorebundle.EdgeDsse:
+		return m.cleareddsse
+	}
+	return false
+}
+
+// ClearEdge clears the value of the edge with the given name. It returns an error
+// if that edge is not defined in the schema.
+func (m *SigstoreBundleMutation) ClearEdge(name string) error {
+	switch name {
+	case sigstorebundle.EdgeDsse:
+		m.ClearDsse()
+		return nil
+	}
+	return fmt.Errorf("unknown SigstoreBundle unique edge %s", name)
+}
+
+// ResetEdge resets all changes to the edge with the given name in this mutation.
+// It returns an error if the edge is not defined in the schema.
+func (m *SigstoreBundleMutation) ResetEdge(name string) error {
+	switch name {
+	case sigstorebundle.EdgeDsse:
+		m.ResetDsse()
+		return nil
+	}
+	return fmt.Errorf("unknown SigstoreBundle edge %s", name)
 }
 
 // StatementMutation represents an operation that mutates the Statement nodes in the graph.
@@ -4663,6 +5473,7 @@ type TimestampMutation struct {
 	id               *uuid.UUID
 	_type            *string
 	timestamp        *time.Time
+	data             *[]byte
 	clearedFields    map[string]struct{}
 	signature        *uuid.UUID
 	clearedsignature bool
@@ -4847,6 +5658,55 @@ func (m *TimestampMutation) ResetTimestamp() {
 	m.timestamp = nil
 }
 
+// SetData sets the "data" field.
+func (m *TimestampMutation) SetData(b []byte) {
+	m.data = &b
+}
+
+// Data returns the value of the "data" field in the mutation.
+func (m *TimestampMutation) Data() (r []byte, exists bool) {
+	v := m.data
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// OldData returns the old "data" field's value of the Timestamp entity.
+// If the Timestamp object wasn't provided to the builder, the object is fetched from the database.
+// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
+func (m *TimestampMutation) OldData(ctx context.Context) (v []byte, err error) {
+	if !m.op.Is(OpUpdateOne) {
+		return v, errors.New("OldData is only allowed on UpdateOne operations")
+	}
+	if m.id == nil || m.oldValue == nil {
+		return v, errors.New("OldData requires an ID field in the mutation")
+	}
+	oldValue, err := m.oldValue(ctx)
+	if err != nil {
+		return v, fmt.Errorf("querying old value for OldData: %w", err)
+	}
+	return oldValue.Data, nil
+}
+
+// ClearData clears the value of the "data" field.
+func (m *TimestampMutation) ClearData() {
+	m.data = nil
+	m.clearedFields[timestamp.FieldData] = struct{}{}
+}
+
+// DataCleared returns if the "data" field was cleared in this mutation.
+func (m *TimestampMutation) DataCleared() bool {
+	_, ok := m.clearedFields[timestamp.FieldData]
+	return ok
+}
+
+// ResetData resets all changes to the "data" field.
+func (m *TimestampMutation) ResetData() {
+	m.data = nil
+	delete(m.clearedFields, timestamp.FieldData)
+}
+
 // SetSignatureID sets the "signature" edge to the Signature entity by id.
 func (m *TimestampMutation) SetSignatureID(id uuid.UUID) {
 	m.signature = &id
@@ -4920,12 +5780,15 @@ func (m *TimestampMutation) Type() string {
 // order to get all numeric fields that were incremented/decremented, call
 // AddedFields().
 func (m *TimestampMutation) Fields() []string {
-	fields := make([]string, 0, 2)
+	fields := make([]string, 0, 3)
 	if m._type != nil {
 		fields = append(fields, timestamp.FieldType)
 	}
 	if m.timestamp != nil {
 		fields = append(fields, timestamp.FieldTimestamp)
+	}
+	if m.data != nil {
+		fields = append(fields, timestamp.FieldData)
 	}
 	return fields
 }
@@ -4939,6 +5802,8 @@ func (m *TimestampMutation) Field(name string) (ent.Value, bool) {
 		return m.GetType()
 	case timestamp.FieldTimestamp:
 		return m.Timestamp()
+	case timestamp.FieldData:
+		return m.Data()
 	}
 	return nil, false
 }
@@ -4952,6 +5817,8 @@ func (m *TimestampMutation) OldField(ctx context.Context, name string) (ent.Valu
 		return m.OldType(ctx)
 	case timestamp.FieldTimestamp:
 		return m.OldTimestamp(ctx)
+	case timestamp.FieldData:
+		return m.OldData(ctx)
 	}
 	return nil, fmt.Errorf("unknown Timestamp field %s", name)
 }
@@ -4974,6 +5841,13 @@ func (m *TimestampMutation) SetField(name string, value ent.Value) error {
 			return fmt.Errorf("unexpected type %T for field %s", value, name)
 		}
 		m.SetTimestamp(v)
+		return nil
+	case timestamp.FieldData:
+		v, ok := value.([]byte)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.SetData(v)
 		return nil
 	}
 	return fmt.Errorf("unknown Timestamp field %s", name)
@@ -5004,7 +5878,11 @@ func (m *TimestampMutation) AddField(name string, value ent.Value) error {
 // ClearedFields returns all nullable fields that were cleared during this
 // mutation.
 func (m *TimestampMutation) ClearedFields() []string {
-	return nil
+	var fields []string
+	if m.FieldCleared(timestamp.FieldData) {
+		fields = append(fields, timestamp.FieldData)
+	}
+	return fields
 }
 
 // FieldCleared returns a boolean indicating if a field with the given name was
@@ -5017,6 +5895,11 @@ func (m *TimestampMutation) FieldCleared(name string) bool {
 // ClearField clears the value of the field with the given name. It returns an
 // error if the field is not defined in the schema.
 func (m *TimestampMutation) ClearField(name string) error {
+	switch name {
+	case timestamp.FieldData:
+		m.ClearData()
+		return nil
+	}
 	return fmt.Errorf("unknown Timestamp nullable field %s", name)
 }
 
@@ -5029,6 +5912,9 @@ func (m *TimestampMutation) ResetField(name string) error {
 		return nil
 	case timestamp.FieldTimestamp:
 		m.ResetTimestamp()
+		return nil
+	case timestamp.FieldData:
+		m.ResetData()
 		return nil
 	}
 	return fmt.Errorf("unknown Timestamp field %s", name)

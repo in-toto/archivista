@@ -27,6 +27,8 @@ const (
 	EdgeSignatures = "signatures"
 	// EdgePayloadDigests holds the string denoting the payload_digests edge name in mutations.
 	EdgePayloadDigests = "payload_digests"
+	// EdgeBundle holds the string denoting the bundle edge name in mutations.
+	EdgeBundle = "bundle"
 	// Table holds the table name of the dsse in the database.
 	Table = "dsses"
 	// StatementTable is the table that holds the statement relation/edge.
@@ -50,6 +52,13 @@ const (
 	PayloadDigestsInverseTable = "payload_digests"
 	// PayloadDigestsColumn is the table column denoting the payload_digests relation/edge.
 	PayloadDigestsColumn = "dsse_payload_digests"
+	// BundleTable is the table that holds the bundle relation/edge.
+	BundleTable = "sigstore_bundles"
+	// BundleInverseTable is the table name for the SigstoreBundle entity.
+	// It exists in this package in order to avoid circular dependency with the "sigstorebundle" package.
+	BundleInverseTable = "sigstore_bundles"
+	// BundleColumn is the table column denoting the bundle relation/edge.
+	BundleColumn = "dsse_bundle"
 )
 
 // Columns holds all SQL columns for dsse fields.
@@ -149,6 +158,13 @@ func ByPayloadDigests(term sql.OrderTerm, terms ...sql.OrderTerm) OrderOption {
 		sqlgraph.OrderByNeighborTerms(s, newPayloadDigestsStep(), append([]sql.OrderTerm{term}, terms...)...)
 	}
 }
+
+// ByBundleField orders the results by bundle field.
+func ByBundleField(field string, opts ...sql.OrderTermOption) OrderOption {
+	return func(s *sql.Selector) {
+		sqlgraph.OrderByNeighborTerms(s, newBundleStep(), sql.OrderByField(field, opts...))
+	}
+}
 func newStatementStep() *sqlgraph.Step {
 	return sqlgraph.NewStep(
 		sqlgraph.From(Table, FieldID),
@@ -168,5 +184,12 @@ func newPayloadDigestsStep() *sqlgraph.Step {
 		sqlgraph.From(Table, FieldID),
 		sqlgraph.To(PayloadDigestsInverseTable, FieldID),
 		sqlgraph.Edge(sqlgraph.O2M, false, PayloadDigestsTable, PayloadDigestsColumn),
+	)
+}
+func newBundleStep() *sqlgraph.Step {
+	return sqlgraph.NewStep(
+		sqlgraph.From(Table, FieldID),
+		sqlgraph.To(BundleInverseTable, FieldID),
+		sqlgraph.Edge(sqlgraph.O2O, false, BundleTable, BundleColumn),
 	)
 }

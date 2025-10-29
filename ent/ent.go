@@ -18,6 +18,7 @@ import (
 	"github.com/in-toto/archivista/ent/dsse"
 	"github.com/in-toto/archivista/ent/payloaddigest"
 	"github.com/in-toto/archivista/ent/signature"
+	"github.com/in-toto/archivista/ent/sigstorebundle"
 	"github.com/in-toto/archivista/ent/statement"
 	"github.com/in-toto/archivista/ent/subject"
 	"github.com/in-toto/archivista/ent/subjectdigest"
@@ -88,6 +89,7 @@ func checkColumn(t, c string) error {
 			dsse.Table:                  dsse.ValidColumn,
 			payloaddigest.Table:         payloaddigest.ValidColumn,
 			signature.Table:             signature.ValidColumn,
+			sigstorebundle.Table:        sigstorebundle.ValidColumn,
 			statement.Table:             statement.ValidColumn,
 			subject.Table:               subject.ValidColumn,
 			subjectdigest.Table:         subjectdigest.ValidColumn,

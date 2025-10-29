@@ -34,6 +34,12 @@ func (_c *TimestampCreate) SetTimestamp(v time.Time) *TimestampCreate {
 	return _c
 }
 
+// SetData sets the "data" field.
+func (_c *TimestampCreate) SetData(v []byte) *TimestampCreate {
+	_c.mutation.SetData(v)
+	return _c
+}
+
 // SetID sets the "id" field.
 func (_c *TimestampCreate) SetID(v uuid.UUID) *TimestampCreate {
 	_c.mutation.SetID(v)
@@ -158,6 +164,10 @@ func (_c *TimestampCreate) createSpec() (*Timestamp, *sqlgraph.CreateSpec) {
 	if value, ok := _c.mutation.Timestamp(); ok {
 		_spec.SetField(timestamp.FieldTimestamp, field.TypeTime, value)
 		_node.Timestamp = value
+	}
+	if value, ok := _c.mutation.Data(); ok {
+		_spec.SetField(timestamp.FieldData, field.TypeBytes, value)
+		_node.Data = value
 	}
 	if nodes := _c.mutation.SignatureIDs(); len(nodes) > 0 {
 		edge := &sqlgraph.EdgeSpec{

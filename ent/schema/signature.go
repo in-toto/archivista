@@ -15,6 +15,7 @@
 package schema
 
 import (
+	"entgo.io/contrib/entgql"
 	"entgo.io/ent"
 	"entgo.io/ent/dialect"
 	"entgo.io/ent/schema/edge"
@@ -34,6 +35,8 @@ func (Signature) Fields() []ent.Field {
 		field.UUID("id", uuid.UUID{}).Default(uuid.New).Immutable().Unique(),
 		field.String("key_id"),
 		field.String("signature").NotEmpty().SchemaType(map[string]string{dialect.MySQL: "text"}),
+		field.Bytes("certificate").Optional().Annotations(entgql.Skip()),
+		field.JSON("intermediates", [][]byte{}).Optional().Annotations(entgql.Skip()),
 	}
 }
 

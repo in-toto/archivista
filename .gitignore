@@ -24,3 +24,6 @@
 ./archivista
 ./archivistctl
 .witness.yaml
+
+# TCR development script
+tcr.sh

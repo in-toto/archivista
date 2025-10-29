@@ -46,6 +46,7 @@ func (Dsse) Edges() []ent.Edge {
 		edge.To("statement", Statement.Type).Unique(),
 		edge.To("signatures", Signature.Type),
 		edge.To("payload_digests", PayloadDigest.Type),
+		edge.To("bundle", SigstoreBundle.Type).Unique(),
 	}
 }
 

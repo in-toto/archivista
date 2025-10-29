@@ -66,6 +66,11 @@ func Timestamp(v time.Time) predicate.Timestamp {
 	return predicate.Timestamp(sql.FieldEQ(FieldTimestamp, v))
 }
 
+// Data applies equality check predicate on the "data" field. It's identical to DataEQ.
+func Data(v []byte) predicate.Timestamp {
+	return predicate.Timestamp(sql.FieldEQ(FieldData, v))
+}
+
 // TypeEQ applies the EQ predicate on the "type" field.
 func TypeEQ(v string) predicate.Timestamp {
 	return predicate.Timestamp(sql.FieldEQ(FieldType, v))
@@ -169,6 +174,56 @@ func TimestampLT(v time.Time) predicate.Timestamp {
 // TimestampLTE applies the LTE predicate on the "timestamp" field.
 func TimestampLTE(v time.Time) predicate.Timestamp {
 	return predicate.Timestamp(sql.FieldLTE(FieldTimestamp, v))
+}
+
+// DataEQ applies the EQ predicate on the "data" field.
+func DataEQ(v []byte) predicate.Timestamp {
+	return predicate.Timestamp(sql.FieldEQ(FieldData, v))
+}
+
+// DataNEQ applies the NEQ predicate on the "data" field.
+func DataNEQ(v []byte) predicate.Timestamp {
+	return predicate.Timestamp(sql.FieldNEQ(FieldData, v))
+}
+
+// DataIn applies the In predicate on the "data" field.
+func DataIn(vs ...[]byte) predicate.Timestamp {
+	return predicate.Timestamp(sql.FieldIn(FieldData, vs...))
+}
+
+// DataNotIn applies the NotIn predicate on the "data" field.
+func DataNotIn(vs ...[]byte) predicate.Timestamp {
+	return predicate.Timestamp(sql.FieldNotIn(FieldData, vs...))
+}
+
+// DataGT applies the GT predicate on the "data" field.
+func DataGT(v []byte) predicate.Timestamp {
+	return predicate.Timestamp(sql.FieldGT(FieldData, v))
+}
+
+// DataGTE applies the GTE predicate on the "data" field.
+func DataGTE(v []byte) predicate.Timestamp {
+	return predicate.Timestamp(sql.FieldGTE(FieldData, v))
+}
+
+// DataLT applies the LT predicate on the "data" field.
+func DataLT(v []byte) predicate.Timestamp {
+	return predicate.Timestamp(sql.FieldLT(FieldData, v))
+}
+
+// DataLTE applies the LTE predicate on the "data" field.
+func DataLTE(v []byte) predicate.Timestamp {
+	return predicate.Timestamp(sql.FieldLTE(FieldData, v))
+}
+
+// DataIsNil applies the IsNil predicate on the "data" field.
+func DataIsNil() predicate.Timestamp {
+	return predicate.Timestamp(sql.FieldIsNull(FieldData))
+}
+
+// DataNotNil applies the NotNil predicate on the "data" field.
+func DataNotNil() predicate.Timestamp {
+	return predicate.Timestamp(sql.FieldNotNull(FieldData))
 }
 
 // HasSignature applies the HasEdge predicate on the "signature" edge.

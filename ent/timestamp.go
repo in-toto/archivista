@@ -23,6 +23,8 @@ type Timestamp struct {
 	Type string `json:"type,omitempty"`
 	// Timestamp holds the value of the "timestamp" field.
 	Timestamp time.Time `json:"timestamp,omitempty"`
+	// Data holds the value of the "data" field.
+	Data []byte `json:"data,omitempty"`
 	// Edges holds the relations/edges for other nodes in the graph.
 	// The values are being populated by the TimestampQuery when eager-loading is set.
 	Edges                TimestampEdges `json:"edges"`
@@ -57,6 +59,8 @@ func (*Timestamp) scanValues(columns []string) ([]any, error) {
 	values := make([]any, len(columns))
 	for i := range columns {
 		switch columns[i] {
+		case timestamp.FieldData:
+			values[i] = new([]byte)
 		case timestamp.FieldType:
 			values[i] = new(sql.NullString)
 		case timestamp.FieldTimestamp:
@@ -97,6 +101,12 @@ func (_m *Timestamp) assignValues(columns []string, values []any) error {
 				return fmt.Errorf("unexpected type %T for field timestamp", values[i])
 			} else if value.Valid {
 				_m.Timestamp = value.Time
+			}
+		case timestamp.FieldData:
+			if value, ok := values[i].(*[]byte); !ok {
+				return fmt.Errorf("unexpected type %T for field data", values[i])
+			} else if value != nil {
+				_m.Data = *value
 			}
 		case timestamp.ForeignKeys[0]:
 			if value, ok := values[i].(*sql.NullScanner); !ok {
@@ -151,6 +161,9 @@ func (_m *Timestamp) String() string {
 	builder.WriteString(", ")
 	builder.WriteString("timestamp=")
 	builder.WriteString(_m.Timestamp.Format(time.ANSIC))
+	builder.WriteString(", ")
+	builder.WriteString("data=")
+	builder.WriteString(fmt.Sprintf("%v", _m.Data))
 	builder.WriteByte(')')
 	return builder.String()
 }

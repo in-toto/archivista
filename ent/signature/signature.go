@@ -17,6 +17,10 @@ const (
 	FieldKeyID = "key_id"
 	// FieldSignature holds the string denoting the signature field in the database.
 	FieldSignature = "signature"
+	// FieldCertificate holds the string denoting the certificate field in the database.
+	FieldCertificate = "certificate"
+	// FieldIntermediates holds the string denoting the intermediates field in the database.
+	FieldIntermediates = "intermediates"
 	// EdgeDsse holds the string denoting the dsse edge name in mutations.
 	EdgeDsse = "dsse"
 	// EdgeTimestamps holds the string denoting the timestamps edge name in mutations.
@@ -44,6 +48,8 @@ var Columns = []string{
 	FieldID,
 	FieldKeyID,
 	FieldSignature,
+	FieldCertificate,
+	FieldIntermediates,
 }
 
 // ForeignKeys holds the SQL foreign-keys that are owned by the "signatures"

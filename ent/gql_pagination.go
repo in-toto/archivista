@@ -21,6 +21,7 @@ import (
 	"github.com/in-toto/archivista/ent/dsse"
 	"github.com/in-toto/archivista/ent/payloaddigest"
 	"github.com/in-toto/archivista/ent/signature"
+	"github.com/in-toto/archivista/ent/sigstorebundle"
 	"github.com/in-toto/archivista/ent/statement"
 	"github.com/in-toto/archivista/ent/subject"
 	"github.com/in-toto/archivista/ent/subjectdigest"
@@ -1644,6 +1645,255 @@ func (_m *Signature) ToEdge(order *SignatureOrder) *SignatureEdge {
 		order = DefaultSignatureOrder
 	}
 	return &SignatureEdge{
+		Node:   _m,
+		Cursor: order.Field.toCursor(_m),
+	}
+}
+
+// SigstoreBundleEdge is the edge representation of SigstoreBundle.
+type SigstoreBundleEdge struct {
+	Node   *SigstoreBundle `json:"node"`
+	Cursor Cursor          `json:"cursor"`
+}
+
+// SigstoreBundleConnection is the connection containing edges to SigstoreBundle.
+type SigstoreBundleConnection struct {
+	Edges      []*SigstoreBundleEdge `json:"edges"`
+	PageInfo   PageInfo              `json:"pageInfo"`
+	TotalCount int                   `json:"totalCount"`
+}
+
+func (c *SigstoreBundleConnection) build(nodes []*SigstoreBundle, pager *sigstorebundlePager, after *Cursor, first *int, before *Cursor, last *int) {
+	c.PageInfo.HasNextPage = before != nil
+	c.PageInfo.HasPreviousPage = after != nil
+	if first != nil && *first+1 == len(nodes) {
+		c.PageInfo.HasNextPage = true
+		nodes = nodes[:len(nodes)-1]
+	} else if last != nil && *last+1 == len(nodes) {
+		c.PageInfo.HasPreviousPage = true
+		nodes = nodes[:len(nodes)-1]
+	}
+	var nodeAt func(int) *SigstoreBundle
+	if last != nil {
+		n := len(nodes) - 1
+		nodeAt = func(i int) *SigstoreBundle {
+			return nodes[n-i]
+		}
+	} else {
+		nodeAt = func(i int) *SigstoreBundle {
+			return nodes[i]
+		}
+	}
+	c.Edges = make([]*SigstoreBundleEdge, len(nodes))
+	for i := range nodes {
+		node := nodeAt(i)
+		c.Edges[i] = &SigstoreBundleEdge{
+			Node:   node,
+			Cursor: pager.toCursor(node),
+		}
+	}
+	if l := len(c.Edges); l > 0 {
+		c.PageInfo.StartCursor = &c.Edges[0].Cursor
+		c.PageInfo.EndCursor = &c.Edges[l-1].Cursor
+	}
+	if c.TotalCount == 0 {
+		c.TotalCount = len(nodes)
+	}
+}
+
+// SigstoreBundlePaginateOption enables pagination customization.
+type SigstoreBundlePaginateOption func(*sigstorebundlePager) error
+
+// WithSigstoreBundleOrder configures pagination ordering.
+func WithSigstoreBundleOrder(order *SigstoreBundleOrder) SigstoreBundlePaginateOption {
+	if order == nil {
+		order = DefaultSigstoreBundleOrder
+	}
+	o := *order
+	return func(pager *sigstorebundlePager) error {
+		if err := o.Direction.Validate(); err != nil {
+			return err
+		}
+		if o.Field == nil {
+			o.Field = DefaultSigstoreBundleOrder.Field
+		}
+		pager.order = &o
+		return nil
+	}
+}
+
+// WithSigstoreBundleFilter configures pagination filter.
+func WithSigstoreBundleFilter(filter func(*SigstoreBundleQuery) (*SigstoreBundleQuery, error)) SigstoreBundlePaginateOption {
+	return func(pager *sigstorebundlePager) error {
+		if filter == nil {
+			return errors.New("SigstoreBundleQuery filter cannot be nil")
+		}
+		pager.filter = filter
+		return nil
+	}
+}
+
+type sigstorebundlePager struct {
+	reverse bool
+	order   *SigstoreBundleOrder
+	filter  func(*SigstoreBundleQuery) (*SigstoreBundleQuery, error)
+}
+
+func newSigstoreBundlePager(opts []SigstoreBundlePaginateOption, reverse bool) (*sigstorebundlePager, error) {
+	pager := &sigstorebundlePager{reverse: reverse}
+	for _, opt := range opts {
+		if err := opt(pager); err != nil {
+			return nil, err
+		}
+	}
+	if pager.order == nil {
+		pager.order = DefaultSigstoreBundleOrder
+	}
+	return pager, nil
+}
+
+func (p *sigstorebundlePager) applyFilter(query *SigstoreBundleQuery) (*SigstoreBundleQuery, error) {
+	if p.filter != nil {
+		return p.filter(query)
+	}
+	return query, nil
+}
+
+func (p *sigstorebundlePager) toCursor(_m *SigstoreBundle) Cursor {
+	return p.order.Field.toCursor(_m)
+}
+
+func (p *sigstorebundlePager) applyCursors(query *SigstoreBundleQuery, after, before *Cursor) (*SigstoreBundleQuery, error) {
+	direction := p.order.Direction
+	if p.reverse {
+		direction = direction.Reverse()
+	}
+	for _, predicate := range entgql.CursorsPredicate(after, before, DefaultSigstoreBundleOrder.Field.column, p.order.Field.column, direction) {
+		query = query.Where(predicate)
+	}
+	return query, nil
+}
+
+func (p *sigstorebundlePager) applyOrder(query *SigstoreBundleQuery) *SigstoreBundleQuery {
+	direction := p.order.Direction
+	if p.reverse {
+		direction = direction.Reverse()
+	}
+	query = query.Order(p.order.Field.toTerm(direction.OrderTermOption()))
+	if p.order.Field != DefaultSigstoreBundleOrder.Field {
+		query = query.Order(DefaultSigstoreBundleOrder.Field.toTerm(direction.OrderTermOption()))
+	}
+	if len(query.ctx.Fields) > 0 {
+		query.ctx.AppendFieldOnce(p.order.Field.column)
+	}
+	return query
+}
+
+func (p *sigstorebundlePager) orderExpr(query *SigstoreBundleQuery) sql.Querier {
+	direction := p.order.Direction
+	if p.reverse {
+		direction = direction.Reverse()
+	}
+	if len(query.ctx.Fields) > 0 {
+		query.ctx.AppendFieldOnce(p.order.Field.column)
+	}
+	return sql.ExprFunc(func(b *sql.Builder) {
+		b.Ident(p.order.Field.column).Pad().WriteString(string(direction))
+		if p.order.Field != DefaultSigstoreBundleOrder.Field {
+			b.Comma().Ident(DefaultSigstoreBundleOrder.Field.column).Pad().WriteString(string(direction))
+		}
+	})
+}
+
+// Paginate executes the query and returns a relay based cursor connection to SigstoreBundle.
+func (_m *SigstoreBundleQuery) Paginate(
+	ctx context.Context, after *Cursor, first *int,
+	before *Cursor, last *int, opts ...SigstoreBundlePaginateOption,
+) (*SigstoreBundleConnection, error) {
+	if err := validateFirstLast(first, last); err != nil {
+		return nil, err
+	}
+	pager, err := newSigstoreBundlePager(opts, last != nil)
+	if err != nil {
+		return nil, err
+	}
+	if _m, err = pager.applyFilter(_m); err != nil {
+		return nil, err
+	}
+	conn := &SigstoreBundleConnection{Edges: []*SigstoreBundleEdge{}}
+	ignoredEdges := !hasCollectedField(ctx, edgesField)
+	if hasCollectedField(ctx, totalCountField) || hasCollectedField(ctx, pageInfoField) {
+		hasPagination := after != nil || first != nil || before != nil || last != nil
+		if hasPagination || ignoredEdges {
+			c := _m.Clone()
+			c.ctx.Fields = nil
+			if conn.TotalCount, err = c.Count(ctx); err != nil {
+				return nil, err
+			}
+			conn.PageInfo.HasNextPage = first != nil && conn.TotalCount > 0
+			conn.PageInfo.HasPreviousPage = last != nil && conn.TotalCount > 0
+		}
+	}
+	if ignoredEdges || (first != nil && *first == 0) || (last != nil && *last == 0) {
+		return conn, nil
+	}
+	if _m, err = pager.applyCursors(_m, after, before); err != nil {
+		return nil, err
+	}
+	limit := paginateLimit(first, last)
+	if limit != 0 {
+		_m.Limit(limit)
+	}
+	if field := collectedField(ctx, edgesField, nodeField); field != nil {
+		if err := _m.collectField(ctx, limit == 1, graphql.GetOperationContext(ctx), *field, []string{edgesField, nodeField}); err != nil {
+			return nil, err
+		}
+	}
+	_m = pager.applyOrder(_m)
+	nodes, err := _m.All(ctx)
+	if err != nil {
+		return nil, err
+	}
+	conn.build(nodes, pager, after, first, before, last)
+	return conn, nil
+}
+
+// SigstoreBundleOrderField defines the ordering field of SigstoreBundle.
+type SigstoreBundleOrderField struct {
+	// Value extracts the ordering value from the given SigstoreBundle.
+	Value    func(*SigstoreBundle) (ent.Value, error)
+	column   string // field or computed.
+	toTerm   func(...sql.OrderTermOption) sigstorebundle.OrderOption
+	toCursor func(*SigstoreBundle) Cursor
+}
+
+// SigstoreBundleOrder defines the ordering of SigstoreBundle.
+type SigstoreBundleOrder struct {
+	Direction OrderDirection            `json:"direction"`
+	Field     *SigstoreBundleOrderField `json:"field"`
+}
+
+// DefaultSigstoreBundleOrder is the default ordering of SigstoreBundle.
+var DefaultSigstoreBundleOrder = &SigstoreBundleOrder{
+	Direction: entgql.OrderDirectionAsc,
+	Field: &SigstoreBundleOrderField{
+		Value: func(_m *SigstoreBundle) (ent.Value, error) {
+			return _m.ID, nil
+		},
+		column: sigstorebundle.FieldID,
+		toTerm: sigstorebundle.ByID,
+		toCursor: func(_m *SigstoreBundle) Cursor {
+			return Cursor{ID: _m.ID}
+		},
+	},
+}
+
+// ToEdge converts SigstoreBundle into SigstoreBundleEdge.
+func (_m *SigstoreBundle) ToEdge(order *SigstoreBundleOrder) *SigstoreBundleEdge {
+	if order == nil {
+		order = DefaultSigstoreBundleOrder
+	}
+	return &SigstoreBundleEdge{
 		Node:   _m,
 		Cursor: order.Field.toCursor(_m),
 	}

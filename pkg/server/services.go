@@ -31,6 +31,7 @@ import (
 	"github.com/in-toto/archivista/pkg/objectstorage/blobstore"
 	"github.com/in-toto/archivista/pkg/objectstorage/filestore"
 	"github.com/in-toto/archivista/pkg/publisherstore"
+	"github.com/in-toto/archivista/pkg/sigstorebundle"
 	"github.com/minio/minio-go/v7/pkg/credentials"
 	"github.com/sirupsen/logrus"
 )
@@ -110,7 +111,11 @@ func (a *ArchivistaService) Setup() (*Server, error) {
 		}
 
 		// Continue with the existing setup code for the SQLStore
-		sqlStore, a.sqlStoreCh, err = sqlstore.New(context.Background(), entClient)
+		bundleLimits := &sigstorebundle.BundleLimits{
+			MaxPayloadSizeMB:       a.Cfg.MaxPayloadSizeMB,
+			MaxSignaturesPerBundle: a.Cfg.MaxSignaturesPerBundle,
+		}
+		sqlStore, a.sqlStoreCh, err = sqlstore.New(context.Background(), entClient, bundleLimits)
 		if err != nil {
 			logrus.Fatalf("error initializing new SQLStore: %+v", err)
 		}

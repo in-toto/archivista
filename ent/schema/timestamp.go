@@ -15,6 +15,7 @@
 package schema
 
 import (
+	"entgo.io/contrib/entgql"
 	"entgo.io/ent"
 	"entgo.io/ent/schema/edge"
 	"entgo.io/ent/schema/field"
@@ -30,6 +31,7 @@ func (Timestamp) Fields() []ent.Field {
 		field.UUID("id", uuid.UUID{}).Default(uuid.New).Immutable().Unique(),
 		field.String("type"),
 		field.Time("timestamp"),
+		field.Bytes("data").Optional().Annotations(entgql.Skip()),
 	}
 }
 

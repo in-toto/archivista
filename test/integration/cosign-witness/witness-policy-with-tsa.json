@@ -1,0 +1,27 @@
+{
+  "_comment": "This is a valid go-witness policy structure. The timestampauthorities field (commented below) would contain TSA certificate trust bundles for RFC3161 timestamp verification on DSSE envelopes. However, cosign bundles handle TSA verification differently - they embed RFC3161 timestamps from Sigstore's TSA in the bundle's verificationMaterial.timestampVerificationData field, which cosign validates directly.",
+  "expires": "2030-12-31T23:59:59Z",
+  "publickeys": {
+    "wZZSq6wOsi/IgU4s/OTl219BLzxadKBTTmDMR/ohtZI=": {
+      "keyid": "wZZSq6wOsi/IgU4s/OTl219BLzxadKBTTmDMR/ohtZI=",
+      "key": "LS0tLS1CRUdJTiBQVUJMSUMgS0VZLS0tLS0KTUZrd0V3WUhLb1pJemowQ0FRWUlLb1pJemowREFRY0RRZ0FFMGY5c2Z3SFczbFV0WGdaTkxBcHFGVTY0SGc4ZgpHSzVhWjVMMEVBZE1BM05wWkJXNklkMFNrU3JlbjNEMEIzU016TGdGNnN5UFM4ck44b3VpWW56V1VnPT0KLS0tLS1FTkQgUFVCTElDIEtFWS0tLS0tCg=="
+    }
+  },
+  "steps": {
+    "cosign-sign": {
+      "name": "cosign-sign",
+      "attestations": [
+        {
+          "type": "https://in-toto.io/attestation/v0.1",
+          "regopolicies": []
+        }
+      ],
+      "functionaries": [
+        {
+          "type": "publickey",
+          "publickeyid": "wZZSq6wOsi/IgU4s/OTl219BLzxadKBTTmDMR/ohtZI="
+        }
+      ]
+    }
+  }
+}

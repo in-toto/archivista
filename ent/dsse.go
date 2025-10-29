@@ -11,6 +11,7 @@ import (
 	"entgo.io/ent/dialect/sql"
 	"github.com/google/uuid"
 	"github.com/in-toto/archivista/ent/dsse"
+	"github.com/in-toto/archivista/ent/sigstorebundle"
 	"github.com/in-toto/archivista/ent/statement"
 )
 
@@ -40,11 +41,13 @@ type DsseEdges struct {
 	Signatures []*Signature `json:"signatures,omitempty"`
 	// PayloadDigests holds the value of the payload_digests edge.
 	PayloadDigests []*PayloadDigest `json:"payload_digests,omitempty"`
+	// Bundle holds the value of the bundle edge.
+	Bundle *SigstoreBundle `json:"bundle,omitempty"`
 	// loadedTypes holds the information for reporting if a
 	// type was loaded (or requested) in eager-loading or not.
-	loadedTypes [3]bool
+	loadedTypes [4]bool
 	// totalCount holds the count of the edges above.
-	totalCount [3]map[string]int
+	totalCount [4]map[string]int
 
 	namedSignatures     map[string][]*Signature
 	namedPayloadDigests map[string][]*PayloadDigest
@@ -77,6 +80,17 @@ func (e DsseEdges) PayloadDigestsOrErr() ([]*PayloadDigest, error) {
 		return e.PayloadDigests, nil
 	}
 	return nil, &NotLoadedError{edge: "payload_digests"}
+}
+
+// BundleOrErr returns the Bundle value or an error if the edge
+// was not loaded in eager-loading, or loaded but was not found.
+func (e DsseEdges) BundleOrErr() (*SigstoreBundle, error) {
+	if e.Bundle != nil {
+		return e.Bundle, nil
+	} else if e.loadedTypes[3] {
+		return nil, &NotFoundError{label: sigstorebundle.Label}
+	}
+	return nil, &NotLoadedError{edge: "bundle"}
 }
 
 // scanValues returns the types for scanning values from sql.Rows.
@@ -165,6 +179,11 @@ func (_m *Dsse) QuerySignatures() *SignatureQuery {
 // QueryPayloadDigests queries the "payload_digests" edge of the Dsse entity.
 func (_m *Dsse) QueryPayloadDigests() *PayloadDigestQuery {
 	return NewDsseClient(_m.config).QueryPayloadDigests(_m)
+}
+
+// QueryBundle queries the "bundle" edge of the Dsse entity.
+func (_m *Dsse) QueryBundle() *SigstoreBundleQuery {
+	return NewDsseClient(_m.config).QueryBundle(_m)
 }
 
 // Update returns a builder for updating this Dsse.

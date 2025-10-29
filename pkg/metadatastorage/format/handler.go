@@ -1,0 +1,41 @@
+// Copyright 2025 The Archivista Contributors
+//
+// Licensed under the Apache License, Version 2.0 (the "License");
+// you may not use this file except in compliance with the License.
+// You may obtain a copy of the License at
+//
+//      http://www.apache.org/licenses/LICENSE-2.0
+//
+// Unless required by applicable law or agreed to in writing, software
+// distributed under the License is distributed on an "AS IS" BASIS,
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+// See the License for the specific language governing permissions and
+// limitations under the License.
+
+package format
+
+import (
+	"context"
+
+	"github.com/google/uuid"
+	"github.com/in-toto/archivista/ent"
+	"github.com/in-toto/go-witness/dsse"
+)
+
+// Store defines what format handlers need from the storage layer
+type Store interface {
+	StoreAttestation(ctx context.Context, envelope *dsse.Envelope, gitoid string) (uuid.UUID, error)
+	WithTx(ctx context.Context, fn func(tx *ent.Tx) error) error
+	// GetBundleLimits returns format-specific configuration limits
+	// Handlers should type-assert to their expected type
+	GetBundleLimits() any
+}
+
+// Handler processes specific attestation formats (e.g., Sigstore bundles)
+type Handler interface {
+	// Detect returns true if this handler can process the raw data
+	Detect(obj []byte) bool
+
+	// Store processes and stores the data using the provided Store
+	Store(ctx context.Context, store Store, gitoid string, obj []byte) error
+}

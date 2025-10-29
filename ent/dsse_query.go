@@ -17,6 +17,7 @@ import (
 	"github.com/in-toto/archivista/ent/payloaddigest"
 	"github.com/in-toto/archivista/ent/predicate"
 	"github.com/in-toto/archivista/ent/signature"
+	"github.com/in-toto/archivista/ent/sigstorebundle"
 	"github.com/in-toto/archivista/ent/statement"
 )
 
@@ -30,6 +31,7 @@ type DsseQuery struct {
 	withStatement           *StatementQuery
 	withSignatures          *SignatureQuery
 	withPayloadDigests      *PayloadDigestQuery
+	withBundle              *SigstoreBundleQuery
 	withFKs                 bool
 	modifiers               []func(*sql.Selector)
 	loadTotal               []func(context.Context, []*Dsse) error
@@ -130,6 +132,28 @@ func (_q *DsseQuery) QueryPayloadDigests() *PayloadDigestQuery {
 			sqlgraph.From(dsse.Table, dsse.FieldID, selector),
 			sqlgraph.To(payloaddigest.Table, payloaddigest.FieldID),
 			sqlgraph.Edge(sqlgraph.O2M, false, dsse.PayloadDigestsTable, dsse.PayloadDigestsColumn),
+		)
+		fromU = sqlgraph.SetNeighbors(_q.driver.Dialect(), step)
+		return fromU, nil
+	}
+	return query
+}
+
+// QueryBundle chains the current query on the "bundle" edge.
+func (_q *DsseQuery) QueryBundle() *SigstoreBundleQuery {
+	query := (&SigstoreBundleClient{config: _q.config}).Query()
+	query.path = func(ctx context.Context) (fromU *sql.Selector, err error) {
+		if err := _q.prepareQuery(ctx); err != nil {
+			return nil, err
+		}
+		selector := _q.sqlQuery(ctx)
+		if err := selector.Err(); err != nil {
+			return nil, err
+		}
+		step := sqlgraph.NewStep(
+			sqlgraph.From(dsse.Table, dsse.FieldID, selector),
+			sqlgraph.To(sigstorebundle.Table, sigstorebundle.FieldID),
+			sqlgraph.Edge(sqlgraph.O2O, false, dsse.BundleTable, dsse.BundleColumn),
 		)
 		fromU = sqlgraph.SetNeighbors(_q.driver.Dialect(), step)
 		return fromU, nil
@@ -332,6 +356,7 @@ func (_q *DsseQuery) Clone() *DsseQuery {
 		withStatement:      _q.withStatement.Clone(),
 		withSignatures:     _q.withSignatures.Clone(),
 		withPayloadDigests: _q.withPayloadDigests.Clone(),
+		withBundle:         _q.withBundle.Clone(),
 		// clone intermediate query.
 		sql:  _q.sql.Clone(),
 		path: _q.path,
@@ -368,6 +393,17 @@ func (_q *DsseQuery) WithPayloadDigests(opts ...func(*PayloadDigestQuery)) *Dsse
 		opt(query)
 	}
 	_q.withPayloadDigests = query
+	return _q
+}
+
+// WithBundle tells the query-builder to eager-load the nodes that are connected to
+// the "bundle" edge. The optional arguments are used to configure the query builder of the edge.
+func (_q *DsseQuery) WithBundle(opts ...func(*SigstoreBundleQuery)) *DsseQuery {
+	query := (&SigstoreBundleClient{config: _q.config}).Query()
+	for _, opt := range opts {
+		opt(query)
+	}
+	_q.withBundle = query
 	return _q
 }
 
@@ -450,10 +486,11 @@ func (_q *DsseQuery) sqlAll(ctx context.Context, hooks ...queryHook) ([]*Dsse, e
 		nodes       = []*Dsse{}
 		withFKs     = _q.withFKs
 		_spec       = _q.querySpec()
-		loadedTypes = [3]bool{
+		loadedTypes = [4]bool{
 			_q.withStatement != nil,
 			_q.withSignatures != nil,
 			_q.withPayloadDigests != nil,
+			_q.withBundle != nil,
 		}
 	)
 	if _q.withStatement != nil {
@@ -500,6 +537,12 @@ func (_q *DsseQuery) sqlAll(ctx context.Context, hooks ...queryHook) ([]*Dsse, e
 		if err := _q.loadPayloadDigests(ctx, query, nodes,
 			func(n *Dsse) { n.Edges.PayloadDigests = []*PayloadDigest{} },
 			func(n *Dsse, e *PayloadDigest) { n.Edges.PayloadDigests = append(n.Edges.PayloadDigests, e) }); err != nil {
+			return nil, err
+		}
+	}
+	if query := _q.withBundle; query != nil {
+		if err := _q.loadBundle(ctx, query, nodes, nil,
+			func(n *Dsse, e *SigstoreBundle) { n.Edges.Bundle = e }); err != nil {
 			return nil, err
 		}
 	}
@@ -614,6 +657,34 @@ func (_q *DsseQuery) loadPayloadDigests(ctx context.Context, query *PayloadDiges
 		node, ok := nodeids[*fk]
 		if !ok {
 			return fmt.Errorf(`unexpected referenced foreign-key "dsse_payload_digests" returned %v for node %v`, *fk, n.ID)
+		}
+		assign(node, n)
+	}
+	return nil
+}
+func (_q *DsseQuery) loadBundle(ctx context.Context, query *SigstoreBundleQuery, nodes []*Dsse, init func(*Dsse), assign func(*Dsse, *SigstoreBundle)) error {
+	fks := make([]driver.Value, 0, len(nodes))
+	nodeids := make(map[uuid.UUID]*Dsse)
+	for i := range nodes {
+		fks = append(fks, nodes[i].ID)
+		nodeids[nodes[i].ID] = nodes[i]
+	}
+	query.withFKs = true
+	query.Where(predicate.SigstoreBundle(func(s *sql.Selector) {
+		s.Where(sql.InValues(s.C(dsse.BundleColumn), fks...))
+	}))
+	neighbors, err := query.All(ctx)
+	if err != nil {
+		return err
+	}
+	for _, n := range neighbors {
+		fk := n.dsse_bundle
+		if fk == nil {
+			return fmt.Errorf(`foreign-key "dsse_bundle" is nil for node %v`, n.ID)
+		}
+		node, ok := nodeids[*fk]
+		if !ok {
+			return fmt.Errorf(`unexpected referenced foreign-key "dsse_bundle" returned %v for node %v`, *fk, n.ID)
 		}
 		assign(node, n)
 	}
