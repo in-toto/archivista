@@ -42,8 +42,8 @@ func TestIamCmd(t *testing.T) {
 		},
 		{
 			name:           "MYSQL RDS IAM",
-			args:           []string{"iam", "MYSQL_RDS_IAM", "mysql://user@tcp(host)/dbname", "--dryrun"},
-			expectedOutput: "mysql://user:authtoken@tcp(host)/dbname?allowCleartextPasswords=true&tls=true\n",
+			args:           []string{"iam", "MYSQL_RDS_IAM", "user@tcp(host)/dbname", "--dryrun"},
+			expectedOutput: "user:authtoken@tcp(host:3306)/dbname?allowCleartextPasswords=true&parseTime=true&tls=true\n",
 		},
 		{
 			name:          "PSQL RDS IAM Invalid Connection String",

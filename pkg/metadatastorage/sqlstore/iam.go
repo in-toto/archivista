@@ -17,12 +17,11 @@ package sqlstore
 import (
 	"context"
 	"fmt"
-	"net/url"
 	"strings"
 
 	"github.com/aws/aws-sdk-go-v2/aws"
 	"github.com/aws/aws-sdk-go-v2/config"
-	"github.com/aws/aws-sdk-go-v2/feature/rds/auth"
+	"github.com/jkjell/go-db-credential-refresh/driver"
 
 	_ "github.com/lib/pq"
 )
@@ -40,53 +39,51 @@ func (c *AWSConfig) LoadDefaultConfig(ctx context.Context, opts ...func(*config.
 
 var AwsConfigAPI AWSConfigAPI = &AWSConfig{}
 
-type AWSAuthAPI interface {
-	// BuildAuthToken builds an authentication token for AWS RDS IAM authentication.
-	BuildAuthToken(ctx context.Context, endpoint, region, dbUser string, creds aws.CredentialsProvider, optFns ...func(options *auth.BuildAuthTokenOptions)) (string, error)
-}
-
-type AWSAuth struct{}
-
-func (a *AWSAuth) BuildAuthToken(ctx context.Context, endpoint, region, dbUser string, creds aws.CredentialsProvider, optFns ...func(options *auth.BuildAuthTokenOptions)) (string, error) {
-	return auth.BuildAuthToken(ctx, endpoint, region, dbUser, creds, optFns...)
-}
-
-var AwsAuthAPI AWSAuthAPI = &AWSAuth{}
-
 // RewriteConnectionStringForIAM rewrites the connection string to use AWS RDS IAM authentication
 // It supports both MYSQL_RDS_IAM and PSQL_RDS_IAM backends
-func RewriteConnectionStringForIAM(sqlBackend string, connectionString string) (string, error) {
-	if AwsConfigAPI == nil || AwsAuthAPI == nil {
-		return "", fmt.Errorf("AWSConfigAPI and AWSAuthAPI must not be nil")
-	}
+func RewriteConnectionStringForIAM(sqlBackend string, connectionString string, dryRun bool) (string, error) {
+	var dc *driver.Config
+	var user string
 	upperSqlBackend := strings.ToUpper(sqlBackend)
-	nURL, err := url.Parse(connectionString)
-	if err != nil {
-		return "", fmt.Errorf("parsing connection string: %w", err)
-	}
-	if nURL.Host == "" {
-		return "", fmt.Errorf("connection string is missing a host")
-	}
-	if nURL.User == nil || nURL.User.Username() == "" {
-		return "", fmt.Errorf("connection string is missing a user")
-	}
-	cfg, err := AwsConfigAPI.LoadDefaultConfig(context.Background())
-	if err != nil {
-		return "", fmt.Errorf("loading AWS config: %w", err)
-	}
-	// generate a new rds session auth tokenized connection string
-	rdsEndpoint := fmt.Sprintf("%s:%s", nURL.Hostname(), nURL.Port())
-	token, err := AwsAuthAPI.BuildAuthToken(context.Background(), rdsEndpoint, cfg.Region, nURL.User.Username(), cfg.Credentials)
-	if err != nil {
-		return "", fmt.Errorf("building auth token: %w", err)
-	}
-	nURL.User = url.UserPassword(nURL.User.Username(), token)
-	// for mysql, we need to add some query parameters
+
 	if strings.HasPrefix(upperSqlBackend, "MYSQL") {
-		q := nURL.Query()
-		q.Set("tls", "true")
-		q.Set("allowCleartextPasswords", "true")
-		nURL.RawQuery = q.Encode()
+		var err error
+		dc, user, _, err = ConfigFromMySQL(connectionString)
+		if err != nil {
+			return "", fmt.Errorf("could not get driver config from mysql connection string: %w", err)
+		}
+		// for mysql, we need to add some query parameters
+		dc.Opts["tls"] = "true"
+		dc.Opts["allowCleartextPasswords"] = "true"
+	} else if strings.HasPrefix(upperSqlBackend, "PSQL") {
+		var err error
+		dc, user, _, err = ConfigFromPostgres(connectionString)
+		if err != nil {
+			return "", fmt.Errorf("could not get driver config from mysql connection string: %w", err)
+		}
+	} else {
+		return "", fmt.Errorf("unsupported sql backend: %s", sqlBackend)
 	}
-	return nURL.String(), nil
+
+	s, err := AWSRDSStoreFromDriverConfig(dc, user)
+	if err != nil {
+		return "", fmt.Errorf("could not create credentials refresh store: %w", err)
+	}
+
+	creds, err := s.Get(context.Background())
+	if err != nil {
+		return "", fmt.Errorf("could not get refreshed credentials: %w", err)
+	}
+
+	if creds == nil {
+		return "", fmt.Errorf("refreshed credentials are nil")
+	}
+
+	var password string
+	if dryRun {
+		password = "authtoken"
+	} else {
+		password = creds.GetPassword()
+	}
+	return dc.Formatter(creds.GetUsername(), password, dc.Host, dc.Port, dc.DB, dc.Opts), nil
 }
