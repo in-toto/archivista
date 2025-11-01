@@ -15,7 +15,9 @@
 package cmd
 
 import (
+	"encoding/json"
 	"errors"
+	"fmt"
 	"strings"
 
 	"github.com/in-toto/archivista/pkg/api"
@@ -52,13 +54,25 @@ Digests are expected to be in the form algorithm:digest, for instance: sha256:45
 			return err
 		}
 
+		if format == "json" {
+			jsonData, err := json.MarshalIndent(results, "", "  ")
+			if err != nil {
+				return fmt.Errorf("failed to marshal results to JSON: %w", err)
+			}
+			fmt.Println(string(jsonData))
+			return nil
+		}
+
 		printResults(results)
 		return nil
 	},
 }
 
+var format string
+
 func init() {
 	rootCmd.AddCommand(searchCmd)
+	searchCmd.Flags().StringVarP(&format, "format", "f", "table", "Output format (table|json)")
 }
 
 func validateDigestString(ds string) (algo, digest string, err error) {
