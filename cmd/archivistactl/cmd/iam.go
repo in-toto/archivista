@@ -21,7 +21,7 @@ import (
 
 	"github.com/aws/aws-sdk-go-v2/aws"
 	"github.com/aws/aws-sdk-go-v2/config"
-	"github.com/aws/aws-sdk-go-v2/credentials"
+	"github.com/aws/aws-sdk-go-v2/feature/rds/auth"
 	"github.com/in-toto/archivista/pkg/metadatastorage/sqlstore"
 	"github.com/spf13/cobra"
 )
@@ -43,14 +43,10 @@ var iamCmd = &cobra.Command{
 
 		if strings.HasSuffix(sqlBackend, "_RDS_IAM") {
 			if dryrun {
-				sqlstore.AwsConfigAPI = &dryrunConfig{
-					cfg: aws.Config{
-						Region:      "us-east-1",
-						Credentials: credentials.NewStaticCredentialsProvider("foo", "bar", "baz"),
-					},
-				}
+				sqlstore.AwsConfigAPI = &dryrunConfig{cfg: aws.Config{Region: "us-east-1"}}
+				sqlstore.AwsAuthAPI = &dryrunAuth{token: "authtoken"}
 			}
-			revisedConnectionString, err := sqlstore.RewriteConnectionStringForIAM(sqlBackend, connectionString, dryrun)
+			revisedConnectionString, err := sqlstore.RewriteConnectionStringForIAM(sqlBackend, connectionString)
 			if err != nil {
 				return err
 			}
@@ -74,4 +70,12 @@ type dryrunConfig struct {
 
 func (m *dryrunConfig) LoadDefaultConfig(ctx context.Context, optFns ...func(*config.LoadOptions) error) (aws.Config, error) {
 	return m.cfg, nil
+}
+
+type dryrunAuth struct {
+	token string
+}
+
+func (m *dryrunAuth) BuildAuthToken(ctx context.Context, endpoint, region, dbUser string, creds aws.CredentialsProvider, optFns ...func(options *auth.BuildAuthTokenOptions)) (string, error) {
+	return m.token, nil
 }
