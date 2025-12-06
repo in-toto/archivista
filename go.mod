@@ -33,7 +33,7 @@ require (
 )
 
 require (
-	github.com/aws/aws-sdk-go-v2/feature/rds/auth v1.6.11 // indirect
+	github.com/aws/aws-sdk-go-v2/feature/rds/auth v1.6.15 // indirect
 	github.com/goccy/go-yaml v1.18.0 // indirect
 	github.com/jackc/chunkreader/v2 v2.0.1 // indirect
 	github.com/jackc/pgconn v1.14.3 // indirect
