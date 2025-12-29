@@ -18,7 +18,7 @@ require (
 	github.com/gorilla/mux v1.8.1
 	github.com/hashicorp/go-multierror v1.1.1
 	github.com/in-toto/go-witness v0.9.1
-	github.com/jackc/pgx/v5 v5.7.6
+	github.com/jackc/pgx/v5 v5.8.0
 	github.com/jkjell/go-db-credential-refresh/store/awsrds v0.0.0-20251027212758-4cea655064ca
 	github.com/kelseyhightower/envconfig v1.4.0
 	github.com/lib/pq v1.10.9
