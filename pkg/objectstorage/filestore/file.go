@@ -46,7 +46,7 @@ func New(ctx context.Context, directory string, address string) (*Store, <-chan 
 
 		<-ctx.Done()
 
-		if err := server.Shutdown(context.Background()); err != nil {
+		if err := server.Shutdown(ctx); err != nil {
 			log.Fatalf("Server Shutdown Failed:%+v", err)
 		}
 

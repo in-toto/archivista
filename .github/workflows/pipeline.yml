@@ -91,7 +91,7 @@ jobs:
 
             - name: Set up Docker Buildx
               uses: docker/setup-buildx-action@v3
-                        
+
             - name: Download GoReleaser
               run: go install github.com/goreleaser/goreleaser@v1.23.0
 
