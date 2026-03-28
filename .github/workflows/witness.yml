@@ -39,7 +39,7 @@ jobs:
           id-token: write
         steps:
           - name: Harden Runner
-            uses: step-security/harden-runner@58077d3c7e43986b6b15fba718e8ea69e387dfcc # v2.15.1
+            uses: step-security/harden-runner@fa2e9d605c4eeb9fcad4c99c224cee0c6c7f3594 # v2.16.0
             with:
               egress-policy: audit
 
@@ -61,4 +61,4 @@ jobs:
             run: ${{ inputs.command }}
 
           - if: ${{ inputs.step == 'tests' }}
-            uses: codecov/codecov-action@671740ac38dd9b0130fbe1cec585b89eea48d3de
+            uses: codecov/codecov-action@57e3a136b779b570ffcdbf80b3bdc90e7fab3de2
