@@ -22,7 +22,7 @@ require (
 	github.com/jkjell/go-db-credential-refresh/store/awsrds v0.0.0-20251027212758-4cea655064ca
 	github.com/kelseyhightower/envconfig v1.4.0
 	github.com/lib/pq v1.11.2
-	github.com/minio/minio-go/v7 v7.0.98
+	github.com/minio/minio-go/v7 v7.0.99
 	github.com/sirupsen/logrus v1.9.4
 	github.com/spf13/cobra v1.10.2
 	github.com/stretchr/testify v1.11.1
