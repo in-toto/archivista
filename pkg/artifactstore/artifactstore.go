@@ -22,7 +22,7 @@ import (
 	"strings"
 
 	"github.com/in-toto/go-witness/cryptoutil"
-	"gopkg.in/yaml.v3"
+	"go.yaml.in/yaml/v3"
 )
 
 // Config represents the available artifacts within the store
