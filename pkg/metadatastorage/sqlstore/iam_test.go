@@ -291,7 +291,7 @@ func (s *RewriteConnectionStringForIAMSuite) TestPostgresNoUser() {
 
 	_, err := RewriteConnectionStringForIAM("psql_rds_iam", "postgresql://:password@host:5432/dbname", false)
 	s.Require().Error(err)
-	s.Contains(err.Error(), "onnection string is missing a user")
+	s.Contains(err.Error(), "onnection string user is incorrect or missing")
 }
 
 func (s *RewriteConnectionStringForIAMSuite) TestUrlParseError() {
