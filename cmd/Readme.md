@@ -35,7 +35,7 @@ Attestations: https://witness.dev/attestations/git/v0.1, https://witness.dev/att
 ```
 # Retrieves all subjects on an in-toto statement by the envelope gitoid
 
-$ archivistactl retrieve subjects <gitpoid>
+$ archivistactl retrieve subjects <gitoid>
 
 # Example
 $ archivistactl retrieve subjects 4462a729251af54c7699dbca2f7d5bf5759a5fc6273b3cd606da29d531387c86
@@ -58,7 +58,7 @@ Digests: sha256:ee48369be6072c1a49ba519b2eef9272235b0d925a6e7a338f7ffc12a2ca538e
 ```
 # Retrieves a dsse envelope by it's gitoid from archivista
 
-$ archivistactl retrieve envelope <gitpoid>
+$ archivistactl retrieve envelope <gitoid>
 $ archivistactl retrieve envelope 4462a729251af54c7699dbca2f7d5bf5759a5fc6273b3cd606da29d531387c86
 
 # Output
@@ -68,9 +68,9 @@ $ archivistactl retrieve envelope 4462a729251af54c7699dbca2f7d5bf5759a5fc6273b3c
 ---
 # Archivista HTTP API Endpoints
 
-1. Get `/v1/download/{gitpoid}`
+1. Get `/v1/download/{gitoid}`
 ```
-curl <archivista_domain>/v1/download/{gitpoid}
+curl <archivista_domain>/v1/download/{gitoid}
 
 # Example
 curl localhost:8082/v1/download/4462a729251af54c7699dbca2f7d5bf5759a5fc6273b3cd606da29d531387c86
