@@ -21,9 +21,7 @@ import (
 
 	"github.com/aws/aws-sdk-go-v2/aws"
 	"github.com/aws/aws-sdk-go-v2/config"
-	"github.com/jkjell/go-db-credential-refresh/driver"
-
-	_ "github.com/lib/pq"
+	"github.com/in-toto/archivista/internal/credentialrefresh/driver"
 )
 
 type AWSConfigAPI interface {

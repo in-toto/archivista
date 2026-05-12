@@ -21,9 +21,9 @@ import (
 	"strings"
 
 	"github.com/go-sql-driver/mysql"
+	"github.com/in-toto/archivista/internal/credentialrefresh/driver"
+	"github.com/in-toto/archivista/internal/credentialrefresh/store/awsrds"
 	"github.com/jackc/pgx/v5"
-	"github.com/jkjell/go-db-credential-refresh/driver"
-	"github.com/jkjell/go-db-credential-refresh/store/awsrds"
 )
 
 func ConfigFromPostgres(connectionString string) (c *driver.Config, user, password string, err error) {
