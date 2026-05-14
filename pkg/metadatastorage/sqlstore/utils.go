@@ -21,9 +21,9 @@ import (
 	"strings"
 
 	"github.com/go-sql-driver/mysql"
+	"github.com/in-toto/archivista/internal/credentialrefresh/driver"
+	"github.com/in-toto/archivista/internal/credentialrefresh/store/awsrds"
 	"github.com/jackc/pgx/v5"
-	"github.com/jkjell/go-db-credential-refresh/driver"
-	"github.com/jkjell/go-db-credential-refresh/store/awsrds"
 )
 
 func ConfigFromPostgres(connectionString string) (c *driver.Config, user, password string, err error) {
@@ -49,8 +49,10 @@ func ConfigFromPostgres(connectionString string) (c *driver.Config, user, passwo
 		dc.Opts["sslmode"] = "disable"
 	}
 
-	if dbConfig.User == "" {
-		return nil, "", "", fmt.Errorf("connection string is missing a user")
+	// pgx's ParseConfig defaults the user to the current system user if it's not provided in the connection string
+	// we want to require that the user is explicitly provided in the connection string
+	if !strings.Contains(connectionString, dbConfig.User) {
+		return nil, "", "", fmt.Errorf("connection string user is incorrect or missing")
 	}
 
 	return &dc, dbConfig.User, dbConfig.Password, nil

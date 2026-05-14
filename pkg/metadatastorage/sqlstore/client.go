@@ -24,8 +24,8 @@ import (
 	"entgo.io/ent/dialect"
 	entsql "entgo.io/ent/dialect/sql"
 	"github.com/in-toto/archivista/ent"
-	"github.com/jkjell/go-db-credential-refresh/driver"
-	"github.com/jkjell/go-db-credential-refresh/store/static"
+	"github.com/in-toto/archivista/internal/credentialrefresh/driver"
+	"github.com/in-toto/archivista/internal/credentialrefresh/store/static"
 )
 
 type ClientOption func(*clientOptions)
