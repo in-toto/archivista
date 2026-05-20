@@ -20,7 +20,7 @@ require (
 	github.com/in-toto/go-witness v0.10.0
 	github.com/jackc/pgx/v5 v5.9.2
 	github.com/kelseyhightower/envconfig v1.4.0
-	github.com/minio/minio-go/v7 v7.0.100
+	github.com/minio/minio-go/v7 v7.1.0
 	github.com/sirupsen/logrus v1.9.4
 	github.com/spf13/cobra v1.10.2
 	github.com/stretchr/testify v1.11.1
@@ -29,6 +29,8 @@ require (
 	github.com/vektah/gqlparser/v2 v2.5.33
 	go.yaml.in/yaml/v3 v3.0.4
 )
+
+require github.com/zeebo/xxh3 v1.1.0 // indirect
 
 require (
 	github.com/aws/aws-sdk-go-v2/feature/rds/auth v1.6.23
