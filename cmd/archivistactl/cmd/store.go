@@ -1,4 +1,4 @@
-// Copyright 2022 The Archivista Contributors
+// Copyright 2022-2024 The Archivista Contributors
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -23,25 +23,23 @@ import (
 	"github.com/spf13/cobra"
 )
 
-var (
-	storeCmd = &cobra.Command{
-		Use:          "store",
-		Short:        "stores an attestation on the archivista server",
-		SilenceUsage: true,
-		Args:         cobra.MinimumNArgs(1),
-		RunE: func(cmd *cobra.Command, args []string) error {
-			for _, filePath := range args {
-				if gitoid, err := storeAttestationByPath(cmd.Context(), archivistaUrl, filePath); err != nil {
-					return fmt.Errorf("failed to store %s: %w", filePath, err)
-				} else {
-					rootCmd.Printf("%s stored with gitoid %s\n", filePath, gitoid)
-				}
+var storeCmd = &cobra.Command{
+	Use:          "store",
+	Short:        "stores an attestation on the archivista server",
+	SilenceUsage: true,
+	Args:         cobra.MinimumNArgs(1),
+	RunE: func(cmd *cobra.Command, args []string) error {
+		for _, filePath := range args {
+			if gitoid, err := storeAttestationByPath(cmd.Context(), archivistaUrl, filePath); err != nil {
+				return fmt.Errorf("failed to store %s: %w", filePath, err)
+			} else {
+				rootCmd.Printf("%s stored with gitoid %s\n", filePath, gitoid)
 			}
+		}
 
-			return nil
-		},
-	}
-)
+		return nil
+	},
+}
 
 func init() {
 	rootCmd.AddCommand(storeCmd)
@@ -54,7 +52,7 @@ func storeAttestationByPath(ctx context.Context, baseUrl, path string) (string, 
 	}
 
 	defer file.Close()
-	resp, err := api.UploadWithReader(ctx, baseUrl, file)
+	resp, err := api.StoreWithReader(ctx, baseUrl, file, requestOptions()...)
 	if err != nil {
 		return "", err
 	}

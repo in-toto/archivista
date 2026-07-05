@@ -8,111 +8,112 @@ import (
 	"github.com/99designs/gqlgen/graphql"
 )
 
-func (a *Attestation) AttestationCollection(ctx context.Context) (*AttestationCollection, error) {
-	result, err := a.Edges.AttestationCollectionOrErr()
+func (_m *Attestation) AttestationCollection(ctx context.Context) (*AttestationCollection, error) {
+	result, err := _m.Edges.AttestationCollectionOrErr()
 	if IsNotLoaded(err) {
-		result, err = a.QueryAttestationCollection().Only(ctx)
+		result, err = _m.QueryAttestationCollection().Only(ctx)
 	}
 	return result, err
 }
 
-func (ac *AttestationCollection) Attestations(ctx context.Context) (result []*Attestation, err error) {
+func (_m *AttestationCollection) Attestations(ctx context.Context) (result []*Attestation, err error) {
 	if fc := graphql.GetFieldContext(ctx); fc != nil && fc.Field.Alias != "" {
-		result, err = ac.NamedAttestations(graphql.GetFieldContext(ctx).Field.Alias)
+		result, err = _m.NamedAttestations(graphql.GetFieldContext(ctx).Field.Alias)
 	} else {
-		result, err = ac.Edges.AttestationsOrErr()
+		result, err = _m.Edges.AttestationsOrErr()
 	}
 	if IsNotLoaded(err) {
-		result, err = ac.QueryAttestations().All(ctx)
-	}
-	return result, err
-}
-
-func (ac *AttestationCollection) Statement(ctx context.Context) (*Statement, error) {
-	result, err := ac.Edges.StatementOrErr()
-	if IsNotLoaded(err) {
-		result, err = ac.QueryStatement().Only(ctx)
+		result, err = _m.QueryAttestations().All(ctx)
 	}
 	return result, err
 }
 
-func (ap *AttestationPolicy) Statement(ctx context.Context) (*Statement, error) {
-	result, err := ap.Edges.StatementOrErr()
+func (_m *AttestationCollection) Statement(ctx context.Context) (*Statement, error) {
+	result, err := _m.Edges.StatementOrErr()
 	if IsNotLoaded(err) {
-		result, err = ap.QueryStatement().Only(ctx)
+		result, err = _m.QueryStatement().Only(ctx)
+	}
+	return result, err
+}
+
+func (_m *AttestationPolicy) Statement(ctx context.Context) (*Statement, error) {
+	result, err := _m.Edges.StatementOrErr()
+	if IsNotLoaded(err) {
+		result, err = _m.QueryStatement().Only(ctx)
 	}
 	return result, MaskNotFound(err)
 }
 
-func (d *Dsse) Statement(ctx context.Context) (*Statement, error) {
-	result, err := d.Edges.StatementOrErr()
+func (_m *Dsse) Statement(ctx context.Context) (*Statement, error) {
+	result, err := _m.Edges.StatementOrErr()
 	if IsNotLoaded(err) {
-		result, err = d.QueryStatement().Only(ctx)
+		result, err = _m.QueryStatement().Only(ctx)
 	}
 	return result, MaskNotFound(err)
 }
 
-func (d *Dsse) Signatures(ctx context.Context) (result []*Signature, err error) {
+func (_m *Dsse) Signatures(ctx context.Context) (result []*Signature, err error) {
 	if fc := graphql.GetFieldContext(ctx); fc != nil && fc.Field.Alias != "" {
-		result, err = d.NamedSignatures(graphql.GetFieldContext(ctx).Field.Alias)
+		result, err = _m.NamedSignatures(graphql.GetFieldContext(ctx).Field.Alias)
 	} else {
-		result, err = d.Edges.SignaturesOrErr()
+		result, err = _m.Edges.SignaturesOrErr()
 	}
 	if IsNotLoaded(err) {
-		result, err = d.QuerySignatures().All(ctx)
+		result, err = _m.QuerySignatures().All(ctx)
 	}
 	return result, err
 }
 
-func (d *Dsse) PayloadDigests(ctx context.Context) (result []*PayloadDigest, err error) {
+func (_m *Dsse) PayloadDigests(ctx context.Context) (result []*PayloadDigest, err error) {
 	if fc := graphql.GetFieldContext(ctx); fc != nil && fc.Field.Alias != "" {
-		result, err = d.NamedPayloadDigests(graphql.GetFieldContext(ctx).Field.Alias)
+		result, err = _m.NamedPayloadDigests(graphql.GetFieldContext(ctx).Field.Alias)
 	} else {
-		result, err = d.Edges.PayloadDigestsOrErr()
+		result, err = _m.Edges.PayloadDigestsOrErr()
 	}
 	if IsNotLoaded(err) {
-		result, err = d.QueryPayloadDigests().All(ctx)
+		result, err = _m.QueryPayloadDigests().All(ctx)
 	}
 	return result, err
 }
 
-func (pd *PayloadDigest) Dsse(ctx context.Context) (*Dsse, error) {
-	result, err := pd.Edges.DsseOrErr()
+func (_m *PayloadDigest) Dsse(ctx context.Context) (*Dsse, error) {
+	result, err := _m.Edges.DsseOrErr()
 	if IsNotLoaded(err) {
-		result, err = pd.QueryDsse().Only(ctx)
+		result, err = _m.QueryDsse().Only(ctx)
 	}
 	return result, MaskNotFound(err)
 }
 
-func (s *Signature) Dsse(ctx context.Context) (*Dsse, error) {
-	result, err := s.Edges.DsseOrErr()
+func (_m *Signature) Dsse(ctx context.Context) (*Dsse, error) {
+	result, err := _m.Edges.DsseOrErr()
 	if IsNotLoaded(err) {
-		result, err = s.QueryDsse().Only(ctx)
+		result, err = _m.QueryDsse().Only(ctx)
 	}
 	return result, MaskNotFound(err)
 }
 
-func (s *Signature) Timestamps(ctx context.Context) (result []*Timestamp, err error) {
+func (_m *Signature) Timestamps(ctx context.Context) (result []*Timestamp, err error) {
 	if fc := graphql.GetFieldContext(ctx); fc != nil && fc.Field.Alias != "" {
-		result, err = s.NamedTimestamps(graphql.GetFieldContext(ctx).Field.Alias)
+		result, err = _m.NamedTimestamps(graphql.GetFieldContext(ctx).Field.Alias)
 	} else {
-		result, err = s.Edges.TimestampsOrErr()
+		result, err = _m.Edges.TimestampsOrErr()
 	}
 	if IsNotLoaded(err) {
-		result, err = s.QueryTimestamps().All(ctx)
+		result, err = _m.QueryTimestamps().All(ctx)
 	}
 	return result, err
 }
 
-func (s *Statement) Subjects(
-	ctx context.Context, after *Cursor, first *int, before *Cursor, last *int, where *SubjectWhereInput,
+func (_m *Statement) Subjects(
+	ctx context.Context, after *Cursor, first *int, before *Cursor, last *int, orderBy *SubjectOrder, where *SubjectWhereInput,
 ) (*SubjectConnection, error) {
 	opts := []SubjectPaginateOption{
+		WithSubjectOrder(orderBy),
 		WithSubjectFilter(where.Filter),
 	}
 	alias := graphql.GetFieldContext(ctx).Field.Alias
-	totalCount, hasTotalCount := s.Edges.totalCount[0][alias]
-	if nodes, err := s.NamedSubjects(alias); err == nil || hasTotalCount {
+	totalCount, hasTotalCount := _m.Edges.totalCount[0][alias]
+	if nodes, err := _m.NamedSubjects(alias); err == nil || hasTotalCount {
 		pager, err := newSubjectPager(opts, last != nil)
 		if err != nil {
 			return nil, err
@@ -121,69 +122,69 @@ func (s *Statement) Subjects(
 		conn.build(nodes, pager, after, first, before, last)
 		return conn, nil
 	}
-	return s.QuerySubjects().Paginate(ctx, after, first, before, last, opts...)
+	return _m.QuerySubjects().Paginate(ctx, after, first, before, last, opts...)
 }
 
-func (s *Statement) Policy(ctx context.Context) (*AttestationPolicy, error) {
-	result, err := s.Edges.PolicyOrErr()
+func (_m *Statement) Policy(ctx context.Context) (*AttestationPolicy, error) {
+	result, err := _m.Edges.PolicyOrErr()
 	if IsNotLoaded(err) {
-		result, err = s.QueryPolicy().Only(ctx)
+		result, err = _m.QueryPolicy().Only(ctx)
 	}
 	return result, MaskNotFound(err)
 }
 
-func (s *Statement) AttestationCollections(ctx context.Context) (*AttestationCollection, error) {
-	result, err := s.Edges.AttestationCollectionsOrErr()
+func (_m *Statement) AttestationCollections(ctx context.Context) (*AttestationCollection, error) {
+	result, err := _m.Edges.AttestationCollectionsOrErr()
 	if IsNotLoaded(err) {
-		result, err = s.QueryAttestationCollections().Only(ctx)
+		result, err = _m.QueryAttestationCollections().Only(ctx)
 	}
 	return result, MaskNotFound(err)
 }
 
-func (s *Statement) Dsse(ctx context.Context) (result []*Dsse, err error) {
+func (_m *Statement) Dsse(ctx context.Context) (result []*Dsse, err error) {
 	if fc := graphql.GetFieldContext(ctx); fc != nil && fc.Field.Alias != "" {
-		result, err = s.NamedDsse(graphql.GetFieldContext(ctx).Field.Alias)
+		result, err = _m.NamedDsse(graphql.GetFieldContext(ctx).Field.Alias)
 	} else {
-		result, err = s.Edges.DsseOrErr()
+		result, err = _m.Edges.DsseOrErr()
 	}
 	if IsNotLoaded(err) {
-		result, err = s.QueryDsse().All(ctx)
+		result, err = _m.QueryDsse().All(ctx)
 	}
 	return result, err
 }
 
-func (s *Subject) SubjectDigests(ctx context.Context) (result []*SubjectDigest, err error) {
+func (_m *Subject) SubjectDigests(ctx context.Context) (result []*SubjectDigest, err error) {
 	if fc := graphql.GetFieldContext(ctx); fc != nil && fc.Field.Alias != "" {
-		result, err = s.NamedSubjectDigests(graphql.GetFieldContext(ctx).Field.Alias)
+		result, err = _m.NamedSubjectDigests(graphql.GetFieldContext(ctx).Field.Alias)
 	} else {
-		result, err = s.Edges.SubjectDigestsOrErr()
+		result, err = _m.Edges.SubjectDigestsOrErr()
 	}
 	if IsNotLoaded(err) {
-		result, err = s.QuerySubjectDigests().All(ctx)
+		result, err = _m.QuerySubjectDigests().All(ctx)
 	}
 	return result, err
 }
 
-func (s *Subject) Statement(ctx context.Context) (*Statement, error) {
-	result, err := s.Edges.StatementOrErr()
+func (_m *Subject) Statement(ctx context.Context) (*Statement, error) {
+	result, err := _m.Edges.StatementOrErr()
 	if IsNotLoaded(err) {
-		result, err = s.QueryStatement().Only(ctx)
+		result, err = _m.QueryStatement().Only(ctx)
 	}
 	return result, MaskNotFound(err)
 }
 
-func (sd *SubjectDigest) Subject(ctx context.Context) (*Subject, error) {
-	result, err := sd.Edges.SubjectOrErr()
+func (_m *SubjectDigest) Subject(ctx context.Context) (*Subject, error) {
+	result, err := _m.Edges.SubjectOrErr()
 	if IsNotLoaded(err) {
-		result, err = sd.QuerySubject().Only(ctx)
+		result, err = _m.QuerySubject().Only(ctx)
 	}
 	return result, MaskNotFound(err)
 }
 
-func (t *Timestamp) Signature(ctx context.Context) (*Signature, error) {
-	result, err := t.Edges.SignatureOrErr()
+func (_m *Timestamp) Signature(ctx context.Context) (*Signature, error) {
+	result, err := _m.Edges.SignatureOrErr()
 	if IsNotLoaded(err) {
-		result, err = t.QuerySignature().Only(ctx)
+		result, err = _m.QuerySignature().Only(ctx)
 	}
 	return result, MaskNotFound(err)
 }

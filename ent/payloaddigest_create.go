@@ -22,64 +22,64 @@ type PayloadDigestCreate struct {
 }
 
 // SetAlgorithm sets the "algorithm" field.
-func (pdc *PayloadDigestCreate) SetAlgorithm(s string) *PayloadDigestCreate {
-	pdc.mutation.SetAlgorithm(s)
-	return pdc
+func (_c *PayloadDigestCreate) SetAlgorithm(v string) *PayloadDigestCreate {
+	_c.mutation.SetAlgorithm(v)
+	return _c
 }
 
 // SetValue sets the "value" field.
-func (pdc *PayloadDigestCreate) SetValue(s string) *PayloadDigestCreate {
-	pdc.mutation.SetValue(s)
-	return pdc
+func (_c *PayloadDigestCreate) SetValue(v string) *PayloadDigestCreate {
+	_c.mutation.SetValue(v)
+	return _c
 }
 
 // SetID sets the "id" field.
-func (pdc *PayloadDigestCreate) SetID(u uuid.UUID) *PayloadDigestCreate {
-	pdc.mutation.SetID(u)
-	return pdc
+func (_c *PayloadDigestCreate) SetID(v uuid.UUID) *PayloadDigestCreate {
+	_c.mutation.SetID(v)
+	return _c
 }
 
 // SetNillableID sets the "id" field if the given value is not nil.
-func (pdc *PayloadDigestCreate) SetNillableID(u *uuid.UUID) *PayloadDigestCreate {
-	if u != nil {
-		pdc.SetID(*u)
+func (_c *PayloadDigestCreate) SetNillableID(v *uuid.UUID) *PayloadDigestCreate {
+	if v != nil {
+		_c.SetID(*v)
 	}
-	return pdc
+	return _c
 }
 
 // SetDsseID sets the "dsse" edge to the Dsse entity by ID.
-func (pdc *PayloadDigestCreate) SetDsseID(id uuid.UUID) *PayloadDigestCreate {
-	pdc.mutation.SetDsseID(id)
-	return pdc
+func (_c *PayloadDigestCreate) SetDsseID(id uuid.UUID) *PayloadDigestCreate {
+	_c.mutation.SetDsseID(id)
+	return _c
 }
 
 // SetNillableDsseID sets the "dsse" edge to the Dsse entity by ID if the given value is not nil.
-func (pdc *PayloadDigestCreate) SetNillableDsseID(id *uuid.UUID) *PayloadDigestCreate {
+func (_c *PayloadDigestCreate) SetNillableDsseID(id *uuid.UUID) *PayloadDigestCreate {
 	if id != nil {
-		pdc = pdc.SetDsseID(*id)
+		_c = _c.SetDsseID(*id)
 	}
-	return pdc
+	return _c
 }
 
 // SetDsse sets the "dsse" edge to the Dsse entity.
-func (pdc *PayloadDigestCreate) SetDsse(d *Dsse) *PayloadDigestCreate {
-	return pdc.SetDsseID(d.ID)
+func (_c *PayloadDigestCreate) SetDsse(v *Dsse) *PayloadDigestCreate {
+	return _c.SetDsseID(v.ID)
 }
 
 // Mutation returns the PayloadDigestMutation object of the builder.
-func (pdc *PayloadDigestCreate) Mutation() *PayloadDigestMutation {
-	return pdc.mutation
+func (_c *PayloadDigestCreate) Mutation() *PayloadDigestMutation {
+	return _c.mutation
 }
 
 // Save creates the PayloadDigest in the database.
-func (pdc *PayloadDigestCreate) Save(ctx context.Context) (*PayloadDigest, error) {
-	pdc.defaults()
-	return withHooks(ctx, pdc.sqlSave, pdc.mutation, pdc.hooks)
+func (_c *PayloadDigestCreate) Save(ctx context.Context) (*PayloadDigest, error) {
+	_c.defaults()
+	return withHooks(ctx, _c.sqlSave, _c.mutation, _c.hooks)
 }
 
 // SaveX calls Save and panics if Save returns an error.
-func (pdc *PayloadDigestCreate) SaveX(ctx context.Context) *PayloadDigest {
-	v, err := pdc.Save(ctx)
+func (_c *PayloadDigestCreate) SaveX(ctx context.Context) *PayloadDigest {
+	v, err := _c.Save(ctx)
 	if err != nil {
 		panic(err)
 	}
@@ -87,40 +87,40 @@ func (pdc *PayloadDigestCreate) SaveX(ctx context.Context) *PayloadDigest {
 }
 
 // Exec executes the query.
-func (pdc *PayloadDigestCreate) Exec(ctx context.Context) error {
-	_, err := pdc.Save(ctx)
+func (_c *PayloadDigestCreate) Exec(ctx context.Context) error {
+	_, err := _c.Save(ctx)
 	return err
 }
 
 // ExecX is like Exec, but panics if an error occurs.
-func (pdc *PayloadDigestCreate) ExecX(ctx context.Context) {
-	if err := pdc.Exec(ctx); err != nil {
+func (_c *PayloadDigestCreate) ExecX(ctx context.Context) {
+	if err := _c.Exec(ctx); err != nil {
 		panic(err)
 	}
 }
 
 // defaults sets the default values of the builder before save.
-func (pdc *PayloadDigestCreate) defaults() {
-	if _, ok := pdc.mutation.ID(); !ok {
+func (_c *PayloadDigestCreate) defaults() {
+	if _, ok := _c.mutation.ID(); !ok {
 		v := payloaddigest.DefaultID()
-		pdc.mutation.SetID(v)
+		_c.mutation.SetID(v)
 	}
 }
 
 // check runs all checks and user-defined validators on the builder.
-func (pdc *PayloadDigestCreate) check() error {
-	if _, ok := pdc.mutation.Algorithm(); !ok {
+func (_c *PayloadDigestCreate) check() error {
+	if _, ok := _c.mutation.Algorithm(); !ok {
 		return &ValidationError{Name: "algorithm", err: errors.New(`ent: missing required field "PayloadDigest.algorithm"`)}
 	}
-	if v, ok := pdc.mutation.Algorithm(); ok {
+	if v, ok := _c.mutation.Algorithm(); ok {
 		if err := payloaddigest.AlgorithmValidator(v); err != nil {
 			return &ValidationError{Name: "algorithm", err: fmt.Errorf(`ent: validator failed for field "PayloadDigest.algorithm": %w`, err)}
 		}
 	}
-	if _, ok := pdc.mutation.Value(); !ok {
+	if _, ok := _c.mutation.Value(); !ok {
 		return &ValidationError{Name: "value", err: errors.New(`ent: missing required field "PayloadDigest.value"`)}
 	}
-	if v, ok := pdc.mutation.Value(); ok {
+	if v, ok := _c.mutation.Value(); ok {
 		if err := payloaddigest.ValueValidator(v); err != nil {
 			return &ValidationError{Name: "value", err: fmt.Errorf(`ent: validator failed for field "PayloadDigest.value": %w`, err)}
 		}
@@ -128,12 +128,12 @@ func (pdc *PayloadDigestCreate) check() error {
 	return nil
 }
 
-func (pdc *PayloadDigestCreate) sqlSave(ctx context.Context) (*PayloadDigest, error) {
-	if err := pdc.check(); err != nil {
+func (_c *PayloadDigestCreate) sqlSave(ctx context.Context) (*PayloadDigest, error) {
+	if err := _c.check(); err != nil {
 		return nil, err
 	}
-	_node, _spec := pdc.createSpec()
-	if err := sqlgraph.CreateNode(ctx, pdc.driver, _spec); err != nil {
+	_node, _spec := _c.createSpec()
+	if err := sqlgraph.CreateNode(ctx, _c.driver, _spec); err != nil {
 		if sqlgraph.IsConstraintError(err) {
 			err = &ConstraintError{msg: err.Error(), wrap: err}
 		}
@@ -146,29 +146,29 @@ func (pdc *PayloadDigestCreate) sqlSave(ctx context.Context) (*PayloadDigest, er
 			return nil, err
 		}
 	}
-	pdc.mutation.id = &_node.ID
-	pdc.mutation.done = true
+	_c.mutation.id = &_node.ID
+	_c.mutation.done = true
 	return _node, nil
 }
 
-func (pdc *PayloadDigestCreate) createSpec() (*PayloadDigest, *sqlgraph.CreateSpec) {
+func (_c *PayloadDigestCreate) createSpec() (*PayloadDigest, *sqlgraph.CreateSpec) {
 	var (
-		_node = &PayloadDigest{config: pdc.config}
+		_node = &PayloadDigest{config: _c.config}
 		_spec = sqlgraph.NewCreateSpec(payloaddigest.Table, sqlgraph.NewFieldSpec(payloaddigest.FieldID, field.TypeUUID))
 	)
-	if id, ok := pdc.mutation.ID(); ok {
+	if id, ok := _c.mutation.ID(); ok {
 		_node.ID = id
 		_spec.ID.Value = &id
 	}
-	if value, ok := pdc.mutation.Algorithm(); ok {
+	if value, ok := _c.mutation.Algorithm(); ok {
 		_spec.SetField(payloaddigest.FieldAlgorithm, field.TypeString, value)
 		_node.Algorithm = value
 	}
-	if value, ok := pdc.mutation.Value(); ok {
+	if value, ok := _c.mutation.Value(); ok {
 		_spec.SetField(payloaddigest.FieldValue, field.TypeString, value)
 		_node.Value = value
 	}
-	if nodes := pdc.mutation.DsseIDs(); len(nodes) > 0 {
+	if nodes := _c.mutation.DsseIDs(); len(nodes) > 0 {
 		edge := &sqlgraph.EdgeSpec{
 			Rel:     sqlgraph.M2O,
 			Inverse: true,
@@ -196,16 +196,16 @@ type PayloadDigestCreateBulk struct {
 }
 
 // Save creates the PayloadDigest entities in the database.
-func (pdcb *PayloadDigestCreateBulk) Save(ctx context.Context) ([]*PayloadDigest, error) {
-	if pdcb.err != nil {
-		return nil, pdcb.err
+func (_c *PayloadDigestCreateBulk) Save(ctx context.Context) ([]*PayloadDigest, error) {
+	if _c.err != nil {
+		return nil, _c.err
 	}
-	specs := make([]*sqlgraph.CreateSpec, len(pdcb.builders))
-	nodes := make([]*PayloadDigest, len(pdcb.builders))
-	mutators := make([]Mutator, len(pdcb.builders))
-	for i := range pdcb.builders {
+	specs := make([]*sqlgraph.CreateSpec, len(_c.builders))
+	nodes := make([]*PayloadDigest, len(_c.builders))
+	mutators := make([]Mutator, len(_c.builders))
+	for i := range _c.builders {
 		func(i int, root context.Context) {
-			builder := pdcb.builders[i]
+			builder := _c.builders[i]
 			builder.defaults()
 			var mut Mutator = MutateFunc(func(ctx context.Context, m Mutation) (Value, error) {
 				mutation, ok := m.(*PayloadDigestMutation)
@@ -219,11 +219,11 @@ func (pdcb *PayloadDigestCreateBulk) Save(ctx context.Context) ([]*PayloadDigest
 				var err error
 				nodes[i], specs[i] = builder.createSpec()
 				if i < len(mutators)-1 {
-					_, err = mutators[i+1].Mutate(root, pdcb.builders[i+1].mutation)
+					_, err = mutators[i+1].Mutate(root, _c.builders[i+1].mutation)
 				} else {
 					spec := &sqlgraph.BatchCreateSpec{Nodes: specs}
 					// Invoke the actual operation on the latest mutation in the chain.
-					if err = sqlgraph.BatchCreate(ctx, pdcb.driver, spec); err != nil {
+					if err = sqlgraph.BatchCreate(ctx, _c.driver, spec); err != nil {
 						if sqlgraph.IsConstraintError(err) {
 							err = &ConstraintError{msg: err.Error(), wrap: err}
 						}
@@ -243,7 +243,7 @@ func (pdcb *PayloadDigestCreateBulk) Save(ctx context.Context) ([]*PayloadDigest
 		}(i, ctx)
 	}
 	if len(mutators) > 0 {
-		if _, err := mutators[0].Mutate(ctx, pdcb.builders[0].mutation); err != nil {
+		if _, err := mutators[0].Mutate(ctx, _c.builders[0].mutation); err != nil {
 			return nil, err
 		}
 	}
@@ -251,8 +251,8 @@ func (pdcb *PayloadDigestCreateBulk) Save(ctx context.Context) ([]*PayloadDigest
 }
 
 // SaveX is like Save, but panics if an error occurs.
-func (pdcb *PayloadDigestCreateBulk) SaveX(ctx context.Context) []*PayloadDigest {
-	v, err := pdcb.Save(ctx)
+func (_c *PayloadDigestCreateBulk) SaveX(ctx context.Context) []*PayloadDigest {
+	v, err := _c.Save(ctx)
 	if err != nil {
 		panic(err)
 	}
@@ -260,14 +260,14 @@ func (pdcb *PayloadDigestCreateBulk) SaveX(ctx context.Context) []*PayloadDigest
 }
 
 // Exec executes the query.
-func (pdcb *PayloadDigestCreateBulk) Exec(ctx context.Context) error {
-	_, err := pdcb.Save(ctx)
+func (_c *PayloadDigestCreateBulk) Exec(ctx context.Context) error {
+	_, err := _c.Save(ctx)
 	return err
 }
 
 // ExecX is like Exec, but panics if an error occurs.
-func (pdcb *PayloadDigestCreateBulk) ExecX(ctx context.Context) {
-	if err := pdcb.Exec(ctx); err != nil {
+func (_c *PayloadDigestCreateBulk) ExecX(ctx context.Context) {
+	if err := _c.Exec(ctx); err != nil {
 		panic(err)
 	}
 }

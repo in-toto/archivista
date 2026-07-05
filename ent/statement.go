@@ -105,7 +105,7 @@ func (*Statement) scanValues(columns []string) ([]any, error) {
 
 // assignValues assigns the values that were returned from sql.Rows (after scanning)
 // to the Statement fields.
-func (s *Statement) assignValues(columns []string, values []any) error {
+func (_m *Statement) assignValues(columns []string, values []any) error {
 	if m, n := len(values), len(columns); m < n {
 		return fmt.Errorf("mismatch number of scan values: %d != %d", m, n)
 	}
@@ -115,16 +115,16 @@ func (s *Statement) assignValues(columns []string, values []any) error {
 			if value, ok := values[i].(*uuid.UUID); !ok {
 				return fmt.Errorf("unexpected type %T for field id", values[i])
 			} else if value != nil {
-				s.ID = *value
+				_m.ID = *value
 			}
 		case statement.FieldPredicate:
 			if value, ok := values[i].(*sql.NullString); !ok {
 				return fmt.Errorf("unexpected type %T for field predicate", values[i])
 			} else if value.Valid {
-				s.Predicate = value.String
+				_m.Predicate = value.String
 			}
 		default:
-			s.selectValues.Set(columns[i], values[i])
+			_m.selectValues.Set(columns[i], values[i])
 		}
 	}
 	return nil
@@ -132,104 +132,104 @@ func (s *Statement) assignValues(columns []string, values []any) error {
 
 // Value returns the ent.Value that was dynamically selected and assigned to the Statement.
 // This includes values selected through modifiers, order, etc.
-func (s *Statement) Value(name string) (ent.Value, error) {
-	return s.selectValues.Get(name)
+func (_m *Statement) Value(name string) (ent.Value, error) {
+	return _m.selectValues.Get(name)
 }
 
 // QuerySubjects queries the "subjects" edge of the Statement entity.
-func (s *Statement) QuerySubjects() *SubjectQuery {
-	return NewStatementClient(s.config).QuerySubjects(s)
+func (_m *Statement) QuerySubjects() *SubjectQuery {
+	return NewStatementClient(_m.config).QuerySubjects(_m)
 }
 
 // QueryPolicy queries the "policy" edge of the Statement entity.
-func (s *Statement) QueryPolicy() *AttestationPolicyQuery {
-	return NewStatementClient(s.config).QueryPolicy(s)
+func (_m *Statement) QueryPolicy() *AttestationPolicyQuery {
+	return NewStatementClient(_m.config).QueryPolicy(_m)
 }
 
 // QueryAttestationCollections queries the "attestation_collections" edge of the Statement entity.
-func (s *Statement) QueryAttestationCollections() *AttestationCollectionQuery {
-	return NewStatementClient(s.config).QueryAttestationCollections(s)
+func (_m *Statement) QueryAttestationCollections() *AttestationCollectionQuery {
+	return NewStatementClient(_m.config).QueryAttestationCollections(_m)
 }
 
 // QueryDsse queries the "dsse" edge of the Statement entity.
-func (s *Statement) QueryDsse() *DsseQuery {
-	return NewStatementClient(s.config).QueryDsse(s)
+func (_m *Statement) QueryDsse() *DsseQuery {
+	return NewStatementClient(_m.config).QueryDsse(_m)
 }
 
 // Update returns a builder for updating this Statement.
 // Note that you need to call Statement.Unwrap() before calling this method if this Statement
 // was returned from a transaction, and the transaction was committed or rolled back.
-func (s *Statement) Update() *StatementUpdateOne {
-	return NewStatementClient(s.config).UpdateOne(s)
+func (_m *Statement) Update() *StatementUpdateOne {
+	return NewStatementClient(_m.config).UpdateOne(_m)
 }
 
 // Unwrap unwraps the Statement entity that was returned from a transaction after it was closed,
 // so that all future queries will be executed through the driver which created the transaction.
-func (s *Statement) Unwrap() *Statement {
-	_tx, ok := s.config.driver.(*txDriver)
+func (_m *Statement) Unwrap() *Statement {
+	_tx, ok := _m.config.driver.(*txDriver)
 	if !ok {
 		panic("ent: Statement is not a transactional entity")
 	}
-	s.config.driver = _tx.drv
-	return s
+	_m.config.driver = _tx.drv
+	return _m
 }
 
 // String implements the fmt.Stringer.
-func (s *Statement) String() string {
+func (_m *Statement) String() string {
 	var builder strings.Builder
 	builder.WriteString("Statement(")
-	builder.WriteString(fmt.Sprintf("id=%v, ", s.ID))
+	builder.WriteString(fmt.Sprintf("id=%v, ", _m.ID))
 	builder.WriteString("predicate=")
-	builder.WriteString(s.Predicate)
+	builder.WriteString(_m.Predicate)
 	builder.WriteByte(')')
 	return builder.String()
 }
 
 // NamedSubjects returns the Subjects named value or an error if the edge was not
 // loaded in eager-loading with this name.
-func (s *Statement) NamedSubjects(name string) ([]*Subject, error) {
-	if s.Edges.namedSubjects == nil {
+func (_m *Statement) NamedSubjects(name string) ([]*Subject, error) {
+	if _m.Edges.namedSubjects == nil {
 		return nil, &NotLoadedError{edge: name}
 	}
-	nodes, ok := s.Edges.namedSubjects[name]
+	nodes, ok := _m.Edges.namedSubjects[name]
 	if !ok {
 		return nil, &NotLoadedError{edge: name}
 	}
 	return nodes, nil
 }
 
-func (s *Statement) appendNamedSubjects(name string, edges ...*Subject) {
-	if s.Edges.namedSubjects == nil {
-		s.Edges.namedSubjects = make(map[string][]*Subject)
+func (_m *Statement) appendNamedSubjects(name string, edges ...*Subject) {
+	if _m.Edges.namedSubjects == nil {
+		_m.Edges.namedSubjects = make(map[string][]*Subject)
 	}
 	if len(edges) == 0 {
-		s.Edges.namedSubjects[name] = []*Subject{}
+		_m.Edges.namedSubjects[name] = []*Subject{}
 	} else {
-		s.Edges.namedSubjects[name] = append(s.Edges.namedSubjects[name], edges...)
+		_m.Edges.namedSubjects[name] = append(_m.Edges.namedSubjects[name], edges...)
 	}
 }
 
 // NamedDsse returns the Dsse named value or an error if the edge was not
 // loaded in eager-loading with this name.
-func (s *Statement) NamedDsse(name string) ([]*Dsse, error) {
-	if s.Edges.namedDsse == nil {
+func (_m *Statement) NamedDsse(name string) ([]*Dsse, error) {
+	if _m.Edges.namedDsse == nil {
 		return nil, &NotLoadedError{edge: name}
 	}
-	nodes, ok := s.Edges.namedDsse[name]
+	nodes, ok := _m.Edges.namedDsse[name]
 	if !ok {
 		return nil, &NotLoadedError{edge: name}
 	}
 	return nodes, nil
 }
 
-func (s *Statement) appendNamedDsse(name string, edges ...*Dsse) {
-	if s.Edges.namedDsse == nil {
-		s.Edges.namedDsse = make(map[string][]*Dsse)
+func (_m *Statement) appendNamedDsse(name string, edges ...*Dsse) {
+	if _m.Edges.namedDsse == nil {
+		_m.Edges.namedDsse = make(map[string][]*Dsse)
 	}
 	if len(edges) == 0 {
-		s.Edges.namedDsse[name] = []*Dsse{}
+		_m.Edges.namedDsse[name] = []*Dsse{}
 	} else {
-		s.Edges.namedDsse[name] = append(s.Edges.namedDsse[name], edges...)
+		_m.Edges.namedDsse[name] = append(_m.Edges.namedDsse[name], edges...)
 	}
 }
 

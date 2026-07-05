@@ -3,6 +3,8 @@
 package dsse
 
 import (
+	"time"
+
 	"entgo.io/ent/dialect/sql"
 	"entgo.io/ent/dialect/sql/sqlgraph"
 	"github.com/google/uuid"
@@ -13,6 +15,8 @@ const (
 	Label = "dsse"
 	// FieldID holds the string denoting the id field in the database.
 	FieldID = "id"
+	// FieldCreatedAt holds the string denoting the created_at field in the database.
+	FieldCreatedAt = "created_at"
 	// FieldGitoidSha256 holds the string denoting the gitoid_sha256 field in the database.
 	FieldGitoidSha256 = "gitoid_sha256"
 	// FieldPayloadType holds the string denoting the payload_type field in the database.
@@ -51,6 +55,7 @@ const (
 // Columns holds all SQL columns for dsse fields.
 var Columns = []string{
 	FieldID,
+	FieldCreatedAt,
 	FieldGitoidSha256,
 	FieldPayloadType,
 }
@@ -77,6 +82,8 @@ func ValidColumn(column string) bool {
 }
 
 var (
+	// DefaultCreatedAt holds the default value on creation for the "created_at" field.
+	DefaultCreatedAt func() time.Time
 	// GitoidSha256Validator is a validator for the "gitoid_sha256" field. It is called by the builders before save.
 	GitoidSha256Validator func(string) error
 	// PayloadTypeValidator is a validator for the "payload_type" field. It is called by the builders before save.
@@ -91,6 +98,11 @@ type OrderOption func(*sql.Selector)
 // ByID orders the results by the id field.
 func ByID(opts ...sql.OrderTermOption) OrderOption {
 	return sql.OrderByField(FieldID, opts...).ToFunc()
+}
+
+// ByCreatedAt orders the results by the created_at field.
+func ByCreatedAt(opts ...sql.OrderTermOption) OrderOption {
+	return sql.OrderByField(FieldCreatedAt, opts...).ToFunc()
 }
 
 // ByGitoidSha256 orders the results by the gitoid_sha256 field.

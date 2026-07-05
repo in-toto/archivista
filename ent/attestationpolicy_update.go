@@ -24,63 +24,63 @@ type AttestationPolicyUpdate struct {
 }
 
 // Where appends a list predicates to the AttestationPolicyUpdate builder.
-func (apu *AttestationPolicyUpdate) Where(ps ...predicate.AttestationPolicy) *AttestationPolicyUpdate {
-	apu.mutation.Where(ps...)
-	return apu
+func (_u *AttestationPolicyUpdate) Where(ps ...predicate.AttestationPolicy) *AttestationPolicyUpdate {
+	_u.mutation.Where(ps...)
+	return _u
 }
 
 // SetName sets the "name" field.
-func (apu *AttestationPolicyUpdate) SetName(s string) *AttestationPolicyUpdate {
-	apu.mutation.SetName(s)
-	return apu
+func (_u *AttestationPolicyUpdate) SetName(v string) *AttestationPolicyUpdate {
+	_u.mutation.SetName(v)
+	return _u
 }
 
 // SetNillableName sets the "name" field if the given value is not nil.
-func (apu *AttestationPolicyUpdate) SetNillableName(s *string) *AttestationPolicyUpdate {
-	if s != nil {
-		apu.SetName(*s)
+func (_u *AttestationPolicyUpdate) SetNillableName(v *string) *AttestationPolicyUpdate {
+	if v != nil {
+		_u.SetName(*v)
 	}
-	return apu
+	return _u
 }
 
 // SetStatementID sets the "statement" edge to the Statement entity by ID.
-func (apu *AttestationPolicyUpdate) SetStatementID(id uuid.UUID) *AttestationPolicyUpdate {
-	apu.mutation.SetStatementID(id)
-	return apu
+func (_u *AttestationPolicyUpdate) SetStatementID(id uuid.UUID) *AttestationPolicyUpdate {
+	_u.mutation.SetStatementID(id)
+	return _u
 }
 
 // SetNillableStatementID sets the "statement" edge to the Statement entity by ID if the given value is not nil.
-func (apu *AttestationPolicyUpdate) SetNillableStatementID(id *uuid.UUID) *AttestationPolicyUpdate {
+func (_u *AttestationPolicyUpdate) SetNillableStatementID(id *uuid.UUID) *AttestationPolicyUpdate {
 	if id != nil {
-		apu = apu.SetStatementID(*id)
+		_u = _u.SetStatementID(*id)
 	}
-	return apu
+	return _u
 }
 
 // SetStatement sets the "statement" edge to the Statement entity.
-func (apu *AttestationPolicyUpdate) SetStatement(s *Statement) *AttestationPolicyUpdate {
-	return apu.SetStatementID(s.ID)
+func (_u *AttestationPolicyUpdate) SetStatement(v *Statement) *AttestationPolicyUpdate {
+	return _u.SetStatementID(v.ID)
 }
 
 // Mutation returns the AttestationPolicyMutation object of the builder.
-func (apu *AttestationPolicyUpdate) Mutation() *AttestationPolicyMutation {
-	return apu.mutation
+func (_u *AttestationPolicyUpdate) Mutation() *AttestationPolicyMutation {
+	return _u.mutation
 }
 
 // ClearStatement clears the "statement" edge to the Statement entity.
-func (apu *AttestationPolicyUpdate) ClearStatement() *AttestationPolicyUpdate {
-	apu.mutation.ClearStatement()
-	return apu
+func (_u *AttestationPolicyUpdate) ClearStatement() *AttestationPolicyUpdate {
+	_u.mutation.ClearStatement()
+	return _u
 }
 
 // Save executes the query and returns the number of nodes affected by the update operation.
-func (apu *AttestationPolicyUpdate) Save(ctx context.Context) (int, error) {
-	return withHooks(ctx, apu.sqlSave, apu.mutation, apu.hooks)
+func (_u *AttestationPolicyUpdate) Save(ctx context.Context) (int, error) {
+	return withHooks(ctx, _u.sqlSave, _u.mutation, _u.hooks)
 }
 
 // SaveX is like Save, but panics if an error occurs.
-func (apu *AttestationPolicyUpdate) SaveX(ctx context.Context) int {
-	affected, err := apu.Save(ctx)
+func (_u *AttestationPolicyUpdate) SaveX(ctx context.Context) int {
+	affected, err := _u.Save(ctx)
 	if err != nil {
 		panic(err)
 	}
@@ -88,21 +88,21 @@ func (apu *AttestationPolicyUpdate) SaveX(ctx context.Context) int {
 }
 
 // Exec executes the query.
-func (apu *AttestationPolicyUpdate) Exec(ctx context.Context) error {
-	_, err := apu.Save(ctx)
+func (_u *AttestationPolicyUpdate) Exec(ctx context.Context) error {
+	_, err := _u.Save(ctx)
 	return err
 }
 
 // ExecX is like Exec, but panics if an error occurs.
-func (apu *AttestationPolicyUpdate) ExecX(ctx context.Context) {
-	if err := apu.Exec(ctx); err != nil {
+func (_u *AttestationPolicyUpdate) ExecX(ctx context.Context) {
+	if err := _u.Exec(ctx); err != nil {
 		panic(err)
 	}
 }
 
 // check runs all checks and user-defined validators on the builder.
-func (apu *AttestationPolicyUpdate) check() error {
-	if v, ok := apu.mutation.Name(); ok {
+func (_u *AttestationPolicyUpdate) check() error {
+	if v, ok := _u.mutation.Name(); ok {
 		if err := attestationpolicy.NameValidator(v); err != nil {
 			return &ValidationError{Name: "name", err: fmt.Errorf(`ent: validator failed for field "AttestationPolicy.name": %w`, err)}
 		}
@@ -110,22 +110,22 @@ func (apu *AttestationPolicyUpdate) check() error {
 	return nil
 }
 
-func (apu *AttestationPolicyUpdate) sqlSave(ctx context.Context) (n int, err error) {
-	if err := apu.check(); err != nil {
-		return n, err
+func (_u *AttestationPolicyUpdate) sqlSave(ctx context.Context) (_node int, err error) {
+	if err := _u.check(); err != nil {
+		return _node, err
 	}
 	_spec := sqlgraph.NewUpdateSpec(attestationpolicy.Table, attestationpolicy.Columns, sqlgraph.NewFieldSpec(attestationpolicy.FieldID, field.TypeUUID))
-	if ps := apu.mutation.predicates; len(ps) > 0 {
+	if ps := _u.mutation.predicates; len(ps) > 0 {
 		_spec.Predicate = func(selector *sql.Selector) {
 			for i := range ps {
 				ps[i](selector)
 			}
 		}
 	}
-	if value, ok := apu.mutation.Name(); ok {
+	if value, ok := _u.mutation.Name(); ok {
 		_spec.SetField(attestationpolicy.FieldName, field.TypeString, value)
 	}
-	if apu.mutation.StatementCleared() {
+	if _u.mutation.StatementCleared() {
 		edge := &sqlgraph.EdgeSpec{
 			Rel:     sqlgraph.O2O,
 			Inverse: true,
@@ -138,7 +138,7 @@ func (apu *AttestationPolicyUpdate) sqlSave(ctx context.Context) (n int, err err
 		}
 		_spec.Edges.Clear = append(_spec.Edges.Clear, edge)
 	}
-	if nodes := apu.mutation.StatementIDs(); len(nodes) > 0 {
+	if nodes := _u.mutation.StatementIDs(); len(nodes) > 0 {
 		edge := &sqlgraph.EdgeSpec{
 			Rel:     sqlgraph.O2O,
 			Inverse: true,
@@ -154,7 +154,7 @@ func (apu *AttestationPolicyUpdate) sqlSave(ctx context.Context) (n int, err err
 		}
 		_spec.Edges.Add = append(_spec.Edges.Add, edge)
 	}
-	if n, err = sqlgraph.UpdateNodes(ctx, apu.driver, _spec); err != nil {
+	if _node, err = sqlgraph.UpdateNodes(ctx, _u.driver, _spec); err != nil {
 		if _, ok := err.(*sqlgraph.NotFoundError); ok {
 			err = &NotFoundError{attestationpolicy.Label}
 		} else if sqlgraph.IsConstraintError(err) {
@@ -162,8 +162,8 @@ func (apu *AttestationPolicyUpdate) sqlSave(ctx context.Context) (n int, err err
 		}
 		return 0, err
 	}
-	apu.mutation.done = true
-	return n, nil
+	_u.mutation.done = true
+	return _node, nil
 }
 
 // AttestationPolicyUpdateOne is the builder for updating a single AttestationPolicy entity.
@@ -175,70 +175,70 @@ type AttestationPolicyUpdateOne struct {
 }
 
 // SetName sets the "name" field.
-func (apuo *AttestationPolicyUpdateOne) SetName(s string) *AttestationPolicyUpdateOne {
-	apuo.mutation.SetName(s)
-	return apuo
+func (_u *AttestationPolicyUpdateOne) SetName(v string) *AttestationPolicyUpdateOne {
+	_u.mutation.SetName(v)
+	return _u
 }
 
 // SetNillableName sets the "name" field if the given value is not nil.
-func (apuo *AttestationPolicyUpdateOne) SetNillableName(s *string) *AttestationPolicyUpdateOne {
-	if s != nil {
-		apuo.SetName(*s)
+func (_u *AttestationPolicyUpdateOne) SetNillableName(v *string) *AttestationPolicyUpdateOne {
+	if v != nil {
+		_u.SetName(*v)
 	}
-	return apuo
+	return _u
 }
 
 // SetStatementID sets the "statement" edge to the Statement entity by ID.
-func (apuo *AttestationPolicyUpdateOne) SetStatementID(id uuid.UUID) *AttestationPolicyUpdateOne {
-	apuo.mutation.SetStatementID(id)
-	return apuo
+func (_u *AttestationPolicyUpdateOne) SetStatementID(id uuid.UUID) *AttestationPolicyUpdateOne {
+	_u.mutation.SetStatementID(id)
+	return _u
 }
 
 // SetNillableStatementID sets the "statement" edge to the Statement entity by ID if the given value is not nil.
-func (apuo *AttestationPolicyUpdateOne) SetNillableStatementID(id *uuid.UUID) *AttestationPolicyUpdateOne {
+func (_u *AttestationPolicyUpdateOne) SetNillableStatementID(id *uuid.UUID) *AttestationPolicyUpdateOne {
 	if id != nil {
-		apuo = apuo.SetStatementID(*id)
+		_u = _u.SetStatementID(*id)
 	}
-	return apuo
+	return _u
 }
 
 // SetStatement sets the "statement" edge to the Statement entity.
-func (apuo *AttestationPolicyUpdateOne) SetStatement(s *Statement) *AttestationPolicyUpdateOne {
-	return apuo.SetStatementID(s.ID)
+func (_u *AttestationPolicyUpdateOne) SetStatement(v *Statement) *AttestationPolicyUpdateOne {
+	return _u.SetStatementID(v.ID)
 }
 
 // Mutation returns the AttestationPolicyMutation object of the builder.
-func (apuo *AttestationPolicyUpdateOne) Mutation() *AttestationPolicyMutation {
-	return apuo.mutation
+func (_u *AttestationPolicyUpdateOne) Mutation() *AttestationPolicyMutation {
+	return _u.mutation
 }
 
 // ClearStatement clears the "statement" edge to the Statement entity.
-func (apuo *AttestationPolicyUpdateOne) ClearStatement() *AttestationPolicyUpdateOne {
-	apuo.mutation.ClearStatement()
-	return apuo
+func (_u *AttestationPolicyUpdateOne) ClearStatement() *AttestationPolicyUpdateOne {
+	_u.mutation.ClearStatement()
+	return _u
 }
 
 // Where appends a list predicates to the AttestationPolicyUpdate builder.
-func (apuo *AttestationPolicyUpdateOne) Where(ps ...predicate.AttestationPolicy) *AttestationPolicyUpdateOne {
-	apuo.mutation.Where(ps...)
-	return apuo
+func (_u *AttestationPolicyUpdateOne) Where(ps ...predicate.AttestationPolicy) *AttestationPolicyUpdateOne {
+	_u.mutation.Where(ps...)
+	return _u
 }
 
 // Select allows selecting one or more fields (columns) of the returned entity.
 // The default is selecting all fields defined in the entity schema.
-func (apuo *AttestationPolicyUpdateOne) Select(field string, fields ...string) *AttestationPolicyUpdateOne {
-	apuo.fields = append([]string{field}, fields...)
-	return apuo
+func (_u *AttestationPolicyUpdateOne) Select(field string, fields ...string) *AttestationPolicyUpdateOne {
+	_u.fields = append([]string{field}, fields...)
+	return _u
 }
 
 // Save executes the query and returns the updated AttestationPolicy entity.
-func (apuo *AttestationPolicyUpdateOne) Save(ctx context.Context) (*AttestationPolicy, error) {
-	return withHooks(ctx, apuo.sqlSave, apuo.mutation, apuo.hooks)
+func (_u *AttestationPolicyUpdateOne) Save(ctx context.Context) (*AttestationPolicy, error) {
+	return withHooks(ctx, _u.sqlSave, _u.mutation, _u.hooks)
 }
 
 // SaveX is like Save, but panics if an error occurs.
-func (apuo *AttestationPolicyUpdateOne) SaveX(ctx context.Context) *AttestationPolicy {
-	node, err := apuo.Save(ctx)
+func (_u *AttestationPolicyUpdateOne) SaveX(ctx context.Context) *AttestationPolicy {
+	node, err := _u.Save(ctx)
 	if err != nil {
 		panic(err)
 	}
@@ -246,21 +246,21 @@ func (apuo *AttestationPolicyUpdateOne) SaveX(ctx context.Context) *AttestationP
 }
 
 // Exec executes the query on the entity.
-func (apuo *AttestationPolicyUpdateOne) Exec(ctx context.Context) error {
-	_, err := apuo.Save(ctx)
+func (_u *AttestationPolicyUpdateOne) Exec(ctx context.Context) error {
+	_, err := _u.Save(ctx)
 	return err
 }
 
 // ExecX is like Exec, but panics if an error occurs.
-func (apuo *AttestationPolicyUpdateOne) ExecX(ctx context.Context) {
-	if err := apuo.Exec(ctx); err != nil {
+func (_u *AttestationPolicyUpdateOne) ExecX(ctx context.Context) {
+	if err := _u.Exec(ctx); err != nil {
 		panic(err)
 	}
 }
 
 // check runs all checks and user-defined validators on the builder.
-func (apuo *AttestationPolicyUpdateOne) check() error {
-	if v, ok := apuo.mutation.Name(); ok {
+func (_u *AttestationPolicyUpdateOne) check() error {
+	if v, ok := _u.mutation.Name(); ok {
 		if err := attestationpolicy.NameValidator(v); err != nil {
 			return &ValidationError{Name: "name", err: fmt.Errorf(`ent: validator failed for field "AttestationPolicy.name": %w`, err)}
 		}
@@ -268,17 +268,17 @@ func (apuo *AttestationPolicyUpdateOne) check() error {
 	return nil
 }
 
-func (apuo *AttestationPolicyUpdateOne) sqlSave(ctx context.Context) (_node *AttestationPolicy, err error) {
-	if err := apuo.check(); err != nil {
+func (_u *AttestationPolicyUpdateOne) sqlSave(ctx context.Context) (_node *AttestationPolicy, err error) {
+	if err := _u.check(); err != nil {
 		return _node, err
 	}
 	_spec := sqlgraph.NewUpdateSpec(attestationpolicy.Table, attestationpolicy.Columns, sqlgraph.NewFieldSpec(attestationpolicy.FieldID, field.TypeUUID))
-	id, ok := apuo.mutation.ID()
+	id, ok := _u.mutation.ID()
 	if !ok {
 		return nil, &ValidationError{Name: "id", err: errors.New(`ent: missing "AttestationPolicy.id" for update`)}
 	}
 	_spec.Node.ID.Value = id
-	if fields := apuo.fields; len(fields) > 0 {
+	if fields := _u.fields; len(fields) > 0 {
 		_spec.Node.Columns = make([]string, 0, len(fields))
 		_spec.Node.Columns = append(_spec.Node.Columns, attestationpolicy.FieldID)
 		for _, f := range fields {
@@ -290,17 +290,17 @@ func (apuo *AttestationPolicyUpdateOne) sqlSave(ctx context.Context) (_node *Att
 			}
 		}
 	}
-	if ps := apuo.mutation.predicates; len(ps) > 0 {
+	if ps := _u.mutation.predicates; len(ps) > 0 {
 		_spec.Predicate = func(selector *sql.Selector) {
 			for i := range ps {
 				ps[i](selector)
 			}
 		}
 	}
-	if value, ok := apuo.mutation.Name(); ok {
+	if value, ok := _u.mutation.Name(); ok {
 		_spec.SetField(attestationpolicy.FieldName, field.TypeString, value)
 	}
-	if apuo.mutation.StatementCleared() {
+	if _u.mutation.StatementCleared() {
 		edge := &sqlgraph.EdgeSpec{
 			Rel:     sqlgraph.O2O,
 			Inverse: true,
@@ -313,7 +313,7 @@ func (apuo *AttestationPolicyUpdateOne) sqlSave(ctx context.Context) (_node *Att
 		}
 		_spec.Edges.Clear = append(_spec.Edges.Clear, edge)
 	}
-	if nodes := apuo.mutation.StatementIDs(); len(nodes) > 0 {
+	if nodes := _u.mutation.StatementIDs(); len(nodes) > 0 {
 		edge := &sqlgraph.EdgeSpec{
 			Rel:     sqlgraph.O2O,
 			Inverse: true,
@@ -329,10 +329,10 @@ func (apuo *AttestationPolicyUpdateOne) sqlSave(ctx context.Context) (_node *Att
 		}
 		_spec.Edges.Add = append(_spec.Edges.Add, edge)
 	}
-	_node = &AttestationPolicy{config: apuo.config}
+	_node = &AttestationPolicy{config: _u.config}
 	_spec.Assign = _node.assignValues
 	_spec.ScanValues = _node.scanValues
-	if err = sqlgraph.UpdateNode(ctx, apuo.driver, _spec); err != nil {
+	if err = sqlgraph.UpdateNode(ctx, _u.driver, _spec); err != nil {
 		if _, ok := err.(*sqlgraph.NotFoundError); ok {
 			err = &NotFoundError{attestationpolicy.Label}
 		} else if sqlgraph.IsConstraintError(err) {
@@ -340,6 +340,6 @@ func (apuo *AttestationPolicyUpdateOne) sqlSave(ctx context.Context) (_node *Att
 		}
 		return nil, err
 	}
-	apuo.mutation.done = true
+	_u.mutation.done = true
 	return _node, nil
 }

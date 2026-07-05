@@ -31,10 +31,15 @@ type Config struct {
 	LogLevel         string   `default:"INFO" desc:"Log level" split_words:"true"`
 	CORSAllowOrigins []string `default:"" desc:"Comma separated list of origins to allow CORS requests from" split_words:"true"`
 
+	EnableTLS bool   `default:"FALSE" desc:"Enables TLS on the Archivista server" split_words:"true"`
+	TLSCert   string `default:"" desc:"Path to the file containing the TLS Certificate" split_words:"true"`
+	TLSKey    string `default:"" desc:"Path to the file containing the TLS Key" split_words:"true"`
+
 	EnableSPIFFE          bool   `default:"TRUE" desc:"*** Enable SPIFFE support" split_words:"true"`
 	SPIFFEAddress         string `default:"unix:///tmp/spire-agent/public/api.sock" desc:"SPIFFE server address" split_words:"true"`
 	SPIFFETrustedServerId string `default:"" desc:"Trusted SPIFFE server ID; defaults to any" split_words:"true"`
 
+	EnableSQLStore                bool          `default:"TRUE" desc:"*** Enable SQL Metadata store. If disabled, GraphQL will also be disabled ***" split_words:"true"`
 	SQLStoreConnectionString      string        `default:"root:example@tcp(db)/testify" desc:"SQL store connection string" split_words:"true"`
 	SQLStoreBackend               string        `default:"MYSQL" desc:"SQL backend to use. Options are MYSQL, PSQL" split_words:"true"`
 	SQLStoreMaxIdleConnections    int           `default:"10" desc:"Maximum number of connections in the idle connection pool" split_words:"true"`
@@ -51,11 +56,19 @@ type Config struct {
 	BlobStoreUseTLS            bool   `default:"TRUE" desc:"Use TLS for BLOB storage backend. Only valid when using BLOB storage backend." split_words:"true"`
 	BlobStoreBucketName        string `default:"" desc:"Bucket to use for storage.  Only valid when using BLOB storage backend." split_words:"true"`
 
-	EnableGraphql          bool `default:"TRUE" desc:"*** Enable GraphQL Endpoint" split_words:"true"`
+	EnableGraphql          bool `default:"TRUE" desc:"*** Enable GraphQL Endpoint. If GraphQL is disabled, Archivista will be unable to be used by Witness to verify policies" split_words:"true"`
 	GraphqlWebClientEnable bool `default:"TRUE" desc:"Enable GraphiQL, the GraphQL web client" split_words:"true"`
 
 	EnableArtifactStore bool   `default:"FALSE" desc:"*** Enable Artifact Store Endpoints" split_words:"true"`
 	ArtifactStoreConfig string `default:"/tmp/artifacts/config.yaml" desc:"Location of the config describing available artifacts" split_words:"true"`
+
+	Publisher                  []string `default:"" desc:"Publisher to use. Options are DAPR, RSTUF or empty string for disabled." split_words:"true"`
+	PublisherDaprHost          string   `default:"http://127.0.0.1" desc:"Host for Dapr" split_words:"true"`
+	PublisherDaprPort          string   `default:"3500" desc:"Port for Dapr" split_words:"true"`
+	PublisherDaprURL           string   `default:"" desc:"URL for Dapr" split_words:"true"`
+	PublisherDaprComponentName string   `default:"archivista" desc:"Dapr pubsub component name" split_words:"true"`
+	PublisherDaprTopic         string   `default:"attestations" desc:"Dapr pubsub topic" split_words:"true"`
+	PublisherRstufHost         string   `default:"http://127.0.0.1" desc:"Host for RSTUF" split_words:"true"`
 }
 
 // Process reads config from env
@@ -78,7 +91,7 @@ func (c *Config) Process() error {
 		}
 	}
 
-	//check if both are being used and error if so
+	// check if both are being used and error if so
 	if usingDeprecatedEnv && usingNewEnv {
 		err := errors.New("both deprecated and new environment variables are being used. Please use only the new environment variables")
 		return err

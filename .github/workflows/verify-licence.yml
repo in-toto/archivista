@@ -27,17 +27,23 @@ jobs:
       runs-on: ubuntu-latest
       steps:
         - name: Harden Runner
-          uses: step-security/harden-runner@5c7944e73c4c2a096b17a9cb74d65b6c2bbafbde # v2.9.1
+          uses: step-security/harden-runner@9af89fc71515a100421586dfdb3dc9c984fbf411 # v2.19.4
           with:
             egress-policy: audit
 
-        - uses: actions/checkout@692973e3d937129bcbf40652eb9f2f61becf3332 # v4.1.7
-        - uses: actions/setup-go@0a12ed9d6a96ab950c8f026ed9f722fe0da7ef32 # v5.0.2
+        - uses: actions/checkout@9c091bb21b7c1c1d1991bb908d89e4e9dddfe3e0 # v7.0.0
+        - uses: actions/setup-go@924ae3a1cded613372ab5595356fb5720e22ba16 # v6.5.0
           with:
-            go-version: '1.19.x'
+            go-version-file: "go.mod"
         - name: Install addlicense
           run: go install github.com/google/addlicense@v1.1.1
         - name: Check license headers
           run: |
             set -e
-            addlicense --check -l apache -c 'The Archivista Contributors' --ignore "generated.go" --ignore "ent.resolvers.go" --ignore "ent/migrate/migrations/**" --ignore "docs/**" --ignore "chart/**/*.yaml" -v ./
+            addlicense --check -l apache -c 'The Archivista Contributors' \
+              --ignore "generated.go" \
+              --ignore "ent.resolvers.go" \
+              --ignore "ent/migrate/migrations/**" \
+              --ignore "docs/**" \
+              --ignore "internal/credentialrefresh/**" \
+              -v ./

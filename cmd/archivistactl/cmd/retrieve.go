@@ -50,7 +50,7 @@ var (
 				out = file
 			}
 
-			return api.DownloadWithWriter(cmd.Context(), archivistaUrl, args[0], out)
+			return api.DownloadWithWriter(cmd.Context(), archivistaUrl, args[0], out, requestOptions()...)
 		},
 	}
 
@@ -60,7 +60,7 @@ var (
 		SilenceUsage: true,
 		Args:         cobra.ExactArgs(1),
 		RunE: func(cmd *cobra.Command, args []string) error {
-			results, err := api.GraphQlQuery[retrieveSubjectResults](cmd.Context(), archivistaUrl, retrieveSubjectsQuery, retrieveSubjectVars{Gitoid: args[0]})
+			results, err := api.GraphQlQuery[retrieveSubjectResults](cmd.Context(), archivistaUrl, retrieveSubjectsQuery, retrieveSubjectVars{Gitoid: args[0]}, requestOptions()...)
 			if err != nil {
 				return err
 			}

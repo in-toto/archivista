@@ -92,6 +92,7 @@ var (
 	// DssesColumns holds the columns for the "dsses" table.
 	DssesColumns = []*schema.Column{
 		{Name: "id", Type: field.TypeUUID, Unique: true},
+		{Name: "created_at", Type: field.TypeTime, Nullable: true},
 		{Name: "gitoid_sha256", Type: field.TypeString, Unique: true},
 		{Name: "payload_type", Type: field.TypeString},
 		{Name: "dsse_statement", Type: field.TypeUUID, Nullable: true},
@@ -104,7 +105,7 @@ var (
 		ForeignKeys: []*schema.ForeignKey{
 			{
 				Symbol:     "dsses_statements_statement",
-				Columns:    []*schema.Column{DssesColumns[3]},
+				Columns:    []*schema.Column{DssesColumns[4]},
 				RefColumns: []*schema.Column{StatementsColumns[0]},
 				OnDelete:   schema.SetNull,
 			},
@@ -187,6 +188,7 @@ var (
 	// SubjectsColumns holds the columns for the "subjects" table.
 	SubjectsColumns = []*schema.Column{
 		{Name: "id", Type: field.TypeUUID, Unique: true},
+		{Name: "created_at", Type: field.TypeTime, Nullable: true},
 		{Name: "name", Type: field.TypeString},
 		{Name: "statement_subjects", Type: field.TypeUUID, Nullable: true},
 	}
@@ -198,7 +200,7 @@ var (
 		ForeignKeys: []*schema.ForeignKey{
 			{
 				Symbol:     "subjects_statements_subjects",
-				Columns:    []*schema.Column{SubjectsColumns[2]},
+				Columns:    []*schema.Column{SubjectsColumns[3]},
 				RefColumns: []*schema.Column{StatementsColumns[0]},
 				OnDelete:   schema.SetNull,
 			},
@@ -207,7 +209,7 @@ var (
 			{
 				Name:    "subject_name",
 				Unique:  false,
-				Columns: []*schema.Column{SubjectsColumns[1]},
+				Columns: []*schema.Column{SubjectsColumns[2]},
 			},
 		},
 	}

@@ -12,17 +12,18 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-FROM golang:1.23.0-alpine@sha256:d0b31558e6b3e4cc59f6011d79905835108c919143ebecc58f35965bf79948f4 AS build
+FROM golang:1.26.4-alpine@sha256:3ad57304ad93bbec8548a0437ad9e06a455660655d9af011d58b993f6f615648 AS build
 WORKDIR /src
 RUN apk update && apk add --no-cache file git curl
 RUN curl -sSf https://atlasgo.sh | sh
-ENV GOMODCACHE /root/.cache/gocache
+ENV GOMODCACHE=/root/.cache/gocache
 RUN --mount=target=. --mount=target=/root/.cache,type=cache \
-    CGO_ENABLED=0 go build -o /out/archivista -ldflags '-s -d -w' ./cmd/archivista; \
+    CGO_ENABLED=0 go build -o /out/ -ldflags '-s -d -w' ./cmd/...; \
     file /out/archivista | grep "statically linked"
 
-FROM alpine:3.20.2@sha256:0a4eaa0eecf5f8c050e5bba433f58c052be7587ee8af3e8b3910ef9ab5fbe9f5
+FROM alpine:3.24.1@sha256:28bd5fe8b56d1bd048e5babf5b10710ebe0bae67db86916198a6eec434943f8b
 COPY --from=build /out/archivista /bin/archivista
+COPY --from=build /out/archivistactl /bin/archivistactl
 COPY --from=build /usr/local/bin/atlas /bin/atlas
 ADD entrypoint.sh /bin/entrypoint.sh
 ADD ent/migrate/migrations /archivista/migrations

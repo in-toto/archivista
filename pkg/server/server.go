@@ -29,6 +29,7 @@ import (
 
 	"entgo.io/contrib/entgql"
 	"github.com/99designs/gqlgen/graphql/handler"
+	"github.com/99designs/gqlgen/graphql/handler/transport"
 	"github.com/99designs/gqlgen/graphql/playground"
 	"github.com/edwarnicke/gitoid"
 	"github.com/gorilla/mux"
@@ -38,16 +39,18 @@ import (
 	"github.com/in-toto/archivista/pkg/api"
 	"github.com/in-toto/archivista/pkg/artifactstore"
 	"github.com/in-toto/archivista/pkg/config"
+	"github.com/in-toto/archivista/pkg/publisherstore"
 	"github.com/sirupsen/logrus"
 	httpSwagger "github.com/swaggo/http-swagger/v2"
 )
 
 type Server struct {
-	metadataStore Storer
-	objectStore   StorerGetter
-	artifactStore artifactstore.Store
-	router        *mux.Router
-	sqlClient     *ent.Client
+	metadataStore  Storer
+	objectStore    StorerGetter
+	artifactStore  artifactstore.Store
+	router         *mux.Router
+	sqlClient      *ent.Client
+	publisherStore []publisherstore.Publisher
 }
 
 type Storer interface {
@@ -89,6 +92,12 @@ func WithArtifactStore(wds artifactstore.Store) Option {
 	}
 }
 
+func WithPublishers(pub []publisherstore.Publisher) Option {
+	return func(s *Server) {
+		s.publisherStore = pub
+	}
+}
+
 func New(cfg *config.Config, opts ...Option) (Server, error) {
 	r := mux.NewRouter()
 	s := Server{
@@ -102,14 +111,14 @@ func New(cfg *config.Config, opts ...Option) (Server, error) {
 	// TODO: remove from future version (v0.6.0) endpoint with version
 	r.HandleFunc("/download/{gitoid}", s.DownloadHandler)
 	r.HandleFunc("/upload", s.UploadHandler)
-	if cfg.EnableGraphql {
+	if cfg.EnableSQLStore && cfg.EnableGraphql {
 		r.Handle("/query", s.Query(s.sqlClient))
 		r.Handle("/v1/query", s.Query(s.sqlClient))
 	}
 
 	r.HandleFunc("/v1/download/{gitoid}", s.DownloadHandler)
 	r.HandleFunc("/v1/upload", s.UploadHandler)
-	if cfg.GraphqlWebClientEnable {
+	if cfg.EnableSQLStore && cfg.EnableGraphql && cfg.GraphqlWebClientEnable {
 		r.Handle("/",
 			playground.Handler("Archivista", "/v1/query"),
 		)
@@ -163,9 +172,20 @@ func (s *Server) Upload(ctx context.Context, r io.Reader) (api.UploadResponse, e
 		}
 	}
 
-	if err := s.metadataStore.Store(ctx, gid.String(), payload); err != nil {
-		logrus.Errorf("received error from metadata store: %+v", err)
-		return api.UploadResponse{}, err
+	if s.metadataStore != nil {
+		if err := s.metadataStore.Store(ctx, gid.String(), payload); err != nil {
+			logrus.Errorf("received error from metadata store: %+v", err)
+			return api.UploadResponse{}, err
+		}
+	}
+
+	if s.publisherStore != nil {
+		for _, publisher := range s.publisherStore {
+			// TODO: Make publish asynchrouns and use goroutine
+			if err := publisher.Publish(ctx, gid.String(), payload); err != nil {
+				logrus.Errorf("received error from publisher: %+v", err)
+			}
+		}
 	}
 
 	return api.UploadResponse{Gitoid: gid.String()}, nil
@@ -272,7 +292,9 @@ func (s *Server) DownloadHandler(w http.ResponseWriter, r *http.Request) {
 // @Tags graphql
 // @Router /v1/query [post]
 func (s *Server) Query(sqlclient *ent.Client) *handler.Server {
-	srv := handler.NewDefaultServer(archivista.NewSchema(sqlclient))
+	srv := handler.New(archivista.NewSchema(sqlclient))
+	srv.AddTransport(transport.GET{})
+	srv.AddTransport(transport.POST{})
 	srv.Use(entgql.Transactioner{TxOpener: sqlclient})
 	return srv
 }
@@ -304,7 +326,6 @@ func (s *Server) AllArtifactsHandler(w http.ResponseWriter, r *http.Request) {
 	}
 
 	w.Header().Set("Content-Type", "application/json")
-
 }
 
 // @Summary List Artifact Versions

@@ -1,4 +1,4 @@
-// Copyright 2023 The Witness Contributors
+// Copyright 2023-2024 The Archivista Contributors
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -26,9 +26,44 @@ import (
 	"github.com/in-toto/go-witness/dsse"
 )
 
-func Download(ctx context.Context, baseUrl string, gitoid string) (dsse.Envelope, error) {
+func DownloadReadCloser(ctx context.Context, baseURL string, gitoid string, requestOptions ...RequestOption) (io.ReadCloser, error) {
+	return DownloadReadCloserWithHTTPClient(ctx, &http.Client{}, baseURL, gitoid, requestOptions...)
+}
+
+func DownloadReadCloserWithHTTPClient(ctx context.Context, client *http.Client, baseURL string, gitoid string, requestOptions ...RequestOption) (io.ReadCloser, error) {
+	downloadURL, err := url.JoinPath(baseURL, "download", gitoid)
+	if err != nil {
+		return nil, err
+	}
+
+	req, err := http.NewRequestWithContext(ctx, http.MethodGet, downloadURL, nil)
+	if err != nil {
+		return nil, err
+	}
+
+	req = applyRequestOptions(req, requestOptions...)
+	req.Header.Set("Content-Type", "application/json")
+	resp, err := client.Do(req)
+	if err != nil {
+		return nil, err
+	}
+
+	if resp.StatusCode != http.StatusOK {
+		// NOTE: attempt to read body on error and
+		// only close if an error occurs
+		defer resp.Body.Close()
+		errMsg, err := io.ReadAll(resp.Body)
+		if err != nil {
+			return nil, err
+		}
+		return nil, errors.New(string(errMsg))
+	}
+	return resp.Body, nil
+}
+
+func Download(ctx context.Context, baseURL string, gitoid string, requestOptions ...RequestOption) (dsse.Envelope, error) {
 	buf := &bytes.Buffer{}
-	if err := DownloadWithWriter(ctx, baseUrl, gitoid, buf); err != nil {
+	if err := DownloadWithWriter(ctx, baseURL, gitoid, buf, requestOptions...); err != nil {
 		return dsse.Envelope{}, err
 	}
 
@@ -41,17 +76,22 @@ func Download(ctx context.Context, baseUrl string, gitoid string) (dsse.Envelope
 	return env, nil
 }
 
-func DownloadWithWriter(ctx context.Context, baseUrl, gitoid string, dst io.Writer) error {
-	downloadUrl, err := url.JoinPath(baseUrl, "download", gitoid)
+func DownloadWithWriter(ctx context.Context, baseURL string, gitoid string, dst io.Writer, requestOptions ...RequestOption) error {
+	return DownloadWithWriterWithHTTPClient(ctx, &http.Client{}, baseURL, gitoid, dst, requestOptions...)
+}
+
+func DownloadWithWriterWithHTTPClient(ctx context.Context, client *http.Client, baseURL string, gitoid string, dst io.Writer, requestOptions ...RequestOption) error {
+	downloadUrl, err := url.JoinPath(baseURL, "download", gitoid)
 	if err != nil {
 		return err
 	}
 
-	req, err := http.NewRequestWithContext(ctx, "GET", downloadUrl, nil)
+	req, err := http.NewRequestWithContext(ctx, http.MethodGet, downloadUrl, nil)
 	if err != nil {
 		return err
 	}
 
+	req = applyRequestOptions(req, requestOptions...)
 	req.Header.Set("Content-Type", "application/json")
 	hc := &http.Client{}
 	resp, err := hc.Do(req)

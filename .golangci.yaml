@@ -12,14 +12,31 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-run:
-  timeout: 6m
+version: "2"
 linters:
   enable:
     - gosec
+  exclusions:
+    generated: lax
+    presets:
+      - comments
+      - common-false-positives
+      - legacy
+      - std-error-handling
+    rules:
+      - linters:
+          - gosec
+        path: _test.go
+    paths:
+      - third_party$
+      - builtin$
+      - examples$
 issues:
   max-same-issues: 50
-  exclude-rules:
-    - path: _test.go
-      linters:
-        - gosec
+formatters:
+  exclusions:
+    generated: lax
+    paths:
+      - third_party$
+      - builtin$
+      - examples$

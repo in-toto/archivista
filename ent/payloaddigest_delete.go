@@ -20,56 +20,56 @@ type PayloadDigestDelete struct {
 }
 
 // Where appends a list predicates to the PayloadDigestDelete builder.
-func (pdd *PayloadDigestDelete) Where(ps ...predicate.PayloadDigest) *PayloadDigestDelete {
-	pdd.mutation.Where(ps...)
-	return pdd
+func (_d *PayloadDigestDelete) Where(ps ...predicate.PayloadDigest) *PayloadDigestDelete {
+	_d.mutation.Where(ps...)
+	return _d
 }
 
 // Exec executes the deletion query and returns how many vertices were deleted.
-func (pdd *PayloadDigestDelete) Exec(ctx context.Context) (int, error) {
-	return withHooks(ctx, pdd.sqlExec, pdd.mutation, pdd.hooks)
+func (_d *PayloadDigestDelete) Exec(ctx context.Context) (int, error) {
+	return withHooks(ctx, _d.sqlExec, _d.mutation, _d.hooks)
 }
 
 // ExecX is like Exec, but panics if an error occurs.
-func (pdd *PayloadDigestDelete) ExecX(ctx context.Context) int {
-	n, err := pdd.Exec(ctx)
+func (_d *PayloadDigestDelete) ExecX(ctx context.Context) int {
+	n, err := _d.Exec(ctx)
 	if err != nil {
 		panic(err)
 	}
 	return n
 }
 
-func (pdd *PayloadDigestDelete) sqlExec(ctx context.Context) (int, error) {
+func (_d *PayloadDigestDelete) sqlExec(ctx context.Context) (int, error) {
 	_spec := sqlgraph.NewDeleteSpec(payloaddigest.Table, sqlgraph.NewFieldSpec(payloaddigest.FieldID, field.TypeUUID))
-	if ps := pdd.mutation.predicates; len(ps) > 0 {
+	if ps := _d.mutation.predicates; len(ps) > 0 {
 		_spec.Predicate = func(selector *sql.Selector) {
 			for i := range ps {
 				ps[i](selector)
 			}
 		}
 	}
-	affected, err := sqlgraph.DeleteNodes(ctx, pdd.driver, _spec)
+	affected, err := sqlgraph.DeleteNodes(ctx, _d.driver, _spec)
 	if err != nil && sqlgraph.IsConstraintError(err) {
 		err = &ConstraintError{msg: err.Error(), wrap: err}
 	}
-	pdd.mutation.done = true
+	_d.mutation.done = true
 	return affected, err
 }
 
 // PayloadDigestDeleteOne is the builder for deleting a single PayloadDigest entity.
 type PayloadDigestDeleteOne struct {
-	pdd *PayloadDigestDelete
+	_d *PayloadDigestDelete
 }
 
 // Where appends a list predicates to the PayloadDigestDelete builder.
-func (pddo *PayloadDigestDeleteOne) Where(ps ...predicate.PayloadDigest) *PayloadDigestDeleteOne {
-	pddo.pdd.mutation.Where(ps...)
-	return pddo
+func (_d *PayloadDigestDeleteOne) Where(ps ...predicate.PayloadDigest) *PayloadDigestDeleteOne {
+	_d._d.mutation.Where(ps...)
+	return _d
 }
 
 // Exec executes the deletion query.
-func (pddo *PayloadDigestDeleteOne) Exec(ctx context.Context) error {
-	n, err := pddo.pdd.Exec(ctx)
+func (_d *PayloadDigestDeleteOne) Exec(ctx context.Context) error {
+	n, err := _d._d.Exec(ctx)
 	switch {
 	case err != nil:
 		return err
@@ -81,8 +81,8 @@ func (pddo *PayloadDigestDeleteOne) Exec(ctx context.Context) error {
 }
 
 // ExecX is like Exec, but panics if an error occurs.
-func (pddo *PayloadDigestDeleteOne) ExecX(ctx context.Context) {
-	if err := pddo.Exec(ctx); err != nil {
+func (_d *PayloadDigestDeleteOne) ExecX(ctx context.Context) {
+	if err := _d.Exec(ctx); err != nil {
 		panic(err)
 	}
 }

@@ -71,7 +71,7 @@ func (*PayloadDigest) scanValues(columns []string) ([]any, error) {
 
 // assignValues assigns the values that were returned from sql.Rows (after scanning)
 // to the PayloadDigest fields.
-func (pd *PayloadDigest) assignValues(columns []string, values []any) error {
+func (_m *PayloadDigest) assignValues(columns []string, values []any) error {
 	if m, n := len(values), len(columns); m < n {
 		return fmt.Errorf("mismatch number of scan values: %d != %d", m, n)
 	}
@@ -81,29 +81,29 @@ func (pd *PayloadDigest) assignValues(columns []string, values []any) error {
 			if value, ok := values[i].(*uuid.UUID); !ok {
 				return fmt.Errorf("unexpected type %T for field id", values[i])
 			} else if value != nil {
-				pd.ID = *value
+				_m.ID = *value
 			}
 		case payloaddigest.FieldAlgorithm:
 			if value, ok := values[i].(*sql.NullString); !ok {
 				return fmt.Errorf("unexpected type %T for field algorithm", values[i])
 			} else if value.Valid {
-				pd.Algorithm = value.String
+				_m.Algorithm = value.String
 			}
 		case payloaddigest.FieldValue:
 			if value, ok := values[i].(*sql.NullString); !ok {
 				return fmt.Errorf("unexpected type %T for field value", values[i])
 			} else if value.Valid {
-				pd.Value = value.String
+				_m.Value = value.String
 			}
 		case payloaddigest.ForeignKeys[0]:
 			if value, ok := values[i].(*sql.NullScanner); !ok {
 				return fmt.Errorf("unexpected type %T for field dsse_payload_digests", values[i])
 			} else if value.Valid {
-				pd.dsse_payload_digests = new(uuid.UUID)
-				*pd.dsse_payload_digests = *value.S.(*uuid.UUID)
+				_m.dsse_payload_digests = new(uuid.UUID)
+				*_m.dsse_payload_digests = *value.S.(*uuid.UUID)
 			}
 		default:
-			pd.selectValues.Set(columns[i], values[i])
+			_m.selectValues.Set(columns[i], values[i])
 		}
 	}
 	return nil
@@ -111,43 +111,43 @@ func (pd *PayloadDigest) assignValues(columns []string, values []any) error {
 
 // GetValue returns the ent.Value that was dynamically selected and assigned to the PayloadDigest.
 // This includes values selected through modifiers, order, etc.
-func (pd *PayloadDigest) GetValue(name string) (ent.Value, error) {
-	return pd.selectValues.Get(name)
+func (_m *PayloadDigest) GetValue(name string) (ent.Value, error) {
+	return _m.selectValues.Get(name)
 }
 
 // QueryDsse queries the "dsse" edge of the PayloadDigest entity.
-func (pd *PayloadDigest) QueryDsse() *DsseQuery {
-	return NewPayloadDigestClient(pd.config).QueryDsse(pd)
+func (_m *PayloadDigest) QueryDsse() *DsseQuery {
+	return NewPayloadDigestClient(_m.config).QueryDsse(_m)
 }
 
 // Update returns a builder for updating this PayloadDigest.
 // Note that you need to call PayloadDigest.Unwrap() before calling this method if this PayloadDigest
 // was returned from a transaction, and the transaction was committed or rolled back.
-func (pd *PayloadDigest) Update() *PayloadDigestUpdateOne {
-	return NewPayloadDigestClient(pd.config).UpdateOne(pd)
+func (_m *PayloadDigest) Update() *PayloadDigestUpdateOne {
+	return NewPayloadDigestClient(_m.config).UpdateOne(_m)
 }
 
 // Unwrap unwraps the PayloadDigest entity that was returned from a transaction after it was closed,
 // so that all future queries will be executed through the driver which created the transaction.
-func (pd *PayloadDigest) Unwrap() *PayloadDigest {
-	_tx, ok := pd.config.driver.(*txDriver)
+func (_m *PayloadDigest) Unwrap() *PayloadDigest {
+	_tx, ok := _m.config.driver.(*txDriver)
 	if !ok {
 		panic("ent: PayloadDigest is not a transactional entity")
 	}
-	pd.config.driver = _tx.drv
-	return pd
+	_m.config.driver = _tx.drv
+	return _m
 }
 
 // String implements the fmt.Stringer.
-func (pd *PayloadDigest) String() string {
+func (_m *PayloadDigest) String() string {
 	var builder strings.Builder
 	builder.WriteString("PayloadDigest(")
-	builder.WriteString(fmt.Sprintf("id=%v, ", pd.ID))
+	builder.WriteString(fmt.Sprintf("id=%v, ", _m.ID))
 	builder.WriteString("algorithm=")
-	builder.WriteString(pd.Algorithm)
+	builder.WriteString(_m.Algorithm)
 	builder.WriteString(", ")
 	builder.WriteString("value=")
-	builder.WriteString(pd.Value)
+	builder.WriteString(_m.Value)
 	builder.WriteByte(')')
 	return builder.String()
 }

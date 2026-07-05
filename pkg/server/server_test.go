@@ -117,6 +117,7 @@ func (ut *UTServerSuite) Test_New() {
 	cfg := new(config.Config)
 	cfg.EnableGraphql = true
 	cfg.GraphqlWebClientEnable = true
+	cfg.EnableSQLStore = true
 	var err error
 	ut.testServer, err = New(cfg, WithMetadataStore(ut.mockedStorer), WithObjectStore(ut.mockedStorerGetter))
 	ut.NoError(err)
@@ -133,7 +134,6 @@ func (ut *UTServerSuite) Test_New() {
 		allPaths = append(allPaths, pathTemplate)
 		return nil
 	})
-
 	if err != nil {
 		ut.FailNow(err.Error())
 	}
@@ -151,6 +151,7 @@ func (ut *UTServerSuite) Test_New_EnableGraphQL_False() {
 	cfg := new(config.Config)
 	cfg.EnableGraphql = false
 	cfg.GraphqlWebClientEnable = true
+	cfg.EnableSQLStore = true
 	var err error
 	ut.testServer, err = New(cfg, WithMetadataStore(ut.mockedStorer), WithObjectStore(ut.mockedStorerGetter))
 	ut.NoError(err)
@@ -167,7 +168,6 @@ func (ut *UTServerSuite) Test_New_EnableGraphQL_False() {
 		allPaths = append(allPaths, pathTemplate)
 		return nil
 	})
-
 	if err != nil {
 		ut.FailNow(err.Error())
 	}
@@ -177,7 +177,6 @@ func (ut *UTServerSuite) Test_New_EnableGraphQL_False() {
 	ut.Contains(allPaths, "/v1/download/{gitoid}")
 	ut.Contains(allPaths, "/v1/upload")
 	ut.NotContains(allPaths, "/v1/query")
-	ut.Contains(allPaths, "/")
 	ut.Contains(allPaths, "/swagger/")
 }
 
@@ -185,6 +184,7 @@ func (ut *UTServerSuite) Test_New_GraphqlWebClientEnable_False() {
 	cfg := new(config.Config)
 	cfg.EnableGraphql = true
 	cfg.GraphqlWebClientEnable = false
+	cfg.EnableSQLStore = true
 	var err error
 	ut.testServer, err = New(cfg, WithMetadataStore(ut.mockedStorer), WithObjectStore(ut.mockedStorerGetter))
 	ut.NoError(err)
@@ -201,7 +201,6 @@ func (ut *UTServerSuite) Test_New_GraphqlWebClientEnable_False() {
 		allPaths = append(allPaths, pathTemplate)
 		return nil
 	})
-
 	if err != nil {
 		ut.FailNow(err.Error())
 	}
@@ -264,7 +263,6 @@ func (ut *UTServerSuite) Test_Upload_FailedMetadatStprage() {
 }
 
 func (ut *UTServerSuite) Test_UploadHandler() {
-
 	w := httptest.NewRecorder()
 	requestBody := []byte("fakePayload")
 	request := httptest.NewRequest(http.MethodPost, "/v1/upload", bytes.NewBuffer(requestBody))
@@ -277,7 +275,6 @@ func (ut *UTServerSuite) Test_UploadHandler() {
 }
 
 func (ut *UTServerSuite) Test_UploadHandler_WrongMethod() {
-
 	w := httptest.NewRecorder()
 	requestBody := []byte("fakePayload")
 	request := httptest.NewRequest(http.MethodGet, "/upload", bytes.NewBuffer(requestBody))
@@ -291,7 +288,6 @@ func (ut *UTServerSuite) Test_UploadHandler_WrongMethod() {
 }
 
 func (ut *UTServerSuite) Test_UploadHandler_FailureUpload() {
-
 	w := httptest.NewRecorder()
 	requestBody := []byte("fakePayload")
 	request := httptest.NewRequest(http.MethodPost, "/upload", bytes.NewBuffer(requestBody))
