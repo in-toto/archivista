@@ -63,7 +63,7 @@ Digests are expected to be in the form algorithm:digest, for instance: sha256:45
 			if err != nil {
 				return fmt.Errorf("failed to marshal results to JSON: %w", err)
 			}
-			cmd.Println(string(jsonData))
+			fmt.Fprintln(cmd.OutOrStdout(), string(jsonData))
 			return nil
 		}
 
