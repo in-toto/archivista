@@ -44,6 +44,10 @@ Digests are expected to be in the form algorithm:digest, for instance: sha256:45
 		return nil
 	},
 	RunE: func(cmd *cobra.Command, args []string) error {
+		if format != "table" && format != "json" {
+			return fmt.Errorf("unsupported format %q: supported formats are table, json", format)
+		}
+
 		algo, digest, err := validateDigestString(args[0])
 		if err != nil {
 			return err
@@ -59,7 +63,7 @@ Digests are expected to be in the form algorithm:digest, for instance: sha256:45
 			if err != nil {
 				return fmt.Errorf("failed to marshal results to JSON: %w", err)
 			}
-			fmt.Println(string(jsonData))
+			cmd.Println(string(jsonData))
 			return nil
 		}
 
