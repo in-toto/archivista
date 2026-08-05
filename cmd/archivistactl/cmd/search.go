@@ -15,7 +15,9 @@
 package cmd
 
 import (
+	"encoding/json"
 	"errors"
+	"fmt"
 	"strings"
 
 	"github.com/in-toto/archivista/pkg/api"
@@ -42,6 +44,10 @@ Digests are expected to be in the form algorithm:digest, for instance: sha256:45
 		return nil
 	},
 	RunE: func(cmd *cobra.Command, args []string) error {
+		if format != "table" && format != "json" {
+			return fmt.Errorf("unsupported format %q: supported formats are table, json", format)
+		}
+
 		algo, digest, err := validateDigestString(args[0])
 		if err != nil {
 			return err
@@ -52,13 +58,25 @@ Digests are expected to be in the form algorithm:digest, for instance: sha256:45
 			return err
 		}
 
+		if format == "json" {
+			jsonData, err := json.MarshalIndent(results, "", "  ")
+			if err != nil {
+				return fmt.Errorf("failed to marshal results to JSON: %w", err)
+			}
+			fmt.Fprintln(cmd.OutOrStdout(), string(jsonData))
+			return nil
+		}
+
 		printResults(results)
 		return nil
 	},
 }
 
+var format string
+
 func init() {
 	rootCmd.AddCommand(searchCmd)
+	searchCmd.Flags().StringVarP(&format, "format", "f", "table", "Output format (table|json)")
 }
 
 func validateDigestString(ds string) (algo, digest string, err error) {

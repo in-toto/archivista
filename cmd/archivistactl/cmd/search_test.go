@@ -56,6 +56,19 @@ func (ut *UTSearchSuite) Test_SearchInvalidDigestString() {
 	}
 }
 
+func (ut *UTSearchSuite) Test_SearchInvalidFormat() {
+	output := bytes.NewBufferString("")
+	rootCmd.SetOut(output)
+	rootCmd.SetErr(output)
+	rootCmd.SetArgs([]string{"search", "sha256:test", "--format", "yaml"})
+	err := rootCmd.Execute()
+	if err != nil {
+		ut.ErrorContains(err, "unsupported format")
+	} else {
+		ut.FailNow("Expected: error")
+	}
+}
+
 func (ut *UTSearchSuite) Test_NoDB() {
 	output := bytes.NewBufferString("")
 	rootCmd.SetOut(output)
