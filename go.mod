@@ -38,7 +38,7 @@ require (
 )
 
 require (
-	github.com/aws/aws-sdk-go-v2/feature/rds/auth v1.6.32
+	github.com/aws/aws-sdk-go-v2/feature/rds/auth v1.6.34
 	github.com/aws/aws-sdk-go-v2/internal/v4a v1.4.35 // indirect
 	github.com/aws/aws-sdk-go-v2/service/signin v1.5.3 // indirect
 	github.com/decred/dcrd/dcrec/secp256k1/v4 v4.4.1 // indirect
