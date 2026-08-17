@@ -17,6 +17,7 @@ package sqlstore
 import (
 	"context"
 	"fmt"
+	"net"
 	"strconv"
 	"strings"
 
@@ -69,9 +70,18 @@ func ConfigFromMySQL(connectionString string) (c *driver.Config, user, password 
 		return nil, "", "", fmt.Errorf("parsing connection string: %w", err)
 	}
 
-	addr := strings.Split(dbConfig.Addr, ":")
-	dc.Host = addr[0]
-	port, err := strconv.Atoi(addr[1])
+	// ParseDSN only fills in a default port for tcp, so a unix socket DSN leaves
+	// Addr as a bare path with no colon. Splitting on ":" and indexing element 1
+	// panicked on that, and mis-parsed a bracketed IPv6 host.
+	if dbConfig.Net != "tcp" {
+		return nil, "", "", fmt.Errorf("unsupported mysql network %q: only tcp is supported", dbConfig.Net)
+	}
+	host, portStr, err := net.SplitHostPort(dbConfig.Addr)
+	if err != nil {
+		return nil, "", "", fmt.Errorf("could not parse mysql address %q: %w", dbConfig.Addr, err)
+	}
+	dc.Host = host
+	port, err := strconv.Atoi(portStr)
 	if err != nil {
 		return nil, "", "", fmt.Errorf("could not parse mysql port: %w", err)
 	}
