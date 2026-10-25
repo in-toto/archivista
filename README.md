@@ -101,7 +101,7 @@ Archivista is configured through environment variables currently.
 | ARCHIVISTA_SQL_STORE_BACKEND               |                                           | Backend to use for SQL. Options are MYSQL or PSQL (MYSQL_RDS_IAM or PSQL_RDS_IAM for AWS IAM authentication)|
 | ARCHIVISTA_SQL_STORE_CONNECTION_STRING     | postgresql://root:example@tcp(db)/testify | SQL store connection string                                                                                 |
 | ARCHIVISTA_STORAGE_BACKEND                 |                                           | Backend to use for attestation storage. Options are FILE, BLOB, or empty string for disabled.               |
-| ARCHIVISTA_FILE_SERVE_ON                   |                                           | What address to serve files on. Only valid when using FILE storage backend (e.g. `:8081`).                  |
+| ARCHIVISTA_FILE_SERVE_ON                   |                                           | What address to serve files on (e.g. `:8081`). Files are not served if empty. Only valid with FILE backend. |
 | ARCHIVISTA_FILE_DIR                        | /tmp/archivista/                          | Directory to store and serve files. Only valid when using FILE storage backend.                             |
 | ARCHIVISTA_BLOB_STORE_ENDPOINT             | 127.0.0.1:9000                            | URL endpoint for blob storage. Only valid when using BLOB storage backend.                                  |
 | ARCHIVISTA_BLOB_STORE_CREDENTIAL_TYPE      |                                           | Blob store credential type. Options are IAM or ACCESS_KEY.                                                  |
