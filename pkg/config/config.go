@@ -47,7 +47,7 @@ type Config struct {
 	SQLStoreConnectionMaxLifetime time.Duration `default:"3m" desc:"Maximum amount of time a connection may be reused" split_words:"true"`
 
 	StorageBackend             string `default:"" desc:"Backend to use for attestation storage. Options are FILE, BLOB, or empty string for disabled." split_words:"true"`
-	FileServeOn                string `default:"" desc:"What address to serve files on. Only valid when using FILE storage backend." split_words:"true"`
+	FileServeOn                string `default:"" desc:"What address to serve files on. Files are not served if empty. Only valid when using FILE storage backend." split_words:"true"`
 	FileDir                    string `default:"/tmp/archivista/" desc:"Directory to store and serve files. Only valid when using FILE storage backend." split_words:"true"`
 	BlobStoreEndpoint          string `default:"127.0.0.1:9000" desc:"URL endpoint for blob storage. Only valid when using BLOB storage backend." split_words:"true"`
 	BlobStoreCredentialType    string `default:"ACCESS_KEY" desc:"Blob store credential type. Options are IAM or ACCESS_KEY" split_words:"true"`

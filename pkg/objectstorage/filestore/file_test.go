@@ -16,9 +16,12 @@ package filestore_test
 import (
 	"context"
 	"io"
+	"net"
+	"net/http"
 	"os"
 	"path/filepath"
 	"testing"
+	"time"
 
 	"github.com/in-toto/archivista/pkg/objectstorage/filestore"
 	"github.com/stretchr/testify/suite"
@@ -50,7 +53,7 @@ func (ut *UTFileStoreSuite) TearDownTest() {
 }
 func (ut *UTFileStoreSuite) Test_Get() {
 
-	store, _, err := filestore.New(context.Background(), ut.tempDir, ":50025")
+	store, _, err := filestore.New(context.Background(), ut.tempDir, "")
 	if err != nil {
 		ut.FailNow(err.Error())
 	}
@@ -92,4 +95,69 @@ func (ut *UTFileStoreSuite) Test_Get() {
 		ut.FailNowf("Failed to detect bad path: %v", err.Error())
 	}
 
+}
+
+func (ut *UTFileStoreSuite) Test_New_WithoutServeAddress() {
+	ctx, cancel := context.WithCancel(context.Background())
+	store, errCh, err := filestore.New(ctx, ut.tempDir, "")
+	ut.NoError(err)
+	ut.NotNil(store)
+
+	err = store.Store(context.Background(), "test_gitoid", ut.payload)
+	ut.NoError(err)
+
+	cancel()
+	select {
+	case err := <-errCh:
+		ut.NoError(err)
+	case <-time.After(5 * time.Second):
+		ut.FailNow("file store did not shut down")
+	}
+}
+
+func (ut *UTFileStoreSuite) Test_New_WithServeAddress() {
+	// Reserve a free port for the file server
+	listener, err := net.Listen("tcp", "127.0.0.1:0")
+	if err != nil {
+		ut.FailNow(err.Error())
+	}
+	address := listener.Addr().String()
+	listener.Close()
+
+	ctx, cancel := context.WithCancel(context.Background())
+	store, errCh, err := filestore.New(ctx, ut.tempDir, address)
+	ut.NoError(err)
+	ut.NotNil(store)
+
+	err = store.Store(context.Background(), "test_gitoid", ut.payload)
+	ut.NoError(err)
+
+	resp, err := http.Get("http://" + address + "/test_gitoid.json")
+	if err != nil {
+		ut.FailNowf("Failed to fetch served file: %v", err.Error())
+	}
+	defer resp.Body.Close()
+	ut.Equal(http.StatusOK, resp.StatusCode)
+
+	servedPayload, err := io.ReadAll(resp.Body)
+	ut.NoError(err)
+	ut.Equal(string(ut.payload), string(servedPayload))
+
+	cancel()
+	select {
+	case err := <-errCh:
+		ut.NoError(err)
+	case <-time.After(5 * time.Second):
+		ut.FailNow("file store did not shut down")
+	}
+
+	_, err = http.Get("http://" + address + "/test_gitoid.json")
+	ut.Error(err)
+}
+
+func (ut *UTFileStoreSuite) Test_New_InvalidServeAddress() {
+	store, errCh, err := filestore.New(context.Background(), ut.tempDir, "8081")
+	ut.ErrorContains(err, "could not listen on 8081")
+	ut.Nil(store)
+	ut.Nil(errCh)
 }
