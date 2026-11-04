@@ -148,6 +148,36 @@ func (ut *UTHTTPClientDownloadSuite) Test_DownloadWithWriter() {
 	ut.Equal(expectedEnvelop, env)
 }
 
+func (ut *UTHTTPClientDownloadSuite) Test_DownloadWithWriter_UsesHTTPClient() {
+	testEnvelope, err := os.ReadFile("../../test/package.attestation.json")
+	if err != nil {
+		ut.FailNow(err.Error())
+	}
+	testServer := httptest.NewTLSServer(
+		http.HandlerFunc(
+			func(w http.ResponseWriter, r *http.Request) {
+				w.WriteHeader(http.StatusOK)
+				_, err = w.Write(testEnvelope)
+				if err != nil {
+					ut.FailNow(err.Error())
+				}
+			},
+		),
+	)
+	defer testServer.Close()
+	ctx := context.TODO()
+	// only the test server's client trusts its TLS certificate
+	client, err := httpclient.CreateArchivistaClient(testServer.Client(), testServer.URL)
+	if err != nil {
+		ut.FailNow(err.Error())
+	}
+	buf := bytes.NewBuffer(nil)
+	if err := client.DownloadWithWriter(ctx, "gitoid_test", buf); err != nil {
+		ut.FailNow(err.Error())
+	}
+	ut.Equal(testEnvelope, buf.Bytes())
+}
+
 // Test Suite: UT HTTPClientStore
 type UTHTTPClientStoreSuite struct {
 	suite.Suite
@@ -210,6 +240,72 @@ func (ut *UTHTTPClientStoreSuite) Test_StoreWithReader() {
 	}
 	ctx := context.TODO()
 	client, err := httpclient.CreateArchivistaClient(http.DefaultClient, testServer.URL)
+	if err != nil {
+		ut.FailNow(err.Error())
+	}
+	resp, err := client.StoreWithReader(ctx, attIo)
+	if err != nil {
+		ut.FailNow(err.Error())
+	}
+	ut.Equal(resp, api.UploadResponse{Gitoid: "test"})
+}
+
+func (ut *UTHTTPClientStoreSuite) Test_Store_UsesHTTPClient() {
+	testServer := httptest.NewTLSServer(
+		http.HandlerFunc(
+			func(w http.ResponseWriter, r *http.Request) {
+				w.WriteHeader(http.StatusOK)
+				_, err := w.Write([]byte(`{"gitoid":"test"}`))
+				if err != nil {
+					ut.FailNow(err.Error())
+				}
+			},
+		),
+	)
+	defer testServer.Close()
+	ctx := context.TODO()
+	attFile, err := os.ReadFile("../../test/package.attestation.json")
+	if err != nil {
+		ut.FailNow(err.Error())
+	}
+	attEnvelop := dsse.Envelope{}
+	err = json.Unmarshal(attFile, &attEnvelop)
+	if err != nil {
+		ut.FailNow(err.Error())
+	}
+	// only the test server's client trusts its TLS certificate
+	client, err := httpclient.CreateArchivistaClient(testServer.Client(), testServer.URL)
+	if err != nil {
+		ut.FailNow(err.Error())
+	}
+	resp, err := client.Store(ctx, attEnvelop)
+	if err != nil {
+		ut.FailNow(err.Error())
+	}
+	ut.Equal(resp, api.UploadResponse{Gitoid: "test"})
+}
+
+func (ut *UTHTTPClientStoreSuite) Test_StoreWithReader_UsesHTTPClient() {
+	testServer := httptest.NewTLSServer(
+		http.HandlerFunc(
+			func(w http.ResponseWriter, r *http.Request) {
+				w.WriteHeader(http.StatusOK)
+				_, err := w.Write([]byte(`{"gitoid":"test"}`))
+				if err != nil {
+					ut.FailNow(err.Error())
+				}
+			},
+		),
+	)
+	defer testServer.Close()
+	attIo, err := os.Open("../../test/package.attestation.json")
+	if err != nil {
+		ut.FailNow(err.Error())
+	}
+	defer attIo.Close()
+	ctx := context.TODO()
+	// only the test server's client trusts its TLS certificate
+	client, err := httpclient.CreateArchivistaClient(testServer.Client(), testServer.URL)
 	if err != nil {
 		ut.FailNow(err.Error())
 	}
