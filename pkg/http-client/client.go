@@ -111,11 +111,16 @@ func (ac *ArchivistaClient) DownloadWithWriter(ctx context.Context, gitoid strin
 }
 
 func (ac *ArchivistaClient) Store(ctx context.Context, envelope dsse.Envelope) (api.UploadResponse, error) {
-	return api.Store(ctx, ac.BaseURL, envelope, ac.requestOptions()...)
+	buf := &bytes.Buffer{}
+	if err := json.NewEncoder(buf).Encode(envelope); err != nil {
+		return api.UploadResponse{}, err
+	}
+
+	return api.StoreWithReaderWithHTTPClient(ctx, ac.Client, ac.BaseURL, buf, ac.requestOptions()...)
 }
 
 func (ac *ArchivistaClient) StoreWithReader(ctx context.Context, r io.Reader) (api.UploadResponse, error) {
-	return api.StoreWithReader(ctx, ac.BaseURL, r, ac.requestOptions()...)
+	return api.StoreWithReaderWithHTTPClient(ctx, ac.Client, ac.BaseURL, r, ac.requestOptions()...)
 }
 
 type GraphQLRequestBodyInterface struct {

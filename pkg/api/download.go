@@ -93,8 +93,11 @@ func DownloadWithWriterWithHTTPClient(ctx context.Context, client *http.Client, 
 
 	req = applyRequestOptions(req, requestOptions...)
 	req.Header.Set("Content-Type", "application/json")
-	hc := &http.Client{}
-	resp, err := hc.Do(req)
+	if client == nil {
+		client = &http.Client{}
+	}
+
+	resp, err := client.Do(req)
 	if err != nil {
 		return err
 	}
