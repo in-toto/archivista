@@ -21,7 +21,7 @@ RUN --mount=target=. --mount=target=/root/.cache,type=cache \
     CGO_ENABLED=0 go build -o /out/ -ldflags '-s -d -w' ./cmd/...; \
     file /out/archivista | grep "statically linked"
 
-FROM alpine:3.24.1@sha256:28bd5fe8b56d1bd048e5babf5b10710ebe0bae67db86916198a6eec434943f8b
+FROM alpine:3.24.4@sha256:f59abe656b692d901e184be3445e084786602108599d2a51d229c0f5a48c71bf
 COPY --from=build /out/archivista /bin/archivista
 COPY --from=build /out/archivistactl /bin/archivistactl
 COPY --from=build /usr/local/bin/atlas /bin/atlas
